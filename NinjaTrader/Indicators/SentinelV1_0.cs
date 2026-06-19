@@ -9,7 +9,7 @@
 // sidebar and lives as a free-standing ToolWindow. It retains the full feature
 // set of TrendArchitectMQPanel V1.6.1 and adds:
 //   - Floating window architecture (WindowStyle.ToolWindow, owned by chart)
-//   - SignalSource enum — configurable signal detection:
+//   - SentinelSignalSource enum — configurable signal detection:
 //       TrendArchitectMQ  : TrendArchitect MQB/MQS draw objects (default)
 //       DrawObjectTag     : any indicator's Draw.X with a configurable tag prefix
 //       IndicatorSeries   : any indicator's output series by name + index
@@ -42,7 +42,7 @@
 //   1. Add this indicator to any chart — a floating Sentinel window appears.
 //   2. The window is owned by the chart and minimizes/restores with it.
 //   3. For TrendArchitectMQ signals: also add TrendArchitect to the chart.
-//   4. For custom signals: set SignalSource and configure the tag or series.
+//   4. For custom signals: set SentinelSignalSource and configure the tag or series.
 //   5. ARM BULL / ARM BEAR to arm entries on the next qualifying signal.
 //   6. All trade management, trailing, and session risk features from
 //      TrendArchitectMQPanel V1.6.1 are fully carried over.
@@ -59,7 +59,7 @@
 //      between indicator reloads via WindowLeft/WindowTop properties.
 //      Width configurable via PanelWidth property (default 280).
 //
-//   2. SignalSource enum — four configurable signal detection modes:
+//   2. SentinelSignalSource enum — four configurable signal detection modes:
 //        TrendArchitectMQ  — DrawObject scan for TA_SIG_N_MQB/MQS tags
 //                            (same as MQPanel — default behavior)
 //        DrawObjectTag     — watch for Draw.X with user-defined tag prefix
@@ -117,15 +117,15 @@ namespace NinjaTrader.NinjaScript.Indicators
         // namespace-level enums from other compiled files which caused CS0246/CS0103
         // on clean installs and CS0426 on environments with older versions present.
         // Nesting is the only approach that compiles on all NT8 builds.
-        public enum OppositeSignalMode { Off, Close, Reverse }
-        public enum ReArmMode          { Disarm, ReArm, ReArmMQB, ReArmMQS }
-        public enum RiskCardCornerPos  { TopLeft, TopRight, BottomLeft, BottomRight }
+        public enum SentinelOppMode { Off, Close, Reverse }
+        public enum SentinelReArmMode          { Disarm, ReArm, ReArmMQB, ReArmMQS }
+        public enum SentinelCornerPos  { TopLeft, TopRight, BottomLeft, BottomRight }
         public enum TrailMode          { None, TrailTicks, BreakevenPlus, BarLowHigh, NBarLowHigh, TrailATR, TrendMagic, HalfPlusBE }
         // V1.6: 3-state auto-entry exit mode
-        public enum AutoEntryMode      { None, StopOnly, Bracket }
+        public enum SentinelAutoEntryMode      { None, StopOnly, Bracket }
 
         // V1.0 (Sentinel): configurable signal detection source
-        public enum SignalSource
+        public enum SentinelSignalSource
         {
             TrendArchitectMQ,  // Default — TA_SIG_N_MQB / TA_SIG_N_MQS draw objects
             DrawObjectTag,     // Any Draw.X with user-configurable tag prefix
@@ -235,7 +235,7 @@ namespace NinjaTrader.NinjaScript.Indicators
         private double  lastRiskUiPnLCents   = double.NaN;
         private bool    lastRiskUiPnlMaxHit;
         private bool    lastRiskUiDdLimitHit;
-        private NinjaTrader.Gui.NinjaScript.IndicatorRenderBase cachedSignalSource; // V1.4 (Spoobie): cached TrendArchitect ref — skips indicator scan after first hit
+        private NinjaTrader.Gui.NinjaScript.IndicatorRenderBase cachedSentinelSignalSource; // V1.4 (Spoobie): cached TrendArchitect ref — skips indicator scan after first hit
         private SharpDX.DirectWrite.Factory riskTextFactory; // V1.4 (Spoobie): cached — avoids per-frame allocation in OnRender
         private bool    pnlMaxHit         = false;
         private bool    ddLimitHit        = false;
@@ -267,7 +267,7 @@ namespace NinjaTrader.NinjaScript.Indicators
         // ── Parameters — Sentinel Signal Source ──────────────────────────────
         [NinjaScriptProperty]
         [Display(Name = "Signal Source", Order = 0, GroupName = "Sentinel Signal")]
-        public SignalSource SentinelSignalSource { get; set; } = SignalSource.TrendArchitectMQ;
+        public SentinelSignalSource SentinelSentinelSignalSource { get; set; } = SentinelSignalSource.TrendArchitectMQ;
 
         [NinjaScriptProperty]
         [Display(Name = "Bull Tag Prefix (DrawObjectTag)", Order = 1, GroupName = "Sentinel Signal")]
@@ -349,16 +349,16 @@ namespace NinjaTrader.NinjaScript.Indicators
         // ── Parameters — Signal Arming ────────────────────────────────────────
         [NinjaScriptProperty]
         [Display(Name = "Opposite Signal Mode", Order = 0, GroupName = "Signal Arming")]
-        public OppositeSignalMode OppSignalMode { get; set; } = OppositeSignalMode.Close;
+        public SentinelOppMode OppSignalMode { get; set; } = SentinelOppMode.Close;
 
         [NinjaScriptProperty]
         [Display(Name = "Re-Arm Mode", Order = 1, GroupName = "Signal Arming")]
-        public ReArmMode ReArmAfterEntry { get; set; } = ReArmMode.Disarm;
+        public SentinelReArmMode ReArmAfterEntry { get; set; } = SentinelReArmMode.Disarm;
 
         // V1.6: 3-state auto-exit mode (None / StopOnly / Bracket)
         [NinjaScriptProperty]
         [Display(Name = "Auto Entry Mode", Order = 2, GroupName = "Signal Arming")]
-        public AutoEntryMode AutoEntryExitMode { get; set; } = AutoEntryMode.None;
+        public SentinelAutoEntryMode AutoEntryExitMode { get; set; } = SentinelAutoEntryMode.None;
 
         // V1.6: Profit target ticks for auto-bracket and manual Bracket button
         [NinjaScriptProperty]
@@ -429,7 +429,7 @@ namespace NinjaTrader.NinjaScript.Indicators
 
         [NinjaScriptProperty]
         [Display(Name = "Risk Card Corner", Order = 3, GroupName = "Session Risk")]
-        public RiskCardCornerPos RiskCardCorner { get; set; } = RiskCardCornerPos.BottomRight;
+        public SentinelCornerPos RiskCardCorner { get; set; } = SentinelCornerPos.BottomRight;
 
         [NinjaScriptProperty]
         [Display(Name = "Sound File (blank = default)", Order = 4, GroupName = "Session Risk")]
@@ -641,16 +641,16 @@ namespace NinjaTrader.NinjaScript.Indicators
                 : new[] { CurrentBar };
 
             // V1.4 (Spoobie): Read value-type properties directly — no Dispatcher needed
-            OppositeSignalMode liveOpp   = OppSignalMode;
-            ReArmMode          liveReArm = ReArmAfterEntry;
+            SentinelOppMode liveOpp   = OppSignalMode;
+            SentinelReArmMode          liveReArm = ReArmAfterEntry;
 
-            // V1.0 (Sentinel): signal detection — all SignalSource modes
-            if (SentinelSignalSource != SignalSource.ManualOnly)
+            // V1.0 (Sentinel): signal detection — all SentinelSignalSource modes
+            if (SentinelSentinelSignalSource != SentinelSignalSource.ManualOnly)
             {
                 if (mqbArmed)
                 {
                     bool bullFired = false;
-                    if (SentinelSignalSource == SignalSource.IndicatorSeries)
+                    if (SentinelSentinelSignalSource == SentinelSignalSource.IndicatorSeries)
                     {
                         bullFired = CheckIndicatorSeriesSignal(true) && CurrentBar != lastMqbEntryBar;
                     }
@@ -659,7 +659,7 @@ namespace NinjaTrader.NinjaScript.Indicators
                         foreach (int bar in barsToCheck)
                         {
                             if (bar < 0 || bar == lastMqbEntryBar) continue;
-                            string tag = SentinelSignalSource == SignalSource.TrendArchitectMQ
+                            string tag = SentinelSentinelSignalSource == SentinelSignalSource.TrendArchitectMQ
                                 ? "TA_SIG_" + bar + "_MQB"
                                 : BullTagPrefix + bar + BullTagSuffix;
                             if (FindChartDrawObject(tag) != null) { bullFired = true; lastMqbEntryBar = bar; break; }
@@ -667,8 +667,8 @@ namespace NinjaTrader.NinjaScript.Indicators
                     }
                     if (bullFired)
                     {
-                        if (SentinelSignalSource == SignalSource.IndicatorSeries) lastMqbEntryBar = CurrentBar;
-                        bool keepArmed = liveReArm == ReArmMode.ReArm || liveReArm == ReArmMode.ReArmMQB;
+                        if (SentinelSentinelSignalSource == SentinelSignalSource.IndicatorSeries) lastMqbEntryBar = CurrentBar;
+                        bool keepArmed = liveReArm == SentinelReArmMode.ReArm || liveReArm == SentinelReArmMode.ReArmMQB;
                         bool didOpposite = HandleOppositePosition(OrderAction.Buy, "BULL", liveOpp);
                         if (!didOpposite) SubmitArmEntry(OrderAction.Buy, "BULL");
                         if (!keepArmed) mqbArmed = false;
@@ -679,7 +679,7 @@ namespace NinjaTrader.NinjaScript.Indicators
                 if (mqsArmed)
                 {
                     bool bearFired = false;
-                    if (SentinelSignalSource == SignalSource.IndicatorSeries)
+                    if (SentinelSentinelSignalSource == SentinelSignalSource.IndicatorSeries)
                     {
                         bearFired = CheckIndicatorSeriesSignal(false) && CurrentBar != lastMqsEntryBar;
                     }
@@ -688,7 +688,7 @@ namespace NinjaTrader.NinjaScript.Indicators
                         foreach (int bar in barsToCheck)
                         {
                             if (bar < 0 || bar == lastMqsEntryBar) continue;
-                            string tag = SentinelSignalSource == SignalSource.TrendArchitectMQ
+                            string tag = SentinelSentinelSignalSource == SentinelSignalSource.TrendArchitectMQ
                                 ? "TA_SIG_" + bar + "_MQS"
                                 : BearTagPrefix + bar + BearTagSuffix;
                             if (FindChartDrawObject(tag) != null) { bearFired = true; lastMqsEntryBar = bar; break; }
@@ -696,8 +696,8 @@ namespace NinjaTrader.NinjaScript.Indicators
                     }
                     if (bearFired)
                     {
-                        if (SentinelSignalSource == SignalSource.IndicatorSeries) lastMqsEntryBar = CurrentBar;
-                        bool keepArmed = liveReArm == ReArmMode.ReArm || liveReArm == ReArmMode.ReArmMQS;
+                        if (SentinelSentinelSignalSource == SentinelSignalSource.IndicatorSeries) lastMqsEntryBar = CurrentBar;
+                        bool keepArmed = liveReArm == SentinelReArmMode.ReArm || liveReArm == SentinelReArmMode.ReArmMQS;
                         bool didOpposite = HandleOppositePosition(OrderAction.SellShort, "BEAR", liveOpp);
                         if (!didOpposite) SubmitArmEntry(OrderAction.SellShort, "BEAR");
                         if (!keepArmed) mqsArmed = false;
@@ -819,7 +819,7 @@ namespace NinjaTrader.NinjaScript.Indicators
                 RefreshTimeFilterStatus();
                 RefreshAutoStopToggle();
 
-                Print("[Sentinel] Window opened — signal source: " + SentinelSignalSource);
+                Print("[Sentinel] Window opened — signal source: " + SentinelSentinelSignalSource);
             }
             catch (Exception ex) { Print("[Sentinel] CreateSentinelWindow error: " + ex.Message); }
         }
@@ -1491,9 +1491,9 @@ namespace NinjaTrader.NinjaScript.Indicators
             btnOppOff     = ModeBtn("Off");
             btnOppClose   = ModeBtn("Close");
             btnOppReverse = ModeBtn("Reverse");
-            btnOppOff.Click     += (s, e) => { OppSignalMode = OppositeSignalMode.Off;     RefreshOppButtons(); };
-            btnOppClose.Click   += (s, e) => { OppSignalMode = OppositeSignalMode.Close;   RefreshOppButtons(); };
-            btnOppReverse.Click += (s, e) => { OppSignalMode = OppositeSignalMode.Reverse; RefreshOppButtons(); };
+            btnOppOff.Click     += (s, e) => { OppSignalMode = SentinelOppMode.Off;     RefreshOppButtons(); };
+            btnOppClose.Click   += (s, e) => { OppSignalMode = SentinelOppMode.Close;   RefreshOppButtons(); };
+            btnOppReverse.Click += (s, e) => { OppSignalMode = SentinelOppMode.Reverse; RefreshOppButtons(); };
 
             Grid.SetColumn(btnOppOff,     0);
             Grid.SetColumn(btnOppClose,   1);
@@ -1516,8 +1516,8 @@ namespace NinjaTrader.NinjaScript.Indicators
             row1.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
             btnReArmDisarm = ModeBtn("Disarm");
             btnReArmReArm  = ModeBtn("ReArm");
-            btnReArmDisarm.Click += (s, e) => { ReArmAfterEntry = ReArmMode.Disarm; RefreshReArmButtons(); };
-            btnReArmReArm.Click  += (s, e) => { ReArmAfterEntry = ReArmMode.ReArm;  RefreshReArmButtons(); };
+            btnReArmDisarm.Click += (s, e) => { ReArmAfterEntry = SentinelReArmMode.Disarm; RefreshReArmButtons(); };
+            btnReArmReArm.Click  += (s, e) => { ReArmAfterEntry = SentinelReArmMode.ReArm;  RefreshReArmButtons(); };
             Grid.SetColumn(btnReArmDisarm, 0);
             Grid.SetColumn(btnReArmReArm,  1);
             row1.Children.Add(btnReArmDisarm);
@@ -1528,8 +1528,8 @@ namespace NinjaTrader.NinjaScript.Indicators
             row2.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
             btnReArmMQB = ModeBtn("ReArm MQB");
             btnReArmMQS = ModeBtn("ReArm MQS");
-            btnReArmMQB.Click += (s, e) => { ReArmAfterEntry = ReArmMode.ReArmMQB; RefreshReArmButtons(); };
-            btnReArmMQS.Click += (s, e) => { ReArmAfterEntry = ReArmMode.ReArmMQS; RefreshReArmButtons(); };
+            btnReArmMQB.Click += (s, e) => { ReArmAfterEntry = SentinelReArmMode.ReArmMQB; RefreshReArmButtons(); };
+            btnReArmMQS.Click += (s, e) => { ReArmAfterEntry = SentinelReArmMode.ReArmMQS; RefreshReArmButtons(); };
             Grid.SetColumn(btnReArmMQB, 0);
             Grid.SetColumn(btnReArmMQS, 1);
             row2.Children.Add(btnReArmMQB);
@@ -2104,9 +2104,9 @@ namespace NinjaTrader.NinjaScript.Indicators
             host.MouseLeftButtonUp += (s, e) =>
             {
                 // Cycle: None → StopOnly → Bracket → None
-                AutoEntryExitMode = AutoEntryExitMode == AutoEntryMode.None    ? AutoEntryMode.StopOnly
-                                  : AutoEntryExitMode == AutoEntryMode.StopOnly ? AutoEntryMode.Bracket
-                                  : AutoEntryMode.None;
+                AutoEntryExitMode = AutoEntryExitMode == SentinelAutoEntryMode.None    ? SentinelAutoEntryMode.StopOnly
+                                  : AutoEntryExitMode == SentinelAutoEntryMode.StopOnly ? SentinelAutoEntryMode.Bracket
+                                  : SentinelAutoEntryMode.None;
                 RefreshAutoStopToggle();
                 Print("Auto-exit mode ▶ " + AutoEntryExitMode);
             };
@@ -2118,21 +2118,21 @@ namespace NinjaTrader.NinjaScript.Indicators
             if (autoStopToggleDot == null) return;
             switch (AutoEntryExitMode)
             {
-                case AutoEntryMode.None:
+                case SentinelAutoEntryMode.None:
                     autoStopToggleDot.Fill           = Brushes.Transparent;
                     autoStopToggleDot.Stroke         = new SolidColorBrush(C_MUTED);
                     autoStopToggleDot.StrokeThickness = 2;
                     if (autoStopToggleHost != null)
                     { autoStopToggleHost.BorderBrush = new SolidColorBrush(C_BORDER); autoStopToggleHost.ToolTip = "Auto-exit: OFF — click to enable Stop Only"; }
                     break;
-                case AutoEntryMode.StopOnly:
+                case SentinelAutoEntryMode.StopOnly:
                     autoStopToggleDot.Fill           = new SolidColorBrush(C_GREEN);
                     autoStopToggleDot.Stroke         = new SolidColorBrush(C_GREEN);
                     autoStopToggleDot.StrokeThickness = 0;
                     if (autoStopToggleHost != null)
                     { autoStopToggleHost.BorderBrush = new SolidColorBrush(C_GREEN); autoStopToggleHost.ToolTip = "Auto-exit: STOP ONLY (●) — click for Bracket"; }
                     break;
-                case AutoEntryMode.Bracket:
+                case SentinelAutoEntryMode.Bracket:
                     autoStopToggleDot.Fill           = new SolidColorBrush(C_PURPLE);
                     autoStopToggleDot.Stroke         = new SolidColorBrush(C_PURPLE);
                     autoStopToggleDot.StrokeThickness = 0;
@@ -2187,17 +2187,17 @@ namespace NinjaTrader.NinjaScript.Indicators
 
         private void RefreshOppButtons()
         {
-            SetModeBtn(btnOppOff,     OppSignalMode == OppositeSignalMode.Off,     C_MUTED);
-            SetModeBtn(btnOppClose,   OppSignalMode == OppositeSignalMode.Close,   C_AMBER);
-            SetModeBtn(btnOppReverse, OppSignalMode == OppositeSignalMode.Reverse, C_BLUE);
+            SetModeBtn(btnOppOff,     OppSignalMode == SentinelOppMode.Off,     C_MUTED);
+            SetModeBtn(btnOppClose,   OppSignalMode == SentinelOppMode.Close,   C_AMBER);
+            SetModeBtn(btnOppReverse, OppSignalMode == SentinelOppMode.Reverse, C_BLUE);
         }
 
         private void RefreshReArmButtons()
         {
-            SetModeBtn(btnReArmDisarm, ReArmAfterEntry == ReArmMode.Disarm,   C_MUTED);
-            SetModeBtn(btnReArmReArm,  ReArmAfterEntry == ReArmMode.ReArm,    C_PURPLE);
-            SetModeBtn(btnReArmMQB,    ReArmAfterEntry == ReArmMode.ReArmMQB, C_GREEN);
-            SetModeBtn(btnReArmMQS,    ReArmAfterEntry == ReArmMode.ReArmMQS, C_RED);
+            SetModeBtn(btnReArmDisarm, ReArmAfterEntry == SentinelReArmMode.Disarm,   C_MUTED);
+            SetModeBtn(btnReArmReArm,  ReArmAfterEntry == SentinelReArmMode.ReArm,    C_PURPLE);
+            SetModeBtn(btnReArmMQB,    ReArmAfterEntry == SentinelReArmMode.ReArmMQB, C_GREEN);
+            SetModeBtn(btnReArmMQS,    ReArmAfterEntry == SentinelReArmMode.ReArmMQS, C_RED);
         }
 
         // ═════════════════════════════════════════════════════════════════════
@@ -2290,7 +2290,7 @@ namespace NinjaTrader.NinjaScript.Indicators
         // ═════════════════════════════════════════════════════════════════════
         // Signal logic helpers (carried from V1.1)
         // ═════════════════════════════════════════════════════════════════════
-        private bool HandleOppositePosition(OrderAction newAction, string label, OppositeSignalMode mode)
+        private bool HandleOppositePosition(OrderAction newAction, string label, SentinelOppMode mode)
         {
             var acct  = ResolveAccount();    if (acct == null)  return false;
             var instr = ResolveInstrument(); if (instr == null) return false;
@@ -2302,12 +2302,12 @@ namespace NinjaTrader.NinjaScript.Indicators
             if (!isOpposite) return false;
             switch (mode)
             {
-                case OppositeSignalMode.Off:
+                case SentinelOppMode.Off:
                     Print("Arm " + label + " ▶ opposite exists, mode=Off — ignoring"); return true;
-                case OppositeSignalMode.Close:
+                case SentinelOppMode.Close:
                     CloseCurrentPosition(acct, instr, pos, label);
                     Print("Arm " + label + " ▶ closed opposite (mode=Close)"); return true;
-                case OppositeSignalMode.Reverse:
+                case SentinelOppMode.Reverse:
                     CloseCurrentPosition(acct, instr, pos, label);
                     Print("Arm " + label + " ▶ closed opposite, reversing (mode=Reverse)"); return false;
                 default: return false;
@@ -2358,34 +2358,34 @@ namespace NinjaTrader.NinjaScript.Indicators
             catch (Exception ex) { Print("Arm " + signalLabel + " ▶ ERROR: " + ex.Message); }
         }
 
-        // V1.0 (Sentinel): signal detection — supports all SignalSource modes
+        // V1.0 (Sentinel): signal detection — supports all SentinelSignalSource modes
         private IDrawingTool FindChartDrawObject(string tag)
         {
             try
             {
                 if (ChartControl == null) return null;
 
-                if (SentinelSignalSource == SignalSource.TrendArchitectMQ
-                    || SentinelSignalSource == SignalSource.DrawObjectTag)
+                if (SentinelSentinelSignalSource == SentinelSignalSource.TrendArchitectMQ
+                    || SentinelSentinelSignalSource == SentinelSignalSource.DrawObjectTag)
                 {
                     // Cache the source indicator on first lookup
-                    if (cachedSignalSource == null)
+                    if (cachedSentinelSignalSource == null)
                     {
-                        string targetName = SentinelSignalSource == SignalSource.TrendArchitectMQ
+                        string targetName = SentinelSentinelSignalSource == SentinelSignalSource.TrendArchitectMQ
                             ? "TrendArchitect" : "";
                         foreach (var ind in ChartControl.Indicators)
                         {
                             if (string.IsNullOrEmpty(targetName)
                                 || string.Equals(ind.GetType().Name, targetName, StringComparison.Ordinal))
                             {
-                                cachedSignalSource = ind;
+                                cachedSentinelSignalSource = ind;
                                 break;
                             }
                         }
                     }
-                    if (cachedSignalSource != null)
+                    if (cachedSentinelSignalSource != null)
                     {
-                        var hit = cachedSignalSource.DrawObjects[tag];
+                        var hit = cachedSentinelSignalSource.DrawObjects[tag];
                         if (hit != null) return hit;
                     }
                     // Fallback: scan all indicators
@@ -2403,27 +2403,27 @@ namespace NinjaTrader.NinjaScript.Indicators
         // V1.0 (Sentinel): check indicator series signal (IndicatorSeries mode)
         private bool CheckIndicatorSeriesSignal(bool bull)
         {
-            if (SentinelSignalSource != SignalSource.IndicatorSeries) return false;
+            if (SentinelSentinelSignalSource != SentinelSignalSource.IndicatorSeries) return false;
             if (string.IsNullOrWhiteSpace(SignalIndicatorName)) return false;
             try
             {
                 if (ChartControl == null) return false;
-                if (cachedSignalSource == null)
+                if (cachedSentinelSignalSource == null)
                 {
                     foreach (var ind in ChartControl.Indicators)
                     {
                         if (string.Equals(ind.Name, SignalIndicatorName, StringComparison.OrdinalIgnoreCase)
                             || string.Equals(ind.GetType().Name, SignalIndicatorName, StringComparison.OrdinalIgnoreCase))
                         {
-                            cachedSignalSource = ind;
+                            cachedSentinelSignalSource = ind;
                             break;
                         }
                     }
                 }
-                if (cachedSignalSource == null) return false;
+                if (cachedSentinelSignalSource == null) return false;
                 int idx = bull ? BullSeriesIndex : BearSeriesIndex;
-                if (idx >= cachedSignalSource.Values.Length) return false;
-                double val = cachedSignalSource.Values[idx][0];
+                if (idx >= cachedSentinelSignalSource.Values.Length) return false;
+                double val = cachedSentinelSignalSource.Values[idx][0];
                 return !double.IsNaN(val) && Math.Abs(val) > 1e-10;
             }
             catch { return false; }
@@ -2586,9 +2586,9 @@ namespace NinjaTrader.NinjaScript.Indicators
                 float x, y;
                 switch (RiskCardCorner)
                 {
-                    case RiskCardCornerPos.TopLeft:    x = margin;                  y = margin;                  break;
-                    case RiskCardCornerPos.TopRight:   x = panelW - cardW - margin; y = margin;                  break;
-                    case RiskCardCornerPos.BottomLeft: x = margin;                  y = panelH - cardH - margin; break;
+                    case SentinelCornerPos.TopLeft:    x = margin;                  y = margin;                  break;
+                    case SentinelCornerPos.TopRight:   x = panelW - cardW - margin; y = margin;                  break;
+                    case SentinelCornerPos.BottomLeft: x = margin;                  y = panelH - cardH - margin; break;
                     default:                           x = panelW - cardW - margin; y = panelH - cardH - margin; break;
                 }
 
@@ -3297,7 +3297,7 @@ namespace NinjaTrader.NinjaScript.Indicators
                     var instrCopy = instr;
 
                     // V1.6: Auto-exit (stop / bracket)
-                    if (AutoEntryExitMode != AutoEntryMode.None)
+                    if (AutoEntryExitMode != SentinelAutoEntryMode.None)
                         ChartControl?.Dispatcher.InvokeAsync(() => TryPlaceAutoExitAfterArmFill(acctCopy, instrCopy));
 
                     // V1.6: Auto-trail
@@ -3321,7 +3321,7 @@ namespace NinjaTrader.NinjaScript.Indicators
         {
             try
             {
-                if (AutoEntryExitMode == AutoEntryMode.None || acct == null || instr == null) return;
+                if (AutoEntryExitMode == SentinelAutoEntryMode.None || acct == null || instr == null) return;
                 var pos = acct.Positions.FirstOrDefault(p => p.Instrument.FullName == instr.FullName);
                 if (pos == null || pos.Quantity == 0) return;
 
@@ -3334,7 +3334,7 @@ namespace NinjaTrader.NinjaScript.Indicators
                 int    stopTicks = ReadBracketStopTicksFromPanel();
                 int    tgtTicks  = ReadAutoTargetTicksFromPanel();
 
-                if (AutoEntryExitMode == AutoEntryMode.StopOnly)
+                if (AutoEntryExitMode == SentinelAutoEntryMode.StopOnly)
                 {
                     // Stop only — same as V1.5 behavior
                     PlaceStopOrder(acct, instr, pos, stopTicks, avgPrice,
@@ -3344,7 +3344,7 @@ namespace NinjaTrader.NinjaScript.Indicators
                             ? avgPrice - stopTicks * tickSz
                             : avgPrice + stopTicks * tickSz).ToString("F2"));
                 }
-                else if (AutoEntryExitMode == AutoEntryMode.Bracket)
+                else if (AutoEntryExitMode == SentinelAutoEntryMode.Bracket)
                 {
                     // OCO bracket anchored to AveragePrice
                     double stopPx = instr.MasterInstrument.RoundToTickSize(
@@ -3512,22 +3512,22 @@ namespace NinjaTrader.NinjaScript.Indicators
 	public partial class Indicator : NinjaTrader.Gui.NinjaScript.IndicatorRenderBase
 	{
 		private SentinelV1_0[] cacheSentinelV1_0;
-		public SentinelV1_0 SentinelV1_0(int breakeven1PlusTicks, int breakeven2PlusTicks, int pricePlusTicks, int entryPlusTicks, int bracketStopTicks, int bracketProfitTicks, int flattenAllPause, int flattenAllTries, SentinelV1_0.SignalSource sentinelSignalSource, string bullTagPrefix, string bearTagPrefix, string bullTagSuffix, string bearTagSuffix, string signalIndicatorName, int bullSeriesIndex, int bearSeriesIndex, int panelWidth, double windowLeft, double windowTop, SentinelV1_0.OppositeSignalMode oppSignalMode, SentinelV1_0.ReArmMode reArmAfterEntry, SentinelV1_0.AutoEntryMode autoEntryExitMode, int autoTargetTicks, bool showTradeStats, bool enableTimeFilter1, DateTime startTime1, DateTime endTime1, bool enableTimeFilter2, DateTime startTime2, DateTime endTime2, bool enableTimeFilter3, DateTime startTime3, DateTime endTime3, double sessionPnLMax, double sessionDDLimit, bool flattenOnDDLimit, SentinelV1_0.RiskCardCornerPos riskCardCorner, string soundFile, int trailTicks, int bETriggerTicks, int bEBufferTicks, int trailBarLookback, int trailATRPeriod, double trailATRMult, int halfTriggerTicks, int halfBufferTicks, int buttonHeight, bool secSignalArmingOpen, bool secOppositeSignalOpen, bool secAfterEntryOpen, bool secTimeFilterOpen, bool secSessionRiskOpen, bool secTradeMgmtOpen, bool secProfitTrailingOpen, bool secBreakevenOpen, bool secTargetsOpen, bool secBracketStopOpen, bool secSizeOpen)
+		public SentinelV1_0 SentinelV1_0(int breakeven1PlusTicks, int breakeven2PlusTicks, int pricePlusTicks, int entryPlusTicks, int bracketStopTicks, int bracketProfitTicks, int flattenAllPause, int flattenAllTries, SentinelV1_0.SentinelSignalSource sentinelSentinelSignalSource, string bullTagPrefix, string bearTagPrefix, string bullTagSuffix, string bearTagSuffix, string signalIndicatorName, int bullSeriesIndex, int bearSeriesIndex, int panelWidth, double windowLeft, double windowTop, SentinelV1_0.SentinelOppMode oppSignalMode, SentinelV1_0.SentinelReArmMode reArmAfterEntry, SentinelV1_0.SentinelAutoEntryMode autoEntryExitMode, int autoTargetTicks, bool showTradeStats, bool enableTimeFilter1, DateTime startTime1, DateTime endTime1, bool enableTimeFilter2, DateTime startTime2, DateTime endTime2, bool enableTimeFilter3, DateTime startTime3, DateTime endTime3, double sessionPnLMax, double sessionDDLimit, bool flattenOnDDLimit, SentinelV1_0.SentinelCornerPos riskCardCorner, string soundFile, int trailTicks, int bETriggerTicks, int bEBufferTicks, int trailBarLookback, int trailATRPeriod, double trailATRMult, int halfTriggerTicks, int halfBufferTicks, int buttonHeight, bool secSignalArmingOpen, bool secOppositeSignalOpen, bool secAfterEntryOpen, bool secTimeFilterOpen, bool secSessionRiskOpen, bool secTradeMgmtOpen, bool secProfitTrailingOpen, bool secBreakevenOpen, bool secTargetsOpen, bool secBracketStopOpen, bool secSizeOpen)
 		{
-			return SentinelV1_0(Input, breakeven1PlusTicks, breakeven2PlusTicks, pricePlusTicks, entryPlusTicks, bracketStopTicks, bracketProfitTicks, flattenAllPause, flattenAllTries, sentinelSignalSource, bullTagPrefix, bearTagPrefix, bullTagSuffix, bearTagSuffix, signalIndicatorName, bullSeriesIndex, bearSeriesIndex, panelWidth, windowLeft, windowTop, oppSignalMode, reArmAfterEntry, autoEntryExitMode, autoTargetTicks, showTradeStats, enableTimeFilter1, startTime1, endTime1, enableTimeFilter2, startTime2, endTime2, enableTimeFilter3, startTime3, endTime3, sessionPnLMax, sessionDDLimit, flattenOnDDLimit, riskCardCorner, soundFile, trailTicks, bETriggerTicks, bEBufferTicks, trailBarLookback, trailATRPeriod, trailATRMult, halfTriggerTicks, halfBufferTicks, buttonHeight, secSignalArmingOpen, secOppositeSignalOpen, secAfterEntryOpen, secTimeFilterOpen, secSessionRiskOpen, secTradeMgmtOpen, secProfitTrailingOpen, secBreakevenOpen, secTargetsOpen, secBracketStopOpen, secSizeOpen);
+			return SentinelV1_0(Input, breakeven1PlusTicks, breakeven2PlusTicks, pricePlusTicks, entryPlusTicks, bracketStopTicks, bracketProfitTicks, flattenAllPause, flattenAllTries, sentinelSentinelSignalSource, bullTagPrefix, bearTagPrefix, bullTagSuffix, bearTagSuffix, signalIndicatorName, bullSeriesIndex, bearSeriesIndex, panelWidth, windowLeft, windowTop, oppSignalMode, reArmAfterEntry, autoEntryExitMode, autoTargetTicks, showTradeStats, enableTimeFilter1, startTime1, endTime1, enableTimeFilter2, startTime2, endTime2, enableTimeFilter3, startTime3, endTime3, sessionPnLMax, sessionDDLimit, flattenOnDDLimit, riskCardCorner, soundFile, trailTicks, bETriggerTicks, bEBufferTicks, trailBarLookback, trailATRPeriod, trailATRMult, halfTriggerTicks, halfBufferTicks, buttonHeight, secSignalArmingOpen, secOppositeSignalOpen, secAfterEntryOpen, secTimeFilterOpen, secSessionRiskOpen, secTradeMgmtOpen, secProfitTrailingOpen, secBreakevenOpen, secTargetsOpen, secBracketStopOpen, secSizeOpen);
 		}
 
-		public SentinelV1_0 SentinelV1_0(ISeries<double> input, int breakeven1PlusTicks, int breakeven2PlusTicks, int pricePlusTicks, int entryPlusTicks, int bracketStopTicks, int bracketProfitTicks, int flattenAllPause, int flattenAllTries, SentinelV1_0.SignalSource sentinelSignalSource, string bullTagPrefix, string bearTagPrefix, string bullTagSuffix, string bearTagSuffix, string signalIndicatorName, int bullSeriesIndex, int bearSeriesIndex, int panelWidth, double windowLeft, double windowTop, SentinelV1_0.OppositeSignalMode oppSignalMode, SentinelV1_0.ReArmMode reArmAfterEntry, SentinelV1_0.AutoEntryMode autoEntryExitMode, int autoTargetTicks, bool showTradeStats, bool enableTimeFilter1, DateTime startTime1, DateTime endTime1, bool enableTimeFilter2, DateTime startTime2, DateTime endTime2, bool enableTimeFilter3, DateTime startTime3, DateTime endTime3, double sessionPnLMax, double sessionDDLimit, bool flattenOnDDLimit, SentinelV1_0.RiskCardCornerPos riskCardCorner, string soundFile, int trailTicks, int bETriggerTicks, int bEBufferTicks, int trailBarLookback, int trailATRPeriod, double trailATRMult, int halfTriggerTicks, int halfBufferTicks, int buttonHeight, bool secSignalArmingOpen, bool secOppositeSignalOpen, bool secAfterEntryOpen, bool secTimeFilterOpen, bool secSessionRiskOpen, bool secTradeMgmtOpen, bool secProfitTrailingOpen, bool secBreakevenOpen, bool secTargetsOpen, bool secBracketStopOpen, bool secSizeOpen)
+		public SentinelV1_0 SentinelV1_0(ISeries<double> input, int breakeven1PlusTicks, int breakeven2PlusTicks, int pricePlusTicks, int entryPlusTicks, int bracketStopTicks, int bracketProfitTicks, int flattenAllPause, int flattenAllTries, SentinelV1_0.SentinelSignalSource sentinelSentinelSignalSource, string bullTagPrefix, string bearTagPrefix, string bullTagSuffix, string bearTagSuffix, string signalIndicatorName, int bullSeriesIndex, int bearSeriesIndex, int panelWidth, double windowLeft, double windowTop, SentinelV1_0.SentinelOppMode oppSignalMode, SentinelV1_0.SentinelReArmMode reArmAfterEntry, SentinelV1_0.SentinelAutoEntryMode autoEntryExitMode, int autoTargetTicks, bool showTradeStats, bool enableTimeFilter1, DateTime startTime1, DateTime endTime1, bool enableTimeFilter2, DateTime startTime2, DateTime endTime2, bool enableTimeFilter3, DateTime startTime3, DateTime endTime3, double sessionPnLMax, double sessionDDLimit, bool flattenOnDDLimit, SentinelV1_0.SentinelCornerPos riskCardCorner, string soundFile, int trailTicks, int bETriggerTicks, int bEBufferTicks, int trailBarLookback, int trailATRPeriod, double trailATRMult, int halfTriggerTicks, int halfBufferTicks, int buttonHeight, bool secSignalArmingOpen, bool secOppositeSignalOpen, bool secAfterEntryOpen, bool secTimeFilterOpen, bool secSessionRiskOpen, bool secTradeMgmtOpen, bool secProfitTrailingOpen, bool secBreakevenOpen, bool secTargetsOpen, bool secBracketStopOpen, bool secSizeOpen)
 		{
 			if (cacheSentinelV1_0 != null)
 				for (int idx = 0; idx < cacheSentinelV1_0.Length; idx++)
 					if (cacheSentinelV1_0[idx] != null
 						&& cacheSentinelV1_0[idx].Breakeven1PlusTicks == breakeven1PlusTicks
-						&& cacheSentinelV1_0[idx].SentinelSignalSource == (SentinelV1_0.SignalSource)sentinelSignalSource
-						&& cacheSentinelV1_0[idx].OppSignalMode == (SentinelV1_0.OppositeSignalMode)oppSignalMode
-						&& cacheSentinelV1_0[idx].ReArmAfterEntry == (SentinelV1_0.ReArmMode)reArmAfterEntry
-						&& cacheSentinelV1_0[idx].AutoEntryExitMode == (SentinelV1_0.AutoEntryMode)autoEntryExitMode
-						&& cacheSentinelV1_0[idx].RiskCardCorner == (SentinelV1_0.RiskCardCornerPos)riskCardCorner
+						&& cacheSentinelV1_0[idx].SentinelSentinelSignalSource == (SentinelV1_0.SentinelSignalSource)sentinelSentinelSignalSource
+						&& cacheSentinelV1_0[idx].OppSignalMode == (SentinelV1_0.SentinelOppMode)oppSignalMode
+						&& cacheSentinelV1_0[idx].ReArmAfterEntry == (SentinelV1_0.SentinelReArmMode)reArmAfterEntry
+						&& cacheSentinelV1_0[idx].AutoEntryExitMode == (SentinelV1_0.SentinelAutoEntryMode)autoEntryExitMode
+						&& cacheSentinelV1_0[idx].RiskCardCorner == (SentinelV1_0.SentinelCornerPos)riskCardCorner
 						&& cacheSentinelV1_0[idx].EqualsInput(input))
 						return cacheSentinelV1_0[idx];
 			return CacheIndicator<SentinelV1_0>(new SentinelV1_0
@@ -3540,7 +3540,7 @@ namespace NinjaTrader.NinjaScript.Indicators
 				BracketProfitTicks   = bracketProfitTicks,
 				FlattenAllPause      = flattenAllPause,
 				FlattenAllTries      = flattenAllTries,
-				SentinelSignalSource = (SentinelV1_0.SignalSource)sentinelSignalSource,
+				SentinelSentinelSignalSource = (SentinelV1_0.SentinelSignalSource)sentinelSentinelSignalSource,
 				BullTagPrefix        = bullTagPrefix,
 				BearTagPrefix        = bearTagPrefix,
 				BullTagSuffix        = bullTagSuffix,
@@ -3551,9 +3551,9 @@ namespace NinjaTrader.NinjaScript.Indicators
 				PanelWidth           = panelWidth,
 				WindowLeft           = windowLeft,
 				WindowTop            = windowTop,
-				OppSignalMode        = (SentinelV1_0.OppositeSignalMode)oppSignalMode,
-				ReArmAfterEntry      = (SentinelV1_0.ReArmMode)reArmAfterEntry,
-				AutoEntryExitMode    = (SentinelV1_0.AutoEntryMode)autoEntryExitMode,
+				OppSignalMode        = (SentinelV1_0.SentinelOppMode)oppSignalMode,
+				ReArmAfterEntry      = (SentinelV1_0.SentinelReArmMode)reArmAfterEntry,
+				AutoEntryExitMode    = (SentinelV1_0.SentinelAutoEntryMode)autoEntryExitMode,
 				AutoTargetTicks      = autoTargetTicks,
 				ShowTradeStats       = showTradeStats,
 				EnableTimeFilter1    = enableTimeFilter1,
@@ -3568,7 +3568,7 @@ namespace NinjaTrader.NinjaScript.Indicators
 				SessionPnLMax        = sessionPnLMax,
 				SessionDDLimit       = sessionDDLimit,
 				FlattenOnDDLimit     = flattenOnDDLimit,
-				RiskCardCorner       = (SentinelV1_0.RiskCardCornerPos)riskCardCorner,
+				RiskCardCorner       = (SentinelV1_0.SentinelCornerPos)riskCardCorner,
 				SoundFile            = soundFile,
 				TrailTicks           = trailTicks,
 				BETriggerTicks       = bETriggerTicks,
@@ -3599,8 +3599,8 @@ namespace NinjaTrader.NinjaScript.MarketAnalyzerColumns
 {
 	public partial class MarketAnalyzerColumn : MarketAnalyzerColumnBase
 	{
-		public Indicators.SentinelV1_0 SentinelV1_0(int breakeven1PlusTicks, int breakeven2PlusTicks, int pricePlusTicks, int entryPlusTicks, int bracketStopTicks, int bracketProfitTicks, int flattenAllPause, int flattenAllTries, SentinelV1_0.SignalSource sentinelSignalSource, string bullTagPrefix, string bearTagPrefix, string bullTagSuffix, string bearTagSuffix, string signalIndicatorName, int bullSeriesIndex, int bearSeriesIndex, int panelWidth, double windowLeft, double windowTop, SentinelV1_0.OppositeSignalMode oppSignalMode, SentinelV1_0.ReArmMode reArmAfterEntry, SentinelV1_0.AutoEntryMode autoEntryExitMode, int autoTargetTicks, bool showTradeStats, bool enableTimeFilter1, DateTime startTime1, DateTime endTime1, bool enableTimeFilter2, DateTime startTime2, DateTime endTime2, bool enableTimeFilter3, DateTime startTime3, DateTime endTime3, double sessionPnLMax, double sessionDDLimit, bool flattenOnDDLimit, SentinelV1_0.RiskCardCornerPos riskCardCorner, string soundFile, int trailTicks, int bETriggerTicks, int bEBufferTicks, int trailBarLookback, int trailATRPeriod, double trailATRMult, int halfTriggerTicks, int halfBufferTicks, int buttonHeight, bool secSignalArmingOpen, bool secOppositeSignalOpen, bool secAfterEntryOpen, bool secTimeFilterOpen, bool secSessionRiskOpen, bool secTradeMgmtOpen, bool secProfitTrailingOpen, bool secBreakevenOpen, bool secTargetsOpen, bool secBracketStopOpen, bool secSizeOpen)
-		{ return indicator.SentinelV1_0(Input, breakeven1PlusTicks, breakeven2PlusTicks, pricePlusTicks, entryPlusTicks, bracketStopTicks, bracketProfitTicks, flattenAllPause, flattenAllTries, sentinelSignalSource, bullTagPrefix, bearTagPrefix, bullTagSuffix, bearTagSuffix, signalIndicatorName, bullSeriesIndex, bearSeriesIndex, panelWidth, windowLeft, windowTop, oppSignalMode, reArmAfterEntry, autoEntryExitMode, autoTargetTicks, showTradeStats, enableTimeFilter1, startTime1, endTime1, enableTimeFilter2, startTime2, endTime2, enableTimeFilter3, startTime3, endTime3, sessionPnLMax, sessionDDLimit, flattenOnDDLimit, riskCardCorner, soundFile, trailTicks, bETriggerTicks, bEBufferTicks, trailBarLookback, trailATRPeriod, trailATRMult, halfTriggerTicks, halfBufferTicks, buttonHeight, secSignalArmingOpen, secOppositeSignalOpen, secAfterEntryOpen, secTimeFilterOpen, secSessionRiskOpen, secTradeMgmtOpen, secProfitTrailingOpen, secBreakevenOpen, secTargetsOpen, secBracketStopOpen, secSizeOpen); }
+		public Indicators.SentinelV1_0 SentinelV1_0(int breakeven1PlusTicks, int breakeven2PlusTicks, int pricePlusTicks, int entryPlusTicks, int bracketStopTicks, int bracketProfitTicks, int flattenAllPause, int flattenAllTries, SentinelV1_0.SentinelSignalSource sentinelSentinelSignalSource, string bullTagPrefix, string bearTagPrefix, string bullTagSuffix, string bearTagSuffix, string signalIndicatorName, int bullSeriesIndex, int bearSeriesIndex, int panelWidth, double windowLeft, double windowTop, SentinelV1_0.SentinelOppMode oppSignalMode, SentinelV1_0.SentinelReArmMode reArmAfterEntry, SentinelV1_0.SentinelAutoEntryMode autoEntryExitMode, int autoTargetTicks, bool showTradeStats, bool enableTimeFilter1, DateTime startTime1, DateTime endTime1, bool enableTimeFilter2, DateTime startTime2, DateTime endTime2, bool enableTimeFilter3, DateTime startTime3, DateTime endTime3, double sessionPnLMax, double sessionDDLimit, bool flattenOnDDLimit, SentinelV1_0.SentinelCornerPos riskCardCorner, string soundFile, int trailTicks, int bETriggerTicks, int bEBufferTicks, int trailBarLookback, int trailATRPeriod, double trailATRMult, int halfTriggerTicks, int halfBufferTicks, int buttonHeight, bool secSignalArmingOpen, bool secOppositeSignalOpen, bool secAfterEntryOpen, bool secTimeFilterOpen, bool secSessionRiskOpen, bool secTradeMgmtOpen, bool secProfitTrailingOpen, bool secBreakevenOpen, bool secTargetsOpen, bool secBracketStopOpen, bool secSizeOpen)
+		{ return indicator.SentinelV1_0(Input, breakeven1PlusTicks, breakeven2PlusTicks, pricePlusTicks, entryPlusTicks, bracketStopTicks, bracketProfitTicks, flattenAllPause, flattenAllTries, sentinelSentinelSignalSource, bullTagPrefix, bearTagPrefix, bullTagSuffix, bearTagSuffix, signalIndicatorName, bullSeriesIndex, bearSeriesIndex, panelWidth, windowLeft, windowTop, oppSignalMode, reArmAfterEntry, autoEntryExitMode, autoTargetTicks, showTradeStats, enableTimeFilter1, startTime1, endTime1, enableTimeFilter2, startTime2, endTime2, enableTimeFilter3, startTime3, endTime3, sessionPnLMax, sessionDDLimit, flattenOnDDLimit, riskCardCorner, soundFile, trailTicks, bETriggerTicks, bEBufferTicks, trailBarLookback, trailATRPeriod, trailATRMult, halfTriggerTicks, halfBufferTicks, buttonHeight, secSignalArmingOpen, secOppositeSignalOpen, secAfterEntryOpen, secTimeFilterOpen, secSessionRiskOpen, secTradeMgmtOpen, secProfitTrailingOpen, secBreakevenOpen, secTargetsOpen, secBracketStopOpen, secSizeOpen); }
 	}
 }
 
@@ -3608,8 +3608,8 @@ namespace NinjaTrader.NinjaScript.Strategies
 {
 	public partial class Strategy : NinjaTrader.Gui.NinjaScript.StrategyRenderBase
 	{
-		public Indicators.SentinelV1_0 SentinelV1_0(int breakeven1PlusTicks, int breakeven2PlusTicks, int pricePlusTicks, int entryPlusTicks, int bracketStopTicks, int bracketProfitTicks, int flattenAllPause, int flattenAllTries, SentinelV1_0.SignalSource sentinelSignalSource, string bullTagPrefix, string bearTagPrefix, string bullTagSuffix, string bearTagSuffix, string signalIndicatorName, int bullSeriesIndex, int bearSeriesIndex, int panelWidth, double windowLeft, double windowTop, SentinelV1_0.OppositeSignalMode oppSignalMode, SentinelV1_0.ReArmMode reArmAfterEntry, SentinelV1_0.AutoEntryMode autoEntryExitMode, int autoTargetTicks, bool showTradeStats, bool enableTimeFilter1, DateTime startTime1, DateTime endTime1, bool enableTimeFilter2, DateTime startTime2, DateTime endTime2, bool enableTimeFilter3, DateTime startTime3, DateTime endTime3, double sessionPnLMax, double sessionDDLimit, bool flattenOnDDLimit, SentinelV1_0.RiskCardCornerPos riskCardCorner, string soundFile, int trailTicks, int bETriggerTicks, int bEBufferTicks, int trailBarLookback, int trailATRPeriod, double trailATRMult, int halfTriggerTicks, int halfBufferTicks, int buttonHeight, bool secSignalArmingOpen, bool secOppositeSignalOpen, bool secAfterEntryOpen, bool secTimeFilterOpen, bool secSessionRiskOpen, bool secTradeMgmtOpen, bool secProfitTrailingOpen, bool secBreakevenOpen, bool secTargetsOpen, bool secBracketStopOpen, bool secSizeOpen)
-		{ return indicator.SentinelV1_0(Input, breakeven1PlusTicks, breakeven2PlusTicks, pricePlusTicks, entryPlusTicks, bracketStopTicks, bracketProfitTicks, flattenAllPause, flattenAllTries, sentinelSignalSource, bullTagPrefix, bearTagPrefix, bullTagSuffix, bearTagSuffix, signalIndicatorName, bullSeriesIndex, bearSeriesIndex, panelWidth, windowLeft, windowTop, oppSignalMode, reArmAfterEntry, autoEntryExitMode, autoTargetTicks, showTradeStats, enableTimeFilter1, startTime1, endTime1, enableTimeFilter2, startTime2, endTime2, enableTimeFilter3, startTime3, endTime3, sessionPnLMax, sessionDDLimit, flattenOnDDLimit, riskCardCorner, soundFile, trailTicks, bETriggerTicks, bEBufferTicks, trailBarLookback, trailATRPeriod, trailATRMult, halfTriggerTicks, halfBufferTicks, buttonHeight, secSignalArmingOpen, secOppositeSignalOpen, secAfterEntryOpen, secTimeFilterOpen, secSessionRiskOpen, secTradeMgmtOpen, secProfitTrailingOpen, secBreakevenOpen, secTargetsOpen, secBracketStopOpen, secSizeOpen); }
+		public Indicators.SentinelV1_0 SentinelV1_0(int breakeven1PlusTicks, int breakeven2PlusTicks, int pricePlusTicks, int entryPlusTicks, int bracketStopTicks, int bracketProfitTicks, int flattenAllPause, int flattenAllTries, SentinelV1_0.SentinelSignalSource sentinelSentinelSignalSource, string bullTagPrefix, string bearTagPrefix, string bullTagSuffix, string bearTagSuffix, string signalIndicatorName, int bullSeriesIndex, int bearSeriesIndex, int panelWidth, double windowLeft, double windowTop, SentinelV1_0.SentinelOppMode oppSignalMode, SentinelV1_0.SentinelReArmMode reArmAfterEntry, SentinelV1_0.SentinelAutoEntryMode autoEntryExitMode, int autoTargetTicks, bool showTradeStats, bool enableTimeFilter1, DateTime startTime1, DateTime endTime1, bool enableTimeFilter2, DateTime startTime2, DateTime endTime2, bool enableTimeFilter3, DateTime startTime3, DateTime endTime3, double sessionPnLMax, double sessionDDLimit, bool flattenOnDDLimit, SentinelV1_0.SentinelCornerPos riskCardCorner, string soundFile, int trailTicks, int bETriggerTicks, int bEBufferTicks, int trailBarLookback, int trailATRPeriod, double trailATRMult, int halfTriggerTicks, int halfBufferTicks, int buttonHeight, bool secSignalArmingOpen, bool secOppositeSignalOpen, bool secAfterEntryOpen, bool secTimeFilterOpen, bool secSessionRiskOpen, bool secTradeMgmtOpen, bool secProfitTrailingOpen, bool secBreakevenOpen, bool secTargetsOpen, bool secBracketStopOpen, bool secSizeOpen)
+		{ return indicator.SentinelV1_0(Input, breakeven1PlusTicks, breakeven2PlusTicks, pricePlusTicks, entryPlusTicks, bracketStopTicks, bracketProfitTicks, flattenAllPause, flattenAllTries, sentinelSentinelSignalSource, bullTagPrefix, bearTagPrefix, bullTagSuffix, bearTagSuffix, signalIndicatorName, bullSeriesIndex, bearSeriesIndex, panelWidth, windowLeft, windowTop, oppSignalMode, reArmAfterEntry, autoEntryExitMode, autoTargetTicks, showTradeStats, enableTimeFilter1, startTime1, endTime1, enableTimeFilter2, startTime2, endTime2, enableTimeFilter3, startTime3, endTime3, sessionPnLMax, sessionDDLimit, flattenOnDDLimit, riskCardCorner, soundFile, trailTicks, bETriggerTicks, bEBufferTicks, trailBarLookback, trailATRPeriod, trailATRMult, halfTriggerTicks, halfBufferTicks, buttonHeight, secSignalArmingOpen, secOppositeSignalOpen, secAfterEntryOpen, secTimeFilterOpen, secSessionRiskOpen, secTradeMgmtOpen, secProfitTrailingOpen, secBreakevenOpen, secTargetsOpen, secBracketStopOpen, secSizeOpen); }
 	}
 }
 
