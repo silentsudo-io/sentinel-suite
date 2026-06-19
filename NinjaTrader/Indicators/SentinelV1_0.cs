@@ -3512,85 +3512,18 @@ namespace NinjaTrader.NinjaScript.Indicators
 	public partial class Indicator : NinjaTrader.Gui.NinjaScript.IndicatorRenderBase
 	{
 		private SentinelV1_0[] cacheSentinelV1_0;
-		public SentinelV1_0 SentinelV1_0(int breakeven1PlusTicks, int breakeven2PlusTicks, int pricePlusTicks, int entryPlusTicks, int bracketStopTicks, int bracketProfitTicks, int flattenAllPause, int flattenAllTries, SentinelV1_0.SentinelV1_0.SentinelSignalSource sentinelSignalSource, string bullTagPrefix, string bearTagPrefix, string bullTagSuffix, string bearTagSuffix, string signalIndicatorName, int bullSeriesIndex, int bearSeriesIndex, int panelWidth, double windowLeft, double windowTop, SentinelV1_0.SentinelOppMode oppSignalMode, SentinelV1_0.SentinelReArmMode reArmAfterEntry, SentinelV1_0.SentinelAutoEntryMode autoEntryExitMode, int autoTargetTicks, bool showTradeStats, bool enableTimeFilter1, DateTime startTime1, DateTime endTime1, bool enableTimeFilter2, DateTime startTime2, DateTime endTime2, bool enableTimeFilter3, DateTime startTime3, DateTime endTime3, double sessionPnLMax, double sessionDDLimit, bool flattenOnDDLimit, SentinelV1_0.SentinelCornerPos riskCardCorner, string soundFile, int trailTicks, int bETriggerTicks, int bEBufferTicks, int trailBarLookback, int trailATRPeriod, double trailATRMult, int halfTriggerTicks, int halfBufferTicks, int buttonHeight, bool secSignalArmingOpen, bool secOppositeSignalOpen, bool secAfterEntryOpen, bool secTimeFilterOpen, bool secSessionRiskOpen, bool secTradeMgmtOpen, bool secProfitTrailingOpen, bool secBreakevenOpen, bool secTargetsOpen, bool secBracketStopOpen, bool secSizeOpen)
+		public SentinelV1_0 SentinelV1_0()
 		{
-			return SentinelV1_0(Input, breakeven1PlusTicks, breakeven2PlusTicks, pricePlusTicks, entryPlusTicks, bracketStopTicks, bracketProfitTicks, flattenAllPause, flattenAllTries, sentinelSignalSource, bullTagPrefix, bearTagPrefix, bullTagSuffix, bearTagSuffix, signalIndicatorName, bullSeriesIndex, bearSeriesIndex, panelWidth, windowLeft, windowTop, oppSignalMode, reArmAfterEntry, autoEntryExitMode, autoTargetTicks, showTradeStats, enableTimeFilter1, startTime1, endTime1, enableTimeFilter2, startTime2, endTime2, enableTimeFilter3, startTime3, endTime3, sessionPnLMax, sessionDDLimit, flattenOnDDLimit, riskCardCorner, soundFile, trailTicks, bETriggerTicks, bEBufferTicks, trailBarLookback, trailATRPeriod, trailATRMult, halfTriggerTicks, halfBufferTicks, buttonHeight, secSignalArmingOpen, secOppositeSignalOpen, secAfterEntryOpen, secTimeFilterOpen, secSessionRiskOpen, secTradeMgmtOpen, secProfitTrailingOpen, secBreakevenOpen, secTargetsOpen, secBracketStopOpen, secSizeOpen);
+			return SentinelV1_0(Input);
 		}
 
-		public SentinelV1_0 SentinelV1_0(ISeries<double> input, int breakeven1PlusTicks, int breakeven2PlusTicks, int pricePlusTicks, int entryPlusTicks, int bracketStopTicks, int bracketProfitTicks, int flattenAllPause, int flattenAllTries, SentinelV1_0.SentinelV1_0.SentinelSignalSource sentinelSignalSource, string bullTagPrefix, string bearTagPrefix, string bullTagSuffix, string bearTagSuffix, string signalIndicatorName, int bullSeriesIndex, int bearSeriesIndex, int panelWidth, double windowLeft, double windowTop, SentinelV1_0.SentinelOppMode oppSignalMode, SentinelV1_0.SentinelReArmMode reArmAfterEntry, SentinelV1_0.SentinelAutoEntryMode autoEntryExitMode, int autoTargetTicks, bool showTradeStats, bool enableTimeFilter1, DateTime startTime1, DateTime endTime1, bool enableTimeFilter2, DateTime startTime2, DateTime endTime2, bool enableTimeFilter3, DateTime startTime3, DateTime endTime3, double sessionPnLMax, double sessionDDLimit, bool flattenOnDDLimit, SentinelV1_0.SentinelCornerPos riskCardCorner, string soundFile, int trailTicks, int bETriggerTicks, int bEBufferTicks, int trailBarLookback, int trailATRPeriod, double trailATRMult, int halfTriggerTicks, int halfBufferTicks, int buttonHeight, bool secSignalArmingOpen, bool secOppositeSignalOpen, bool secAfterEntryOpen, bool secTimeFilterOpen, bool secSessionRiskOpen, bool secTradeMgmtOpen, bool secProfitTrailingOpen, bool secBreakevenOpen, bool secTargetsOpen, bool secBracketStopOpen, bool secSizeOpen)
+		public SentinelV1_0 SentinelV1_0(ISeries<double> input)
 		{
 			if (cacheSentinelV1_0 != null)
 				for (int idx = 0; idx < cacheSentinelV1_0.Length; idx++)
-					if (cacheSentinelV1_0[idx] != null
-						&& cacheSentinelV1_0[idx].Breakeven1PlusTicks == breakeven1PlusTicks
-						&& cacheSentinelV1_0[idx].SentinelSentinelSignalSource == (SentinelV1_0.SentinelSignalSource)sentinelSignalSource
-						&& cacheSentinelV1_0[idx].OppSignalMode == (SentinelV1_0.SentinelOppMode)oppSignalMode
-						&& cacheSentinelV1_0[idx].ReArmAfterEntry == (SentinelV1_0.SentinelReArmMode)reArmAfterEntry
-						&& cacheSentinelV1_0[idx].AutoEntryExitMode == (SentinelV1_0.SentinelAutoEntryMode)autoEntryExitMode
-						&& cacheSentinelV1_0[idx].RiskCardCorner == (SentinelV1_0.SentinelCornerPos)riskCardCorner
-						&& cacheSentinelV1_0[idx].EqualsInput(input))
+					if (cacheSentinelV1_0[idx] != null &&  cacheSentinelV1_0[idx].EqualsInput(input))
 						return cacheSentinelV1_0[idx];
-			return CacheIndicator<SentinelV1_0>(new SentinelV1_0
-			{
-				Breakeven1PlusTicks  = breakeven1PlusTicks,
-				Breakeven2PlusTicks  = breakeven2PlusTicks,
-				PricePlusTicks       = pricePlusTicks,
-				EntryPlusTicks       = entryPlusTicks,
-				BracketStopTicks     = bracketStopTicks,
-				BracketProfitTicks   = bracketProfitTicks,
-				FlattenAllPause      = flattenAllPause,
-				FlattenAllTries      = flattenAllTries,
-				SentinelSentinelSignalSource = (SentinelV1_0.SentinelSignalSource)sentinelSignalSource,
-				BullTagPrefix        = bullTagPrefix,
-				BearTagPrefix        = bearTagPrefix,
-				BullTagSuffix        = bullTagSuffix,
-				BearTagSuffix        = bearTagSuffix,
-				SignalIndicatorName  = signalIndicatorName,
-				BullSeriesIndex      = bullSeriesIndex,
-				BearSeriesIndex      = bearSeriesIndex,
-				PanelWidth           = panelWidth,
-				WindowLeft           = windowLeft,
-				WindowTop            = windowTop,
-				OppSignalMode        = (SentinelV1_0.SentinelOppMode)oppSignalMode,
-				ReArmAfterEntry      = (SentinelV1_0.SentinelReArmMode)reArmAfterEntry,
-				AutoEntryExitMode    = (SentinelV1_0.SentinelAutoEntryMode)autoEntryExitMode,
-				AutoTargetTicks      = autoTargetTicks,
-				ShowTradeStats       = showTradeStats,
-				EnableTimeFilter1    = enableTimeFilter1,
-				StartTime1           = startTime1,
-				EndTime1             = endTime1,
-				EnableTimeFilter2    = enableTimeFilter2,
-				StartTime2           = startTime2,
-				EndTime2             = endTime2,
-				EnableTimeFilter3    = enableTimeFilter3,
-				StartTime3           = startTime3,
-				EndTime3             = endTime3,
-				SessionPnLMax        = sessionPnLMax,
-				SessionDDLimit       = sessionDDLimit,
-				FlattenOnDDLimit     = flattenOnDDLimit,
-				RiskCardCorner       = (SentinelV1_0.SentinelCornerPos)riskCardCorner,
-				SoundFile            = soundFile,
-				TrailTicks           = trailTicks,
-				BETriggerTicks       = bETriggerTicks,
-				BEBufferTicks        = bEBufferTicks,
-				TrailBarLookback     = trailBarLookback,
-				TrailATRPeriod       = trailATRPeriod,
-				TrailATRMult         = trailATRMult,
-				HalfTriggerTicks     = halfTriggerTicks,
-				HalfBufferTicks      = halfBufferTicks,
-				ButtonHeight         = buttonHeight,
-				SecSignalArmingOpen  = secSignalArmingOpen,
-				SecOppositeSignalOpen= secOppositeSignalOpen,
-				SecAfterEntryOpen    = secAfterEntryOpen,
-				SecTimeFilterOpen    = secTimeFilterOpen,
-				SecSessionRiskOpen   = secSessionRiskOpen,
-				SecTradeMgmtOpen     = secTradeMgmtOpen,
-				SecProfitTrailingOpen= secProfitTrailingOpen,
-				SecBreakevenOpen     = secBreakevenOpen,
-				SecTargetsOpen       = secTargetsOpen,
-				SecBracketStopOpen   = secBracketStopOpen,
-				SecSizeOpen          = secSizeOpen,
-			}, input, ref cacheSentinelV1_0);
+			return CacheIndicator<SentinelV1_0>(new SentinelV1_0(), input, ref cacheSentinelV1_0);
 		}
 	}
 }
@@ -3599,8 +3532,15 @@ namespace NinjaTrader.NinjaScript.MarketAnalyzerColumns
 {
 	public partial class MarketAnalyzerColumn : MarketAnalyzerColumnBase
 	{
-		public Indicators.SentinelV1_0 SentinelV1_0(int breakeven1PlusTicks, int breakeven2PlusTicks, int pricePlusTicks, int entryPlusTicks, int bracketStopTicks, int bracketProfitTicks, int flattenAllPause, int flattenAllTries, SentinelV1_0.SentinelV1_0.SentinelSignalSource sentinelSignalSource, string bullTagPrefix, string bearTagPrefix, string bullTagSuffix, string bearTagSuffix, string signalIndicatorName, int bullSeriesIndex, int bearSeriesIndex, int panelWidth, double windowLeft, double windowTop, SentinelV1_0.SentinelOppMode oppSignalMode, SentinelV1_0.SentinelReArmMode reArmAfterEntry, SentinelV1_0.SentinelAutoEntryMode autoEntryExitMode, int autoTargetTicks, bool showTradeStats, bool enableTimeFilter1, DateTime startTime1, DateTime endTime1, bool enableTimeFilter2, DateTime startTime2, DateTime endTime2, bool enableTimeFilter3, DateTime startTime3, DateTime endTime3, double sessionPnLMax, double sessionDDLimit, bool flattenOnDDLimit, SentinelV1_0.SentinelCornerPos riskCardCorner, string soundFile, int trailTicks, int bETriggerTicks, int bEBufferTicks, int trailBarLookback, int trailATRPeriod, double trailATRMult, int halfTriggerTicks, int halfBufferTicks, int buttonHeight, bool secSignalArmingOpen, bool secOppositeSignalOpen, bool secAfterEntryOpen, bool secTimeFilterOpen, bool secSessionRiskOpen, bool secTradeMgmtOpen, bool secProfitTrailingOpen, bool secBreakevenOpen, bool secTargetsOpen, bool secBracketStopOpen, bool secSizeOpen)
-		{ return indicator.SentinelV1_0(Input, breakeven1PlusTicks, breakeven2PlusTicks, pricePlusTicks, entryPlusTicks, bracketStopTicks, bracketProfitTicks, flattenAllPause, flattenAllTries, sentinelSignalSource, bullTagPrefix, bearTagPrefix, bullTagSuffix, bearTagSuffix, signalIndicatorName, bullSeriesIndex, bearSeriesIndex, panelWidth, windowLeft, windowTop, oppSignalMode, reArmAfterEntry, autoEntryExitMode, autoTargetTicks, showTradeStats, enableTimeFilter1, startTime1, endTime1, enableTimeFilter2, startTime2, endTime2, enableTimeFilter3, startTime3, endTime3, sessionPnLMax, sessionDDLimit, flattenOnDDLimit, riskCardCorner, soundFile, trailTicks, bETriggerTicks, bEBufferTicks, trailBarLookback, trailATRPeriod, trailATRMult, halfTriggerTicks, halfBufferTicks, buttonHeight, secSignalArmingOpen, secOppositeSignalOpen, secAfterEntryOpen, secTimeFilterOpen, secSessionRiskOpen, secTradeMgmtOpen, secProfitTrailingOpen, secBreakevenOpen, secTargetsOpen, secBracketStopOpen, secSizeOpen); }
+		public Indicators.SentinelV1_0 SentinelV1_0()
+		{
+			return indicator.SentinelV1_0(Input);
+		}
+
+		public Indicators.SentinelV1_0 SentinelV1_0(ISeries<double> input )
+		{
+			return indicator.SentinelV1_0(input);
+		}
 	}
 }
 
@@ -3608,8 +3548,15 @@ namespace NinjaTrader.NinjaScript.Strategies
 {
 	public partial class Strategy : NinjaTrader.Gui.NinjaScript.StrategyRenderBase
 	{
-		public Indicators.SentinelV1_0 SentinelV1_0(int breakeven1PlusTicks, int breakeven2PlusTicks, int pricePlusTicks, int entryPlusTicks, int bracketStopTicks, int bracketProfitTicks, int flattenAllPause, int flattenAllTries, SentinelV1_0.SentinelV1_0.SentinelSignalSource sentinelSignalSource, string bullTagPrefix, string bearTagPrefix, string bullTagSuffix, string bearTagSuffix, string signalIndicatorName, int bullSeriesIndex, int bearSeriesIndex, int panelWidth, double windowLeft, double windowTop, SentinelV1_0.SentinelOppMode oppSignalMode, SentinelV1_0.SentinelReArmMode reArmAfterEntry, SentinelV1_0.SentinelAutoEntryMode autoEntryExitMode, int autoTargetTicks, bool showTradeStats, bool enableTimeFilter1, DateTime startTime1, DateTime endTime1, bool enableTimeFilter2, DateTime startTime2, DateTime endTime2, bool enableTimeFilter3, DateTime startTime3, DateTime endTime3, double sessionPnLMax, double sessionDDLimit, bool flattenOnDDLimit, SentinelV1_0.SentinelCornerPos riskCardCorner, string soundFile, int trailTicks, int bETriggerTicks, int bEBufferTicks, int trailBarLookback, int trailATRPeriod, double trailATRMult, int halfTriggerTicks, int halfBufferTicks, int buttonHeight, bool secSignalArmingOpen, bool secOppositeSignalOpen, bool secAfterEntryOpen, bool secTimeFilterOpen, bool secSessionRiskOpen, bool secTradeMgmtOpen, bool secProfitTrailingOpen, bool secBreakevenOpen, bool secTargetsOpen, bool secBracketStopOpen, bool secSizeOpen)
-		{ return indicator.SentinelV1_0(Input, breakeven1PlusTicks, breakeven2PlusTicks, pricePlusTicks, entryPlusTicks, bracketStopTicks, bracketProfitTicks, flattenAllPause, flattenAllTries, sentinelSignalSource, bullTagPrefix, bearTagPrefix, bullTagSuffix, bearTagSuffix, signalIndicatorName, bullSeriesIndex, bearSeriesIndex, panelWidth, windowLeft, windowTop, oppSignalMode, reArmAfterEntry, autoEntryExitMode, autoTargetTicks, showTradeStats, enableTimeFilter1, startTime1, endTime1, enableTimeFilter2, startTime2, endTime2, enableTimeFilter3, startTime3, endTime3, sessionPnLMax, sessionDDLimit, flattenOnDDLimit, riskCardCorner, soundFile, trailTicks, bETriggerTicks, bEBufferTicks, trailBarLookback, trailATRPeriod, trailATRMult, halfTriggerTicks, halfBufferTicks, buttonHeight, secSignalArmingOpen, secOppositeSignalOpen, secAfterEntryOpen, secTimeFilterOpen, secSessionRiskOpen, secTradeMgmtOpen, secProfitTrailingOpen, secBreakevenOpen, secTargetsOpen, secBracketStopOpen, secSizeOpen); }
+		public Indicators.SentinelV1_0 SentinelV1_0()
+		{
+			return indicator.SentinelV1_0(Input);
+		}
+
+		public Indicators.SentinelV1_0 SentinelV1_0(ISeries<double> input )
+		{
+			return indicator.SentinelV1_0(input);
+		}
 	}
 }
 
