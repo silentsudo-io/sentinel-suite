@@ -1,0 +1,32 @@
+<!-- ============================================================ -->
+<!-- TrendArchitect Skin — BasicEntry.xaml                        -->
+<!-- ChartTrader order entry area styling                         -->
+<!-- ============================================================ -->
+<ResourceDictionary xmlns    ="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x  ="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:po ="http://schemas.microsoft.com/winfx/2006/xaml/presentation/options">
+
+    <!-- ── Position P&L and quantity displays ───────────────────────────── -->
+    <SolidColorBrush x:Key="BasicEntry.UptickBackground"            Color="#FF00D4A0" po:Freeze="true" />
+    <SolidColorBrush x:Key="BasicEntry.UptickForeground"            Color="#FF0D0F14" po:Freeze="true" />
+    <SolidColorBrush x:Key="BasicEntry.DowntickBackground"          Color="#FFFF4D6A" po:Freeze="true" />
+    <SolidColorBrush x:Key="BasicEntry.DowntickForeground"          Color="#FFE8EAF0" po:Freeze="true" />
+    <SolidColorBrush x:Key="BasicEntry.TextBoxBackground"           Color="Transparent" po:Freeze="true" />
+    <SolidColorBrush x:Key="BasicEntry.PositionQtyLongBackground"   Color="#FF00D4A0" po:Freeze="true" />
+    <SolidColorBrush x:Key="BasicEntry.PositionQtyShortBackground"  Color="#FFFF4D6A" po:Freeze="true" />
+    <SolidColorBrush x:Key="BasicEntry.PnLBackground"               Color="Transparent" po:Freeze="true" />
+
+    <!-- ── Button backgrounds ───────────────────────────────────────────── -->
+    <!-- General buttons: dark card background                             -->
+    <SolidColorBrush x:Key="BasicEntry.ButtonBackground"         Color="#FF13161E" po:Freeze="true" />
+
+    <!-- Action buttons (Rev, Close, Flat, Entry): dark neutral            -->
+    <SolidColorBrush x:Key="BasicEntry.ActionButtonsBackground"  Color="#FF13161E" po:Freeze="true" />
+
+    <!-- Buy buttons: subtle green tint background                         -->
+    <SolidColorBrush x:Key="BasicEntry.BuyButtonsBackground"     Color="#0D1F1A"   po:Freeze="true" />
+
+    <!-- Sell buttons: subtle red tint background                          -->
+    <SolidColorBrush x:Key="BasicEntry.SellButtonsBackground"    Color="#1F0D10"   po:Freeze="true" />
+
+</ResourceDictionary>

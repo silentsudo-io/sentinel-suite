@@ -1,0 +1,1059 @@
+<!-- ============================================================ -->
+<!-- TrendArchitect Skin — BluePrint.xaml                         -->
+<!-- Master skin file — fonts, colors, all global NT8 styles      -->
+<!--                                                              -->
+<!-- Palette                                                       -->
+<!--   C_BG      #0D0F14   all window backgrounds                 -->
+<!--   C_CARD    #13161E   panel/card backgrounds                 -->
+<!--   C_BORDER  #1E2330   borders, grid lines, separators        -->
+<!--   C_DIM     #282C3A   hover states, scrollbar tracks         -->
+<!--   C_MUTED   #5A6070   secondary / disabled text              -->
+<!--   C_LABEL   #787890   label text                             -->
+<!--   C_TEXT    #E8EAF0   primary text                           -->
+<!--   C_GREEN   #00D4A0   buy / long / profit / armed MQB        -->
+<!--   C_RED     #FF4D6A   sell / short / loss / armed MQS        -->
+<!--   C_AMBER   #F59E0B   caution / P&L max / Rev button         -->
+<!--   C_BLUE    #3B82F6   neutral action / Close button           -->
+<!--   C_PURPLE  #A769FF   ATM / special                          -->
+<!--                                                              -->
+<!-- Fonts                                                         -->
+<!--   UI: Consolas (monospace — matches panel Consolas font)     -->
+<!--   Fallback: Courier New, Arial                               -->
+<!--                                                              -->
+<!-- Base: Stealth Cyan (original author unknown)                  -->
+<!-- TrendArchitect adaptation: open source                        -->
+<!-- ============================================================ -->
+<ResourceDictionary xmlns            ="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x          ="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:po         ="http://schemas.microsoft.com/winfx/2006/xaml/presentation/options"
+                    xmlns:collections ="clr-namespace:System.Collections;assembly=mscorlib"
+                    xmlns:system     ="clr-namespace:System;assembly=mscorlib">
+
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <!-- COLOR RESOURCES                                             -->
+    <!-- ═══════════════════════════════════════════════════════════ -->
+
+    <!-- Core palette tokens -->
+    <Color x:Key="ButtonTextColorNormal">       #FFE8EAF0 </Color>
+    <Color x:Key="WindowBottomGradientStopColor">#FF0D0F14 </Color>
+    <Color x:Key="ColorTextNormal">             #FF787890 </Color>
+    <Color x:Key="ColorTextHighlight">          #FFE8EAF0 </Color>
+    <Color x:Key="ColorDisabledBackground">     #FF1E2330 </Color>
+    <Color x:Key="ColorDisabledForeground">     #FF3A4050 </Color>
+    <Color x:Key="ColorItemHoverBorder">        #FF1E2B3B </Color>
+    <Color x:Key="ColorTabItemShadow">          #FF0D0F14 </Color>
+    <Color x:Key="ColorDisabledBorder">         #FF1E2330 </Color>
+    <Color x:Key="ButtonBackgroundStop1">       #FF13161E </Color>
+    <Color x:Key="ButtonBackgroundStop2">       #FF13161E </Color>
+
+    <!-- Strategy Analyzer area colors -->
+    <Color x:Key="NegativeApAreaColor">         #FFFF4D6A </Color>
+    <Color x:Key="PositiveApAreaColor">         #FF00D4A0 </Color>
+    <Color x:Key="NegativeApMarkerColor">       #FFFF4D6A </Color>
+    <Color x:Key="PositiveApMarkerColor">       #FF00D4A0 </Color>
+
+    <!-- NT logo colors -->
+    <SolidColorBrush x:Key="NinjaTraderLogoCaptionBrush"  Color="#FF1E2330" po:Freeze="true"/>
+    <SolidColorBrush x:Key="NinjaTraderLogoWordmarkBrush" Color="#FF00D4A0" po:Freeze="true"/>
+    <SolidColorBrush x:Key="NinjaTraderLogoKoreaBrush"    Color="#FF1E2330" po:Freeze="true"/>
+
+    <!-- Delayed data -->
+    <SolidColorBrush x:Key="DelayedDataInstrumentBrush"                    Color="#FFF59E0B" po:Freeze="true"/>
+    <SolidColorBrush x:Key="DelayedDataInstrumentForegroundBrush"          Color="#FFF59E0B" po:Freeze="true"/>
+    <SolidColorBrush x:Key="DelayedDataInstrumentBackgroundBrush"          Color="#FF2A1F08" po:Freeze="true"/>
+    <SolidColorBrush x:Key="DelayedDataInstrumentForegroundPressedBrush"   Color="#FFB87A08" po:Freeze="true"/>
+    <SolidColorBrush x:Key="DelayedDataInstrumentBackgroundPressedBrush"   Color="#FF1A1308" po:Freeze="true"/>
+
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <!-- GRADIENT STOP COLLECTIONS                                   -->
+    <!-- ═══════════════════════════════════════════════════════════ -->
+
+    <!-- Menu item hover -->
+    <GradientStopCollection po:Freeze="true" x:Key="ItemHoverStops">
+        <GradientStop Color="#C01E2B3B" Offset="0"/>
+        <GradientStop Color="#C01E2B3B" Offset="0.5"/>
+        <GradientStop Color="#C01E2B3B" Offset="1"/>
+    </GradientStopCollection>
+
+    <!-- Control Center account tab alerts -->
+    <SolidColorBrush x:Key="ExcessIntradayMarginHighlight"  Color="#FFFF4D6A" po:Freeze="true"/>
+    <SolidColorBrush x:Key="ExcessInitialMarginHighlight"   Color="#FFFF4D6A" po:Freeze="true"/>
+    <SolidColorBrush x:Key="ExcessPositionMarginHighlight"  Color="#FFFF4D6A" po:Freeze="true"/>
+    <SolidColorBrush x:Key="LargePositionHighlight"         Color="#FFFF4D6A" po:Freeze="true"/>
+
+    <!-- Instrument selector popup -->
+    <SolidColorBrush x:Key="InstrumentSelectorPopupBackground" Color="#FF0D0F14" po:Freeze="true"/>
+    <SolidColorBrush x:Key="InstrumentSelectorPopupForeground" Color="#FFE8EAF0" po:Freeze="true"/>
+
+    <!-- Window min/max/close chrome -->
+    <GradientStopCollection po:Freeze="true" x:Key="SystemMinMaxStops">
+        <GradientStop Color="#FF13161E" Offset="0"/>
+        <GradientStop Color="#FF13161E" Offset="0.39"/>
+        <GradientStop Color="#FF13161E" Offset="0.67"/>
+    </GradientStopCollection>
+    <GradientStopCollection po:Freeze="true" x:Key="SystemCloseStops">
+        <GradientStop Color="#FF2A0D10" Offset="0"/>
+        <GradientStop Color="#FF2A0D10" Offset="0.39"/>
+        <GradientStop Color="#FF2A0D10" Offset="0.67"/>
+    </GradientStopCollection>
+    <GradientStopCollection po:Freeze="true" x:Key="SysMenuBackStops">
+        <GradientStop Offset="0.00" Color="#FF13161E"/>
+        <GradientStop Offset="0.9"  Color="#FF13161E"/>
+    </GradientStopCollection>
+
+    <!-- Button border gradients -->
+    <GradientStopCollection po:Freeze="true" x:Key="BaseBorderStops">
+        <GradientStop Color="#FF1E2330" Offset="0"/>
+        <GradientStop Color="#FF1E2330" Offset="0.15"/>
+        <GradientStop Color="#FF1E2330" Offset="0.61"/>
+        <GradientStop Color="#FF1E2330" Offset="0.95"/>
+        <GradientStop Color="#FF1E2330" Offset="1"/>
+    </GradientStopCollection>
+    <GradientStopCollection po:Freeze="true" x:Key="InnerBorderStops">
+        <GradientStop Color="#FF1E2330" Offset="0.0"/>
+        <GradientStop Color="#FF1E2330" Offset="0.5"/>
+        <GradientStop Color="#FF1E2330" Offset="1"/>
+    </GradientStopCollection>
+    <GradientStopCollection po:Freeze="true" x:Key="ButtonBackgroundStops">
+        <GradientStop Color="#FF13161E"/>
+        <GradientStop Color="#FF13161E" Offset="1"/>
+    </GradientStopCollection>
+    <GradientStopCollection po:Freeze="true" x:Key="ButtonBorderStops">
+        <GradientStop Color="#FF1E2330" Offset="0"/>
+        <GradientStop Color="#FF1E2330" Offset="1"/>
+        <GradientStop Color="#FF1E2330" Offset="0.5"/>
+    </GradientStopCollection>
+    <GradientStopCollection po:Freeze="true" x:Key="CheckBoxBackgroundStops">
+        <GradientStop Color="#FF13161E" Offset="0"/>
+        <GradientStop Color="#FF13161E" Offset="0.5"/>
+    </GradientStopCollection>
+    <GradientStopCollection po:Freeze="true" x:Key="RadioButtonStops">
+        <GradientStop Color="#FF13161E" Offset="0"/>
+        <GradientStop Color="#FF13161E" Offset="0.5"/>
+    </GradientStopCollection>
+
+    <!-- Shadow gradients (transparent) -->
+    <GradientStopCollection po:Freeze="true" x:Key="ShadowTopStops">
+        <GradientStop Color="Transparent" Offset="0.2"/>
+        <GradientStop Color="Transparent" Offset="1"/>
+    </GradientStopCollection>
+    <GradientStopCollection po:Freeze="true" x:Key="ShadowBottomStops">
+        <GradientStop Color="Transparent" Offset="0"/>
+        <GradientStop Color="Transparent" Offset="1"/>
+    </GradientStopCollection>
+
+    <!-- Connection status indicator colors -->
+    <GradientStopCollection po:Freeze="true" x:Key="ConnectedStops">
+        <GradientStop Color="#FF00D4A0" Offset="0"/>
+        <GradientStop Color="#FF00D4A0" Offset="1"/>
+    </GradientStopCollection>
+    <GradientStopCollection po:Freeze="true" x:Key="ConnectingStops">
+        <GradientStop Color="#FFF59E0B" Offset="0"/>
+        <GradientStop Color="#FFF59E0B" Offset="1"/>
+    </GradientStopCollection>
+    <GradientStopCollection po:Freeze="true" x:Key="ConnectionLostPriceStops">
+        <GradientStop Color="#FFF59E0B" Offset="0"/>
+        <GradientStop Color="#FFF59E0B" Offset="1"/>
+    </GradientStopCollection>
+    <GradientStopCollection po:Freeze="true" x:Key="ConnectionLostOrderStops">
+        <GradientStop Color="#FFFF4D6A" Offset="0"/>
+        <GradientStop Color="#FFFF4D6A" Offset="1"/>
+    </GradientStopCollection>
+    <GradientStopCollection po:Freeze="true" x:Key="DisconnectedStops">
+        <GradientStop Color="#FF1E2330" Offset="0"/>
+        <GradientStop Color="#FF1E2330" Offset="1"/>
+    </GradientStopCollection>
+
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <!-- CONTROLS — BUTTONS, CHECKBOXES, MENUS                      -->
+    <!-- ═══════════════════════════════════════════════════════════ -->
+
+    <SolidColorBrush po:Freeze="true" x:Key="LinkPressedBrush"              Color="#FF1E2B3B"/>
+    <LinearGradientBrush po:Freeze="true" x:Key="ButtonBackgroundBrush"
+        GradientStops="{StaticResource ButtonBackgroundStops}" StartPoint="0.5,-0.05" EndPoint="0.5,0.66" />
+    <LinearGradientBrush po:Freeze="true" x:Key="ButtonBackgroundPressedBrush"
+        GradientStops="{StaticResource ButtonBackgroundStops}" StartPoint="0.5,0.1"   EndPoint="0.5,0.66" />
+    <SolidColorBrush po:Freeze="true" x:Key="ButtonBorderBrush"             Color="#FF1E2330"/>
+    <SolidColorBrush po:Freeze="true" x:Key="ButtonDisabledBorder"          Color="{StaticResource ColorDisabledBorder}"/>
+    <SolidColorBrush po:Freeze="true" x:Key="ButtonDisabledForeground"      Color="{StaticResource ColorDisabledForeground}"/>
+    <SolidColorBrush po:Freeze="true" x:Key="ButtonDisabledBackground"      Color="{StaticResource ColorDisabledBackground}"/>
+
+    <!-- CheckBox -->
+    <LinearGradientBrush po:Freeze="true" x:Key="CheckBoxBackgroundBrush"
+        StartPoint="0.5,0" EndPoint="0.5,1" GradientStops="{StaticResource CheckBoxBackgroundStops}"/>
+    <SolidColorBrush po:Freeze="true" x:Key="CheckBoxDisabledBorder"        Color="{StaticResource ColorDisabledBorder}"/>
+    <SolidColorBrush po:Freeze="true" x:Key="CheckBoxDisabledForeground"    Color="{StaticResource ColorDisabledForeground}"/>
+    <SolidColorBrush po:Freeze="true" x:Key="CheckBoxDisabledBackground"    Color="{StaticResource ColorDisabledBackground}"/>
+
+    <!-- ComboBox -->
+    <LinearGradientBrush po:Freeze="true" x:Key="ComboBoxBackgroundBrush"
+        StartPoint="0.5,0" EndPoint="0.5,1" GradientStops="{StaticResource CheckBoxBackgroundStops}"/>
+    <SolidColorBrush po:Freeze="true" x:Key="ComboBoxDropDownBackBrush"     Color="#FF13161E"/>
+    <SolidColorBrush po:Freeze="true" x:Key="ComboBoxItemForeground"        Color="#FFE8EAF0"/>
+    <SolidColorBrush po:Freeze="true" x:Key="ComboBoxItemHoverBorder"       Color="{StaticResource ColorItemHoverBorder}"/>
+    <LinearGradientBrush po:Freeze="true" x:Key="ComboBoxItemHoverBackground"
+        StartPoint="0.5,-0.344" EndPoint="0.5,1.4" GradientStops="{StaticResource ItemHoverStops}"/>
+    <SolidColorBrush po:Freeze="true" x:Key="ComboBoxDisabledBorder"        Color="{StaticResource ColorDisabledBorder}"/>
+    <SolidColorBrush po:Freeze="true" x:Key="ComboBoxDisabledForeground"    Color="{StaticResource ColorDisabledForeground}"/>
+    <SolidColorBrush po:Freeze="true" x:Key="ComboBoxDisabledBackground"    Color="{StaticResource ColorDisabledBackground}"/>
+
+    <!-- Window Link Control -->
+    <system:Double x:Key="SizeLinkControlItem">13</system:Double>
+    <system:Double x:Key="SizeLinkControlMenu">14</system:Double>
+
+    <!-- Link background colors -->
+    <LinearGradientBrush po:Freeze="true" x:Key="LinkAllGreenBackground" StartPoint="0.5,-0.2" EndPoint="0.5,0.62">
+        <LinearGradientBrush.GradientStops>
+            <GradientStop Color="#FF00D4A0" Offset="0"/>
+            <GradientStop Color="#FF00D4A0" Offset="0.75"/>
+        </LinearGradientBrush.GradientStops>
+    </LinearGradientBrush>
+    <LinearGradientBrush po:Freeze="true" x:Key="LinkAllOrangeBackground" StartPoint="0.5,-0.2" EndPoint="0.5,0.62">
+        <LinearGradientBrush.GradientStops>
+            <GradientStop Color="#FFF59E0B" Offset="0"/>
+            <GradientStop Color="#FFF59E0B" Offset="0.75"/>
+        </LinearGradientBrush.GradientStops>
+    </LinearGradientBrush>
+    <LinearGradientBrush po:Freeze="true" x:Key="LinkAllRedBackground" StartPoint="0.5,-0.4" EndPoint="0.5,1.24">
+        <LinearGradientBrush.GradientStops>
+            <GradientStop Color="#FFFF4D6A" Offset="0"/>
+            <GradientStop Color="#FFFF4D6A" Offset="0.75"/>
+        </LinearGradientBrush.GradientStops>
+    </LinearGradientBrush>
+
+    <!-- ListBox -->
+    <LinearGradientBrush po:Freeze="true" x:Key="ListBoxBorderBrush"
+        StartPoint="0.5,0" EndPoint="0.5,1" GradientStops="{StaticResource BaseBorderStops}"/>
+    <SolidColorBrush po:Freeze="true" x:Key="ListBoxBackgroundBrush"        Color="#FF0D0F14"/>
+    <SolidColorBrush po:Freeze="true" x:Key="ListBoxItemForeground"         Color="#FFE8EAF0"/>
+    <SolidColorBrush po:Freeze="true" x:Key="ListBoxItemHoverBorder"        Color="{StaticResource ColorItemHoverBorder}"/>
+    <LinearGradientBrush po:Freeze="true" x:Key="ListBoxItemHoverBackground"
+        StartPoint="0.5,-0.34" EndPoint="0.5,1.4" GradientStops="{StaticResource ItemHoverStops}"/>
+    <SolidColorBrush po:Freeze="true" x:Key="ListBoxDisabledBorder"         Color="{StaticResource ColorDisabledBorder}"/>
+    <SolidColorBrush po:Freeze="true" x:Key="ListBoxDisabledForeground"     Color="{StaticResource ColorDisabledForeground}"/>
+    <SolidColorBrush po:Freeze="true" x:Key="ListBoxDisabledBackground"     Color="{StaticResource ColorDisabledBackground}"/>
+
+    <!-- Menus -->
+    <system:Double x:Key="MenuRibbonWidth">23</system:Double>
+    <SolidColorBrush po:Freeze="true" x:Key="MenuBorderBrush"               Color="#FF1E2330"/>
+    <SolidColorBrush po:Freeze="true" x:Key="MenuRibbonBrush"               Color="#FF13161E"/>
+    <SolidColorBrush po:Freeze="true" x:Key="MenuSeparator"                 Color="#FF1E2330"/>
+    <SolidColorBrush po:Freeze="true" x:Key="SubMenuBackground"             Color="#FF0D0F14"/>
+    <SolidColorBrush po:Freeze="true" x:Key="MenuHilightBorderBrush"        Color="{StaticResource ColorItemHoverBorder}"/>
+    <LinearGradientBrush po:Freeze="true" x:Key="MenuHilightBackgroundBrush"
+        StartPoint="0.5,-0.34" EndPoint="0.5,1.4" GradientStops="{StaticResource ItemHoverStops}"/>
+    <SolidColorBrush po:Freeze="true" x:Key="MenuItemDisabledForeground"    Color="{StaticResource ColorDisabledForeground}"/>
+    <LinearGradientBrush po:Freeze="true" x:Key="SystemMenuBackground"
+        StartPoint="0.5,1.35" EndPoint="0.5,-0.25" GradientStops="{StaticResource SysMenuBackStops}"/>
+    <LinearGradientBrush po:Freeze="true" x:Key="MenuShadowBottom"
+        StartPoint="0.5,1.15" EndPoint="0.5,0.53" GradientStops="{StaticResource ShadowBottomStops}"/>
+    <LinearGradientBrush po:Freeze="true" x:Key="MenuShadowTop"
+        StartPoint="0.5,-0.13" EndPoint="0.5,0.8" GradientStops="{StaticResource ShadowTopStops}"/>
+
+    <!-- Radio Buttons -->
+    <RadialGradientBrush po:Freeze="true" x:Key="RadioButtonBackground"
+        RadiusY="0.58" RadiusX="1" GradientOrigin="0.5,0.33" Center="0.5,0.08"
+        GradientStops="{StaticResource RadioButtonStops}"/>
+    <SolidColorBrush po:Freeze="true" x:Key="RadioButtonCheckMark"          Color="#FF00D4A0"/>
+    <SolidColorBrush po:Freeze="true" x:Key="RadioButtonDisabledBorder"     Color="{StaticResource ColorDisabledBorder}"/>
+    <SolidColorBrush po:Freeze="true" x:Key="RadioButtonDisabledForeground" Color="{StaticResource ColorDisabledForeground}"/>
+    <SolidColorBrush po:Freeze="true" x:Key="RadioButtonDisabledBackground" Color="{StaticResource ColorDisabledBackground}"/>
+
+    <!-- ScrollBar -->
+    <GradientStopCollection po:Freeze="true" x:Key="ScrollThumbBackStops">
+        <GradientStop Offset="0.00" Color="#FF1E2330"/>
+        <GradientStop Offset="0.49" Color="#FF1E2330"/>
+        <GradientStop Offset="0.51" Color="#FF1E2330"/>
+    </GradientStopCollection>
+    <GradientStopCollection po:Freeze="true" x:Key="ScrollThumbBackStopsHover">
+        <GradientStop Offset="0.49" Color="#FF282C3A"/>
+        <GradientStop Offset="0.50" Color="#FF282C3A"/>
+        <GradientStop Offset="1.00" Color="#FF282C3A"/>
+    </GradientStopCollection>
+    <GradientStopCollection po:Freeze="true" x:Key="ScrollThumbBackStopsPressed">
+        <GradientStop Offset="0.49" Color="#FF3B82F6"/>
+        <GradientStop Offset="0.50" Color="#FF3B82F6"/>
+        <GradientStop Offset="1.00" Color="#FF3B82F6"/>
+    </GradientStopCollection>
+    <SolidColorBrush po:Freeze="true" x:Key="ScrollBarTrackBackground"      Color="#FF13161E"/>
+    <SolidColorBrush po:Freeze="true" x:Key="ScrollBarTrackHover"           Color="#FF13161E"/>
+    <SolidColorBrush po:Freeze="true" x:Key="ScrollBarTrackPressed"         Color="#FF0D0F14"/>
+    <SolidColorBrush po:Freeze="true" x:Key="ScrollBarDisabledBackground"   Color="#FF1E2330"/>
+    <SolidColorBrush po:Freeze="true" x:Key="ScrollButtonsLeftBorder"       Color="#FF1E2330"/>
+    <SolidColorBrush po:Freeze="true" x:Key="ScrollBarThumbBorder"          Color="#FF1E2330"/>
+    <SolidColorBrush po:Freeze="true" x:Key="ScrollBarThumbBorderHover"     Color="#FF3B82F6"/>
+    <SolidColorBrush po:Freeze="true" x:Key="ScrollBarThumbBorderPressed"   Color="#FF3B82F6"/>
+    <LinearGradientBrush po:Freeze="true" x:Key="ScrollBarVerticalForeground"
+        StartPoint="0,0.5" EndPoint="1,0.5" GradientStops="{StaticResource ScrollThumbBackStops}"/>
+    <LinearGradientBrush po:Freeze="true" x:Key="ScrollBarHorizontalForeground"
+        StartPoint="0.5,0" EndPoint="0.5,1" GradientStops="{StaticResource ScrollThumbBackStops}"/>
+    <LinearGradientBrush po:Freeze="true" x:Key="ScrollBarVerticalForeHover"
+        StartPoint="0,0.5" EndPoint="1,0.5" GradientStops="{StaticResource ScrollThumbBackStopsHover}"/>
+    <LinearGradientBrush po:Freeze="true" x:Key="ScrollBarVerticalForePressed"
+        StartPoint="0,0.5" EndPoint="1,0.5" GradientStops="{StaticResource ScrollThumbBackStopsPressed}"/>
+    <LinearGradientBrush po:Freeze="true" x:Key="ScrollBarHorizontalForeHover"
+        StartPoint="0.5,0" EndPoint="0.5,1" GradientStops="{StaticResource ScrollThumbBackStopsHover}"/>
+    <LinearGradientBrush po:Freeze="true" x:Key="ScrollBarHorizontalForePressed"
+        StartPoint="0.5,0" EndPoint="0.5,1" GradientStops="{StaticResource ScrollThumbBackStopsPressed}"/>
+    <SolidColorBrush po:Freeze="true" x:Key="ScrollBarForeAdorner"          Color="#FF1E2330"/>
+    <SolidColorBrush po:Freeze="true" x:Key="ScrollBarForeAdornerHover"     Color="#FF3B82F6"/>
+    <SolidColorBrush po:Freeze="true" x:Key="ScrollBarForeAdornerPressed"   Color="#FF3B82F6"/>
+    <SolidColorBrush po:Freeze="true" x:Key="ScrollBarForeAdornerDisabled"  Color="#FF1E2330"/>
+    <SolidColorBrush po:Freeze="true" x:Key="ScrollBarCaratNormal"          Color="#FF5A6070"/>
+    <SolidColorBrush po:Freeze="true" x:Key="ScrollBarCaratHover"           Color="#FFE8EAF0"/>
+    <SolidColorBrush po:Freeze="true" x:Key="ScrollBarCaratPressed"         Color="#FFE8EAF0"/>
+    <SolidColorBrush po:Freeze="true" x:Key="ScrollBarCaratDisabled"        Color="#FF1E2330"/>
+    <SolidColorBrush po:Freeze="true" x:Key="ScrollBarArrowNormal"          Color="#FF5A6070"/>
+    <SolidColorBrush po:Freeze="true" x:Key="ScrollBarArrowHover"           Color="#FFE8EAF0"/>
+    <SolidColorBrush po:Freeze="true" x:Key="ScrollBarArrowPressed"         Color="#FFE8EAF0"/>
+    <SolidColorBrush po:Freeze="true" x:Key="ScrollBarArrowDisabled"        Color="#FF1E2330"/>
+    <SolidColorBrush po:Freeze="true" x:Key="ScrollBarArrowBackgroundNormal"   Color="#FF0D0F14"/>
+    <SolidColorBrush po:Freeze="true" x:Key="ScrollBarArrowBackgroundHover"    Color="#FF1E2B3B"/>
+    <SolidColorBrush po:Freeze="true" x:Key="ScrollBarArrowBackgroundPressed"  Color="#FF282C3A"/>
+    <SolidColorBrush po:Freeze="true" x:Key="ScrollBarArrowBackgroundDisabled" Color="#FF1E2330"/>
+
+    <!-- Sliders -->
+    <LinearGradientBrush po:Freeze="true" x:Key="SliderBorderBrush"
+        StartPoint="0.5,0" EndPoint="0.5,1" GradientStops="{StaticResource BaseBorderStops}"/>
+    <LinearGradientBrush po:Freeze="true" x:Key="SliderTicksBrush"
+        StartPoint="0.5,0" EndPoint="0.5,1" GradientStops="{StaticResource BaseBorderStops}"/>
+    <LinearGradientBrush po:Freeze="true" x:Key="SliderBackgroundBrush"
+        StartPoint="0.5,0" EndPoint="0.5,1" GradientStops="{StaticResource BaseBorderStops}"/>
+    <LinearGradientBrush po:Freeze="true" x:Key="SliderForegroundBrush"
+        StartPoint="0.5,0" EndPoint="0.5,1" GradientStops="{StaticResource CheckBoxBackgroundStops}"/>
+
+    <!-- Tab Controls -->
+    <RadialGradientBrush x:Key="TabItemPrintBackground"
+        RadiusX="0.5" RadiusY="0.5" Center="0.5,0.1" GradientOrigin="0.5,0.1" po:Freeze="true">
+        <RadialGradientBrush.GradientStops>
+            <GradientStop Color="{StaticResource WindowBottomGradientStopColor}" Offset="0"/>
+            <GradientStop Color="{StaticResource WindowBottomGradientStopColor}" Offset="1"/>
+        </RadialGradientBrush.GradientStops>
+    </RadialGradientBrush>
+    <SolidColorBrush po:Freeze="true" x:Key="TabControlBorderBrush"         Color="#FF1E2330"/>
+    <SolidColorBrush po:Freeze="true" x:Key="TabBackground"                 Color="Transparent"/>
+    <SolidColorBrush po:Freeze="true" x:Key="TabItemNormalForeground"       Color="#FF5A6070"/>
+    <SolidColorBrush po:Freeze="true" x:Key="TabItemSelectedForeground"     Color="#FF00D4A0"/>
+    <SolidColorBrush po:Freeze="true" x:Key="TabItemHotForeground"          Color="#FFE8EAF0"/>
+    <SolidColorBrush po:Freeze="true" x:Key="TabItemButton"                 Color="#FF1E2330"/>
+    <SolidColorBrush po:Freeze="true" x:Key="TabActiveBorder"               Color="#FF00D4A0"/>
+    <SolidColorBrush po:Freeze="true" x:Key="TabNormalBorder"               Color="#FF1E2330"/>
+    <LinearGradientBrush po:Freeze="true" x:Key="TabItemNormalBackground" StartPoint="0.5,0" EndPoint="0.5,1">
+        <LinearGradientBrush.GradientStops>
+            <GradientStop Color="#FF13161E" Offset="0"/>
+            <GradientStop Color="#FF13161E" Offset="0.3"/>
+        </LinearGradientBrush.GradientStops>
+    </LinearGradientBrush>
+    <LinearGradientBrush po:Freeze="true" x:Key="TabItemButtonPressed" StartPoint="0.5,0" EndPoint="0.5,1">
+        <LinearGradientBrush.GradientStops>
+            <GradientStop Color="#FF0D0F14" Offset="0"/>
+            <GradientStop Color="#FF0D0F14" Offset="0.6"/>
+        </LinearGradientBrush.GradientStops>
+    </LinearGradientBrush>
+    <LinearGradientBrush po:Freeze="true" x:Key="TabHeaderShadowBrush" StartPoint="0.5,1" EndPoint="0.5,0.2">
+        <LinearGradientBrush.GradientStops>
+            <GradientStop Color="#00000000" Offset="0"/>
+            <GradientStop Color="#00000000" Offset="1"/>
+        </LinearGradientBrush.GradientStops>
+    </LinearGradientBrush>
+
+    <!-- TextBox error states -->
+    <SolidColorBrush po:Freeze="true" x:Key="TextBoxDisabledBackground"     Color="{StaticResource ColorDisabledBackground}"/>
+    <SolidColorBrush po:Freeze="true" x:Key="TextBoxDisabledForeground"     Color="{StaticResource ColorDisabledForeground}"/>
+    <SolidColorBrush po:Freeze="true" x:Key="TextBoxDisabledBorder"         Color="{StaticResource ColorDisabledBorder}"/>
+    <SolidColorBrush po:Freeze="true" x:Key="TextBoxErrorBorder"            Color="#FFFF4D6A"/>
+    <SolidColorBrush po:Freeze="true" x:Key="TextBoxErrorBackground"        Color="#FF2A0D10"/>
+
+    <!-- TreeView -->
+    <SolidColorBrush po:Freeze="true" x:Key="TreeViewDisabledForeground"    Color="{StaticResource ColorDisabledForeground}"/>
+    <LinearGradientBrush po:Freeze="true" x:Key="TreeItemSelectedBackground"
+        StartPoint="0.5,-0.344" EndPoint="0.5,1.4" GradientStops="{StaticResource ItemHoverStops}"/>
+    <SolidColorBrush po:Freeze="true" x:Key="TreeViewDisabledSelectedForeground" Color="#FF1E2330"/>
+
+    <!-- Menu icons -->
+    <Color po:Freeze="true"  x:Key="NinjaScriptOutputSearchHighlight">       #FF5A6070 </Color>
+    <SolidColorBrush po:Freeze="true" x:Key="MenuIconDisabledForeground"    Color="#FF3A4050"/>
+
+    <!-- Scroll width -->
+    <system:Double x:Key="NTScrollWidth">14</system:Double>
+
+    <!-- Numeric up/down spinners -->
+    <LinearGradientBrush po:Freeze="true" StartPoint="0.5,0" EndPoint="0.5,1"
+        x:Key="brushButtonSpinnersBackground">
+        <GradientStop Color="#FF0D0F14" Offset="0.25"/>
+        <GradientStop Color="#FF0D0F14" Offset="0.5"/>
+        <GradientStop Color="#FF0D0F14" Offset="0.75"/>
+    </LinearGradientBrush>
+    <LinearGradientBrush po:Freeze="true" x:Key="XamNumericEditorBackground" StartPoint="0.5,0" EndPoint="0.5,0.9">
+        <GradientStop Color="#FF0D0F14" Offset="0"/>
+        <GradientStop Color="#FF0D0F14" Offset="0.5"/>
+    </LinearGradientBrush>
+    <LinearGradientBrush po:Freeze="true" x:Key="XamNumericEditorBackgroundFocused" StartPoint="0.5,-0.15" EndPoint="0.5,0.9">
+        <GradientStop Color="#FF13161E" Offset="0"/>
+        <GradientStop Color="#FF13161E" Offset="0.5"/>
+    </LinearGradientBrush>
+
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <!-- NTWINDOW — tabs, caption bars, tables, grids               -->
+    <!-- ═══════════════════════════════════════════════════════════ -->
+
+    <HorizontalAlignment x:Key="AlignmentButtonText">Center</HorizontalAlignment>
+    <HorizontalAlignment x:Key="AlignmentGrid">Left</HorizontalAlignment>
+    <VerticalAlignment   x:Key="AlignmentLabel">Center</VerticalAlignment>
+    <TextAlignment       x:Key="AlignmentLabelText">Center</TextAlignment>
+
+    <!-- Window backgrounds -->
+    <RadialGradientBrush x:Key="BackgroundActiveTab"
+        RadiusX="0.5" RadiusY="0.5" Center="0.5,0.1" GradientOrigin="0.5,0.1" po:Freeze="true">
+        <RadialGradientBrush.GradientStops>
+            <GradientStop Color="#FF13161E" Offset="0"/>
+            <GradientStop Color="#FF13161E" Offset="1"/>
+        </RadialGradientBrush.GradientStops>
+    </RadialGradientBrush>
+    <LinearGradientBrush x:Key="BackgroundCaptionBar" StartPoint="0.5,-.45" EndPoint="0.5,1" po:Freeze="true">
+        <LinearGradientBrush.GradientStops>
+            <GradientStop Color="#FF13161E" Offset="0"/>
+            <GradientStop Color="#FF13161E" Offset="1"/>
+        </LinearGradientBrush.GradientStops>
+    </LinearGradientBrush>
+    <SolidColorBrush x:Key="FlashingCaptionBar"            Color="#FFFF4D6A"  po:Freeze="true"/>
+    <SolidColorBrush x:Key="BackgroundCaptionBarInactive"  Color="#FF0D0F14"  po:Freeze="true"/>
+    <RadialGradientBrush x:Key="BackgroundMainWindow"
+        RadiusX="0.5" RadiusY="0.5" Center="0.5,0.1" GradientOrigin="0.5,0.1" po:Freeze="true">
+        <RadialGradientBrush.GradientStops>
+            <GradientStop Color="{StaticResource WindowBottomGradientStopColor}" Offset="0"/>
+            <GradientStop Color="{StaticResource WindowBottomGradientStopColor}" Offset="1"/>
+        </RadialGradientBrush.GradientStops>
+    </RadialGradientBrush>
+    <RadialGradientBrush x:Key="BackgroundModalWindow"
+        RadiusX="0.5" RadiusY="0.5" Center="0.5,0.1" GradientOrigin="0.5,0.1" po:Freeze="true">
+        <RadialGradientBrush.GradientStops>
+            <GradientStop Color="{StaticResource WindowBottomGradientStopColor}" Offset="0"/>
+            <GradientStop Color="{StaticResource WindowBottomGradientStopColor}" Offset="1"/>
+        </RadialGradientBrush.GradientStops>
+    </RadialGradientBrush>
+    <SolidColorBrush x:Key="TabBlendingColor"
+        Color="{StaticResource WindowBottomGradientStopColor}" po:Freeze="true"/>
+    <SolidColorBrush x:Key="BackgroundModalOverlay"        Color="#FF0D0F14" Opacity="0.75" po:Freeze="true"/>
+    <LinearGradientBrush x:Key="BackgroundNormalTab" StartPoint="0.5,0" EndPoint="0.5,1" po:Freeze="true">
+        <LinearGradientBrush.GradientStops>
+            <GradientStop Color="#FF13161E" Offset="0"/>
+            <GradientStop Color="#FF13161E" Offset="1"/>
+        </LinearGradientBrush.GradientStops>
+    </LinearGradientBrush>
+    <SolidColorBrush x:Key="BackgroundTableSolidBottom"    Color="#FF1E2330" Opacity="0.4" po:Freeze="true"/>
+    <SolidColorBrush x:Key="FavoritesBorderBrush"          Color="#FF1E2330"               po:Freeze="true"/>
+
+    <!-- Table / grid headers -->
+    <LinearGradientBrush x:Key="BackgroundTableHeaderVertical" StartPoint="1,0.5" EndPoint="0,0.5" po:Freeze="true">
+        <LinearGradientBrush.GradientStops>
+            <GradientStop Color="#FF0D0F14" Offset="0.5"/>
+            <GradientStop Color="#FF0D0F14" Offset="0.5"/>
+        </LinearGradientBrush.GradientStops>
+    </LinearGradientBrush>
+    <LinearGradientBrush x:Key="BackgroundTableHeader" StartPoint="0.5,0" EndPoint="0.5,1" po:Freeze="true">
+        <LinearGradientBrush.GradientStops>
+            <GradientStop Color="#FF0D0F14" Offset="0.5"/>
+            <GradientStop Color="#FF0D0F14" Offset="0.5"/>
+        </LinearGradientBrush.GradientStops>
+    </LinearGradientBrush>
+
+    <!-- Text highlight / input -->
+    <LinearGradientBrush x:Key="BackgroundTextHighlight" StartPoint="0.5,0" EndPoint="0.5,1" po:Freeze="true">
+        <LinearGradientBrush.GradientStops>
+            <GradientStop Color="#FF3B82F6" Offset="0"/>
+            <GradientStop Color="#FF3B82F6" Offset="0.5"/>
+            <GradientStop Color="#FF3B82F6" Offset="1"/>
+        </LinearGradientBrush.GradientStops>
+    </LinearGradientBrush>
+    <SolidColorBrush x:Key="BackgroundTextInput"           Color="#FF13161E" po:Freeze="true"/>
+
+    <!-- Title blocks (window top-left badge) — use C_GREEN for brand identity -->
+    <LinearGradientBrush x:Key="BackgroundTitleBlock" StartPoint="0.5,0" EndPoint="0.5,1" po:Freeze="true">
+        <LinearGradientBrush.GradientStops>
+            <GradientStop Color="#FF004D3A" Offset="0"/>
+            <GradientStop Color="#FF004D3A" Offset="1"/>
+        </LinearGradientBrush.GradientStops>
+    </LinearGradientBrush>
+
+    <!-- Window borders -->
+    <SolidColorBrush x:Key="BorderMainWindowBrush"         Color="#FF1E2330" po:Freeze="true"/>
+    <system:Double   x:Key="BorderMainWindowThickness">     1                </system:Double>
+    <SolidColorBrush x:Key="BorderNormalTabBrush"          Color="Transparent" po:Freeze="true"/>
+    <system:Double   x:Key="BorderNormalTabThickness">      1                </system:Double>
+    <SolidColorBrush x:Key="BorderTextHighlightBrush"      Color="#FF3B82F6" po:Freeze="true"/>
+    <system:Double   x:Key="BorderTextHighlightThickness">  1                </system:Double>
+    <SolidColorBrush x:Key="BorderThinBrush"               Color="#FF1E2330" po:Freeze="true"/>
+    <system:Double   x:Key="BorderThinThickness">           0.9              </system:Double>
+
+    <!-- Connection / workspace -->
+    <SolidColorBrush po:Freeze="true" x:Key="ConnectionBorderBrush"         Color="#FF1E2330"/>
+    <RadialGradientBrush po:Freeze="true" x:Key="DisconnectedBrush"
+        RadiusX="0.5" RadiusY="0.5" Center="0.5,0.1" GradientOrigin="0.5,0.1"
+        GradientStops="{StaticResource DisconnectedStops}"/>
+    <RadialGradientBrush po:Freeze="true" x:Key="ConnectedBrush"
+        RadiusX="0.5" RadiusY="0.5" Center="0.5,0.1" GradientOrigin="0.5,0.1"
+        GradientStops="{StaticResource ConnectedStops}"/>
+    <RadialGradientBrush po:Freeze="true" x:Key="ConnectingBrush"
+        RadiusX="0.5" RadiusY="0.5" Center="0.5,0.1" GradientOrigin="0.5,0.1"
+        GradientStops="{StaticResource ConnectingStops}"/>
+    <RadialGradientBrush po:Freeze="true" x:Key="ConnectionLostPriceBrush"
+        RadiusX="0.5" RadiusY="0.5" Center="0.5,0.1" GradientOrigin="0.5,0.1"
+        GradientStops="{StaticResource ConnectionLostPriceStops}"/>
+    <RadialGradientBrush po:Freeze="true" x:Key="ConnectionLostOrderBrush"
+        RadiusX="0.5" RadiusY="0.5" Center="0.5,0.1" GradientOrigin="0.5,0.1"
+        GradientStops="{StaticResource ConnectionLostOrderStops}"/>
+    <SolidColorBrush po:Freeze="true" x:Key="WorkspaceActiveFill"           Color="#FF00D4A0"/>
+    <SolidColorBrush po:Freeze="true" x:Key="WorkspaceInactiveFill"         Color="#FF5A6070"/>
+    <SolidColorBrush po:Freeze="true" x:Key="WorkspaceStroke"               Color="#FFE8EAF0"/>
+
+    <!-- Market Analyzer column bars -->
+    <SolidColorBrush po:Freeze="true" x:Key="ColumnBaseAltBarColor"         Color="#FFFF4D6A"/>
+    <SolidColorBrush po:Freeze="true" x:Key="ColumnBaseBarColor"            Color="#FF00D4A0"/>
+
+    <!-- Text highlight -->
+    <SolidColorBrush po:Freeze="true" x:Key="TextHighlightBrush"            Color="{StaticResource ColorTextHighlight}"/>
+
+    <!-- Window chrome buttons -->
+    <SolidColorBrush po:Freeze="true" x:Key="WindowButtonsInactive"         Color="#FF5A6070"/>
+    <SolidColorBrush po:Freeze="true" x:Key="SystemButtonsForeground"       Color="#FFE8EAF0"/>
+    <LinearGradientBrush po:Freeze="true" x:Key="SystemButtonsBackgroundNormal"
+        GradientStops="{StaticResource SystemMinMaxStops}" StartPoint="0.5,-0.2" EndPoint="0.5,0.62"/>
+    <LinearGradientBrush po:Freeze="true" x:Key="SystemButtonsBackgroundPressed"
+        GradientStops="{StaticResource SystemMinMaxStops}" StartPoint="0.5,0.05" EndPoint="0.5,0.45"/>
+    <LinearGradientBrush po:Freeze="true" x:Key="SystemCloseBackgroundNormal"
+        GradientStops="{StaticResource SystemCloseStops}" StartPoint="0.5,-0.2" EndPoint="0.5,0.62"/>
+    <LinearGradientBrush po:Freeze="true" x:Key="SystemCloseBackgroundPressed"
+        GradientStops="{StaticResource SystemCloseStops}" StartPoint="0.5,0.05" EndPoint="0.5,0.45"/>
+    <LinearGradientBrush po:Freeze="true" x:Key="SystemButtonsBorder"
+        GradientStops="{StaticResource BaseBorderStops}" StartPoint="0.5,0" EndPoint="0.5,1"/>
+    <LinearGradientBrush po:Freeze="true" x:Key="SystemCloseBorder"
+        GradientStops="{StaticResource BaseBorderStops}" StartPoint="0.5,0" EndPoint="0.5,1"/>
+
+    <!-- Focus indicator -->
+    <SolidColorBrush po:Freeze="true" x:Key="FocusedBrush"                  Color="#FF3B82F6"/>
+
+    <!-- Control Center — Strategies grid -->
+    <SolidColorBrush po:Freeze="true" x:Key="brushStrategyWaitForFlat"      Color="#FFF59E0B"/>
+    <SolidColorBrush po:Freeze="true" x:Key="brushStrategyActive"           Color="#FF00D4A0"/>
+    <SolidColorBrush po:Freeze="true" x:Key="brushStrategyNotSynced"        Color="#FFFF4D6A"/>
+
+    <!-- Control Center — Orders grid -->
+    <SolidColorBrush po:Freeze="true" x:Key="brushOrderWorking"             Color="#FF00D4A0"/>
+    <SolidColorBrush po:Freeze="true" x:Key="brushOrderPartFilled"          Color="#FF00D4A0"/>
+    <SolidColorBrush po:Freeze="true" x:Key="brushOrderPendingSubmit"       Color="#FFF59E0B"/>
+    <SolidColorBrush po:Freeze="true" x:Key="brushOrderPendingChange"       Color="#FFF59E0B"/>
+    <SolidColorBrush po:Freeze="true" x:Key="brushOrderAccepted"            Color="#FF3B82F6"/>
+    <SolidColorBrush po:Freeze="true" x:Key="brushOrderPendingCancel"       Color="#FFF59E0B"/>
+    <SolidColorBrush po:Freeze="true" x:Key="brushOrderInitialized"         Color="#FF5A6070"/>
+    <SolidColorBrush po:Freeze="true" x:Key="brushOrderTriggerPending"      Color="#FFF59E0B"/>
+
+    <!-- Properties windows -->
+    <SolidColorBrush po:Freeze="true" x:Key="PropertiesSlimText"            Color="{StaticResource ColorTextNormal}"/>
+    <SolidColorBrush po:Freeze="true" x:Key="PropertiesFatText"             Color="{StaticResource ColorTextHighlight}"/>
+    <SolidColorBrush po:Freeze="true" x:Key="PropertiesDisabledText"        Color="{StaticResource ColorDisabledForeground}"/>
+    <SolidColorBrush po:Freeze="true" x:Key="PropertyGridSeparatorLineFill" Color="#FF1E2330"/>
+
+    <!-- Infragistics grid (Trade Performance, Control Center grids) -->
+    <SolidColorBrush po:Freeze="true" x:Key="GridHeaderHighlight"           Color="#00FFFFFF"/>
+    <SolidColorBrush po:Freeze="true" x:Key="GridRowBackground"             Color="#00FFFFFF"/>
+    <SolidColorBrush po:Freeze="true" x:Key="GridRowForeground"             Color="#FFE8EAF0"/>
+    <LinearGradientBrush po:Freeze="true" x:Key="GridRowHighlight"
+        StartPoint="0.5,-0.344" EndPoint="0.5,1.4" GradientStops="{StaticResource ItemHoverStops}"/>
+    <SolidColorBrush po:Freeze="true" x:Key="GridEntireBackground"          Color="#00FFFFFF"/>
+    <SolidColorBrush po:Freeze="true" x:Key="GridRowBackgroundPrinting"     Color="#FF0D0F14"/>
+    <LinearGradientBrush po:Freeze="true" x:Key="GridLabelBackgroundPrinting" StartPoint="0.5,0" EndPoint="0.5,1">
+        <LinearGradientBrush.GradientStops>
+            <GradientStop Color="#FF0D0F14" Offset="0.5"/>
+            <GradientStop Color="#FF0D0F14" Offset="0.5"/>
+        </LinearGradientBrush.GradientStops>
+    </LinearGradientBrush>
+
+    <!-- Tooltips -->
+    <system:Double x:Key="ToolTipDividerHeight">1</system:Double>
+    <SolidColorBrush x:Key="ToolTipDividerBrush"                            Color="#FF1E2330" po:Freeze="true"/>
+    <system:Double x:Key="ToolTipMaxWidth">700</system:Double>
+    <SolidColorBrush x:Key="BackgroundModalOverlayToolTip"                  Color="#FF13161E" po:Freeze="true"/>
+    <SolidColorBrush x:Key="BackgroundModalOverlayToolTipStrokeBrush"       Color="#FF1E2330" po:Freeze="true"/>
+    <system:Double x:Key="BackgroundModalOverlayToolTipStrokeThickness">    1</system:Double>
+    <DropShadowEffect x:Key="ToolTipDropShadowEffect"
+        Color="#FF00D4A0" Direction="0" ShadowDepth="1" BlurRadius="3"
+        RenderingBias="Quality" Opacity=".15" po:Freeze="true"/>
+
+    <!-- Drop shadow effects -->
+    <DropShadowEffect po:Freeze="true" x:Key="HoverDropShadow"
+        Color="#FF00D4A0" Direction="0" ShadowDepth="0" BlurRadius="7"
+        RenderingBias="Quality" Opacity="0.8"/>
+    <DropShadowEffect po:Freeze="true" x:Key="TextDropShadow"
+        Color="#FF00D4A0" Direction="0" ShadowDepth="0" BlurRadius="20"
+        RenderingBias="Quality" Opacity="0.6"/>
+    <DropShadowEffect po:Freeze="true" x:Key="QuantitySelectorDropShadow"
+        Color="#FF3B82F6" Direction="0" ShadowDepth="0" BlurRadius="10"
+        RenderingBias="Quality" Opacity="0.8"/>
+    <DropShadowEffect po:Freeze="true" x:Key="DropShadowModalWindow"
+        Color="#FFE8EAF0" Direction="0" ShadowDepth="1" BlurRadius="5"
+        RenderingBias="Quality" Opacity=".35" />
+    <DropShadowEffect po:Freeze="true" x:Key="DropShadowTitleBlock"
+        Color="#FF0D0F14" Direction="0" ShadowDepth="1" BlurRadius="3"
+        RenderingBias="Quality" Opacity="1"/>
+
+    <!-- Font size biggest -->
+    <system:Double x:Key="NTFontSizeBiggest">20</system:Double>
+
+    <!-- Position display backgrounds -->
+    <SolidColorBrush po:Freeze="true" x:Key="FlatBackground"                Color="#FF0D0F14"/>
+    <SolidColorBrush po:Freeze="true" x:Key="LongBackground"                Color="#FF00D4A0"/>
+    <SolidColorBrush po:Freeze="true" x:Key="ShortBackground"               Color="#FFFF4D6A"/>
+    <SolidColorBrush po:Freeze="true" x:Key="PositionTextBlockBrush"        Color="#FFE8EAF0"/>
+    <SolidColorBrush po:Freeze="true" x:Key="PositionTextBlockProfitBrush"  Color="#FF00D4A0"/>
+    <SolidColorBrush po:Freeze="true" x:Key="PositionTextBlockLossBrush"    Color="#FFFF4D6A"/>
+
+    <!-- P&L displays -->
+    <SolidColorBrush po:Freeze="true" x:Key="PnLBackground"                 Color="#FF0D0F14"/>
+    <SolidColorBrush po:Freeze="true" x:Key="PositionLongQuantityBrush"     Color="#FF0D0F14"/>
+    <SolidColorBrush po:Freeze="true" x:Key="PositionShortQuantityBrush"    Color="#FFE8EAF0"/>
+    <SolidColorBrush x:Key="BrowserChartBackground"                         Color="#FF0D0F14" po:Freeze="true"/>
+
+    <!-- Daily loss limit progression colors -->
+    <SolidColorBrush po:Freeze="true" x:Key="brushDailyLossLimitDefault"    Color="#FF00D4A0"/>
+    <SolidColorBrush po:Freeze="true" x:Key="brushDailyLossLimitFifty"      Color="#FFF59E0B"/>
+    <SolidColorBrush po:Freeze="true" x:Key="brushDailyLossLimitSeventyFive" Color="#FFFF8C00"/>
+    <SolidColorBrush po:Freeze="true" x:Key="brushDailyLossLimitNinety"     Color="#FFFF4D6A"/>
+
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <!-- FONTS — Consolas throughout for terminal aesthetic         -->
+    <!-- ═══════════════════════════════════════════════════════════ -->
+
+    <!-- Tooltips -->
+    <system:Double x:Key="FontToolTipHeight">10</system:Double>
+    <FontFamily    x:Key="FontToolTipFamily">Consolas, Courier New</FontFamily>
+    <FontStyle     x:Key="FontToolTipStyle">Normal</FontStyle>
+    <FontWeight    x:Key="FontToolTipWeight">Normal</FontWeight>
+    <SolidColorBrush x:Key="FontToolTipBrush"                               Color="#FFE8EAF0" po:Freeze="true"/>
+
+    <!-- Action buttons (text-only, no border) -->
+    <system:Double x:Key="FontActionMargin">30</system:Double>
+    <system:Double x:Key="FontActionHeight">11</system:Double>
+    <FontFamily    x:Key="FontActionFamily">Consolas, Courier New</FontFamily>
+    <FontStyle     x:Key="FontActionStyle">Normal</FontStyle>
+    <FontWeight    x:Key="FontActionWeight">Regular</FontWeight>
+    <SolidColorBrush x:Key="FontActionBrush"                                Color="#FF5A6070" po:Freeze="true"/>
+
+    <!-- Buttons throughout — this controls Buy Mkt / Sell Mkt text etc. -->
+    <system:Double x:Key="FontButtonHeight">13</system:Double>
+    <FontFamily    x:Key="FontButtonFamily">Consolas, Courier New</FontFamily>
+    <FontStyle     x:Key="FontButtonStyle">Normal</FontStyle>
+    <FontWeight    x:Key="FontButtonWeight">Bold</FontWeight>
+    <SolidColorBrush x:Key="FontButtonBrush"                                Color="#FFE8EAF0" po:Freeze="true"/>
+
+    <!-- General control text -->
+    <system:Double x:Key="FontControlHeight">12</system:Double>
+    <FontFamily    x:Key="FontControlFamily">Consolas, Courier New</FontFamily>
+    <FontStyle     x:Key="FontControlStyle">Normal</FontStyle>
+    <FontWeight    x:Key="FontControlWeight">Regular</FontWeight>
+    <SolidColorBrush x:Key="FontControlBrush"                               Color="#FFE8EAF0" po:Freeze="true"/>
+    <SolidColorBrush x:Key="FontControlBrushReverse"                        Color="#FF0D0F14" po:Freeze="true"/>
+
+    <!-- Get Connected window -->
+    <system:Double x:Key="FontGetConnectedSmallHeight">15</system:Double>
+    <system:Double x:Key="FontGetConnectedLargeHeight">18</system:Double>
+
+    <!-- Daily change / last price (large display) -->
+    <system:Double x:Key="FontDailyChangedHeight">68</system:Double>
+
+    <!-- Header levels -->
+    <system:Double x:Key="FontHeaderLevel1Height">14</system:Double>
+    <FontFamily    x:Key="FontHeaderLevel1Family">Consolas, Courier New</FontFamily>
+    <FontStyle     x:Key="FontHeaderLevel1Style">Normal</FontStyle>
+    <FontWeight    x:Key="FontHeaderLevel1Weight">Bold</FontWeight>
+    <SolidColorBrush x:Key="FontHeaderLevel1Brush"                          Color="#FFE8EAF0" po:Freeze="true"/>
+
+    <system:Double x:Key="FontHeaderLevel2Height">12</system:Double>
+    <FontFamily    x:Key="FontHeaderLevel2Family">Consolas, Courier New</FontFamily>
+    <FontStyle     x:Key="FontHeaderLevel2Style">Normal</FontStyle>
+    <FontWeight    x:Key="FontHeaderLevel2Weight">Regular</FontWeight>
+    <SolidColorBrush x:Key="FontHeaderLevel2Brush"                          Color="#FF787890" po:Freeze="true"/>
+
+    <system:Double x:Key="FontHeaderLevel3Height">11</system:Double>
+    <FontFamily    x:Key="FontHeaderLevel3Family">Consolas, Courier New</FontFamily>
+    <FontStyle     x:Key="FontHeaderLevel3Style">Normal</FontStyle>
+    <FontWeight    x:Key="FontHeaderLevel3Weight">Bold</FontWeight>
+    <SolidColorBrush x:Key="FontHeaderLevel3Brush"                          Color="#FF787890" po:Freeze="true"/>
+    <system:Double x:Key="FontHeaderLevel3Margin">9</system:Double>
+
+    <system:Double x:Key="FontHeaderLevel4Height">11</system:Double>
+    <FontFamily    x:Key="FontHeaderLevel4Family">Consolas, Courier New</FontFamily>
+    <FontStyle     x:Key="FontHeaderLevel4Style">Normal</FontStyle>
+    <FontWeight    x:Key="FontHeaderLevel4Weight">Regular</FontWeight>
+    <SolidColorBrush x:Key="FontHeaderLevel4Brush"                          Color="#FF787890" po:Freeze="true"/>
+    <system:Double x:Key="FontHeaderLevel4Margin">3</system:Double>
+
+    <!-- Labels -->
+    <system:Double x:Key="FontLabelHeight">11</system:Double>
+    <FontFamily    x:Key="FontLabelFamily">Consolas, Courier New</FontFamily>
+    <FontStyle     x:Key="FontLabelStyle">Normal</FontStyle>
+    <FontWeight    x:Key="FontLabelWeight">Regular</FontWeight>
+    <SolidColorBrush x:Key="FontLabelBrush"                                 Color="#FF787890" po:Freeze="true"/>
+
+    <!-- Lists -->
+    <system:Double x:Key="FontListHeight">11</system:Double>
+    <FontFamily    x:Key="FontListFamily">Consolas, Courier New</FontFamily>
+    <FontStyle     x:Key="FontListStyle">Normal</FontStyle>
+    <FontWeight    x:Key="FontListWeight">Regular</FontWeight>
+    <SolidColorBrush x:Key="FontListBrush"                                  Color="#FFE8EAF0" po:Freeze="true"/>
+    <system:Double x:Key="FontListMargin">3</system:Double>
+
+    <!-- Menus -->
+    <system:Double x:Key="FontMenuHeight">12</system:Double>
+    <FontFamily    x:Key="FontMenuFamily">Consolas, Courier New</FontFamily>
+    <FontStyle     x:Key="FontMenuStyle">Normal</FontStyle>
+    <FontWeight    x:Key="FontMenuWeight">SemiBold</FontWeight>
+    <SolidColorBrush x:Key="FontMenuBrush"                                  Color="#FFE8EAF0" po:Freeze="true"/>
+
+    <!-- Top nav (New / Tools / Workspaces / Connections / Help / Chat) -->
+    <system:Double x:Key="FontMenuTopHeight">13</system:Double>
+    <FontFamily    x:Key="FontMenuTopFamily">Consolas, Courier New</FontFamily>
+    <FontStyle     x:Key="FontMenuTopStyle">Normal</FontStyle>
+    <FontWeight    x:Key="FontMenuTopWeight">Bold</FontWeight>
+    <SolidColorBrush x:Key="FontMenuTopBrush"                               Color="#FFE8EAF0" po:Freeze="true"/>
+    <SolidColorBrush x:Key="FontMenuHighlightedBrush"                       Color="#FF00D4A0" po:Freeze="true"/>
+
+    <!-- Modal window title -->
+    <system:Double x:Key="FontModalTitleHeight">13</system:Double>
+    <FontFamily    x:Key="FontModalTitleFamily">Consolas, Courier New</FontFamily>
+    <FontStyle     x:Key="FontModalTitleStyle">Normal</FontStyle>
+    <FontWeight    x:Key="FontModalTitleWeight">Bold</FontWeight>
+    <SolidColorBrush x:Key="FontModalTitleBrush"                            Color="#FFE8EAF0" po:Freeze="true"/>
+    <system:Double x:Key="FontModalTitleMargin">5</system:Double>
+
+    <!-- Modal body -->
+    <system:Double x:Key="FontModalHeight">11</system:Double>
+    <FontFamily    x:Key="FontModalFamily">Consolas, Courier New</FontFamily>
+    <FontStyle     x:Key="FontModalStyle">Normal</FontStyle>
+    <FontWeight    x:Key="FontModalWeight">Regular</FontWeight>
+    <SolidColorBrush x:Key="FontModalBrush"                                 Color="#FFE8EAF0" po:Freeze="true"/>
+    <system:Double x:Key="FontModalMargin">2</system:Double>
+
+    <!-- Modal links -->
+    <system:Double x:Key="FontModalLinkHeight">11</system:Double>
+    <FontFamily    x:Key="FontModalLinkFamily">Consolas, Courier New</FontFamily>
+    <FontStyle     x:Key="FontModalLinkStyle">Normal</FontStyle>
+    <FontWeight    x:Key="FontModalLinkWeight">Regular</FontWeight>
+    <SolidColorBrush x:Key="FontModalLinkBrush"                             Color="#FF00D4A0" po:Freeze="true"/>
+    <system:Double x:Key="FontModalLinkMargin">2</system:Double>
+
+    <!-- FX Board pip direction font -->
+    <FontFamily    x:Key="FontPipFamily">Consolas, Courier New</FontFamily>
+    <FontStyle     x:Key="FontPipStyle">Normal</FontStyle>
+    <FontWeight    x:Key="FontPipWeight">Bold</FontWeight>
+    <SolidColorBrush x:Key="FontPipBrush"                                   Color="#FFE8EAF0" po:Freeze="true"/>
+
+    <!-- Table column headers (Trade Performance, Control Center) -->
+    <system:Double x:Key="FontTableHeight">11</system:Double>
+    <FontFamily    x:Key="FontTableFamily">Consolas, Courier New</FontFamily>
+    <FontStyle     x:Key="FontTableStyle">Normal</FontStyle>
+    <FontWeight    x:Key="FontTableWeight">Bold</FontWeight>
+    <SolidColorBrush x:Key="FontTableBrush"                                 Color="#FFE8EAF0" po:Freeze="true"/>
+    <system:Double x:Key="FontTableMargin">3</system:Double>
+
+    <!-- Title blocks (window top-left badge text) -->
+    <system:Double x:Key="FontTitleBlockHeight">13</system:Double>
+    <FontFamily    x:Key="FontTitleBlockFamily">Consolas, Courier New</FontFamily>
+    <FontStyle     x:Key="FontTitleBlockStyle">Normal</FontStyle>
+    <FontWeight    x:Key="FontTitleBlockWeight">Bold</FontWeight>
+    <SolidColorBrush x:Key="FontTitleBlockBrush"                            Color="#FF00D4A0" po:Freeze="true"/>
+
+    <!-- Active / normal tab labels -->
+    <system:Double x:Key="FontActiveTabHeight">13</system:Double>
+    <FontFamily    x:Key="FontActiveTabFamily">Consolas, Courier New</FontFamily>
+    <FontStyle     x:Key="FontActiveTabStyle">Normal</FontStyle>
+    <FontWeight    x:Key="FontActiveTabWeight">Bold</FontWeight>
+    <SolidColorBrush x:Key="FontActiveTabBrush"                             Color="#FF00D4A0" po:Freeze="true"/>
+
+    <system:Double x:Key="FontNormalTabHeight">13</system:Double>
+    <FontFamily    x:Key="FontNormalTabFamily">Consolas, Courier New</FontFamily>
+    <FontStyle     x:Key="FontNormalTabStyle">Normal</FontStyle>
+    <FontWeight    x:Key="FontNormalTabWeight">Regular</FontWeight>
+    <SolidColorBrush x:Key="FontNormalTabBrush"                             Color="#FF5A6070" po:Freeze="true"/>
+
+    <system:Double x:Key="FontNormalTabHoverHeight">13</system:Double>
+    <FontFamily    x:Key="FontNormalTabHoverFamily">Consolas, Courier New</FontFamily>
+    <FontStyle     x:Key="FontNormalTabHoverStyle">Normal</FontStyle>
+    <FontWeight    x:Key="FontNormalTabHoverWeight">Bold</FontWeight>
+    <SolidColorBrush x:Key="FontNormalTabHoverBrush"                        Color="#FFE8EAF0" po:Freeze="true"/>
+
+    <!-- Main navigation font -->
+    <system:Double x:Key="FontMainNavigationHeight">13</system:Double>
+    <FontFamily    x:Key="FontMainNavigationFamily">Consolas, Courier New</FontFamily>
+    <FontStyle     x:Key="FontMainNavigationStyle">Normal</FontStyle>
+    <FontWeight    x:Key="FontMainNavigationWeight">Regular</FontWeight>
+    <SolidColorBrush x:Key="FontMainNavigationBrush"                        Color="#FFE8EAF0" po:Freeze="true"/>
+
+    <!-- Tooltip title -->
+    <system:Double x:Key="FontToolTipTitleHeight">10</system:Double>
+    <FontFamily    x:Key="FontToolTipTitleFamily">Consolas, Courier New</FontFamily>
+    <FontStyle     x:Key="FontToolTipTitleStyle">Normal</FontStyle>
+    <FontWeight    x:Key="FontToolTipTitleWeight">Bold</FontWeight>
+    <SolidColorBrush x:Key="FontToolTipTitleBrush"                          Color="#FFE8EAF0" po:Freeze="true"/>
+
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <!-- SIZES AND MARGINS                                           -->
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <system:Double x:Key="HeightControl">18</system:Double>
+    <system:Double x:Key="HeightSmallControl">12</system:Double>
+    <system:Double x:Key="HeightTableHeader">23</system:Double>
+    <system:Double x:Key="IconModalButton">24</system:Double>
+    <system:Double x:Key="IconModalSilhouette">24</system:Double>
+    <system:Double x:Key="TreeViewFontIconSize">14</system:Double>
+    <system:Double x:Key="MarginActiveTab">0</system:Double>
+    <system:Double x:Key="MarginBase">6</system:Double>
+    <system:Double x:Key="MarginBaseNegative">-6</system:Double>
+    <system:Double x:Key="MarginButtonLeft">8</system:Double>
+    <system:Double x:Key="MarginButtonTop">20</system:Double>
+    <system:Double x:Key="MarginControl">6</system:Double>
+    <system:Double x:Key="MarginConnectionIcon">5</system:Double>
+    <system:Double x:Key="MarginFontList">6</system:Double>
+    <system:Double x:Key="MarginMainNavigation">30</system:Double>
+    <system:Double x:Key="MarginMainNavigationIcon">8</system:Double>
+    <system:Double x:Key="MarginNormalTab">2</system:Double>
+    <system:Double x:Key="MarginWindowControl">3</system:Double>
+    <system:Double x:Key="PaddingButton">8</system:Double>
+    <system:Double x:Key="PaddingColumn">6</system:Double>
+    <system:Double x:Key="PaddingColumn2">3</system:Double>
+    <system:Double x:Key="PaddingGroup">4</system:Double>
+    <system:Double x:Key="PaddingTab">8</system:Double>
+    <system:Double x:Key="PaddingTableHeader">6</system:Double>
+    <system:Double x:Key="PaddingTextInputVertical">2</system:Double>
+    <system:Double x:Key="NTGridCellPadding">4</system:Double>
+    <system:Double x:Key="HotKeyEditorMargin">18</system:Double>
+    <system:Double x:Key="SizeWindowControl">16</system:Double>
+    <system:Double x:Key="TabControlCloseButtonContentSize">8</system:Double>
+    <system:Double x:Key="TabControlCloseButtonSize">12</system:Double>
+    <system:Double x:Key="TabControlCloseButtonPadding">2</system:Double>
+    <system:Double x:Key="TabControlItemFontSizeSelected">13</system:Double>
+    <system:Double x:Key="TabControlItemFontSizeUnselected">12</system:Double>
+    <system:Double x:Key="TabControlItemMarginBase">6</system:Double>
+    <system:Double x:Key="TabControlItemMinWidth">60</system:Double>
+    <system:Double x:Key="TabControlSelectedItemHeightIncrease">3</system:Double>
+    <system:Double x:Key="TabControlConnectionStatusSize">20</system:Double>
+    <system:Double x:Key="TabControlConnectionStatusMargin">10</system:Double>
+
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <!-- SPECIFIC WINDOWS                                            -->
+    <!-- ═══════════════════════════════════════════════════════════ -->
+
+    <!-- Depth Chart -->
+    <SolidColorBrush x:Key="DepthChart.AxisBackground"  Color="#FF0D0F14" po:Freeze="true"/>
+    <SolidColorBrush x:Key="DepthChart.TextForeground"  Color="#FFE8EAF0" po:Freeze="true"/>
+
+    <!-- Strategy Analyzer -->
+    <LinearGradientBrush x:Key="SelectedApAreaBrush"
+        StartPoint="0.5,-0.34" EndPoint="0.5,1.4"
+        GradientStops="{StaticResource ItemHoverStops}" po:Freeze="true"/>
+    <SolidColorBrush x:Key="NegativeApAreaBrush"        Color="{StaticResource NegativeApAreaColor}" po:Freeze="true" Opacity="0.5"/>
+    <SolidColorBrush x:Key="PositiveApAreaBrush"        Color="{StaticResource PositiveApAreaColor}" po:Freeze="true" Opacity="0.5"/>
+    <SolidColorBrush x:Key="NegativeApAreaStroke"       Color="{StaticResource NegativeApAreaColor}" po:Freeze="true"/>
+    <SolidColorBrush x:Key="PositiveApAreaStroke"       Color="{StaticResource PositiveApAreaColor}" po:Freeze="true"/>
+    <SolidColorBrush x:Key="NegativeApMarkerBrush"      Color="{StaticResource NegativeApMarkerColor}" po:Freeze="true"/>
+    <SolidColorBrush x:Key="PositiveApMarkerBrush"      Color="{StaticResource PositiveApMarkerColor}" po:Freeze="true"/>
+    <SolidColorBrush x:Key="ApMarkerBorderBrush"        Color="#FFE8EAF0" po:Freeze="true"/>
+    <SolidColorBrush x:Key="Alt1ApGridBrush"            Color="#00FFFFFF" po:Freeze="true"/>
+    <SolidColorBrush x:Key="Alt2ApGridBrush"            Color="#FF1E2330" po:Freeze="true" Opacity="0.1"/>
+    <SolidColorBrush x:Key="ApOptimizationScatterFill"  Color="#FF3B82F6" po:Freeze="true"/>
+    <SolidColorBrush x:Key="OptimizationGraphScatterBrush" Color="#FF3B82F6" po:Freeze="true"/>
+    <SolidColorBrush x:Key="ParetoDataPointBrush"       Color="#FF3B82F6" po:Freeze="true" Opacity="0.75"/>
+    <SolidColorBrush x:Key="ParetoPinnedDataPointBrush" Color="#FF00D4A0" po:Freeze="true" Opacity="0.75"/>
+    <SolidColorBrush x:Key="ParetoDataPointHoverBrush"  Color="#FF00D4A0" po:Freeze="true" Opacity="0.85"/>
+    <SolidColorBrush x:Key="ParetoSelectedDataPointBrush" Color="#FFFF4D6A" po:Freeze="true"/>
+    <SolidColorBrush x:Key="StrategyAnalyzerNegativeValueBrush" Color="#FFFF4D6A" po:Freeze="true"/>
+    <Color x:Key="OptimizationGraphGradientColor1">     #FFE8EAF0 </Color>
+    <Color x:Key="OptimizationGraphGradientColor2">     #FF00D4A0 </Color>
+    <Color x:Key="OptimizationGraphGradientColor3">     #FF00A87E </Color>
+    <Color x:Key="OptimizationGraphGradientColor4">     #FF007D5E </Color>
+    <Color x:Key="OptimizationGraphGradientColor5">     #FF00523E </Color>
+    <Color x:Key="OptimizationGraphGradientColor6">     #FF00271E </Color>
+    <Pen x:Key="ApGridLinesPen" Thickness="1" po:Freeze="true">
+        <Pen.Brush><SolidColorBrush Color="#FF1E2330" po:Freeze="true"/></Pen.Brush>
+        <Pen.DashStyle><DashStyle Dashes="4,3"/></Pen.DashStyle>
+    </Pen>
+    <Pen x:Key="ApAxisLinesPen" Thickness="1" po:Freeze="true">
+        <Pen.Brush><SolidColorBrush Color="#FF5A6070" po:Freeze="true"/></Pen.Brush>
+    </Pen>
+    <SolidColorBrush x:Key="OptimizationGraphGridLinesColor" Color="#CC1E2330" po:Freeze="true"/>
+
+    <!-- NinjaScript Editor -->
+    <Color po:Freeze="true" x:Key="NinjaScriptEditorBackground">              #0D0F14 </Color>
+    <Color po:Freeze="true" x:Key="NinjaScriptEditorCommentForeground">       #5A6070 </Color>
+    <Color po:Freeze="true" x:Key="NinjaScriptEditorCompilerErrorForeground"> #FF4D6A </Color>
+    <Color po:Freeze="true" x:Key="NinjaScriptEditorIdentifierForeground">    #E8EAF0 </Color>
+    <Color po:Freeze="true" x:Key="NinjaScriptEditorIndentationLineForeground">#1E2330</Color>
+    <Color po:Freeze="true" x:Key="NinjaScriptEditorKeywordForeground">       #3B82F6 </Color>
+    <Color po:Freeze="true" x:Key="NinjaScriptEditorLineNumbersBackground">   #0D0F14 </Color>
+    <Color po:Freeze="true" x:Key="NinjaScriptEditorLineNumbersForeground">   #5A6070 </Color>
+    <Color po:Freeze="true" x:Key="NinjaScriptEditorNumberForeground">        #F59E0B </Color>
+    <Color po:Freeze="true" x:Key="NinjaScriptEditorStringForeground">        #00D4A0 </Color>
+    <Color po:Freeze="true" x:Key="NinjaScriptEditorSyntaxErrorForeground">   #FF4D6A </Color>
+    <Color po:Freeze="true" x:Key="NinjaScriptEditorPlainTextForeground">     #E8EAF0 </Color>
+    <Color po:Freeze="true" x:Key="NinjaScriptEditorCollapsibleRegionBackground">#13161E</Color>
+    <SolidColorBrush po:Freeze="true" x:Key="NinjaScriptEditorErrorGridBackgroundSelectedTab" Color="#FF2A0D10"/>
+    <SolidColorBrush po:Freeze="true" x:Key="NinjaScriptEditorErrorGridBackgroundOtherTab"   Color="#FF3D0D10"/>
+    <SolidColorBrush po:Freeze="true" x:Key="NinjaScriptEditorCaretBrush"                    Color="#FFE8EAF0"/>
+    <Color po:Freeze="true" x:Key="NinjaScriptEditorFontSelectionBrush">      #FF3B82F6 </Color>
+    <SolidColorBrush po:Freeze="true" x:Key="NinjaScriptEditorWarningDotBrush" Color="#FFF59E0B"/>
+    <SolidColorBrush po:Freeze="true" x:Key="NinjaScriptEditorErrorDotBrush"   Color="#FFFF4D6A"/>
+    <SolidColorBrush po:Freeze="true" x:Key="FontSelectionBrush"               Color="#FF3B82F6"/>
+
+    <!-- Market Watch Tiles -->
+    <system:Double x:Key="MarketWatchTileWidthExtraSmall">182</system:Double>
+    <system:Double x:Key="MarketWatchTileHeightExtraSmall">113</system:Double>
+    <system:Double x:Key="MarketWatchTileFontSizeExtraSmall">8</system:Double>
+    <system:Double x:Key="MarketWatchTileWidthSmall">203</system:Double>
+    <system:Double x:Key="MarketWatchTileHeightSmall">126</system:Double>
+    <system:Double x:Key="MarketWatchTileFontSizeSmall">9</system:Double>
+    <system:Double x:Key="MarketWatchTileWidthMedium">229</system:Double>
+    <system:Double x:Key="MarketWatchTileHeightMedium">142</system:Double>
+    <system:Double x:Key="MarketWatchTileFontSizeMedium">10</system:Double>
+    <system:Double x:Key="MarketWatchTileWidthLarge">263</system:Double>
+    <system:Double x:Key="MarketWatchTileHeightLarge">163</system:Double>
+    <system:Double x:Key="MarketWatchTileFontSizeLarge">11</system:Double>
+    <system:Double x:Key="MarketWatchTileWidthExtraLarge">308</system:Double>
+    <system:Double x:Key="MarketWatchTileHeightExtraLarge">191</system:Double>
+    <system:Double x:Key="MarketWatchTileFontSizeExtraLarge">12</system:Double>
+
+    <!-- FX Board tiles -->
+    <system:Double x:Key="TileWidthLarge">286</system:Double>
+    <system:Double x:Key="TileHeightLarge">203.5</system:Double>
+    <system:Double x:Key="SubPipSizeLarge">17.6</system:Double>
+    <system:Double x:Key="SubPipMinWidthLarge">26.4</system:Double>
+    <system:Double x:Key="TileWidthMedium">260</system:Double>
+    <system:Double x:Key="TileHeightMedium">185</system:Double>
+    <system:Double x:Key="SubPipSizeMedium">16</system:Double>
+    <system:Double x:Key="SubPipMinWidthMedium">24</system:Double>
+    <system:Double x:Key="TileWidthSmall">237.4</system:Double>
+    <system:Double x:Key="TileHeightSmall">170</system:Double>
+    <system:Double x:Key="SubPipSizeSmall">14</system:Double>
+    <system:Double x:Key="SubPipMinWidthSmall">21.6</system:Double>
+
+    <!-- FX Board P&L -->
+    <SolidColorBrush po:Freeze="true" x:Key="FxBoardPnLProfitBrush"                  Color="#FF00D4A0"/>
+    <SolidColorBrush po:Freeze="true" x:Key="FxBoardPnLLossBrush"                    Color="#FFFF4D6A"/>
+    <SolidColorBrush po:Freeze="true" x:Key="FxBoardPnLZeroBrush"                    Color="#FF0D0F14"/>
+    <SolidColorBrush po:Freeze="true" x:Key="FxBoardPositionLongBrush"               Color="#FF00D4A0"/>
+    <SolidColorBrush po:Freeze="true" x:Key="FxBoardPositionShortBrush"              Color="#FFFF4D6A"/>
+    <SolidColorBrush po:Freeze="true" x:Key="FxBoardPositionFlatBrush"               Color="#FF0D0F14"/>
+    <SolidColorBrush po:Freeze="true" x:Key="FxBoardPositionBorderBrush"             Color="#FF1E2330"/>
+    <SolidColorBrush po:Freeze="true" x:Key="FxBoardPositionForegroundBrush"         Color="#FFE8EAF0"/>
+    <SolidColorBrush po:Freeze="true" x:Key="FxBoardPositionBarBackgroundBrush"      Color="#FF1E2330"/>
+    <SolidColorBrush po:Freeze="true" x:Key="FxBoardClosePositionForegroundBrush"    Color="#FF0D0F14"/>
+    <SolidColorBrush po:Freeze="true" x:Key="FxBoardCloseButtonBorderBrush"          Color="#FF1E2330"/>
+    <SolidColorBrush po:Freeze="true" x:Key="FxBoardBidAskBarBackgroundBrush"        Color="#FF1E2330"/>
+    <SolidColorBrush po:Freeze="true" x:Key="FxBoardBidAskBarForegroundBrush"        Color="#FFE8EAF0"/>
+    <SolidColorBrush po:Freeze="true" x:Key="FxBoardInstrumentSelectorForeground"    Color="#FF787890"/>
+    <SolidColorBrush po:Freeze="true" x:Key="FxBoardInstrumentSelectorBorder"        Color="#FF1E2330"/>
+    <LinearGradientBrush po:Freeze="true" x:Key="FxBoardInstrumentSelectorBackground"
+        StartPoint="0.5,0" EndPoint="0.5,1">
+        <LinearGradientBrush.GradientStops>
+            <GradientStop Color="#FF13161E" Offset="0"/>
+            <GradientStop Color="#FF13161E" Offset="0.14"/>
+        </LinearGradientBrush.GradientStops>
+    </LinearGradientBrush>
+    <SolidColorBrush po:Freeze="true" x:Key="FxBoardInstrumentSelectorForegroundSelected" Color="#FFE8EAF0"/>
+    <SolidColorBrush po:Freeze="true" x:Key="FxBoardInstrumentSelectorBorderSelected"     Color="#FF00D4A0"/>
+    <LinearGradientBrush po:Freeze="true" x:Key="FxBoardInstrumentSelectorBackgroundSelected"
+        StartPoint="0.5,0" EndPoint="0.5,1">
+        <LinearGradientBrush.GradientStops>
+            <GradientStop Color="#FF004D3A" Offset="0"/>
+            <GradientStop Color="#FF004D3A" Offset="0.14"/>
+        </LinearGradientBrush.GradientStops>
+    </LinearGradientBrush>
+    <LinearGradientBrush x:Key="FxBoardActionButtonFillBrush" Opacity="0"
+        StartPoint="0.5,0" EndPoint="0.5,1" po:Freeze="true">
+        <LinearGradientBrush.GradientStops>
+            <GradientStop Color="#1FFFFFFF" Offset="0"/>
+            <GradientStop Color="#1FFFFFFF" Offset="1"/>
+        </LinearGradientBrush.GradientStops>
+    </LinearGradientBrush>
+    <LinearGradientBrush x:Key="FxBoardCloseButtonFillBrush"
+        StartPoint="0.5,0" EndPoint="0.5,1" po:Freeze="true">
+        <LinearGradientBrush.GradientStops>
+            <GradientStop Color="#00FFFFFF" Offset="0.20"/>
+            <GradientStop Color="#00FFFFFF" Offset="0.49"/>
+            <GradientStop Color="#00FFFFFF" Offset="0.50"/>
+        </LinearGradientBrush.GradientStops>
+    </LinearGradientBrush>
+    <LinearGradientBrush x:Key="FxBoardCloseButtonFillBrushPressed"
+        StartPoint="0.5,0" EndPoint="0.5,1" po:Freeze="true">
+        <LinearGradientBrush.GradientStops>
+            <GradientStop Color="#00FFFFFF" Offset="0.20"/>
+            <GradientStop Color="#00FFFFFF" Offset="0.59"/>
+            <GradientStop Color="#00FFFFFF" Offset="0.60"/>
+        </LinearGradientBrush.GradientStops>
+    </LinearGradientBrush>
+    <SolidColorBrush po:Freeze="true" x:Key="FxBoardSpreadBorderBrush"       Color="#FF0D0F14"/>
+    <SolidColorBrush po:Freeze="true" x:Key="FxBoardSpreadBackgroundBrush"   Color="#FF1E2330"/>
+    <SolidColorBrush po:Freeze="true" x:Key="FxBoardSpreadForegroundBrush"   Color="#FFE8EAF0"/>
+
+    <!-- Historical Data -->
+    <SolidColorBrush po:Freeze="true" x:Key="HdmAddRowBrush"                 Color="#FF00D4A0"/>
+    <SolidColorBrush po:Freeze="true" x:Key="HdmDeleteRowBrush"              Color="#FFFF4D6A"/>
+    <SolidColorBrush po:Freeze="true" x:Key="HdmEditRowBrush"                Color="#FFF59E0B"/>
+
+    <!-- Logon dialog -->
+    <SolidColorBrush x:Key="LoginBackgroundBrush"                            Color="#FF0D0F14"  po:Freeze="true"/>
+    <SolidColorBrush x:Key="LogonBorderBrush"                                Color="#FF1E2330"  po:Freeze="true"/>
+    <SolidColorBrush x:Key="LogonEmptyUsernameBrush"                         Color="#FFFF4D6A"  po:Freeze="true"/>
+    <SolidColorBrush x:Key="LogonFontMainBrush"                              Color="#FFE8EAF0"  po:Freeze="true"/>
+    <SolidColorBrush x:Key="LogonFontMainInvertBrush"                        Color="#FFE8EAF0"  po:Freeze="true"/>
+    <SolidColorBrush x:Key="LogonFontSecondaryBrush"                         Color="#FF787890"  po:Freeze="true"/>
+    <SolidColorBrush x:Key="LogonFontButtonBrush"                            Color="#FF0D0F14"  po:Freeze="true"/>
+    <SolidColorBrush x:Key="LogonFontSubBrush"                               Color="#FF5A6070"  po:Freeze="true"/>
+    <SolidColorBrush x:Key="LogonIncorrectLoginBackground"                   Color="#FF1A0508"  po:Freeze="true"/>
+    <SolidColorBrush x:Key="LogonIncorrectLoginBrush"                        Color="#FFFCAFAF"  po:Freeze="true"/>
+    <SolidColorBrush x:Key="LogonIncorrectLoginButtonBackground"             Color="#FF2A1010"  po:Freeze="true"/>
+    <SolidColorBrush x:Key="LogonInputBrush"                                 Color="#FF13161E"  po:Freeze="true"/>
+    <SolidColorBrush x:Key="LogonInputBorderBrush"                           Color="#FF1E2330"  po:Freeze="true"/>
+    <SolidColorBrush x:Key="LogonLinkBrush"                                  Color="#FF00D4A0"  po:Freeze="true"/>
+    <SolidColorBrush x:Key="LogonLinkHoverBrush"                             Color="#FF00A07A"  po:Freeze="true"/>
+    <SolidColorBrush x:Key="LogonPasswordActiveBorder"                       Color="#FF3B82F6"  po:Freeze="true"/>
+    <SolidColorBrush x:Key="LogonSocialButtonBrush"                          Color="#FF13161E"  po:Freeze="true"/>
+    <SolidColorBrush x:Key="LogonSocialButtonIsOverBrush"                    Color="#FF1E2330"  po:Freeze="true"/>
+    <SolidColorBrush x:Key="LogonSocialButtonPressedBrush"                   Color="#FF1E2330"  po:Freeze="true"/>
+    <SolidColorBrush x:Key="LogonButtonBrush"                                Color="#FF1E2B3B"  po:Freeze="true"/>
+    <SolidColorBrush x:Key="LogonButtonIsOverBrush"                          Color="#FF1E2B3B"  po:Freeze="true"/>
+    <SolidColorBrush x:Key="LogonButtonIsPressedBrush"                       Color="#FF1E2B3B"  po:Freeze="true"/>
+    <SolidColorBrush x:Key="TradingModePlaybackBrush"                        Color="#FF00D4A0"  po:Freeze="true"/>
+    <SolidColorBrush x:Key="TradingModeIsOverBrush"                          Color="#FF00A07A"  po:Freeze="true"/>
+    <SolidColorBrush x:Key="TradingModeIsPressedBrush"                       Color="#FF00A07A"  po:Freeze="true"/>
+    <SolidColorBrush x:Key="TradingModeIsPressedForeground"                  Color="#FF0D0F14"  po:Freeze="true"/>
+    <FontWeight      x:Key="LogonFontWeightSimExpired">Bold</FontWeight>
+    <system:Double   x:Key="LogonFontHeightSmall">12</system:Double>
+    <system:Double   x:Key="LogonFontHeightMedium1">16</system:Double>
+    <system:Double   x:Key="LogonFontHeightMedium2">32</system:Double>
+    <system:Double   x:Key="LogonFontHeightLarge">39</system:Double>
+    <FontFamily      x:Key="LogonFontFamily">Consolas, Courier New</FontFamily>
+
+    <!-- Chart OCO / SO signifier icons -->
+    <SolidColorBrush x:Key="OcoSignifierBackground"                          Color="#FF00D4A0"  po:Freeze="true"/>
+    <SolidColorBrush x:Key="SoSignifierBackground"                           Color="#FF00D4A0"  po:Freeze="true"/>
+
+    <!-- Trade Performance window -->
+    <SolidColorBrush po:Freeze="true" x:Key="TradePerformanceFiltersBackground"    Color="#FF13161E"/>
+    <SolidColorBrush po:Freeze="true" x:Key="TradePerformanceFiltersBackground2"   Color="#FF1E2330"/>
+    <SolidColorBrush po:Freeze="true" x:Key="TradePerformanceFiltersBackground3"   Color="#FF0D0F14"/>
+
+    <!-- Crypto trailing zero -->
+    <SolidColorBrush po:Freeze="true" x:Key="CryptocurrencyTrailingZeroForeground" Color="#FF3A4050"/>
+
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <!-- CUSTOM COLOR PICKER                                         -->
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <collections:ArrayList x:Key="customColorPickerList">
+        <LinearGradientBrush StartPoint="0.5,-0.05" EndPoint="0.5,0.66" po:Freeze="true">
+            <LinearGradientBrush.GradientStops>
+                <GradientStop Color="{StaticResource ButtonBackgroundStop1}" Offset="0"/>
+                <GradientStop Color="{StaticResource ButtonBackgroundStop2}" Offset="1"/>
+            </LinearGradientBrush.GradientStops>
+        </LinearGradientBrush>
+    </collections:ArrayList>
+
+</ResourceDictionary>

@@ -1,0 +1,14 @@
+<!-- ============================================================ -->
+<!-- TrendArchitect Skin — ControlCenter.xaml                     -->
+<!-- Output / log window row colors                               -->
+<!-- ============================================================ -->
+<ResourceDictionary xmlns    ="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x  ="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:po ="http://schemas.microsoft.com/winfx/2006/xaml/presentation/options">
+
+    <SolidColorBrush x:Key="LogGrid.InformationBackground" Color="#FF0D0F14"  po:Freeze="true" />
+    <SolidColorBrush x:Key="LogGrid.WarningBackground"     Color="#FF2A1F08"  po:Freeze="true" />
+    <SolidColorBrush x:Key="LogGrid.ErrorBackground"       Color="#FF2A0D10"  po:Freeze="true" />
+    <SolidColorBrush x:Key="LogGrid.AlertBackground"       Color="#FF3D0A10"  po:Freeze="true" />
+
+</ResourceDictionary>

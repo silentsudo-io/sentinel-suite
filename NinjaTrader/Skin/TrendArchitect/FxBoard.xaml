@@ -1,0 +1,11 @@
+<ResourceDictionary xmlns		="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+					xmlns:x		="http://schemas.microsoft.com/winfx/2006/xaml"
+					xmlns:po	="http://schemas.microsoft.com/winfx/2006/xaml/presentation/options">
+
+	<SolidColorBrush x:Key="FxBoard.UptickBackground"	Color="Blue"	po:Freeze="true" />
+	<SolidColorBrush x:Key="FxBoard.UptickForeground"	Color="White"	po:Freeze="true" />
+	<SolidColorBrush x:Key="FxBoard.DowntickBackground"	Color="#FFFF4D6A"		po:Freeze="true" />
+	<SolidColorBrush x:Key="FxBoard.DowntickForeground"	Color="White"	po:Freeze="true" />
+	<SolidColorBrush x:Key="FxBoard.ButtonBackground"	Color="#7F7F7F"	po:Freeze="true" />
+	<SolidColorBrush x:Key="FxBoard.ButtonForeground"	Color="White"	po:Freeze="true" />
+</ResourceDictionary>

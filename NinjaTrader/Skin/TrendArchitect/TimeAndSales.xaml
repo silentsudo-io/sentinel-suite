@@ -1,0 +1,23 @@
+<ResourceDictionary	xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" 
+					xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+					xmlns:po="http://schemas.microsoft.com/winfx/2006/xaml/presentation/options">
+
+	<SolidColorBrush	po:Freeze="true"	x:Key="TimeAndSales.AboveAskBackground"		Color="Transparent"/>
+	<SolidColorBrush	po:Freeze="true"	x:Key="TimeAndSales.AboveAskForeground"		Color="Gold"/>
+	<SolidColorBrush	po:Freeze="true"	x:Key="TimeAndSales.AskForeground"			Color="Crimson"/>
+	<SolidColorBrush	po:Freeze="true"	x:Key="TimeAndSales.AskBackground"			Color="Transparent"/>
+	<SolidColorBrush	po:Freeze="true"	x:Key="TimeAndSales.AtAskBackground"		Color="Transparent"/>
+	<SolidColorBrush	po:Freeze="true"	x:Key="TimeAndSales.AtAskForeground"		Color="ForestGreen"/>
+	<SolidColorBrush	po:Freeze="true"	x:Key="TimeAndSales.AtBidBackground"		Color="Transparent"/>
+	<SolidColorBrush	po:Freeze="true"	x:Key="TimeAndSales.AtBidForeground"		Color="Chocolate"/>
+	<SolidColorBrush	po:Freeze="true"	x:Key="TimeAndSales.BelowBidBackground"		Color="Transparent"/>
+	<SolidColorBrush	po:Freeze="true"	x:Key="TimeAndSales.BelowBidForeground"		Color="DeepPink"/>
+	<SolidColorBrush	po:Freeze="true"	x:Key="TimeAndSales.BetweenBackground"		Color="Transparent"/>
+	<SolidColorBrush	po:Freeze="true"	x:Key="TimeAndSales.BetweenForeground"		Color="Sienna"/>
+	<SolidColorBrush	po:Freeze="true"	x:Key="TimeAndSales.BidForeground"			Color="Orange"/>
+	<SolidColorBrush	po:Freeze="true"	x:Key="TimeAndSales.BidBackground"			Color="Transparent"/>
+	<SolidColorBrush	po:Freeze="true"	x:Key="TimeAndSales.BlockAlertForeground"	Color="DeepSkyBlue"/>
+	<SolidColorBrush	po:Freeze="true"	x:Key="TimeAndSales.DailyHighForeground"	Color="#FF00D4A0"/>
+	<SolidColorBrush	po:Freeze="true"	x:Key="TimeAndSales.DailyLowForeground"		Color="#FFFF4D6A"/>
+	<SolidColorBrush	po:Freeze="true"	x:Key="TimeAndSales.MainBackground"			Color="Transparent"/>
+</ResourceDictionary>

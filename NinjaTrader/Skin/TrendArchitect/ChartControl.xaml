@@ -1,0 +1,65 @@
+<!-- ============================================================ -->
+<!-- TrendArchitect Skin — ChartControl.xaml                      -->
+<!-- Palette matches TrendArchitectMQPanel dark terminal UI       -->
+<!--   C_BG     #0D0F14   chart + ChartTrader background         -->
+<!--   C_CARD   #13161E   panel cards                            -->
+<!--   C_BORDER #1E2330   borders / grid lines                   -->
+<!--   C_GREEN  #00D4A0   buy / bullish / armed                  -->
+<!--   C_RED    #FF4D6A   sell / bearish / risk hit              -->
+<!--   C_AMBER  #F59E0B   caution / P&L max                      -->
+<!--   C_BLUE   #3B82F6   neutral action / rev                   -->
+<!--   C_MUTED  #5A6070   secondary text                         -->
+<!--   C_TEXT   #E8EAF0   primary text                           -->
+<!-- Base: Stealth Cyan by unknown author                         -->
+<!-- TrendArchitect adaptation: open source                       -->
+<!-- ============================================================ -->
+<ResourceDictionary xmlns    ="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x  ="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:po ="http://schemas.microsoft.com/winfx/2006/xaml/presentation/options">
+
+    <!-- ── ChartTrader button backgrounds ──────────────────────────────── -->
+    <!-- All button groups use the same flat dark background.              -->
+    <!-- Foreground color is controlled by NT8's button text style.        -->
+    <SolidColorBrush x:Key="ChartTrader.ButtonBackground"         Color="#13161E" po:Freeze="true" />
+    <SolidColorBrush x:Key="ChartTrader.ActionButtonsBackground"  Color="#13161E" po:Freeze="true" />
+    <SolidColorBrush x:Key="ChartTrader.BuyButtonsBackground"     Color="#0D1F1A" po:Freeze="true" />
+    <SolidColorBrush x:Key="ChartTrader.SellButtonsBackground"    Color="#1F0D10" po:Freeze="true" />
+
+    <!-- ── Chart canvas ─────────────────────────────────────────────────── -->
+    <SolidColorBrush x:Key="ChartControl.ChartBackground"                  Color="#FF0D0F14" po:Freeze="true" />
+    <SolidColorBrush x:Key="ChartControl.ChartText"                        Color="#FFE8EAF0" po:Freeze="true" />
+    <SolidColorBrush x:Key="ChartControl.InactivePriceMarkersBackground"   Color="#FF13161E" po:Freeze="true" />
+    <SolidColorBrush x:Key="ChartControl.CrosshairLabelBackground"         Color="#FF1E2330" po:Freeze="true" />
+
+    <!-- ── Grid lines and axes ──────────────────────────────────────────── -->
+    <Pen x:Key="ChartControl.AxisPen"          Brush="#FF1E2330" po:Freeze="true" Thickness="1"/>
+    <Pen x:Key="ChartControl.CrosshairPen"     Brush="#FF3B82F6" po:Freeze="true" Thickness="1"/>
+    <Pen x:Key="ChartControl.GridLineHPen"     po:Freeze="true"  Thickness="1">
+        <Pen.Brush><SolidColorBrush Color="#1E2330" Opacity="0.6" po:Freeze="true"/></Pen.Brush>
+    </Pen>
+    <Pen x:Key="ChartControl.GridLineVPen"     po:Freeze="true"  Thickness="1">
+        <Pen.Brush><SolidColorBrush Color="#1E2330" Opacity="0.6" po:Freeze="true"/></Pen.Brush>
+    </Pen>
+    <Pen x:Key="ChartControl.PanelSplitterPen" Brush="#FF1E2330" po:Freeze="true" Thickness="1"/>
+
+    <!-- ── Data box ─────────────────────────────────────────────────────── -->
+    <SolidColorBrush x:Key="ChartControl.DataBoxPanelLabelBackground"  Color="#FF13161E" po:Freeze="true" />
+    <SolidColorBrush x:Key="ChartControl.DataBoxItemLabelBackground"   Color="#FF1E2330" po:Freeze="true" />
+    <SolidColorBrush x:Key="ChartControl.DataBoxBackground"            Color="#FF0D0F14" po:Freeze="true" Opacity="0.88"/>
+    <SolidColorBrush x:Key="ChartControl.DataBoxForeground"            Color="#FFE8EAF0" po:Freeze="true" />
+
+    <!-- ── Highlights and markers ───────────────────────────────────────── -->
+    <SolidColorBrush x:Key="ChartControl.TimeHighBrush"        Color="#0078869B" po:Freeze="true" Opacity="0.2"/>
+    <SolidColorBrush x:Key="ChartControl.DropHighlight"        Color="#0078869B" po:Freeze="true" Opacity="0.4"/>
+    <SolidColorBrush x:Key="ChartControl.SelectedMarkerBrush"  Color="#FF3B82F6"  po:Freeze="true" />
+
+    <!-- ── Candle up/down brushes ────────────────────────────────────────── -->
+    <SolidColorBrush x:Key="ChartControl.UpBrush"        Color="#FF00D4A0" po:Freeze="true" />
+    <SolidColorBrush x:Key="ChartControl.DownBrush"      Color="#FFFF4D6A" po:Freeze="true" />
+    <SolidColorBrush x:Key="ChartControl.VolumetricText" Color="#FFE8EAF0" po:Freeze="true" />
+
+    <!-- ── Stroke pens ──────────────────────────────────────────────────── -->
+    <Pen x:Key="ChartControl.Stroke"  Brush="#FFE8EAF0" po:Freeze="true" Thickness="1"/>
+    <Pen x:Key="ChartControl.Stroke2" Brush="#FF5A6070" po:Freeze="true" Thickness="1"/>
+
+</ResourceDictionary>

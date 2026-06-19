@@ -1,0 +1,22 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+					xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+					xmlns:po="http://schemas.microsoft.com/winfx/2006/xaml/presentation/options">
+	
+	<SolidColorBrush x:Key="Level2.L1Background"			Color="Gray"			po:Freeze="true" />
+	<SolidColorBrush x:Key="Level2.L2Background"			Color="Orange"			po:Freeze="true" />
+	<SolidColorBrush x:Key="Level2.L3Background"			Color="#FFFF4D6A"				po:Freeze="true" />
+	<SolidColorBrush x:Key="Level2.L4Background"			Color="#FF00D4A0"		po:Freeze="true" />
+	<SolidColorBrush x:Key="Level2.L5Background"			Color="Blue"			po:Freeze="true" />
+	<SolidColorBrush x:Key="Level2.L6Background"			Color="LemonChiffon"	po:Freeze="true" />
+	<SolidColorBrush x:Key="Level2.L7Background"			Color="Bisque"			po:Freeze="true" />
+	<SolidColorBrush x:Key="Level2.L8Background"			Color="LightSalmon"		po:Freeze="true" />
+	<SolidColorBrush x:Key="Level2.L9Background"			Color="LightSeaGreen"	po:Freeze="true" />
+	<SolidColorBrush x:Key="Level2.L10Background"			Color="LightSteelBlue"	po:Freeze="true" />
+	<SolidColorBrush x:Key="Level2.MarketMakersBackground"	Color="Black"			po:Freeze="true" />
+	<SolidColorBrush x:Key="Level2.MarketMakersForeground"	Color="White"			po:Freeze="true" />
+	<SolidColorBrush x:Key="Level2.TextForeground"			Color="Black"			po:Freeze="true" />
+	<SolidColorBrush x:Key="Level2.UptickForeground"		Color="White"			po:Freeze="true" />
+	<SolidColorBrush x:Key="Level2.UptickBackground"		Color="Transparent"		po:Freeze="true" />
+	<SolidColorBrush x:Key="Level2.DowntickForeground"		Color="White"			po:Freeze="true" />
+	<SolidColorBrush x:Key="Level2.DowntickBackground"		Color="Transparent"		po:Freeze="true" />
+</ResourceDictionary>

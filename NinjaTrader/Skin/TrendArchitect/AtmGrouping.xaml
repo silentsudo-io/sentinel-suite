@@ -1,0 +1,14 @@
+<!-- ============================================================ -->
+<!-- TrendArchitect Skin — AtmGrouping.xaml                       -->
+<!-- ATM Strategy grouping header colors                          -->
+<!-- ============================================================ -->
+<ResourceDictionary xmlns    ="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x  ="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:po ="http://schemas.microsoft.com/winfx/2006/xaml/presentation/options">
+
+    <SolidColorBrush x:Key="AtmHeaderBackground"      Color="#FF13161E" po:Freeze="true" />
+    <SolidColorBrush x:Key="AtmHeaderTextBackground"  Color="#FFE8EAF0" po:Freeze="true" />
+    <SolidColorBrush x:Key="InstrumentTextForeground" Color="#FFE8EAF0" po:Freeze="true" />
+    <SolidColorBrush x:Key="InstrumentTextBackground" Color="#FF13161E" po:Freeze="true" />
+
+</ResourceDictionary>

@@ -1,0 +1,14 @@
+<!-- TrendArchitect Skin — MarketAnalyzer.xaml -->
+<ResourceDictionary xmlns    ="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x  ="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:po ="http://schemas.microsoft.com/winfx/2006/xaml/presentation/options">
+    <SolidColorBrush po:Freeze="true" x:Key="ConditionBackground"          Color="Transparent"  />
+    <SolidColorBrush po:Freeze="true" x:Key="ConditionForeground"          Color="#FFE8EAF0"    />
+    <SolidColorBrush po:Freeze="true" x:Key="MAGridForeground"             Color="#FFE8EAF0"    />
+    <SolidColorBrush po:Freeze="true" x:Key="MAGridLines"                  Color="#FF1E2330"    />
+    <SolidColorBrush po:Freeze="true" x:Key="LabelRowBackground"           Color="#FF13161E"    />
+    <SolidColorBrush po:Freeze="true" x:Key="LabelRowForeground"           Color="#FFE8EAF0"    />
+    <SolidColorBrush po:Freeze="true" x:Key="RowChangeHighlightBackground" Color="#FFF59E0B"    />
+    <SolidColorBrush po:Freeze="true" x:Key="RowChangeHighlightForeground" Color="#FF0D0F14"    />
+    <SolidColorBrush po:Freeze="true" x:Key="MAGridTotalRowBackground"     Color="#FF1E2330"    />
+</ResourceDictionary>
