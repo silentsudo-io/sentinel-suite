@@ -761,27 +761,7 @@ namespace NinjaTrader.NinjaScript.Indicators
                     Focusable                     = true,
                 };
 
-                // V1.2.2: Wire mouse wheel so NT chart doesn't consume it first
-                _ctScrollViewer.PreviewMouseWheel += OnPanelMouseWheel;
 
-                InsertPanel();
-                uiPanelActive = true;
-                WireChartTraderQuantitySelector();
-
-                // V1.3: Cache account and instrument for safe data-thread access
-                CacheAccountAndInstrument();
-
-                if (State == State.Realtime)
-                    SubscribeChartTraderOrderUpdate();
-
-                RefreshArmButtons();
-                RefreshOppButtons();
-                RefreshReArmButtons();
-                RefreshTimeFilterStatus();
-                RefreshAutoStopToggle();
-            }
-            catch (Exception ex) { Print("[SentinelV1_0] CreateWPFControls error: " + ex.Message); }
-        }
 
         private void DisposeSentinelWindow()
         {
