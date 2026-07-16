@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sentinel · Sentinel Dataset Dictionary</title>
+<style>
+  :root{
+    --void:#e7edf1; --panel:#f3f7f9; --surface:#ffffff; --surface2:#eaf0f3;
+    --ink:#16222c; --ink2:#586873; --line:#cdd8de; --grid:#dde5ea;
+    --accent:#0b8ea1; --flow:#0d8fa2;
+    --up:#12a56f; --down:#e0424f; --warn:#c9861a;
+    --mono:ui-monospace,"Cascadia Code","SF Mono",Consolas,Menlo,monospace;
+    --sans:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  }
+  @media (prefers-color-scheme:dark){
+    :root{
+      --void:#0a0e13; --panel:#0d131a; --surface:#141c25; --surface2:#0f161e;
+      --ink:#e2e9ee; --ink2:#8a9ba8; --line:#26333f; --grid:#131c25;
+      --accent:#4ad6e8; --flow:#3fb6c9; --up:#25d08b; --down:#ff5c6a; --warn:#f2b23c;
+    }
+  }
+  :root[data-theme="light"]{
+    --void:#e7edf1; --panel:#f3f7f9; --surface:#ffffff; --surface2:#eaf0f3;
+    --ink:#16222c; --ink2:#586873; --line:#cdd8de; --grid:#dde5ea;
+    --accent:#0b8ea1; --flow:#0d8fa2; --up:#12a56f; --down:#e0424f; --warn:#c9861a;
+  }
+  :root[data-theme="dark"]{
+    --void:#0a0e13; --panel:#0d131a; --surface:#141c25; --surface2:#0f161e;
+    --ink:#e2e9ee; --ink2:#8a9ba8; --line:#26333f; --grid:#131c25;
+    --accent:#4ad6e8; --flow:#3fb6c9; --up:#25d08b; --down:#ff5c6a; --warn:#f2b23c;
+  }
+
+  *{box-sizing:border-box}
+  body{margin:0; background:var(--void); color:var(--ink); font-family:var(--sans); line-height:1.55; -webkit-font-smoothing:antialiased; overflow-x:hidden}
+  .wrap{max-width:1120px; margin:0 auto; padding:56px 24px 100px; position:relative; z-index:1}
+
+  /* the Sentinel brand mark (Spartan barbute helmet) — faint fixed watermark + crisp header mark */
+  .watermark{position:fixed; z-index:0; pointer-events:none; top:50%; right:-2vw; transform:translateY(-50%); width:clamp(300px,40vw,560px); height:auto; fill:var(--accent); opacity:.18; filter:drop-shadow(0 0 55px color-mix(in srgb,var(--accent) 60%,transparent))}
+  .brandmark{width:16px; height:16px; flex:0 0 auto; fill:var(--accent); filter:drop-shadow(0 0 5px color-mix(in srgb,var(--accent) 50%,transparent))}
+
+  .kicker{font-family:var(--mono); font-size:11px; letter-spacing:.34em; text-transform:uppercase; color:var(--accent); display:flex; align-items:center; gap:9px; margin:0 0 14px}
+  .livedot{width:8px; height:8px; border-radius:50%; background:var(--accent); animation:pulse 2.4s ease-out infinite}
+  @keyframes pulse{0%{box-shadow:0 0 0 0 color-mix(in srgb,var(--accent) 55%,transparent)}70%{box-shadow:0 0 0 7px transparent}100%{box-shadow:0 0 0 0 transparent}}
+  h1{font-family:var(--mono); font-weight:700; font-size:clamp(30px,5.4vw,50px); letter-spacing:-.015em; margin:0 0 14px; text-wrap:balance}
+  .lede{font-size:18px; color:var(--ink2); max-width:66ch; margin:0 0 4px}
+  .lede b{color:var(--ink); font-weight:600}
+
+  .oneline{display:flex; flex-wrap:wrap; gap:7px; align-items:center; margin:28px 0 6px}
+  .oneline .s{font-family:var(--mono); font-size:12px; color:var(--ink); background:var(--surface); border:1px solid var(--line); border-radius:999px; padding:6px 13px}
+  .oneline .s b{color:var(--accent); font-weight:700}
+  .oneline .sep{color:var(--ink2); font-family:var(--mono)}
+
+  .toc{display:flex; flex-wrap:wrap; gap:6px 20px; margin:22px 0 6px; padding:16px 18px; border:1px solid var(--line); border-radius:12px; background:var(--panel)}
+  .toc a{font-family:var(--mono); font-size:12.5px; color:var(--ink2); text-decoration:none; white-space:nowrap}
+  .toc a:hover{color:var(--accent)}
+  .toc a b{color:var(--accent); font-weight:700; margin-right:6px}
+
+  .legend{display:flex; flex-wrap:wrap; gap:8px 18px; margin:18px 0 6px; padding:13px 16px; border:1px solid var(--line); border-radius:12px; background:var(--panel)}
+  .legend .k{display:flex; align-items:center; gap:8px; font-family:var(--mono); font-size:12px; color:var(--ink2)}
+  .swatch{width:22px; height:4px; border-radius:2px}
+  .swatch.a{background:var(--flow)} .swatch.u{background:var(--up)} .swatch.d{background:var(--down)} .swatch.w{background:var(--warn)}
+  .legend .k b{color:var(--ink); font-weight:600}
+
+  .part{display:flex; align-items:baseline; gap:16px; margin:80px 0 8px; padding-bottom:14px; border-bottom:1px solid var(--line)}
+  .part .pn{font-family:var(--mono); font-size:13px; font-weight:700; color:var(--accent); letter-spacing:.2em; white-space:nowrap}
+  .part h2{font-family:var(--mono); font-weight:700; font-size:15px; letter-spacing:.22em; text-transform:uppercase; color:var(--ink); margin:0}
+  .part .pd{margin-left:auto; font-size:13px; color:var(--ink2); font-family:var(--mono); text-align:right}
+
+  section{margin-top:44px}
+  .eyebrow{font-family:var(--mono); font-size:11px; letter-spacing:.24em; text-transform:uppercase; color:var(--accent); margin:0 0 8px; display:flex; gap:10px; align-items:baseline}
+  .eyebrow .num{color:var(--ink2); opacity:.7}
+  h3{font-family:var(--mono); font-weight:700; font-size:22px; margin:0 0 6px; letter-spacing:-.01em; text-wrap:balance}
+  .desc{color:var(--ink2); font-size:15px; margin:0 0 20px; max-width:74ch}
+  .desc b{color:var(--ink); font-weight:600}
+  code{font-family:var(--mono); font-size:.9em; background:var(--surface2); border:1px solid var(--line); border-radius:5px; padding:1px 5px; color:var(--ink)}
+
+  .panel{border:1px solid var(--line); border-radius:14px; background:var(--panel);
+    background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);
+    background-size:26px 26px; background-position:-1px -1px; padding:34px 30px; overflow-x:auto}
+
+  .node{background:var(--surface); border:1px solid var(--line); border-radius:11px; padding:11px 14px; min-width:120px; text-align:center; position:relative; box-shadow:0 1px 0 color-mix(in srgb,var(--ink) 6%,transparent)}
+  .node .t{font-family:var(--mono); font-weight:700; font-size:13px; color:var(--ink); white-space:nowrap}
+  .node .s{font-family:var(--mono); font-size:10.5px; color:var(--ink2); margin-top:3px; white-space:nowrap}
+  .node.accent{border-color:color-mix(in srgb,var(--accent) 55%,var(--line))}
+  .node.accent::before,.node.up::before,.node.down::before,.node.warn::before{content:""; position:absolute; left:0; top:9px; bottom:9px; width:3px; border-radius:3px}
+  .node.accent::before{background:var(--accent)}
+  .node.up::before{background:var(--up)} .node.up .t{color:color-mix(in srgb,var(--up) 78%,var(--ink))}
+  .node.down::before{background:var(--down)} .node.down .t{color:color-mix(in srgb,var(--down) 82%,var(--ink))}
+  .node.warn::before{background:var(--warn)}
+  .node.big{min-width:150px; padding:14px 16px}
+
+  .chip{font-family:var(--mono); font-size:11px; color:var(--ink); background:var(--surface2); border:1px solid var(--line); border-radius:7px; padding:5px 8px; white-space:nowrap; display:flex; justify-content:space-between; gap:10px; align-items:center}
+  .chip .w{color:var(--ink2); font-size:10px}
+  .chip.mute{color:var(--ink2)}
+
+  .flow{display:flex; align-items:center; justify-content:center; min-width:min-content}
+  .arrow{position:relative; flex:0 0 var(--aw,50px); height:2px; align-self:center; background:linear-gradient(90deg,color-mix(in srgb,var(--flow) 25%,transparent),var(--flow)); --c:var(--flow)}
+  .arrow::after{content:""; position:absolute; right:-1px; top:50%; transform:translateY(-50%); border-left:8px solid var(--c); border-top:5px solid transparent; border-bottom:5px solid transparent}
+  .arrow[data-l]::before{content:attr(data-l); position:absolute; left:50%; top:-15px; transform:translateX(-50%); font-family:var(--mono); font-size:9px; letter-spacing:.06em; text-transform:uppercase; color:var(--ink2); white-space:nowrap}
+  .arrow.up{--c:var(--up); background:linear-gradient(90deg,color-mix(in srgb,var(--up) 25%,transparent),var(--up))}
+  .arrow.down{--c:var(--down); background:linear-gradient(90deg,color-mix(in srgb,var(--down) 25%,transparent),var(--down))}
+  .arrow.warn{--c:var(--warn); background:linear-gradient(90deg,color-mix(in srgb,var(--warn) 25%,transparent),var(--warn))}
+  .arrow.v{width:2px; height:var(--ah,38px); flex:none; margin:0 auto; background:linear-gradient(180deg,color-mix(in srgb,var(--flow) 25%,transparent),var(--flow))}
+  .arrow.v::after{right:50%; top:auto; bottom:-1px; left:auto; transform:translateX(50%); border-left:5px solid transparent; border-right:5px solid transparent; border-top:8px solid var(--c); border-bottom:0}
+  .arrow.v.up-dir{background:linear-gradient(0deg,color-mix(in srgb,var(--flow) 25%,transparent),var(--flow))}
+  .arrow.v.up-dir::after{bottom:auto; top:-1px; border-top:0; border-bottom:8px solid var(--c)}
+  .arrow.v[data-l]::before{left:12px; top:50%; transform:translateY(-50%)}
+  .live .arrow{background-size:220% 100%; animation:travel 2.6s linear infinite}
+  @keyframes travel{0%{background-position:120% 0}100%{background-position:-40% 0}}
+
+  .group{border:1px dashed color-mix(in srgb,var(--line) 92%,var(--ink)); border-radius:11px; padding:12px; background:color-mix(in srgb,var(--surface) 55%,transparent)}
+  .group .gl{font-family:var(--mono); font-size:10px; letter-spacing:.14em; text-transform:uppercase; color:var(--ink2); margin:0 0 10px; text-align:center}
+  .grid2{display:grid; grid-template-columns:repeat(2,minmax(96px,1fr)); gap:6px}
+  .grid1{display:grid; gap:6px}
+  .rowflow{display:flex; align-items:center; justify-content:center; gap:0; min-width:min-content}
+  .stack{display:flex; flex-direction:column; align-items:center}
+  .band{display:flex; gap:8px; justify-content:center; flex-wrap:wrap; max-width:520px}
+
+  .verdict{background:var(--surface); border:1px solid color-mix(in srgb,var(--accent) 45%,var(--line)); border-radius:11px; padding:14px 16px; min-width:180px}
+  .verdict .vt{font-family:var(--mono); font-weight:700; font-size:12px; color:var(--accent); letter-spacing:.14em; margin-bottom:10px}
+  .vrow{display:flex; justify-content:space-between; gap:16px; font-family:var(--mono); font-size:12px; padding:4px 0; border-top:1px solid var(--line)}
+  .vrow span:first-child{color:var(--ink2)} .vrow span:last-child{color:var(--ink); font-weight:600}
+
+  .drow{display:flex; align-items:center; gap:14px; justify-content:center}
+  .branch{display:flex; align-items:center; gap:10px}
+  .blabel{font-family:var(--mono); font-size:9px; letter-spacing:.08em; text-transform:uppercase; color:var(--ink2)}
+  .qnode{background:var(--surface); border:1px solid var(--line); border-radius:11px; padding:12px 16px; text-align:center; position:relative}
+  .qnode.dec{border-color:color-mix(in srgb,var(--accent) 40%,var(--line))}
+  .qnode .t{font-family:var(--mono); font-weight:700; font-size:12.5px; color:var(--ink)}
+  .qnode .s{font-family:var(--mono); font-size:10px; color:var(--ink2); margin-top:4px}
+  .spine{display:flex; flex-direction:column; align-items:center}
+
+  .cast{display:grid; grid-template-columns:repeat(auto-fill,minmax(232px,1fr)); gap:12px}
+  .castcard{border:1px solid var(--line); border-radius:12px; background:var(--surface); padding:14px 15px; display:flex; flex-direction:column; gap:6px}
+  .castcard .role{font-family:var(--mono); font-size:9.5px; letter-spacing:.16em; text-transform:uppercase; color:var(--accent)}
+  .castcard .nm{font-family:var(--mono); font-weight:700; font-size:15px; color:var(--ink)}
+  .castcard p{margin:0; font-size:13px; color:var(--ink2)}
+  .castcard .seam{margin-top:auto; font-family:var(--mono); font-size:10.5px; color:var(--ink2); border-top:1px dashed var(--line); padding-top:7px}
+  .castcard .seam b{color:var(--ink); font-weight:600}
+
+  .two{display:grid; grid-template-columns:1.1fr .9fr; gap:26px; align-items:start}
+  .two .panel{margin:0}
+  .anno{display:flex; flex-direction:column; gap:12px}
+  .anno .a{display:flex; gap:12px; align-items:flex-start}
+  .anno .n{flex:0 0 22px; height:22px; border-radius:6px; background:var(--surface2); border:1px solid var(--line); color:var(--accent); font-family:var(--mono); font-weight:700; font-size:11px; display:flex; align-items:center; justify-content:center; margin-top:1px}
+  .anno .a div b{font-family:var(--mono); font-size:12.5px; color:var(--ink)}
+  .anno .a div p{margin:2px 0 0; font-size:13px; color:var(--ink2)}
+
+  .tblwrap{overflow-x:auto; border:1px solid var(--line); border-radius:12px; margin:8px 0}
+  table{width:100%; border-collapse:collapse; font-family:var(--mono); font-size:12.5px; min-width:640px}
+  thead th{text-align:left; font-size:10px; letter-spacing:.12em; text-transform:uppercase; color:var(--ink2); font-weight:600; padding:12px 14px; background:var(--panel); border-bottom:1px solid var(--line); white-space:nowrap}
+  tbody td{padding:10px 14px; border-bottom:1px solid var(--line); color:var(--ink); vertical-align:top}
+  tbody tr:last-child td{border-bottom:0}
+  td .vt{color:var(--ink2); font-size:11.5px}
+  td b{color:var(--ink)}
+  .wt{font-variant-numeric:tabular-nums; color:var(--accent); font-weight:700}
+  .ax-orth{color:var(--accent)} .ax-price{color:var(--ink2)}
+  .st{font-size:11px; color:var(--ink2)}
+
+  .principles{display:grid; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); gap:16px}
+  .pr{border:1px solid var(--line); border-left:3px solid var(--accent); border-radius:0 12px 12px 0; background:var(--surface); padding:16px 18px}
+  .pr h4{font-family:var(--mono); font-size:14px; margin:0 0 6px; color:var(--ink)}
+  .pr p{margin:0; font-size:13.5px; color:var(--ink2)}
+  .pr p b{color:var(--ink); font-weight:600}
+
+  .layers{display:flex; flex-direction:column; gap:12px}
+  .layer{display:grid; grid-template-columns:138px 1fr auto; align-items:center; gap:16px; border:1px solid var(--line); border-radius:12px; background:var(--surface); padding:14px 16px}
+  .layer .lb{font-family:var(--mono); font-size:10px; letter-spacing:.14em; text-transform:uppercase; color:var(--accent)}
+  .layer .lb b{display:block; color:var(--ink); font-size:14px; letter-spacing:0; margin-top:3px; text-transform:none}
+  .layer .lc{display:flex; flex-wrap:wrap; gap:6px}
+  .layer .lo{font-family:var(--mono); font-size:10.5px; color:var(--ink2); white-space:nowrap; text-align:right; line-height:1.5}
+  @media(max-width:640px){.layer{grid-template-columns:1fr; gap:10px} .layer .lo{text-align:left}}
+
+  /* prose + reference */
+  .prose{max-width:76ch}
+  .prose p{margin:0 0 14px; font-size:15px; color:var(--ink)}
+  .prose p.muted{color:var(--ink2)}
+  .callout{border:1px solid var(--line); border-left:3px solid var(--accent); border-radius:0 12px 12px 0; background:var(--surface); padding:14px 18px; margin:18px 0; font-size:14.5px; color:var(--ink); max-width:80ch}
+  .callout.warn{border-left-color:var(--warn)} .callout.caveat{border-left-color:var(--down)}
+  .callout b{color:var(--ink)}
+  .callout .cl{display:block; font-family:var(--mono); font-size:10px; letter-spacing:.16em; text-transform:uppercase; margin-bottom:6px; color:var(--accent)}
+  .callout.warn .cl{color:var(--warn)} .callout.caveat .cl{color:var(--down)}
+  .steps{list-style:none; counter-reset:s; padding:0; margin:0; display:flex; flex-direction:column; gap:12px; max-width:80ch}
+  .steps li{counter-increment:s; display:grid; grid-template-columns:28px minmax(0,1fr); column-gap:14px; row-gap:2px; align-items:start}
+  .steps li::before{content:counter(s); grid-column:1; grid-row:1; height:26px; width:26px; border-radius:7px; background:var(--surface2); border:1px solid var(--line); color:var(--accent); font-family:var(--mono); font-weight:700; font-size:12px; display:flex; align-items:center; justify-content:center}
+  .steps li b{grid-column:2; grid-row:1; color:var(--ink)} .steps li p{grid-column:2; grid-row:2; margin:3px 0 0; color:var(--ink2); font-size:14px}
+  .steps li code{font-size:.85em}
+  .code{background:var(--surface2); border:1px solid var(--line); border-radius:10px; padding:13px 15px; overflow-x:auto; font-family:var(--mono); font-size:12px; color:var(--ink); line-height:1.65; margin:14px 0; white-space:pre; max-width:100%}
+  .code .c{color:var(--ink2)} .code .k{color:var(--accent)}
+  .defs{display:grid; gap:0; max-width:80ch}
+  .defs .row{display:grid; grid-template-columns:170px 1fr; gap:16px; font-size:14px; padding:11px 0; border-bottom:1px solid var(--line)}
+  .defs b{font-family:var(--mono); font-size:12.5px; color:var(--ink)}
+  .defs .d{color:var(--ink2)}
+  .gauntlet{display:flex; flex-direction:column; gap:3px; font-family:var(--mono); font-size:12.5px; max-width:660px}
+  .gauntlet .g{display:flex; align-items:center; gap:12px; padding:10px 13px; border:1px solid var(--line); border-radius:8px; background:var(--surface)}
+  .gauntlet .g .ck{color:var(--up); font-weight:700; flex:0 0 auto}
+  .gauntlet .g .cond{color:var(--ink)} .gauntlet .g .res{margin-left:auto; color:var(--ink2); white-space:nowrap}
+  .reading{display:grid; grid-template-columns:1fr 1fr; gap:14px; margin:20px 0 6px; max-width:80ch}
+  .rp{border:1px solid var(--line); border-radius:12px; background:var(--surface); padding:14px 16px}
+  .rp .rt{font-family:var(--mono); font-size:11px; letter-spacing:.12em; text-transform:uppercase; color:var(--accent); margin-bottom:6px}
+  .rp p{margin:0; font-size:13.5px; color:var(--ink2)}
+  .rp b{color:var(--ink)}
+  @media(max-width:640px){ .reading{grid-template-columns:1fr} .defs .row{grid-template-columns:1fr; gap:2px} }
+
+  /* screenshot placeholders */
+  .shots{display:grid; grid-template-columns:repeat(auto-fit,minmax(238px,1fr)); gap:14px; margin:6px 0}
+  .shot{border:1.5px dashed color-mix(in srgb,var(--line) 78%,var(--ink)); border-radius:12px; background:var(--surface2); min-height:160px; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:18px 16px; gap:7px; margin:0}
+  .shot svg{color:var(--ink2); opacity:.55; margin-bottom:2px}
+  .shot .sid{font-family:var(--mono); font-size:10px; letter-spacing:.18em; font-weight:700; color:var(--accent)}
+  .shot .stt{font-family:var(--mono); font-size:13px; font-weight:700; color:var(--ink)}
+  .shot .scap{font-size:12px; color:var(--ink2); line-height:1.45; max-width:30ch}
+  .shot .sfile{font-family:var(--mono); font-size:9.5px; color:var(--ink2); opacity:.72; margin-top:3px}
+
+  footer{margin-top:72px; padding-top:22px; border-top:1px solid var(--line); font-family:var(--mono); font-size:11.5px; color:var(--ink2); display:flex; flex-wrap:wrap; gap:6px 18px; justify-content:space-between}
+  footer b{color:var(--ink); font-weight:600}
+
+  @media (prefers-reduced-motion:reduce){ .live .arrow{animation:none} .livedot{animation:none} }
+  @media (max-width:760px){ .two{grid-template-columns:1fr} }
+  @media (max-width:640px){ .wrap{padding:40px 14px 72px} .panel{padding:24px 16px} }
+</style>
+<style>
+  .wrap{max-width:900px}
+  .kicker .navsep{opacity:.45;margin:0 3px}
+  .kicker a.navhome{color:var(--ink2);border-bottom:0;text-decoration:none}
+  .kicker a.navhome:hover{color:var(--accent)}
+  .doc h2{font-family:var(--mono);font-weight:700;font-size:15px;letter-spacing:.2em;text-transform:uppercase;
+    color:var(--ink);margin:64px 0 4px;padding-bottom:12px;border-bottom:1px solid var(--line)}
+  .doc h2 .hn{color:var(--accent);margin-right:12px}
+  .doc h3{margin:34px 0 8px}
+  .doc p{font-size:15.5px;color:var(--ink);margin:0 0 15px;max-width:78ch}
+  .doc a{color:var(--accent);text-decoration:none;border-bottom:1px solid color-mix(in srgb,var(--accent) 40%,transparent)}
+  .doc a:hover{border-bottom-color:var(--accent)}
+  .doc strong{color:var(--ink);font-weight:670}
+  .doc em{color:var(--ink2);font-style:italic}
+  .doc ul,.doc ol{max-width:78ch;padding-left:1.3em;margin:0 0 15px}
+  .doc li{margin:.42em 0;font-size:15px;color:var(--ink)}
+  .doc li::marker{color:var(--accent)}
+  .doc hr{border:0;border-top:1px solid var(--line);margin:8px 0}
+  .doc blockquote{margin:18px 0;padding:14px 18px;border:1px solid var(--line);border-left:3px solid var(--accent);
+    border-radius:0 12px 12px 0;background:var(--surface);color:var(--ink2);max-width:80ch}
+  .doc blockquote p{color:var(--ink2);margin:0}
+  .doc blockquote strong{color:var(--ink)}
+  .doc pre{background:var(--surface2);border:1px solid var(--line);border-radius:10px;padding:14px 16px;
+    overflow-x:auto;font-family:var(--mono);font-size:12px;color:var(--ink);line-height:1.6;margin:16px 0;white-space:pre}
+  .doc pre code{background:none;border:0;padding:0;font-size:1em;color:inherit}
+</style>
+</head><body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><symbol id="helm" viewBox="0 0 512 512"><path fill-rule="nonzero" d="M255.406 17.75C189.313 39.42 124.536 85.124 79.03 150.344c21.238 57.44 32.72 94.314 32.72 131.375 0 36.493-11.52 73.723-32.125 129.655 49.72 36.73 100.08 58.95 150.313 64.938-5.052-60.378-9.83-120.748 1.593-181.125-30.644-3.28-61.384-13.286-92.03-30.72v-71.312c80.67 42.255 158.908 41.547 242.063 0v71.313c-30.06 14.376-60.192 24.722-90.25 29.28 8.684 60.46 7.723 120.915 2.03 181.375 46.386-7.335 92.89-28.824 139.032-64.312-33.966-112.954-34.03-145.933.594-260.47C391.162 84.844 317.924 39.89 255.405 17.75zm-75.125 212c-11.16-.13-19.646 3.174-21.25 9.156-2.33 8.7 10.778 19.76 29.282 24.72 18.505 4.957 35.388 1.92 37.72-6.782 2.33-8.7-10.775-19.76-29.282-24.72-5.783-1.55-11.396-2.315-16.47-2.374zm160.69 0c-5.074.06-10.687.825-16.47 2.375-18.507 4.96-31.613 16.018-29.28 24.72 2.33 8.7 19.213 11.738 37.717 6.78 18.505-4.958 31.613-16.018 29.282-24.72-1.604-5.98-10.09-9.286-21.25-9.155z"/></symbol></svg>
+<svg class="watermark" viewBox="0 0 512 512" aria-hidden="true"><use href="#helm"/></svg>
+<div class="wrap doc">
+<header>
+<p class="kicker"><svg class="brandmark" viewBox="0 0 512 512" aria-hidden="true"><use href="#helm"/></svg><span class="livedot"></span> Sentinel Suite · NinjaTrader 8 · living document<span class="navsep">·</span><a class="navhome" href="SENTINEL_DOCS.html">Docs home →</a></p>
+<h1>Sentinel Dataset Dictionary</h1>
+<p class="lede"><strong>The authoritative reference for the syntax and nomenclature of every Sentinel dataset</strong> — the training corpus the Council learns from. If you are about to read, write, ingest, or fit against a <code>.jsonl</code> under <code>Sentinel\Excursions\</code>, this is the map.</p>
+</header>
+<p>This doc is generated from live source (<code>BarsTypes\SentinelFlux_v1_0_0.cs</code>, <code>AddOns\SentinelCore.SystemBuilder.cs</code> <code>VoterCatalog</code>, <code>Indicators\Council_v1_0_0.cs</code>, and <code>Sentinel\Lab\</code>). When those change, regenerate. Related: <a href="SENTINEL_ML_SPEC.html">ML spec</a> · <a href="SENTINEL_FLUXBARS_SPEC.html">Flux bars spec</a> · <a href="SENTINEL_PROCESS_ATLAS.html">Process Atlas</a>.</p>
+<hr>
+<h2>1 · The naming grammar</h2>
+<p>Everything keys off a <strong>scope</strong>. A scope is <em>one chart's worth of decision context</em> — exactly the coordinate a model is defined over.</p>
+<pre><code>GC  .  212201v12x48  @  STB24FCA
+─┬─    ─────┬──────     ───┬────
+inst      bartag          lane
+└──────── scope ──────────┘        scope = inst . bartag [ @lane ]</code></pre>
+<div class="tblwrap"><table><thead><tr><th>Token</th><th>Example</th><th>Meaning</th></tr></thead><tbody><tr><td><strong>inst</strong></td><td><code>GC</code></td><td>Master instrument (the NT <code>MasterInstrument.Name</code>).</td></tr><tr><td><strong>bartag</strong></td><td><code>212201v12x48</code></td><td>The <em>bar construction</em> = <code>&lt;BarsPeriodTypeId&gt;v&lt;Value&gt;x&lt;Value2&gt;</code>.</td></tr><tr><td><strong>@lane</strong></td><td><code>@STB24FCA</code></td><td>Optional human-named <strong>per-chart lane</strong>. Absent ⇒ bare scope. Sanitized to letters/digits.</td></tr></tbody></table></div>
+<p><strong>Why bartag and not "5-minute":</strong> bar granularity determines label optimism. A Renko-labelled row and a minute-labelled row do not describe the same world, so the Lab <strong>never pools bartypes</strong> — the bartag is a hard partition key, not a cosmetic tag.</p>
+<p>Two IDs stitch a single fire's records together across files:</p>
+<div class="tblwrap"><table><thead><tr><th>Key</th><th>Example</th><th>Grammar</th><th>Role</th></tr></thead><tbody><tr><td><strong>episodeId</strong></td><td><code>GC-20260715-0053</code></td><td><code>inst-yyyyMMdd-####</code></td><td>Join key across corpus row ⇄ tick sidecar ⇄ Ledger.</td></tr><tr><td><strong>fireId</strong></td><td><code>20260715T175912741_GC_L_29</code></td><td>`ts(ms)_inst_&lt;L\</td><td>S&gt;_&lt;sessionSeq&gt;`</td><td>Unique per fire; also the tick-sidecar filename stem. <code>L</code>/<code>S</code> = long/short.</td></tr></tbody></table></div>
+<hr>
+<h2>2 · Bar-type ID registry</h2>
+<p>The <code>212200–212299</code> block is <strong>reserved for the Sentinel bar-type family</strong> (declared in every Sentinel bars header). Those three are the ones that build a real corpus:</p>
+<div class="tblwrap"><table><thead><tr><th>Id</th><th>Tool</th><th><code>vNxM</code> decode</th><th>Notes</th></tr></thead><tbody><tr><td><strong>212201</strong></td><td><strong>SentinelTBars</strong></td><td><code>v(SS/2)x(SS×2)</code> — <code>v6x24</code> = Speed Setting <strong>12</strong></td><td>The adaptive HA/Renko brick engine. Also publishes <code>BrickState</code> → the <code>BRK</code> voter.</td></tr><tr><td><strong>212202</strong></td><td><strong>SentinelTbarsCount</strong></td><td>same speed pair (<code>v6x24</code>)</td><td>Plain brick + ticks-to-next-brick HUD.</td></tr><tr><td><strong>212203</strong></td><td><strong>SentinelFlux</strong></td><td><code>v8</code> = imbalance threshold scale</td><td>Order-flow imbalance bars (López de Prado × TBars). Publishes <code>FluxState</code> → the <code>FLUX</code> voter.</td></tr><tr><td>212204+</td><td><em>(reserved)</em></td><td>—</td><td>Future Sentinel bars.</td></tr></tbody></table></div>
+<p><strong>Other IDs seen in older corpus files</strong> (present for completeness — these are not the Sentinel family and several are frozen/legacy):</p>
+<div class="tblwrap"><table><thead><tr><th>Id</th><th>Tool</th><th>Source</th></tr></thead><tbody><tr><td><code>0</code></td><td>Tick (native NT)</td><td><code>0v150x1</code> = a <strong>150-tick</strong> chart (<code>Value</code>=ticks, <code>Value2</code>=1).</td></tr><tr><td><code>2016</code></td><td>ERP_Type_Bars</td><td><code>BarsTypes\ERP_Type_Bars.cs</code></td></tr><tr><td><code>54321</code></td><td>EdsRetraceBarsV2</td><td><code>BarsTypes\EdsRetraceBarsV2.cs</code></td></tr><tr><td><code>2018</code></td><td>ReversalRenko</td><td><code>BarsTypes\ReversalRenko.cs</code></td></tr><tr><td><code>2085</code></td><td>RenkoATR</td><td><code>BarsTypes\RenkoATRBarsType.cs</code></td></tr><tr><td><code>69696</code> / <code>69697</code></td><td>TBarsElse / TbarsCount (legacy)</td><td>pre-Sentinel TBars lineage</td></tr><tr><td><code>69700–69799</code></td><td>TBarsNext family</td><td>reserved block</td></tr><tr><td><code>212121–212123</code></td><td>TbarsSudo v1/2/3</td><td>frozen checkpoints</td></tr></tbody></table></div>
+<hr>
+<h2>3 · The three dataset families</h2>
+<p>All live under <code>Sentinel\Excursions\</code>. <strong>One writer, one schema per folder</strong> — the Council recorder (<code>SentinelExcursionRecorder_v2_0_0</code>) owns the <code>council\</code> tree; legacy per-sensor recorders default OFF.</p>
+<div class="tblwrap"><table><thead><tr><th>Path</th><th>Family</th><th>Filename grammar</th><th>Written when</th></tr></thead><tbody><tr><td><code>council\1.3\</code></td><td><strong>Labeled corpus</strong> (schema <code>1.3</code>)</td><td><code>&lt;sessionStart&gt;__&lt;inst&gt;__&lt;bartag[@lane]&gt;.jsonl</code></td><td>One row <strong>per fire</strong>, streamed on 60-min window completion (<code>endReason="window"</code>).</td></tr><tr><td><code>council\ticks\</code></td><td><strong>Raw-tick path</strong> (schema <code>ctick.1</code>)</td><td><code>&lt;fireId&gt;.jsonl</code> = `&lt;ts_ms&gt;_&lt;inst&gt;_&lt;L\</td><td>S&gt;_&lt;seq&gt;.jsonl`</td><td>One file <strong>per fire</strong>: a header line + the tick tape from fire to resolution.</td></tr><tr><td><code>Excursions\</code> root</td><td><strong>Legacy per-sensor baselines</strong></td><td><code>&lt;sessionStart&gt;__&lt;inst&gt;__&lt;bartag&gt;.jsonl</code></td><td>CBRK (CompressionBase) first-touch baseline; default off elsewhere.</td></tr></tbody></table></div>
+<p><strong>Filename anatomy</strong> (corpus): <code>20260715T090945__GC__212201v12x48@STB24FCA.jsonl</code></p>
+<ul>
+<li><code>20260715T090945</code> — when the <strong>recorder instance loaded</strong> (session), <code>yyyyMMddThhmmss</code>. <em>Not</em> per-row.</li>
+<li><code>__</code> — double-underscore delimiter.</li>
+<li><code>212201v12x48@STB24FCA</code> — the bartag, carrying <code>@lane</code> when the chart is laned.</li>
+<li><code>.jsonl</code> — <strong>one JSON object per line</strong>.</li>
+</ul>
+<hr>
+<h2>4 · Schema-1.3 corpus row</h2>
+<p>One row = one Council fire and everything that happened to it. Fields group into four blocks.</p>
+<h3>4a · Identity / keying</h3>
+<div class="tblwrap"><table><thead><tr><th>Field</th><th>Example</th><th>Meaning</th></tr></thead><tbody><tr><td><code>schema</code></td><td><code>"1.4"</code></td><td>Row schema version. <strong><code>1.4</code> = <code>1.3</code> + the provenance block (<code>recVer</code>/<code>coreVer</code>/<code>barLabel</code>).</strong> <code>1.4</code> rows live in <code>council\1.4\</code>; the frozen pre-provenance <code>1.3</code> corpus stays in <code>council\1.3\</code>. <strong>Never pool schemas across a fit.</strong></td></tr><tr><td><code>recVer</code> / <code>coreVer</code> / <code>cnclVer</code></td><td><code>"2.1.5"</code> / <code>"1.36.0"</code> / <code>"1.8.0"</code></td><td><strong>PROVENANCE (schema ≥ 1.4).</strong> Which recorder + SentinelCore + <strong>Council</strong> LOGIC wrote the row, so a logic change can't pool old/new rows invisibly. <code>cnclVer</code> is finer than <code>coreVer</code> (it catches a Council-only change that didn't bump Core). <strong>A null/absent <code>coreVer</code> = pre-provenance (old logic); a null <code>cnclVer</code> on a 1.4 row = pre-v2.1.5.</strong></td></tr><tr><td><code>barLabel</code></td><td><code>"SentinelFlux 8"</code></td><td><strong>Human bartag</strong> (schema ≥ 1.4) — the display name of <code>bartype</code>, denormalized for readers. Machine key stays <code>bartype</code>; see §2.</td></tr><tr><td><code>kind</code></td><td><code>"excursion"</code></td><td>Discriminator (ingesters skip non-<code>excursion</code> lines).</td></tr><tr><td><code>signal</code></td><td><code>"COUNCIL"</code></td><td>Which decision source emitted it. The Lab fits only <code>COUNCIL</code> rows.</td></tr><tr><td><code>inst</code> / <code>bartype</code></td><td><code>GC</code> / <code>212201v12x48@STB24FCA</code></td><td>Partition keys (bartype carries <code>@lane</code>). The <strong>machine key</strong> — never changed; render for humans via <code>SentinelCore.FriendlyBartag</code>/<code>FriendlyScope</code> → <code>barLabel</code>.</td></tr><tr><td><code>episodeId</code></td><td><code>GC-20260715-0053</code></td><td>Join key to the Ledger. NB: per-episode, <strong>not</strong> per-fire (a fire↔sidecar 1:1 join uses <code>inst</code>+<code>fireTime</code>+<code>firePx</code>+<code>dir</code>).</td></tr><tr><td><code>fireTime</code> / <code>firePx</code></td><td><code>2026-…T16:25:21Z</code> / <code>4043</code></td><td>Entry timestamp (UTC) + entry price. ⚠ <strong>Realtime-only rule (§9): a <code>fireTime</code> far in the past = a REPLAY leak</strong> — the <code>corpus_probe</code> reports these as <code>stale_dated_rows</code>.</td></tr></tbody></table></div>
+<h3>4b · The decision — what the Council said at fire</h3>
+<div class="tblwrap"><table><thead><tr><th>Field</th><th>Example</th><th>Meaning</th></tr></thead><tbody><tr><td><code>dir</code></td><td><code>-1</code></td><td>Side: <code>+1</code> long, <code>-1</code> short, <code>0</code> flat.</td></tr><tr><td><code>conviction</code></td><td><code>0.5976</code></td><td>Signed-agreement magnitude, <code>0–1</code>. `=</td><td>netScore</td><td>/ denom`.</td></tr><tr><td><code>convBucket</code></td><td><code>"MID"</code></td><td><code>LOW</code> / <code>MID</code> / <code>HIGH</code>.</td></tr><tr><td><code>sizeMult</code></td><td><code>0.5079</code></td><td>Context-damped size multiplier, <code>0–1</code>. <code>0</code> = vetoed / below floor.</td></tr><tr><td><code>voters</code> / <code>agree</code> / <code>disagree</code></td><td><code>10</code> / <code>4</code> / <code>2</code></td><td>Roster tally.</td></tr><tr><td><code>netScore</code></td><td><code>-2.45</code></td><td><code>Σ(voteᵢ × wᵢ)</code> — the raw fusion score.</td></tr><tr><td><code>activeW</code></td><td><code>4.65</code></td><td>The kind-aware denominator conviction was divided by.</td></tr><tr><td><code>votes{}</code></td><td><code>{EYE:0, TRND:-1, …}</code></td><td><strong>Per-voter direction</strong> <code>-1/0/+1</code>. The Phase-2 feature vector.</td></tr><tr><td><code>voteW{}</code></td><td><code>{EYE:1.4, CCI:1.2, …}</code></td><td><strong>Per-voter weight</strong> at fire (Roster.conf / F6 override of the catalog default).</td></tr><tr><td><code>reasons</code></td><td><code>EYE~ TRND▼ … denom 4.1/7.8</code></td><td>Human audit string (see §6).</td></tr></tbody></table></div>
+<h3>4c · Context modulators at fire</h3>
+<div class="tblwrap"><table><thead><tr><th>Field</th><th>Meaning</th></tr></thead><tbody><tr><td><code>regime</code> / <code>adx</code></td><td>Trend-vs-chop label + ADX value.</td></tr><tr><td><code>clockPhase</code></td><td><code>0</code> closed · <code>1</code> opendrive · <code>2</code> midday · <code>3</code> close.</td></tr><tr><td><code>rvol</code></td><td>Time-normalized relative volume.</td></tr><tr><td><code>mtfBias</code></td><td>Higher-timeframe ladder consensus <code>-1/0/+1</code>.</td></tr><tr><td><code>levelInPath</code> / <code>levelName</code></td><td>A structural level sits in the trade's path (headwind).</td></tr><tr><td><code>eyeHad</code> / <code>eyeScore</code> / <code>eyeDir</code> / <code>eyeAligned</code></td><td>Eye-specific legacy fields (may be null).</td></tr></tbody></table></div>
+<h3>4d · The OUTCOME / label — what happened after (all excursions in <strong>ticks</strong>)</h3>
+<div class="tblwrap"><table><thead><tr><th>Field</th><th>Meaning</th></tr></thead><tbody><tr><td><code>maxMFE</code> / <code>maxMAE</code></td><td>Max favorable / adverse excursion over the window.</td></tr><tr><td><code>barsToMFE</code> / <code>barsToMAE</code> · <code>msToMFE</code> / <code>msToMAE</code></td><td>When those maxima occurred.</td></tr><tr><td><code>mfe1 mae1 … mfe60 mae60</code></td><td>MFE/MAE at the <strong>1 / 5 / 15 / 60-min</strong> milestones.</td></tr><tr><td><code>barrierTicks</code></td><td>The ATR-scaled ±1R barrier used for first-touch.</td></tr><tr><td><code>barsToTargetR</code> / <code>barsToStopR</code></td><td>Bars to touch <code>+1R</code> / <code>-1R</code> (<code>-1</code> = never).</td></tr><tr><td><strong><code>firstTouch</code></strong></td><td><strong>THE label</strong>: <code>+1</code> target hit first · <code>-1</code> stop first · <code>0</code> neither by window end.</td></tr><tr><td><code>ftAmbig</code></td><td>Both barriers touched the <strong>same bar</strong> (ambiguous — resolved pessimistically to loss).</td></tr><tr><td><code>endReason</code> / <code>endTime</code></td><td><code>"window"</code> = clean 60-min completion.</td></tr></tbody></table></div>
+<hr>
+<h2>5 · Tick sidecar (<code>ctick.2</code>)</h2>
+<p>A two-part file, one per fire. <strong>Line 1 = header</strong> (join keys + tick-resolution outcome), <strong>lines 2…N = the path</strong>. (<code>ctick.2</code> = <code>ctick.1</code> + the <code>recVer</code>/<code>coreVer</code>/<code>barLabel</code> provenance block, matching the row schema-1.4 bump; <code>ctick.1</code> sidecars stay valid and load unchanged.)</p>
+<p>Header fields of note: <strong><code>recVer</code>/<code>coreVer</code>/<code>barLabel</code></strong> (provenance, ctick.2) · <code>fireId</code> · <code>episodeId</code> · <code>scope</code> · <code>firePx</code> · <code>conviction</code>/<code>sizeMult</code> · <code>barrierTicks</code> · <code>maxFavTicks</code>/<code>maxAdvTicks</code> · <code>msToMaxFav</code>/<code>msToMaxAdv</code> · <code>msToTargetR</code>/<code>msToStopR</code> · <strong><code>firstTouchTick</code></strong> / <code>ftAmbigTick</code> · <code>ticks</code> (count) · <code>trunc</code> (buffer overflowed).</p>
+<p>Path rows: <code>{"ms": &lt;ms since fireTime&gt;, "px": &lt;last-trade price&gt;}</code>.</p>
+<blockquote><p>The row's <code>firstTouch</code> (bar resolution) and the sidecar's <code>firstTouchTick</code> (tick resolution) are the <strong>same label at two fidelities</strong>. The Lab prefers <code>firstTouch</code>; the tick path is for grading fill quality and <code>msToFirstTouch</code>.</p></blockquote>
+<hr>
+<h2>6 · Decoding the <code>reasons</code> audit string</h2>
+<p>Built in <code>Council_v1_0_0.BuildReasons()</code>. Example:</p>
+<pre><code>EYE~ TRND▼ CCI▼ ADX▼ ENV▼ BRK▲ CMP~ IMKT▲ WAE~ GREV~ STF▼* · clk:Midday · vol×1.3 · roster 10/10 ?STF · denom 4.1/7.8</code></pre>
+<div class="tblwrap"><table><thead><tr><th>Token</th><th>Meaning</th></tr></thead><tbody><tr><td><code>TAG▲</code> / <code>TAG▼</code> / <code>TAG~</code></td><td>Voter direction: bullish (<code>Dir&gt;0</code>) / bearish (<code>Dir&lt;0</code>) / neutral (<code>Dir=0</code>).</td></tr><tr><td><code>TAG*</code></td><td><strong>Heard but NOT counted</strong> — <code>w=0</code> explorer, or undeclared (drift).</td></tr><tr><td><code>· clk:&lt;phase&gt;</code></td><td>Clock phase (Closed/OpenDrive/Midday/Close).</td></tr><tr><td><code>· vol×N</code></td><td>RVOL size multiplier.</td></tr><tr><td><code>· vs-MTF</code></td><td>Higher-timeframe ladder disagrees with the side.</td></tr><tr><td><code>· into &lt;level&gt;</code></td><td>A structural level is in the path.</td></tr><tr><td><code>· chop N</code></td><td>STF chop reading triggered the chop veto.</td></tr><tr><td><code>· in-value</code> · <code>· hi-vol</code></td><td>In value-area · high-volatility regime.</td></tr><tr><td><code>· +flowDiv</code> / <code>-flowDiv</code> · <code>· flux:absorb</code> / <code>· flux▲/▼</code></td><td>Flow-divergence / Flux absorption or flow direction.</td></tr><tr><td><code>· roster P/D</code></td><td><strong>P</strong>resent of <strong>D</strong>eclared voters.</td></tr><tr><td><code>⚠TAG,…</code></td><td>Declared but <strong>MISSING</strong> (crashed/stale/not loaded).</td></tr><tr><td><code>?TAG,…</code></td><td>Present but <strong>UNEXPECTED</strong> (loaded, not in <code>Roster.conf</code> → excluded from fusion).</td></tr><tr><td><code>· denom X/Y</code></td><td>Effective <strong>kind-aware</strong> denominator <code>X</code> vs static declared weight <code>Y</code>. `conviction =</td><td>netScore</td><td>/X`.</td></tr></tbody></table></div>
+<hr>
+<h2>7 · The voter catalog</h2>
+<p>The source of truth is <code>SentinelCore.SystemBuilder.VoterCatalog</code>, which the Council <strong>emits on load</strong> to the shared file <strong><code>Sentinel\Models\catalog.conf</code></strong> (<code>tag|role|kind|defWeight|display|seam</code>, one line each). The Python Lab reads that file, so both sides build the fit's feature columns from the <em>same</em> map — no more hardcoded voter list drifting behind the Council. <strong>Weights below are catalog DEFAULTS</strong> — a scope's <code>Roster.conf</code> (and the Council's F6) override them (e.g. live <code>GC</code> runs <code>CCI</code> at <code>1.2</code>, not <code>0.8</code>), and the Lab's fit baseline uses the <strong>recorded <code>voteW{}</code></strong> per scope, not these defaults. <code>KIND</code> sets how a voter counts toward the conviction denominator: <strong>STATE</strong> always dilutes; <strong>TRIGGER</strong> dilutes only when it fired or is absent (a quiet trigger is <em>absence of evidence</em>, not evidence against).</p>
+<h3>7a · Weighted voters (the <code>Roster.conf</code> surface)</h3>
+<div class="tblwrap"><table><thead><tr><th>Tag</th><th>Display</th><th>Kind</th><th>Def w</th><th>Seam</th><th>Note</th></tr></thead><tbody><tr><td><code>EYE</code></td><td>Eye</td><td>Trigger</td><td>1.4</td><td><code>EyeVerdict</code></td><td>GodTrades qualifier — strongest single voice.</td></tr><tr><td><code>TRND</code></td><td>SentinelTrend</td><td>State</td><td>1.0</td><td><code>TrendState</code></td><td>Structural trailing-line trend.</td></tr><tr><td><code>CCI</code></td><td>Woodies CCI</td><td>State</td><td>0.8</td><td><code>CciState</code></td><td>Woodies CCI bias (×1.5 strong).</td></tr><tr><td><code>ADX</code></td><td>ADX Pro</td><td>State</td><td>0.6</td><td><code>AdxState</code></td><td>Regime/strength confirmer.</td></tr><tr><td><code>ENV</code></td><td>Vol Envelope</td><td>State</td><td>0.6</td><td><code>EnvelopeState</code></td><td>Trend regime + drives the squeeze modulator.</td></tr><tr><td><code>BRK</code></td><td>Brick</td><td>State</td><td>0.5</td><td><code>BrickState</code></td><td>Adaptive brick micro-trend (from the SentinelTBars <strong>bar type</strong>).</td></tr><tr><td><code>CMP</code></td><td>Compression</td><td>Trigger</td><td>0.7</td><td><code>CompressionState</code></td><td>Held breakout off a compression base.</td></tr><tr><td><code>IMKT</code></td><td>Intermarket</td><td>State</td><td>0.6</td><td><code>IntermarketState</code></td><td>Correlated-instrument lean (instrument-keyed).</td></tr><tr><td><code>WAE</code></td><td>WAE</td><td>Trigger</td><td>0.7</td><td><code>WaeState</code></td><td>Waddah-Attar momentum-explosion breakout.</td></tr><tr><td><code>GREV</code></td><td>God Reversal</td><td>Trigger</td><td>0.9</td><td><code>GodReversalState</code></td><td>Candle-grammar reversal (mean-reversion voice).</td></tr><tr><td><code>STF</code></td><td>Stoch Filter</td><td>State</td><td>0.0</td><td><code>StfState</code></td><td>Gaussian midline slope. <code>w=0</code> = exploration; drives the chop veto.</td></tr><tr><td><code>FLOW</code></td><td>Flow</td><td>State</td><td>0.9</td><td><code>FlowState</code></td><td>Tick-rule CVD regime — not price-derived.</td></tr><tr><td><code>STRC</code></td><td>Structure</td><td>State</td><td>0.7</td><td><code>StructureState</code></td><td>Swing HH/HL·LH/LL structure.</td></tr><tr><td><code>EXH</code></td><td>Exhaustion</td><td>Trigger</td><td>0.5</td><td><code>ExhaustionState</code></td><td>Leledc reversal (mean-reversion).</td></tr><tr><td><code>AVMA</code></td><td>ADXVMA</td><td>State</td><td>0.6</td><td><code>AdxvmaState</code></td><td>ADX-vol adaptive-MA trinary trend.</td></tr><tr><td><code>SPRT</code></td><td>SuperTrend</td><td>State</td><td>0.7</td><td><code>SuperTrendState</code></td><td>ATR-band trailing flip (always ±1).</td></tr><tr><td><code>PSAR</code></td><td>Parabolic SAR</td><td>State</td><td>0.5</td><td><code>SarState</code></td><td>Wilder SAR trend/stop (always ±1).</td></tr><tr><td><code>ZSC</code></td><td>Z-Score</td><td>Trigger</td><td>0.4</td><td><code>ZScoreState</code></td><td><code>(Close−SMA)/σ</code> fade voice.</td></tr><tr><td><code>ARCH</code></td><td>Trend Architect</td><td>State</td><td>0.7</td><td><code>TrendArchitectState</code></td><td>Composite PRISM trend + regime gate.</td></tr><tr><td><code>VDYA</code></td><td>VIDYA</td><td>State</td><td>0.5</td><td><code>VidyaState</code></td><td>Chande-CMO adaptive-MA trend.</td></tr><tr><td><code>HARM</code></td><td>Harmonic</td><td>Trigger</td><td>0.4</td><td><code>HarmonicState</code></td><td>XABCD pattern completions (reversal).</td></tr><tr><td><code>FLUX</code></td><td>Flux</td><td>State</td><td>0.7</td><td><code>FluxState</code></td><td>Net order-flow direction of the imbalance bar (from the SentinelFlux <strong>bar type</strong>).</td></tr></tbody></table></div>
+<h3>7b · Context axes (consulted, NOT in <code>Roster.conf</code> — toggled via the Council's <code>Consult*</code> settings)</h3>
+<div class="tblwrap"><table><thead><tr><th>Tag</th><th>Display</th><th>Role</th><th>Seam</th><th>Note</th></tr></thead><tbody><tr><td><code>CLOCK</code></td><td>Clock</td><td>Modulator</td><td><code>ClockState</code></td><td>Session phase / mins-to-close (instrument-keyed).</td></tr><tr><td><code>PARTIC</code></td><td>Participation</td><td>Modulator</td><td><code>ParticipationState</code></td><td>RVOL + climax/dry-up (<strong>scope-keyed — load on every Council chart</strong>).</td></tr><tr><td><code>MTF</code></td><td>MTF</td><td>Modulator</td><td><code>MtfState</code></td><td>HTF consensus ladder (counter-HTF penalty).</td></tr><tr><td><code>LOC</code></td><td>Location</td><td>Veto</td><td><code>LevelState</code></td><td>VWAP/PDH-PDL/OR/IB levels in the path.</td></tr><tr><td><code>LIQ</code></td><td>Liquidity</td><td>Veto</td><td><code>LiquidityState</code></td><td>Order-flow absorption walls.</td></tr></tbody></table></div>
+<hr>
+<h2>8 · How <code>train.py</code> consumes it</h2>
+<p><code>Sentinel\Lab\train.py</code> — the offline fitter. Nothing here touches <code>bin\Custom</code>; it reads the corpus and emits <code>Sentinel\Model.candidate.conf</code> (gated to <code>Model.conf</code> only with <code>--promote</code>).</p>
+<pre><code>python train.py --inst GC --bartype 212201v6x24 --barrier 20 --cost 1.5</code></pre>
+<p><strong>Pipeline</strong> (<code>dataset.py</code> → <code>labels.py</code> → <code>train.py</code>):</p>
+<ol>
+<li><strong>Load</strong> — <code>load_jsonl(council\&lt;schema&gt;\)</code> reads every row where <code>kind=="excursion"</code>, then <strong>filters by <code>inst</code> + <code>bartype</code></strong>. <em>Never pools bartypes</em> (§1). <code>council_rows</code> keeps <code>signal=="COUNCIL"</code>.</li>
+<li><strong>Label</strong> — <code>make_labels</code>: prefers <strong><code>firstTouch</code></strong> (<code>+1→WIN</code>, <code>-1→LOSS</code>, <code>0→CENSORED</code>); for old 1.2 rows falls back to the pessimistic <code>mfeN/maeN</code> milestone. Censored rows are dropped from the fit.</li>
+<li><strong>Uniqueness weight</strong> — <code>uniqueness_weights</code> (AFML ch. 4): two fires 90 s apart share most of their forward window and are <strong>not</strong> independent. <code>effective_n = Σ(avg uniqueness)</code> is the N you may quote.</li>
+<li><strong>Fold by direction</strong> — the model feature is <code>x_i = voteᵢ × dir</code>: "did the voter agree with the <em>taken</em> side." Halves the feature space and makes a fitted coefficient directly comparable to <code>WeightEye</code> — it drops straight into <code>Model.conf</code>.</li>
+<li><strong>Phase 1 — calibration</strong> (needs only <code>conviction</code>, so schema 1.2 is enough): Platt-scale <code>conviction → P(win)</code> under <strong>purged walk-forward CV</strong>; <code>expectancy_floor</code> = the lowest conviction whose <em>calibrated</em> win-prob clears breakeven after cost → <strong>the learned <code>ConvictionFloor</code></strong> (replaces the hand-set <code>0.20</code>). <code>nan</code> = "no conviction level pays" — a real answer.</li>
+<li><strong>Phase 2 — weights</strong> (needs ≥150 rows carrying the <code>votes{}</code> vector): the voter set is <strong>data-driven per fit</strong> — <code>active_voter_tags</code> admits the catalog voters this bartype actually records above a support threshold (<code>max(30, 5% of vector rows)</code>) with ≥1 non-neutral vote, in catalog order. Rosters range 2→18 voters across bartypes, so a fixed list would drop real voters (e.g. STF) or fit all-zero columns; under-supported and undeclared tags are reported, not silently dropped. Then ridge-logistic on the folded features + orthogonal axes (<code>clockPhase</code>, <code>log_rvol</code>, <code>mtfBias×dir</code>, <code>levelInPath</code>, <code>activeW</code>, <code>voters</code>); grid over <code>C</code>; OOF AUC vs the <strong>recorded-<code>voteW</code> baseline</strong>. Fitted <code>w.TAG</code> values rescaled to the current weight total (conviction is scale-invariant) → the learned weights.</li>
+<li><strong>Emit + gate</strong> — writes <code>status=ok|reject</code> (<code>reject</code> if no profitable floor, or the fit didn't beat the hand weights). <code>--promote</code> <strong>refuses</strong> to overwrite the live <code>Model.conf</code> on <code>reject</code>.</li>
+</ol>
+<h3>Which fields feed which stage</h3>
+<div class="tblwrap"><table><thead><tr><th>Field(s)</th><th>Consumed by</th></tr></thead><tbody><tr><td><code>inst</code>, <code>bartype</code></td><td>Partition (never pooled).</td></tr><tr><td><code>firstTouch</code> / <code>mfeN</code>,<code>maeN</code>,<code>barrierTicks</code></td><td>Label (<code>y</code>).</td></tr><tr><td><code>fireTime</code> + resolution time</td><td>Uniqueness weight / purged CV windows.</td></tr><tr><td><code>conviction</code> (or recomputed <code>netScore/activeW</code>)</td><td>Phase 1 calibration + the floor.</td></tr><tr><td><code>votes{}</code>, <code>dir</code></td><td>Phase 2 folded feature vector.</td></tr><tr><td><code>clockPhase</code>, <code>rvol</code>, <code>mtfBias</code>, <code>levelInPath</code>, <code>activeW</code>, <code>voters</code></td><td>Phase 2 orthogonal-axis features.</td></tr><tr><td><code>votes{}</code> keys</td><td>Data-driven voter set (which <code>w.TAG</code> columns the fit builds).</td></tr><tr><td><code>voteW{}</code></td><td>Per-scope baseline weight (median) + compared against the fitted <code>w.TAG</code>.</td></tr></tbody></table></div>
+<hr>
+<h2>9 · Quick rules</h2>
+<ul>
+<li><strong>Never round-trip a <code>.jsonl</code> through PowerShell <code>Get-Content</code>/<code>Set-Content</code></strong> — it double-encodes UTF-8 (<code>▼</code>→<code>â–¼</code>). The files are clean UTF-8; the mangling is a display artifact of the cp1252 console.</li>
+<li><strong>Never pool bartypes or schemas</strong> in a fit — different bar construction = different label optimism.</li>
+<li><strong>Never pool <code>coreVer</code>s</strong> (schema ≥ 1.4) — a different SentinelCore/recorder version = potentially different fusion logic. A null <code>coreVer</code> = pre-provenance <code>1.3</code>; treat it as its own (older, unknown-logic) cohort.</li>
+<li><strong>One writer per corpus folder.</strong> The Council recorder owns <code>council\</code>; legacy recorders stay OFF.</li>
+<li>A <code>.jsonl</code> row is only trustworthy when written in <code>State.Realtime</code> — replayed (historical) verdicts carry lookahead. ⚠ <strong>This is NOT self-enforcing:</strong> the schema has no realtime flag, so a replay leak (a <code>fireTime</code> far in the past) sits in the corpus looking identical to a live row. <strong>Verify with <code>Lab\health\corpus_probe.py</code></strong> (<code>stale_dated_rows</code>), and window-scope the fit by <code>fireTime</code> — do not assume the folder is clean.</li>
+</ul>
+<h2>9a · Proving the corpus is trustworthy — <code>corpus_probe.py</code></h2>
+<p><code>Lab\health\corpus_probe.py</code> (read-only, mirrors <code>probe.py</code>) is the "prove the recording" surface — it never opens the corpus at record time, so nothing else validates it. Run <code>python corpus_probe.py</code> (or <code>--loop 300</code>). It writes <code>corpus_integrity</code> / <code>corpus_folder</code> / <code>corpus_events</code> to <code>sentinel.db</code> (Grafana-readable) with: <strong>reconciliation</strong> (Ledger fires ↔ excursion rows ↔ tick sidecars, joined on <code>inst+fireTime+firePx+dir</code>; a <code>recon_gap</code>, not pass/fail) · <strong>schema hygiene</strong> (mixed-schema / unexpected-for-folder, <code>rows_13</code> vs <code>rows_14</code>) · <strong>provenance coverage</strong> (<code>prov_coverage_pct</code> + distinct <code>coreVer</code>s — a silent logic change shows as two versions in the pool) · <strong>silent-loss</strong> (<code>trunc</code> sidecars, malformed lines) · <strong><code>stale_dated_rows</code></strong> (the realtime-leak detector). First live run (2026-07-16) flagged <strong>~7,671 stale-dated rows (~83% of the 1.3 corpus, oldest <code>fireTime</code> 2025-12-09)</strong> — a replay/backfill leak that had been invisible.</p>
+<h2>9b · The DB warehouse (<code>sentinel.db</code>) columns</h2>
+<p><code>ingest.py</code> reads BOTH <code>council\1.3\</code> and <code>council\1.4\</code> (+ <code>ctick.1</code>/<code>ctick.2</code> sidecars). The <code>trades</code> table carries provenance (<code>rec_ver</code>, <code>core_ver</code>, <code>bar_label</code>, <code>scope</code>) + the context that used to be dropped (<code>regime</code>, <code>adx</code>, <code>conv_bucket</code>, <code>agree</code>, <code>disagree</code>, <code>voters</code>, <code>end_reason</code>, and the milestone curves + <code>barsTo*</code> folded into one <code>milestones_json</code> blob). Indexed on <code>(inst,bartype)</code>, <code>episode_id</code>, <code>src</code>, <code>schema</code>, <code>bartype</code>, <code>entry_utc</code>. The ingester now prints a <strong>drop tally by reason</strong> (silent loss made visible; a <code>row_no_votes</code> count = legacy pre-instrumentation rows). <code>train.py</code> reads the JSONL directly (<code>--schema 1.4</code>), not the DB — the DB is the derived warehouse (see <code>SENTINEL_DB_MIGRATION_SPEC</code>).</p>
+<footer><span>Sentinel Suite · <b>Sentinel Dataset Dictionary</b></span><span>living document · rendered from Markdown</span></footer>
+</div></body></html>

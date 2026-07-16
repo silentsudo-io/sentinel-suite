@@ -1,0 +1,22 @@
+<ResourceDictionary xmlns		="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+					xmlns:x		="http://schemas.microsoft.com/winfx/2006/xaml"
+					xmlns:po	="http://schemas.microsoft.com/winfx/2006/xaml/presentation/options">
+	<LinearGradientBrush	po:Freeze="true"	 x:Key="OrderTicket.ButtonBackground" StartPoint="0.5,-0.05"	EndPoint="0.5,0.66" >
+		<LinearGradientBrush.GradientStops>
+			<GradientStop Color="#E4EAF2"/>
+			<GradientStop Color="#E4EAF2" Offset="1"/>
+		</LinearGradientBrush.GradientStops>
+	</LinearGradientBrush>
+	<LinearGradientBrush 	po:Freeze="true"	x:Key="OrderTicket.BuyButtonsBackground" StartPoint="0.5,-0.05"	EndPoint="0.5,0.66" ><!-- Sentinel up (deep) -->
+		<LinearGradientBrush.GradientStops>
+			<GradientStop Color="#1C8F63"/>
+			<GradientStop Color="#125C41" Offset="1"/>
+		</LinearGradientBrush.GradientStops>
+	</LinearGradientBrush>
+	<LinearGradientBrush 	po:Freeze="true"	x:Key="OrderTicket.SellButtonsBackground" StartPoint="0.5,-0.05"	EndPoint="0.5,0.66" ><!-- Sentinel down (deep) -->
+		<LinearGradientBrush.GradientStops>
+			<GradientStop Color="#B84550"/>
+			<GradientStop Color="#7E2C34" Offset="1"/>
+		</LinearGradientBrush.GradientStops>
+	</LinearGradientBrush>
+</ResourceDictionary>

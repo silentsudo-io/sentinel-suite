@@ -1,0 +1,127 @@
+<ResourceDictionary xmlns		="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+					xmlns:x		="http://schemas.microsoft.com/winfx/2006/xaml"
+					xmlns:po	="http://schemas.microsoft.com/winfx/2006/xaml/presentation/options"
+					xmlns:system="clr-namespace:System;assembly=mscorlib">
+	<!-- Button Colors -->
+	<LinearGradientBrush	po:Freeze="true"	 x:Key="SuperDom.ButtonBackground" StartPoint="0.5,-0.05"	EndPoint="0.5,0.66" >
+		<LinearGradientBrush.GradientStops>
+			<GradientStop Color="#17130D"/>
+			<GradientStop Color="#17130D" Offset="1"/>
+		</LinearGradientBrush.GradientStops>
+	</LinearGradientBrush>
+	<LinearGradientBrush	po:Freeze="true"	 x:Key="SuperDom.ActionButtonsBackground" StartPoint="0.5,-0.05"	EndPoint="0.5,0.66" >
+		<LinearGradientBrush.GradientStops>
+			<GradientStop Color="#17130D"/>
+			<GradientStop Color="#17130D" Offset="1"/>
+		</LinearGradientBrush.GradientStops>
+	</LinearGradientBrush>
+	<LinearGradientBrush 	po:Freeze="true"	x:Key="SuperDom.BuyButtonsBackground" StartPoint="0.5,-0.05"	EndPoint="0.5,0.66" ><!-- Sentinel up (deep) -->
+		<LinearGradientBrush.GradientStops>
+			<GradientStop Color="#1C8F63"/>
+			<GradientStop Color="#125C41" Offset="1"/>
+		</LinearGradientBrush.GradientStops>
+	</LinearGradientBrush>
+	<LinearGradientBrush 	po:Freeze="true"	x:Key="SuperDom.SellButtonsBackground" StartPoint="0.5,-0.05"	EndPoint="0.5,0.66" ><!-- Sentinel down (deep) -->
+		<LinearGradientBrush.GradientStops>
+			<GradientStop Color="#B84550"/>
+			<GradientStop Color="#7E2C34" Offset="1"/>
+		</LinearGradientBrush.GradientStops>
+	</LinearGradientBrush>
+	<!-- Qty/Offset Modifier Colors -->
+	<GradientStopCollection po:Freeze="true"	x:Key="ModifierFlagBackgroundStops">
+		<GradientStop Color="#FFFFFFFF" Offset="0"/>
+		<GradientStop Color="#FFBDBDBD" Offset="0.66"/>
+	</GradientStopCollection>
+
+	<LinearGradientBrush	po:Freeze="true"
+							x:Key="ModifierFlagBackgroundBrush"
+							StartPoint="0.5,0"
+							EndPoint="0.5,1"
+							GradientStops="{StaticResource ModifierFlagBackgroundStops}" />
+	<SolidColorBrush		x:Key="ModifierFlagForeground"
+							Color="Black"
+							po:Freeze="true" />
+
+	<Color x:Key="colorOrderStateTriggerPending">	Yellow		</Color>
+	<Color x:Key="colorOrderTypeLimit">				Cyan		</Color>
+	<Color x:Key="colorOrderTypeMarketIfTouched">	SpringGreen	</Color>
+	<Color x:Key="colorOrderTypeStopLimit">			Violet		</Color>
+	<Color x:Key="colorOrderTypeStopMarket">		Pink		</Color>
+	<Color x:Key="colorProfitTarget">				Lime		</Color>
+	<Color x:Key="colorStopLoss">					Red			</Color>
+
+	<Color x:Key="colorOrderDropShadow">White</Color>
+	
+	<!-- Custom volume column brushes -->
+	<SolidColorBrush po:Freeze="true"
+					 x:Key="brushVolumeColumnBackground"
+					 Color="#5599DD" />
+
+	<SolidColorBrush po:Freeze="true"
+					 x:Key="immutableBrushVolumeColumnBackground"
+					 Color="#5599DD" />
+
+	<SolidColorBrush po:Freeze="true"
+					 x:Key="brushVolumeColumnForeground"
+					 Color="#FFCCCCCC" />
+
+	<SolidColorBrush po:Freeze="true"
+					 x:Key="immutableBrushVolumeColumnForeground"
+					 Color="#FFCCCCCC" />
+
+	<!-- Price Ladder Colors -->
+	<SolidColorBrush po:Freeze="true" x:Key="brushAskPriceForeground"			Color="LimeGreen" />
+	<SolidColorBrush po:Freeze="true" x:Key="brushBidPriceForeground"			Color="Blue" />
+	<SolidColorBrush po:Freeze="true" x:Key="brushBuyColumnBackground"			Color="#FF231D14" />
+	<SolidColorBrush po:Freeze="true" x:Key="brushBuyColumnForeground"			Color="#FFCCCCCC" />
+	<SolidColorBrush po:Freeze="true" x:Key="brushDailyHighPriceBackground"		Color="ForestGreen" />
+	<SolidColorBrush po:Freeze="true" x:Key="brushDailyLowPriceBackground"		Color="SteelBlue" />
+	<SolidColorBrush po:Freeze="true" x:Key="brushEntryPriceBackground"			Color="Sienna" />
+	<SolidColorBrush po:Freeze="true" x:Key="brushHighlightBackground"			Color="#FF0b76c4" />
+	<SolidColorBrush po:Freeze="true" x:Key="brushLastTradeBackground"			Color="Yellow" />
+	<SolidColorBrush po:Freeze="true" x:Key="brushPriceColumnBackground"		Color="#FF1e1e1e" />
+	<SolidColorBrush po:Freeze="true" x:Key="brushPriceColumnForeground"		Color="#FFCCCCCC" />
+	<SolidColorBrush po:Freeze="true" x:Key="brushSellColumnBackground"			Color="#FF231D14" />
+	<SolidColorBrush po:Freeze="true" x:Key="brushSellColumnForeground"			Color="#FFCCCCCC" />
+
+	<SolidColorBrush po:Freeze="true" x:Key="immutableBrushAskPriceForeground"		Color="LimeGreen" />
+	<SolidColorBrush po:Freeze="true" x:Key="immutableBrushBidPriceForeground"		Color="Blue" />
+	<SolidColorBrush po:Freeze="true" x:Key="immutableBrushBuyColumnBackground"		Color="#FF231D14" />
+	<SolidColorBrush po:Freeze="true" x:Key="immutableBrushBuyColumnForeground"		Color="#FFCCCCCC" />
+	<SolidColorBrush po:Freeze="true" x:Key="immutableBrushDailyHighPriceBackground"	Color="ForestGreen" />
+	<SolidColorBrush po:Freeze="true" x:Key="immutableBrushDailyLowPriceBackground"	Color="SteelBlue" />
+	<SolidColorBrush po:Freeze="true" x:Key="immutableBrushEntryPriceBackground"	Color="Sienna" />
+	<SolidColorBrush po:Freeze="true" x:Key="immutableBrushHighlightBackground"		Color="#FF0b76c4" />
+	<SolidColorBrush po:Freeze="true" x:Key="immutableBrushLastTradeBackground"		Color="Yellow" />
+	<SolidColorBrush po:Freeze="true" x:Key="immutableBrushPriceColumnBackground"	Color="#FF1e1e1e" />
+	<SolidColorBrush po:Freeze="true" x:Key="immutableBrushPriceColumnForeground"	Color="#FFCCCCCC" />
+	<SolidColorBrush po:Freeze="true" x:Key="immutableBrushSellColumnBackground"	Color="#FF231D14" />
+	<SolidColorBrush po:Freeze="true" x:Key="immutableBrushSellColumnForeground"	Color="#FFCCCCCC" />
+
+	<SolidColorBrush po:Freeze="true"  x:Key="brushAskPriceAlternateForeground"				Color="Blue" />
+	<SolidColorBrush po:Freeze="true"  x:Key="brushBidPriceAlternateForeground"				Color="Red" />
+
+	<SolidColorBrush po:Freeze="true"  x:Key="immutableBrushAskPriceAlternateForeground"	Color="Blue" />
+	<SolidColorBrush po:Freeze="true"  x:Key="immutableBrushBidPriceAlternateForeground"	Color="Red" />
+
+	<!-- Auto Hold Outline Color -->
+	<Color po:Freeze="true" x:Key="brushHoldOutline">#4488CC</Color>
+	<system:Double x:Key="holdDropShadowRadius">15</system:Double>
+	<system:Double x:Key="holdDropShadowOpacity">1</system:Double>
+
+	<!-- Order Flag Colors -->
+	<LinearGradientBrush x:Key="TriggerPendingOrderStateFillBrush" StartPoint="0.5, -0.1" EndPoint="0.5, 0.5"  po:Freeze="true">
+		<LinearGradientBrush.GradientStops>
+			<GradientStop Color="#FFFFFF00" Offset="0.0" />
+			<GradientStop Color="#FFFFFFBF" Offset="0.99" />
+			<GradientStop Color="#FFFFFF00" Offset="1.0" />
+		</LinearGradientBrush.GradientStops>
+	</LinearGradientBrush>
+	<LinearGradientBrush x:Key="PendingOrderStateFillBrush" StartPoint="0.5, -0.1" EndPoint="0.5, 0.5"  po:Freeze="true">
+		<LinearGradientBrush.GradientStops>
+			<GradientStop Color="#FFFFA500" Offset="0.0" />
+			<GradientStop Color="#FFFFE9BF" Offset="0.99" />
+			<GradientStop Color="#FFFFA500" Offset="1.0" />
+		</LinearGradientBrush.GradientStops>
+	</LinearGradientBrush>
+</ResourceDictionary>

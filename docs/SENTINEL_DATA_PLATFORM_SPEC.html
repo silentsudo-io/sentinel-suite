@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sentinel · Sentinel Data Platform — Spec &amp; Stand-Up Workflow</title>
+<style>
+  :root{
+    --void:#e7edf1; --panel:#f3f7f9; --surface:#ffffff; --surface2:#eaf0f3;
+    --ink:#16222c; --ink2:#586873; --line:#cdd8de; --grid:#dde5ea;
+    --accent:#0b8ea1; --flow:#0d8fa2;
+    --up:#12a56f; --down:#e0424f; --warn:#c9861a;
+    --mono:ui-monospace,"Cascadia Code","SF Mono",Consolas,Menlo,monospace;
+    --sans:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  }
+  @media (prefers-color-scheme:dark){
+    :root{
+      --void:#0a0e13; --panel:#0d131a; --surface:#141c25; --surface2:#0f161e;
+      --ink:#e2e9ee; --ink2:#8a9ba8; --line:#26333f; --grid:#131c25;
+      --accent:#4ad6e8; --flow:#3fb6c9; --up:#25d08b; --down:#ff5c6a; --warn:#f2b23c;
+    }
+  }
+  :root[data-theme="light"]{
+    --void:#e7edf1; --panel:#f3f7f9; --surface:#ffffff; --surface2:#eaf0f3;
+    --ink:#16222c; --ink2:#586873; --line:#cdd8de; --grid:#dde5ea;
+    --accent:#0b8ea1; --flow:#0d8fa2; --up:#12a56f; --down:#e0424f; --warn:#c9861a;
+  }
+  :root[data-theme="dark"]{
+    --void:#0a0e13; --panel:#0d131a; --surface:#141c25; --surface2:#0f161e;
+    --ink:#e2e9ee; --ink2:#8a9ba8; --line:#26333f; --grid:#131c25;
+    --accent:#4ad6e8; --flow:#3fb6c9; --up:#25d08b; --down:#ff5c6a; --warn:#f2b23c;
+  }
+
+  *{box-sizing:border-box}
+  body{margin:0; background:var(--void); color:var(--ink); font-family:var(--sans); line-height:1.55; -webkit-font-smoothing:antialiased; overflow-x:hidden}
+  .wrap{max-width:1120px; margin:0 auto; padding:56px 24px 100px; position:relative; z-index:1}
+
+  /* the Sentinel brand mark (Spartan barbute helmet) — faint fixed watermark + crisp header mark */
+  .watermark{position:fixed; z-index:0; pointer-events:none; top:50%; right:-2vw; transform:translateY(-50%); width:clamp(300px,40vw,560px); height:auto; fill:var(--accent); opacity:.18; filter:drop-shadow(0 0 55px color-mix(in srgb,var(--accent) 60%,transparent))}
+  .brandmark{width:16px; height:16px; flex:0 0 auto; fill:var(--accent); filter:drop-shadow(0 0 5px color-mix(in srgb,var(--accent) 50%,transparent))}
+
+  .kicker{font-family:var(--mono); font-size:11px; letter-spacing:.34em; text-transform:uppercase; color:var(--accent); display:flex; align-items:center; gap:9px; margin:0 0 14px}
+  .livedot{width:8px; height:8px; border-radius:50%; background:var(--accent); animation:pulse 2.4s ease-out infinite}
+  @keyframes pulse{0%{box-shadow:0 0 0 0 color-mix(in srgb,var(--accent) 55%,transparent)}70%{box-shadow:0 0 0 7px transparent}100%{box-shadow:0 0 0 0 transparent}}
+  h1{font-family:var(--mono); font-weight:700; font-size:clamp(30px,5.4vw,50px); letter-spacing:-.015em; margin:0 0 14px; text-wrap:balance}
+  .lede{font-size:18px; color:var(--ink2); max-width:66ch; margin:0 0 4px}
+  .lede b{color:var(--ink); font-weight:600}
+
+  .oneline{display:flex; flex-wrap:wrap; gap:7px; align-items:center; margin:28px 0 6px}
+  .oneline .s{font-family:var(--mono); font-size:12px; color:var(--ink); background:var(--surface); border:1px solid var(--line); border-radius:999px; padding:6px 13px}
+  .oneline .s b{color:var(--accent); font-weight:700}
+  .oneline .sep{color:var(--ink2); font-family:var(--mono)}
+
+  .toc{display:flex; flex-wrap:wrap; gap:6px 20px; margin:22px 0 6px; padding:16px 18px; border:1px solid var(--line); border-radius:12px; background:var(--panel)}
+  .toc a{font-family:var(--mono); font-size:12.5px; color:var(--ink2); text-decoration:none; white-space:nowrap}
+  .toc a:hover{color:var(--accent)}
+  .toc a b{color:var(--accent); font-weight:700; margin-right:6px}
+
+  .legend{display:flex; flex-wrap:wrap; gap:8px 18px; margin:18px 0 6px; padding:13px 16px; border:1px solid var(--line); border-radius:12px; background:var(--panel)}
+  .legend .k{display:flex; align-items:center; gap:8px; font-family:var(--mono); font-size:12px; color:var(--ink2)}
+  .swatch{width:22px; height:4px; border-radius:2px}
+  .swatch.a{background:var(--flow)} .swatch.u{background:var(--up)} .swatch.d{background:var(--down)} .swatch.w{background:var(--warn)}
+  .legend .k b{color:var(--ink); font-weight:600}
+
+  .part{display:flex; align-items:baseline; gap:16px; margin:80px 0 8px; padding-bottom:14px; border-bottom:1px solid var(--line)}
+  .part .pn{font-family:var(--mono); font-size:13px; font-weight:700; color:var(--accent); letter-spacing:.2em; white-space:nowrap}
+  .part h2{font-family:var(--mono); font-weight:700; font-size:15px; letter-spacing:.22em; text-transform:uppercase; color:var(--ink); margin:0}
+  .part .pd{margin-left:auto; font-size:13px; color:var(--ink2); font-family:var(--mono); text-align:right}
+
+  section{margin-top:44px}
+  .eyebrow{font-family:var(--mono); font-size:11px; letter-spacing:.24em; text-transform:uppercase; color:var(--accent); margin:0 0 8px; display:flex; gap:10px; align-items:baseline}
+  .eyebrow .num{color:var(--ink2); opacity:.7}
+  h3{font-family:var(--mono); font-weight:700; font-size:22px; margin:0 0 6px; letter-spacing:-.01em; text-wrap:balance}
+  .desc{color:var(--ink2); font-size:15px; margin:0 0 20px; max-width:74ch}
+  .desc b{color:var(--ink); font-weight:600}
+  code{font-family:var(--mono); font-size:.9em; background:var(--surface2); border:1px solid var(--line); border-radius:5px; padding:1px 5px; color:var(--ink)}
+
+  .panel{border:1px solid var(--line); border-radius:14px; background:var(--panel);
+    background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);
+    background-size:26px 26px; background-position:-1px -1px; padding:34px 30px; overflow-x:auto}
+
+  .node{background:var(--surface); border:1px solid var(--line); border-radius:11px; padding:11px 14px; min-width:120px; text-align:center; position:relative; box-shadow:0 1px 0 color-mix(in srgb,var(--ink) 6%,transparent)}
+  .node .t{font-family:var(--mono); font-weight:700; font-size:13px; color:var(--ink); white-space:nowrap}
+  .node .s{font-family:var(--mono); font-size:10.5px; color:var(--ink2); margin-top:3px; white-space:nowrap}
+  .node.accent{border-color:color-mix(in srgb,var(--accent) 55%,var(--line))}
+  .node.accent::before,.node.up::before,.node.down::before,.node.warn::before{content:""; position:absolute; left:0; top:9px; bottom:9px; width:3px; border-radius:3px}
+  .node.accent::before{background:var(--accent)}
+  .node.up::before{background:var(--up)} .node.up .t{color:color-mix(in srgb,var(--up) 78%,var(--ink))}
+  .node.down::before{background:var(--down)} .node.down .t{color:color-mix(in srgb,var(--down) 82%,var(--ink))}
+  .node.warn::before{background:var(--warn)}
+  .node.big{min-width:150px; padding:14px 16px}
+
+  .chip{font-family:var(--mono); font-size:11px; color:var(--ink); background:var(--surface2); border:1px solid var(--line); border-radius:7px; padding:5px 8px; white-space:nowrap; display:flex; justify-content:space-between; gap:10px; align-items:center}
+  .chip .w{color:var(--ink2); font-size:10px}
+  .chip.mute{color:var(--ink2)}
+
+  .flow{display:flex; align-items:center; justify-content:center; min-width:min-content}
+  .arrow{position:relative; flex:0 0 var(--aw,50px); height:2px; align-self:center; background:linear-gradient(90deg,color-mix(in srgb,var(--flow) 25%,transparent),var(--flow)); --c:var(--flow)}
+  .arrow::after{content:""; position:absolute; right:-1px; top:50%; transform:translateY(-50%); border-left:8px solid var(--c); border-top:5px solid transparent; border-bottom:5px solid transparent}
+  .arrow[data-l]::before{content:attr(data-l); position:absolute; left:50%; top:-15px; transform:translateX(-50%); font-family:var(--mono); font-size:9px; letter-spacing:.06em; text-transform:uppercase; color:var(--ink2); white-space:nowrap}
+  .arrow.up{--c:var(--up); background:linear-gradient(90deg,color-mix(in srgb,var(--up) 25%,transparent),var(--up))}
+  .arrow.down{--c:var(--down); background:linear-gradient(90deg,color-mix(in srgb,var(--down) 25%,transparent),var(--down))}
+  .arrow.warn{--c:var(--warn); background:linear-gradient(90deg,color-mix(in srgb,var(--warn) 25%,transparent),var(--warn))}
+  .arrow.v{width:2px; height:var(--ah,38px); flex:none; margin:0 auto; background:linear-gradient(180deg,color-mix(in srgb,var(--flow) 25%,transparent),var(--flow))}
+  .arrow.v::after{right:50%; top:auto; bottom:-1px; left:auto; transform:translateX(50%); border-left:5px solid transparent; border-right:5px solid transparent; border-top:8px solid var(--c); border-bottom:0}
+  .arrow.v.up-dir{background:linear-gradient(0deg,color-mix(in srgb,var(--flow) 25%,transparent),var(--flow))}
+  .arrow.v.up-dir::after{bottom:auto; top:-1px; border-top:0; border-bottom:8px solid var(--c)}
+  .arrow.v[data-l]::before{left:12px; top:50%; transform:translateY(-50%)}
+  .live .arrow{background-size:220% 100%; animation:travel 2.6s linear infinite}
+  @keyframes travel{0%{background-position:120% 0}100%{background-position:-40% 0}}
+
+  .group{border:1px dashed color-mix(in srgb,var(--line) 92%,var(--ink)); border-radius:11px; padding:12px; background:color-mix(in srgb,var(--surface) 55%,transparent)}
+  .group .gl{font-family:var(--mono); font-size:10px; letter-spacing:.14em; text-transform:uppercase; color:var(--ink2); margin:0 0 10px; text-align:center}
+  .grid2{display:grid; grid-template-columns:repeat(2,minmax(96px,1fr)); gap:6px}
+  .grid1{display:grid; gap:6px}
+  .rowflow{display:flex; align-items:center; justify-content:center; gap:0; min-width:min-content}
+  .stack{display:flex; flex-direction:column; align-items:center}
+  .band{display:flex; gap:8px; justify-content:center; flex-wrap:wrap; max-width:520px}
+
+  .verdict{background:var(--surface); border:1px solid color-mix(in srgb,var(--accent) 45%,var(--line)); border-radius:11px; padding:14px 16px; min-width:180px}
+  .verdict .vt{font-family:var(--mono); font-weight:700; font-size:12px; color:var(--accent); letter-spacing:.14em; margin-bottom:10px}
+  .vrow{display:flex; justify-content:space-between; gap:16px; font-family:var(--mono); font-size:12px; padding:4px 0; border-top:1px solid var(--line)}
+  .vrow span:first-child{color:var(--ink2)} .vrow span:last-child{color:var(--ink); font-weight:600}
+
+  .drow{display:flex; align-items:center; gap:14px; justify-content:center}
+  .branch{display:flex; align-items:center; gap:10px}
+  .blabel{font-family:var(--mono); font-size:9px; letter-spacing:.08em; text-transform:uppercase; color:var(--ink2)}
+  .qnode{background:var(--surface); border:1px solid var(--line); border-radius:11px; padding:12px 16px; text-align:center; position:relative}
+  .qnode.dec{border-color:color-mix(in srgb,var(--accent) 40%,var(--line))}
+  .qnode .t{font-family:var(--mono); font-weight:700; font-size:12.5px; color:var(--ink)}
+  .qnode .s{font-family:var(--mono); font-size:10px; color:var(--ink2); margin-top:4px}
+  .spine{display:flex; flex-direction:column; align-items:center}
+
+  .cast{display:grid; grid-template-columns:repeat(auto-fill,minmax(232px,1fr)); gap:12px}
+  .castcard{border:1px solid var(--line); border-radius:12px; background:var(--surface); padding:14px 15px; display:flex; flex-direction:column; gap:6px}
+  .castcard .role{font-family:var(--mono); font-size:9.5px; letter-spacing:.16em; text-transform:uppercase; color:var(--accent)}
+  .castcard .nm{font-family:var(--mono); font-weight:700; font-size:15px; color:var(--ink)}
+  .castcard p{margin:0; font-size:13px; color:var(--ink2)}
+  .castcard .seam{margin-top:auto; font-family:var(--mono); font-size:10.5px; color:var(--ink2); border-top:1px dashed var(--line); padding-top:7px}
+  .castcard .seam b{color:var(--ink); font-weight:600}
+
+  .two{display:grid; grid-template-columns:1.1fr .9fr; gap:26px; align-items:start}
+  .two .panel{margin:0}
+  .anno{display:flex; flex-direction:column; gap:12px}
+  .anno .a{display:flex; gap:12px; align-items:flex-start}
+  .anno .n{flex:0 0 22px; height:22px; border-radius:6px; background:var(--surface2); border:1px solid var(--line); color:var(--accent); font-family:var(--mono); font-weight:700; font-size:11px; display:flex; align-items:center; justify-content:center; margin-top:1px}
+  .anno .a div b{font-family:var(--mono); font-size:12.5px; color:var(--ink)}
+  .anno .a div p{margin:2px 0 0; font-size:13px; color:var(--ink2)}
+
+  .tblwrap{overflow-x:auto; border:1px solid var(--line); border-radius:12px; margin:8px 0}
+  table{width:100%; border-collapse:collapse; font-family:var(--mono); font-size:12.5px; min-width:640px}
+  thead th{text-align:left; font-size:10px; letter-spacing:.12em; text-transform:uppercase; color:var(--ink2); font-weight:600; padding:12px 14px; background:var(--panel); border-bottom:1px solid var(--line); white-space:nowrap}
+  tbody td{padding:10px 14px; border-bottom:1px solid var(--line); color:var(--ink); vertical-align:top}
+  tbody tr:last-child td{border-bottom:0}
+  td .vt{color:var(--ink2); font-size:11.5px}
+  td b{color:var(--ink)}
+  .wt{font-variant-numeric:tabular-nums; color:var(--accent); font-weight:700}
+  .ax-orth{color:var(--accent)} .ax-price{color:var(--ink2)}
+  .st{font-size:11px; color:var(--ink2)}
+
+  .principles{display:grid; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); gap:16px}
+  .pr{border:1px solid var(--line); border-left:3px solid var(--accent); border-radius:0 12px 12px 0; background:var(--surface); padding:16px 18px}
+  .pr h4{font-family:var(--mono); font-size:14px; margin:0 0 6px; color:var(--ink)}
+  .pr p{margin:0; font-size:13.5px; color:var(--ink2)}
+  .pr p b{color:var(--ink); font-weight:600}
+
+  .layers{display:flex; flex-direction:column; gap:12px}
+  .layer{display:grid; grid-template-columns:138px 1fr auto; align-items:center; gap:16px; border:1px solid var(--line); border-radius:12px; background:var(--surface); padding:14px 16px}
+  .layer .lb{font-family:var(--mono); font-size:10px; letter-spacing:.14em; text-transform:uppercase; color:var(--accent)}
+  .layer .lb b{display:block; color:var(--ink); font-size:14px; letter-spacing:0; margin-top:3px; text-transform:none}
+  .layer .lc{display:flex; flex-wrap:wrap; gap:6px}
+  .layer .lo{font-family:var(--mono); font-size:10.5px; color:var(--ink2); white-space:nowrap; text-align:right; line-height:1.5}
+  @media(max-width:640px){.layer{grid-template-columns:1fr; gap:10px} .layer .lo{text-align:left}}
+
+  /* prose + reference */
+  .prose{max-width:76ch}
+  .prose p{margin:0 0 14px; font-size:15px; color:var(--ink)}
+  .prose p.muted{color:var(--ink2)}
+  .callout{border:1px solid var(--line); border-left:3px solid var(--accent); border-radius:0 12px 12px 0; background:var(--surface); padding:14px 18px; margin:18px 0; font-size:14.5px; color:var(--ink); max-width:80ch}
+  .callout.warn{border-left-color:var(--warn)} .callout.caveat{border-left-color:var(--down)}
+  .callout b{color:var(--ink)}
+  .callout .cl{display:block; font-family:var(--mono); font-size:10px; letter-spacing:.16em; text-transform:uppercase; margin-bottom:6px; color:var(--accent)}
+  .callout.warn .cl{color:var(--warn)} .callout.caveat .cl{color:var(--down)}
+  .steps{list-style:none; counter-reset:s; padding:0; margin:0; display:flex; flex-direction:column; gap:12px; max-width:80ch}
+  .steps li{counter-increment:s; display:grid; grid-template-columns:28px minmax(0,1fr); column-gap:14px; row-gap:2px; align-items:start}
+  .steps li::before{content:counter(s); grid-column:1; grid-row:1; height:26px; width:26px; border-radius:7px; background:var(--surface2); border:1px solid var(--line); color:var(--accent); font-family:var(--mono); font-weight:700; font-size:12px; display:flex; align-items:center; justify-content:center}
+  .steps li b{grid-column:2; grid-row:1; color:var(--ink)} .steps li p{grid-column:2; grid-row:2; margin:3px 0 0; color:var(--ink2); font-size:14px}
+  .steps li code{font-size:.85em}
+  .code{background:var(--surface2); border:1px solid var(--line); border-radius:10px; padding:13px 15px; overflow-x:auto; font-family:var(--mono); font-size:12px; color:var(--ink); line-height:1.65; margin:14px 0; white-space:pre; max-width:100%}
+  .code .c{color:var(--ink2)} .code .k{color:var(--accent)}
+  .defs{display:grid; gap:0; max-width:80ch}
+  .defs .row{display:grid; grid-template-columns:170px 1fr; gap:16px; font-size:14px; padding:11px 0; border-bottom:1px solid var(--line)}
+  .defs b{font-family:var(--mono); font-size:12.5px; color:var(--ink)}
+  .defs .d{color:var(--ink2)}
+  .gauntlet{display:flex; flex-direction:column; gap:3px; font-family:var(--mono); font-size:12.5px; max-width:660px}
+  .gauntlet .g{display:flex; align-items:center; gap:12px; padding:10px 13px; border:1px solid var(--line); border-radius:8px; background:var(--surface)}
+  .gauntlet .g .ck{color:var(--up); font-weight:700; flex:0 0 auto}
+  .gauntlet .g .cond{color:var(--ink)} .gauntlet .g .res{margin-left:auto; color:var(--ink2); white-space:nowrap}
+  .reading{display:grid; grid-template-columns:1fr 1fr; gap:14px; margin:20px 0 6px; max-width:80ch}
+  .rp{border:1px solid var(--line); border-radius:12px; background:var(--surface); padding:14px 16px}
+  .rp .rt{font-family:var(--mono); font-size:11px; letter-spacing:.12em; text-transform:uppercase; color:var(--accent); margin-bottom:6px}
+  .rp p{margin:0; font-size:13.5px; color:var(--ink2)}
+  .rp b{color:var(--ink)}
+  @media(max-width:640px){ .reading{grid-template-columns:1fr} .defs .row{grid-template-columns:1fr; gap:2px} }
+
+  /* screenshot placeholders */
+  .shots{display:grid; grid-template-columns:repeat(auto-fit,minmax(238px,1fr)); gap:14px; margin:6px 0}
+  .shot{border:1.5px dashed color-mix(in srgb,var(--line) 78%,var(--ink)); border-radius:12px; background:var(--surface2); min-height:160px; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:18px 16px; gap:7px; margin:0}
+  .shot svg{color:var(--ink2); opacity:.55; margin-bottom:2px}
+  .shot .sid{font-family:var(--mono); font-size:10px; letter-spacing:.18em; font-weight:700; color:var(--accent)}
+  .shot .stt{font-family:var(--mono); font-size:13px; font-weight:700; color:var(--ink)}
+  .shot .scap{font-size:12px; color:var(--ink2); line-height:1.45; max-width:30ch}
+  .shot .sfile{font-family:var(--mono); font-size:9.5px; color:var(--ink2); opacity:.72; margin-top:3px}
+
+  footer{margin-top:72px; padding-top:22px; border-top:1px solid var(--line); font-family:var(--mono); font-size:11.5px; color:var(--ink2); display:flex; flex-wrap:wrap; gap:6px 18px; justify-content:space-between}
+  footer b{color:var(--ink); font-weight:600}
+
+  @media (prefers-reduced-motion:reduce){ .live .arrow{animation:none} .livedot{animation:none} }
+  @media (max-width:760px){ .two{grid-template-columns:1fr} }
+  @media (max-width:640px){ .wrap{padding:40px 14px 72px} .panel{padding:24px 16px} }
+</style>
+<style>
+  .wrap{max-width:900px}
+  .kicker .navsep{opacity:.45;margin:0 3px}
+  .kicker a.navhome{color:var(--ink2);border-bottom:0;text-decoration:none}
+  .kicker a.navhome:hover{color:var(--accent)}
+  .doc h2{font-family:var(--mono);font-weight:700;font-size:15px;letter-spacing:.2em;text-transform:uppercase;
+    color:var(--ink);margin:64px 0 4px;padding-bottom:12px;border-bottom:1px solid var(--line)}
+  .doc h2 .hn{color:var(--accent);margin-right:12px}
+  .doc h3{margin:34px 0 8px}
+  .doc p{font-size:15.5px;color:var(--ink);margin:0 0 15px;max-width:78ch}
+  .doc a{color:var(--accent);text-decoration:none;border-bottom:1px solid color-mix(in srgb,var(--accent) 40%,transparent)}
+  .doc a:hover{border-bottom-color:var(--accent)}
+  .doc strong{color:var(--ink);font-weight:670}
+  .doc em{color:var(--ink2);font-style:italic}
+  .doc ul,.doc ol{max-width:78ch;padding-left:1.3em;margin:0 0 15px}
+  .doc li{margin:.42em 0;font-size:15px;color:var(--ink)}
+  .doc li::marker{color:var(--accent)}
+  .doc hr{border:0;border-top:1px solid var(--line);margin:8px 0}
+  .doc blockquote{margin:18px 0;padding:14px 18px;border:1px solid var(--line);border-left:3px solid var(--accent);
+    border-radius:0 12px 12px 0;background:var(--surface);color:var(--ink2);max-width:80ch}
+  .doc blockquote p{color:var(--ink2);margin:0}
+  .doc blockquote strong{color:var(--ink)}
+  .doc pre{background:var(--surface2);border:1px solid var(--line);border-radius:10px;padding:14px 16px;
+    overflow-x:auto;font-family:var(--mono);font-size:12px;color:var(--ink);line-height:1.6;margin:16px 0;white-space:pre}
+  .doc pre code{background:none;border:0;padding:0;font-size:1em;color:inherit}
+</style>
+</head><body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><symbol id="helm" viewBox="0 0 512 512"><path fill-rule="nonzero" d="M255.406 17.75C189.313 39.42 124.536 85.124 79.03 150.344c21.238 57.44 32.72 94.314 32.72 131.375 0 36.493-11.52 73.723-32.125 129.655 49.72 36.73 100.08 58.95 150.313 64.938-5.052-60.378-9.83-120.748 1.593-181.125-30.644-3.28-61.384-13.286-92.03-30.72v-71.312c80.67 42.255 158.908 41.547 242.063 0v71.313c-30.06 14.376-60.192 24.722-90.25 29.28 8.684 60.46 7.723 120.915 2.03 181.375 46.386-7.335 92.89-28.824 139.032-64.312-33.966-112.954-34.03-145.933.594-260.47C391.162 84.844 317.924 39.89 255.405 17.75zm-75.125 212c-11.16-.13-19.646 3.174-21.25 9.156-2.33 8.7 10.778 19.76 29.282 24.72 18.505 4.957 35.388 1.92 37.72-6.782 2.33-8.7-10.775-19.76-29.282-24.72-5.783-1.55-11.396-2.315-16.47-2.374zm160.69 0c-5.074.06-10.687.825-16.47 2.375-18.507 4.96-31.613 16.018-29.28 24.72 2.33 8.7 19.213 11.738 37.717 6.78 18.505-4.958 31.613-16.018 29.282-24.72-1.604-5.98-10.09-9.286-21.25-9.155z"/></symbol></svg>
+<svg class="watermark" viewBox="0 0 512 512" aria-hidden="true"><use href="#helm"/></svg>
+<div class="wrap doc">
+<header>
+<p class="kicker"><svg class="brandmark" viewBox="0 0 512 512" aria-hidden="true"><use href="#helm"/></svg><span class="livedot"></span> Sentinel Suite · NinjaTrader 8 · living document<span class="navsep">·</span><a class="navhome" href="SENTINEL_DOCS.html">Docs home →</a></p>
+<h1>Sentinel Data Platform — Spec &amp; Stand-Up Workflow</h1>
+<p class="lede"><strong>Status:</strong> ✅ <strong>BUILT &amp; LIVE (updated 2026-07-14).</strong> All phases below shipped; the sections that read as "to build" / "open decisions" are kept for the design rationale but are RESOLVED — see <strong>§9 Built state</strong> for what is actually running. <strong>Goal (achieved):</strong> turn the trade/tick records into a persistent, always-on, filterable data layer with two graphical front-ends — <strong>Plotly (per-trade path inspection)</strong> and <strong>Grafana (dashboards)</strong> — so you <em>open a URL and the data is there</em>, no copy-paste from chat, no one-off scripts.</p>
+</header>
+<p><strong>What shipped since this spec was written:</strong> SQLite <code>Sentinel\Lab\db\sentinel.db</code> (WAL) + a live <code>--watch</code> ingester + Streamlit :8501 + Grafana :3000, all auto-started by the <strong><code>SentinelDataPlatform</code></strong> scheduled task. <strong>And (2026-07-14) the ingester now folds the Council VOTE VECTOR into the DB</strong> — the decision inputs (<code>votes/netScore/activeW/reasons</code>) live only in the <code>council\1.3\</code> ROW corpus, not the tick sidecars, so the ingester reads both: it <strong>enriches</strong> each tick-true trade with its vote vector and <strong>backfills</strong> the historical graded fires. DB went 702 → ~5,300 trades, <strong>~99% carrying the vote vector.</strong> See [[ingester-vote-vector-fold-in]].</p>
+<p>Related: [[sentinel-ml-lab]] (the "analyze the PATH, go tick-true" redirection), the Deck tape capture (<code>Deck_v0_2_5.cs</code>, raw-tick <code>OnMarketData</code>), the ExcursionRecorder corpus (<code>SentinelExcursionRecorder_v2_0_0</code>, v2.1.2).</p>
+<hr>
+<h2><span class="hn">1.</span>North star (the workflow you described)</h2>
+<pre><code>  You trade in NT ─▶ Deck writes JSONL tick files ─▶ Ingester loads them ─▶ SQLite ─┬─▶ Streamlit+Plotly  (localhost:8501)
+  (+ Council fires)   (Excursions\ticks\, council\)   (runs on a schedule)    (one DB) └─▶ Grafana          (localhost:3000)</code></pre>
+<p>You never touch files or paste links. The ingester keeps the DB current; you go to either front-end and <strong>filter</strong>.</p>
+<hr>
+<h2><span class="hn">2.</span>Architecture decisions (with rationale)</h2>
+<ol>
+<li><strong>NT writes files, Python owns the DB. NT never talks to SQLite.</strong> NinjaScript stays simple and crash-safe: the Deck/recorder append <strong>JSONL</strong> (durable, append-only, no DB driver in the trading process, no lock contention with a live account). A <strong>Python ingester</strong> reads those files into SQLite. This decouples the <em>trading</em> process from the <em>analysis</em> store — a bug in analysis can never touch order flow.</li>
+<li><strong>SQLite is the single source of truth</strong> for BOTH front-ends. One <code>sentinel.db</code>; Streamlit and Grafana both read it. Rationale: embedded (no server), one file, pandas-native, and Grafana has a first-class SQLite datasource plugin. (Postgres/Influx only if we later need multi-writer or live streaming — not now.)</li>
+<li><strong>Plotly and Grafana are complementary, not redundant.</strong></li>
+<li><strong>Streamlit + Plotly</strong> → <em>inspect ONE trade's path</em> interactively (the favorable-ticks shape, entry heat, raw price), + ad-hoc aggregates.</li>
+<li><strong>Grafana</strong> → <em>dashboards over the whole corpus</em> (blotter, aggregate stats by conviction band / bar type, capture health), live-refreshing.</li>
+<li><strong>The DB schema is fidelity-forward.</strong> It carries a <code>px</code> column now (currently the bar <code>Close[0]</code>) and adds <code>last/bid/ask</code> when the capture goes <strong>raw-tick</strong> via <code>OnMarketData</code> (see §6). No schema churn to upgrade.</li>
+</ol>
+<hr>
+<h2><span class="hn">3.</span>Data model (SQLite: <code>Sentinel\Lab\db\sentinel.db</code>)</h2>
+<h3><code>trades</code> — one row per captured trade/fire</h3>
+<div class="tblwrap"><table><thead><tr><th>column</th><th>type</th><th>notes</th></tr></thead><tbody><tr><td><code>trade_id</code></td><td>TEXT PK</td><td>the JSONL <code>tradeId</code></td></tr><tr><td><code>source</code></td><td>TEXT</td><td><code>manual</code> (Deck tape) · <code>council</code> (recorder) · <code>godtrades</code> …</td></tr><tr><td><code>inst</code> · <code>bartype</code> · <code>account</code></td><td>TEXT</td><td></td></tr><tr><td><code>dir</code></td><td>INT</td><td>+1 long / −1 short</td></tr><tr><td><code>entry_utc</code> · <code>entry_px</code></td><td>TEXT · REAL</td><td></td></tr><tr><td><code>exit_utc</code> · <code>exit_px</code></td><td>TEXT · REAL</td><td>null while open</td></tr><tr><td><code>max_fav_ticks</code> · <code>max_adv_ticks</code></td><td>REAL</td><td></td></tr><tr><td><code>n_ticks</code> · <code>dur_s</code></td><td>INT · REAL</td><td>path length</td></tr><tr><td><code>partial</code></td><td>INT</td><td>1 = capture armed mid-trade (entry not seen)</td></tr><tr><td><code>schema</code> · <code>src</code></td><td>TEXT</td><td>fidelity discriminator: <code>schema='ctick.1'</code>+<code>src='last'</code> = tick-true sidecar · <code>schema='1.3'</code>+<code>src='row'</code> = bar-based ROW trade folded from <code>council\1.3\</code> (no tick path) · <code>src='row'</code> twins are dropped when a real sidecar lands</td></tr><tr><td><strong>council context</strong> (nullable)</td><td></td><td>filled for council trades — the VOTE VECTOR is folded in from the <code>council\1.3\</code> row corpus (the sidecars don't carry it)</td></tr><tr><td><code>conviction</code> · <code>size_mult</code> · <code>net_score</code> · <code>active_w</code></td><td>REAL</td><td></td></tr><tr><td><code>votes_json</code> · <code>reasons</code> · <code>episode_id</code> · <code>first_touch</code></td><td>TEXT/INT</td><td>~99% populated after the fold-in</td></tr><tr><td><code>barrier_ticks</code> · <code>ms_to_target_r</code> · <code>ms_to_stop_r</code></td><td>REAL/INT</td><td>tick-true first-touch (sidecar)</td></tr><tr><td><strong>derived path features</strong> (computed at ingest)</td><td></td><td>the "analyze the path" columns</td></tr><tr><td><code>time_to_mfe_s</code> · <code>time_to_mae_s</code></td><td>REAL</td><td></td></tr><tr><td><code>mfe_mae_ratio</code></td><td>REAL</td><td></td></tr><tr><td><code>adverse_first</code></td><td>INT</td><td>1 = took heat before it worked (late-ish) vs 0 (favorable first)</td></tr><tr><td><code>ingested_utc</code></td><td>TEXT</td><td></td></tr></tbody></table></div>
+<h3><code>ticks</code> — the path, one row per tick</h3>
+<div class="tblwrap"><table><thead><tr><th>column</th><th>type</th><th>notes</th></tr></thead><tbody><tr><td><code>trade_id</code></td><td>TEXT</td><td>FK → trades</td></tr><tr><td><code>ms</code></td><td>INT</td><td>ms from entry</td></tr><tr><td><code>px</code></td><td>REAL</td><td>bar close now; raw last after the fidelity upgrade</td></tr><tr><td><code>last</code> · <code>bid</code> · <code>ask</code> · <code>vol</code></td><td>REAL/INT</td><td><strong>added at tick.2</strong> (raw-tick capture)</td></tr></tbody></table></div>
+<p><code>PRIMARY KEY (trade_id, ms)</code>, index on <code>trade_id</code>. A <code>trade_features</code> VIEW can pre-compute filter columns (conviction band, R buckets) for Grafana.</p>
+<hr>
+<h2><span class="hn">4.</span>Components to build</h2>
+<div class="tblwrap"><table><thead><tr><th>#</th><th>component</th><th>path</th><th>job</th></tr></thead><tbody><tr><td>A</td><td><strong>DB schema</strong></td><td><code>Lab\db\schema.sql</code></td><td>create <code>trades</code> + <code>ticks</code> (+ view)</td></tr><tr><td>B</td><td><strong>Ingester</strong></td><td><code>Lab\ingest\ingest.py</code></td><td>scan <code>Excursions\ticks\<em>.jsonl</code> <strong>and <code>council\ticks\</em>.jsonl</code></strong> → parse header+ticks → compute path features → upsert into SQLite. <strong>THEN <code>ingest_council_rows()</code> folds <code>council\1.3\*.jsonl</code></strong> (the vote-vector corpus) in — enrich existing tick-true trades' NULL vote columns, else insert a bar-based <code>src='row'</code> trade; per-file mtime watermark (<code>row_files</code> table) keeps <code>--watch</code> cheap. <strong>Idempotent</strong> (skip unchanged by mtime). WAL + <code>busy_timeout</code> so a backfill and the watch loop coexist. Modes: one-shot · <code>--watch</code> (poll 2 s) · <code>--reingest</code> (force full backfill)</td></tr><tr><td>C</td><td><strong>Streamlit explorer</strong></td><td><code>Lab\viz\explorer.py</code></td><td>reads SQLite; sidebar filters (date · inst · bartype · dir · source · conviction band · partial · min ticks); a trade table → click → Plotly path chart (fav-ticks + raw price) + aggregate panels (median path by conviction band, MFE/MAE scatter). Supersedes the file-based <code>viz\tickpaths.py</code>.</td></tr><tr><td>D</td><td><strong>Grafana provisioning</strong></td><td><code>Lab\grafana\</code></td><td>datasource YAML (SQLite → <code>sentinel.db</code>) + dashboard JSON: (1) blotter table (2) path viewer (3) aggregates by conviction/bartype (4) capture-health (records/day, missing exits)</td></tr><tr><td>E</td><td><strong>Always-on runner</strong></td><td><code>Lab\run\</code></td><td>scripts/tasks to keep B (ingest), C (Streamlit), D (Grafana) up so the browser is always live</td></tr></tbody></table></div>
+<hr>
+<h2><span class="hn">5.</span>Stand-up workflow (one-time)</h2>
+<ol>
+<li><strong>Python deps</strong> (Lab venv already has pandas/plotly/streamlit): <code>pip install watchdog</code> (for <code>--watch</code>), nothing else — SQLite is stdlib (<code>sqlite3</code>).</li>
+<li><strong>Create the DB:</strong> <code>python Lab\ingest\ingest.py --init</code> (runs <code>schema.sql</code>) then a first full ingest of the existing 4 tick files.</li>
+<li><strong>Grafana:</strong> install Grafana OSS (Windows installer <em>or</em> Docker), install the <strong><code>frser-sqlite-datasource</code></strong> plugin, drop the provisioning files from <code>Lab\grafana\</code>. Grafana → <code>localhost:3000</code>.</li>
+<li><strong>Streamlit:</strong> <code>streamlit run Lab\viz\explorer.py</code> → <code>localhost:8501</code>.</li>
+</ol>
+<h2><span class="hn">5b.</span>Always-on (so the data is "just there")</h2>
+<ul>
+<li><strong>Ingester:</strong> a <strong>Windows Scheduled Task</strong> running <code>ingest.py --watch</code> (or every 60 s) at logon → new tick files land in SQLite within a minute.</li>
+<li><strong>Streamlit:</strong> a small startup script (or Task) running the server in the background.</li>
+<li><strong>Grafana:</strong> install as a <strong>Windows service</strong> (default) → always up.</li>
+<li>Net: open your browser to either URL anytime → filter → the data's current.</li>
+</ul>
+<hr>
+<h2><span class="hn">6.</span>Fidelity prerequisite (the honest caveat)</h2>
+<p>Today <code>px</code> = the Deck tape's <code>Close[0]</code> = the <strong>brick close</strong> on TBars/HA bar types, <strong>not raw last-trade</strong>. Good for <em>shape</em>, not for fill-level analysis. The upgrade (separate build, tracked in [[sentinel-ml-lab]]):</p>
+<ul>
+<li><strong>Deck tape → raw ticks</strong> via <code>OnMarketData</code> (<code>MarketDataEventArgs.Price</code>), schema <strong><code>tick.2</code></strong> adding <code>last/bid/ask/vol</code>. The DB schema already reserves those columns.</li>
+<li><strong>Tick-true Council-fire recorder</strong> — the recorder currently stores peaks + minute snapshots, no path. A tick-true version logs the full raw-tick excursion per fire → lands in the SAME <code>trades</code>/<code>ticks</code> tables (<code>source='council'</code>) → lets us finally test <strong>conviction vs. path QUALITY</strong>, not a coarse binary.</li>
+</ul>
+<hr>
+<h2><span class="hn">7.</span>Phased plan (build order)</h2>
+<ul>
+<li><strong>Phase 0 — DB + ingest + Streamlit-over-SQLite</strong> (immediate value on the 4 existing files; uses <code>Close[0]</code> px, flagged). → "go to localhost:8501, filter."</li>
+<li><strong>Phase 1 — Grafana</strong> install + SQLite datasource + starter dashboards.</li>
+<li><strong>Phase 2 — raw-tick capture</strong> (Deck <code>OnMarketData</code>, schema tick.2) → re-ingest.</li>
+<li><strong>Phase 3 — tick-true Council-fire recorder</strong> → council trades in the DB → <strong>path-vs-conviction</strong> analysis (the "don't bury the Council on coarse labels" payoff).</li>
+<li><strong>Phase 4 — always-on services</strong> (scheduled ingester + Streamlit + Grafana service).</li>
+</ul>
+<hr>
+<h2><span class="hn">8.</span>Open decisions (confirm before Phase 0)</h2>
+<ol>
+<li><strong>SQLite</strong> (recommended) vs Postgres vs InfluxDB. SQLite unless you foresee live-streaming dashboards.</li>
+<li><strong>Streamlit+Plotly</strong> (recommended, already built) vs <strong>Plotly Dash</strong> for the "Plotly" front-end. Streamlit is faster to stand up and reuses <code>tickpaths.py</code>; Dash if you want a more app-like custom UI.</li>
+<li><strong>Ingest cadence:</strong> scheduled task every ~60 s (recommended, simple) vs a live file-watch daemon.</li>
+<li><strong>DB location:</strong> <code>Sentinel\Lab\db\sentinel.db</code> (Lab-owned, recommended) vs <code>Sentinel\sentinel.db</code>.</li>
+<li><strong>Grafana install:</strong> native Windows service (recommended for always-on) vs Docker.</li>
+</ol>
+<blockquote><p><strong>RESOLVED (all of §7–§8):</strong> SQLite at <code>Lab\db\sentinel.db</code> · Streamlit+Plotly · <code>--watch</code> ingester · Grafana native — every recommended option was taken and shipped. See §9.</p></blockquote>
+<hr>
+<h2><span class="hn">9.</span>Built state (2026-07-14) — what is actually running</h2>
+<ul>
+<li><strong>DB:</strong> <code>Sentinel\Lab\db\sentinel.db</code>, <strong>WAL</strong> journal + <code>busy_timeout=30000</code> (readers never block the writer; a backfill and the live watch loop coexist). ~5,300 <code>trades</code>, ~300k <code>ticks</code>. <strong>~99% of council trades carry the vote vector</strong> after the fold-in.</li>
+<li><strong>Ingester (<code>Lab\ingest\ingest.py</code>)</strong> — two passes per scan: (1) tick sidecars (<code>Excursions\ticks\</code> + <code>council\ticks\</code>) → <code>trades</code>+<code>ticks</code>; (2) <strong><code>ingest_council_rows()</code></strong> folds <code>council\1.3\</code> — the ONLY place the vote vector lives — enriching tick-true trades and backfilling historical no-sidecar fires (<code>src='row'</code>). Discriminator: <code>src='last'</code> = tick-true, <code>src='row'</code> = bar-based row; a <code>row</code> twin is deleted when its real sidecar arrives (any order). Backfill: <code>python ingest\ingest.py --reingest</code>. See [[ingester-vote-vector-fold-in]].</li>
+<li><strong>Recorder</strong> — <code>SentinelExcursionRecorder_v2_0_0</code> (v2.1.2). Writes the schema-1.3 ROW (<code>council\1.3\</code>) + a per-fire tick-path sidecar (<code>council\ticks\</code>). <strong>v2.1.2 streams each row to disk the moment its excursion window completes (~60 min post-fire)</strong> instead of buffering to session-end, bounding crash-loss of the vote vector to the in-flight window.</li>
+<li><strong>Front-ends:</strong> Streamlit+Plotly <code>viz\explorer.py</code> → <strong>localhost:8501</strong> (+ the Council Paths page); Grafana → <strong>localhost:3000</strong> (SQLite datasource).</li>
+<li><strong>Always-on:</strong> the <strong><code>SentinelDataPlatform</code></strong> scheduled task runs <code>Lab\run\sentinel-data.bat</code> at logon (guarded by "is :8501 up" so it never dupes), launching the <code>.venv</code> ingester (<code>--watch</code>) + Streamlit; Grafana runs as a service. ⚠ Self-heal is <strong>logon-level, not process-level</strong> — a killed ingester is not respawned mid-session.</li>
+</ul>
+<h2><span class="hn">10.</span>Health layer (2026-07-15) — "is everything alive &amp; safe"</h2>
+<p>A second, orthogonal surface: <strong>operational health of NT + the whole Sentinel suite</strong>, distinct from the trade-corpus analytics above. Split by design: <strong>Grafana = ops/health</strong> ("am I safe to trade right now"); <strong>Streamlit/Observatory = research</strong> ("does the edge exist"). Don't blur them.</p>
+<ul>
+<li><strong>Probe (<code>Lab\health\probe.py</code>)</strong> — samples every <strong>30 s</strong>, <strong>READ-ONLY on NT</strong> (files/process/ports only: <code>state.json</code>, <code>sentinel.log</code>, the <code>Ledger</code>, <code>tasklist</code>, socket port checks — never NT internals or orders, so a crash here can't touch trading). No new deps (<code>tasklist</code>, not psutil). Single-instance via a <code>127.0.0.1:8502</code> bind (a blind launcher start is safe; the bound port doubles as the "probe up" signal). Crash-resistant <code>--watch</code> loop (each sample in try/except).</li>
+<li><strong>Health tables</strong> (same <code>sentinel.db</code>, WAL + <code>busy_timeout</code>): <code>health</code> (wide time-series: NT up/responding, kill, connections, feed/risk, service freshness, rolling 5-min err/crit/contention/naked counts, live-Council count, fires today, last conviction, DB/WAL size), <code>governor_health</code> (per-account day P&amp;L vs cap / loss-stop / status), <code>arc_slots</code> (per-slot health · pos_qty→naked · fills · P&amp;L), <code>roster_health</code> (per-scope present/declared/missing/unexpected, parsed from the Council log line), <code>health_event</code> (deduped discrete transitions: NT down, kill engaged, …).</li>
+<li><strong>More tables:</strong> <code>feed_health</code> (per-INSTRUMENT lag/stall from <code>state.json.risk.feeds</code> — already published by RiskService/StateService, <strong>no C# change needed</strong>; empty until a feed is active), <code>connection_health</code> (per broker), <code>eye_health</code>, <code>copier_health</code>, <code>veto_5m</code>, <code>scope_health</code> (<strong>quiet-Council detector</strong> — seconds since last verdict, bounded to recently-active scopes). <code>health</code> also carries NT <strong>CPU%/RAM/uptime</strong> (psutil, CPU normalized by core count), disk free/used%, day-P&amp;L total, win-rate/trades today. Schema grows via an idempotent <code>_migrate()</code>.</li>
+<li><strong>Dashboard <code>Sentinel · Health</code></strong> (uid <code>sentinel-health</code>, <code>Lab\grafana\dashboards\sentinel-health.json</code>, <strong>52 panels</strong>, 4 rows — 🛡 Safety · 🧠 Brain · 💰 P&amp;L/accounts · 🔩 Resources/infra). Generated by <strong><code>Lab\grafana\build_health_dashboard.py</code></strong> (edit the generator, re-run; the provider auto-reloads within 30 s, <code>allowUiUpdates:true</code>). → <strong>localhost:3000/d/sentinel-health</strong>.</li>
+<li><strong>⚠ Two gotchas:</strong> (1) a <strong>Grafana auto-update wipes the unsigned <code>frser-sqlite</code> plugin</strong> → every dashboard reads "No data" (<code>plugin.notRegistered</code>); fix = reinstall + <code>conf\custom.ini</code> <code>allow_loading_unsigned_plugins</code> + restart (<strong>self-heal now in <code>sentinel-data.bat</code></strong>). (2) <strong>frser reads an integer time column as SECONDS</strong> → every time-series query selects <strong><code>ts_ms/1000 AS time</code></strong> (raw ms → "Data outside time range").</li>
+<li><strong>Always-on:</strong> the probe <code>--watch</code> + a Grafana-plugin heal were added to <code>Lab\run\sentinel-data.bat</code> <strong>before</strong> the <code>:8501</code> skip-guard, so they run even when the rest of the platform is already up (the probe's <code>:8502</code> guard prevents dupes). Same logon-level self-heal caveat as the ingester.</li>
+</ul>
+<hr>
+<p><em>The consumer of this DB is the Lab (<code>Lab\train.py</code> fits the ConvictionFloor + per-bar-type weights; <code>Lab\council_paths.py</code> grades conviction vs path quality). Corpus hygiene + fill fidelity: [[corpus-hygiene-and-fill-fidelity]].</em></p>
+<footer><span>Sentinel Suite · <b>Sentinel Data Platform — Spec &amp; Stand-Up Workflow</b></span><span>living document · rendered from Markdown</span></footer>
+</div></body></html>

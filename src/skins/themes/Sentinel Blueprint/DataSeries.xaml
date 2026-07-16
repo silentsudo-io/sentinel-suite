@@ -1,0 +1,12 @@
+<ResourceDictionary xmlns		="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+					xmlns:x		="http://schemas.microsoft.com/winfx/2006/xaml"
+					xmlns:po	="http://schemas.microsoft.com/winfx/2006/xaml/presentation/options">
+
+	<SolidColorBrush	x:Key="DataSeries.PriceMarkerBrush"		Color="Black"		po:Freeze="true" />
+	<SolidColorBrush	x:Key="DataSeries.ShortExecutionBrush"	Color="Magenta"		po:Freeze="true" />
+	<SolidColorBrush	x:Key="DataSeries.LongExecutionBrush"	Color="DodgerBlue"	po:Freeze="true" />
+
+	<Pen				x:Key="DataSeries.PositionPenLoser"		Brush="Crimson"		Thickness="2" DashStyle="{x:Static DashStyles.Dot}"/>
+	<Pen				x:Key="DataSeries.PositionPenWinner"	Brush="DarkGreen"	Thickness="2" DashStyle="{x:Static DashStyles.Dot}"/>
+	<Pen				x:Key="DataSeries.TradingHoursPen"		Brush="#0D2447"		Thickness="1"/>
+</ResourceDictionary>

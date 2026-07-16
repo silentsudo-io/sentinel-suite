@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sentinel · Sentinel System Builder — Spec</title>
+<style>
+  :root{
+    --void:#e7edf1; --panel:#f3f7f9; --surface:#ffffff; --surface2:#eaf0f3;
+    --ink:#16222c; --ink2:#586873; --line:#cdd8de; --grid:#dde5ea;
+    --accent:#0b8ea1; --flow:#0d8fa2;
+    --up:#12a56f; --down:#e0424f; --warn:#c9861a;
+    --mono:ui-monospace,"Cascadia Code","SF Mono",Consolas,Menlo,monospace;
+    --sans:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  }
+  @media (prefers-color-scheme:dark){
+    :root{
+      --void:#0a0e13; --panel:#0d131a; --surface:#141c25; --surface2:#0f161e;
+      --ink:#e2e9ee; --ink2:#8a9ba8; --line:#26333f; --grid:#131c25;
+      --accent:#4ad6e8; --flow:#3fb6c9; --up:#25d08b; --down:#ff5c6a; --warn:#f2b23c;
+    }
+  }
+  :root[data-theme="light"]{
+    --void:#e7edf1; --panel:#f3f7f9; --surface:#ffffff; --surface2:#eaf0f3;
+    --ink:#16222c; --ink2:#586873; --line:#cdd8de; --grid:#dde5ea;
+    --accent:#0b8ea1; --flow:#0d8fa2; --up:#12a56f; --down:#e0424f; --warn:#c9861a;
+  }
+  :root[data-theme="dark"]{
+    --void:#0a0e13; --panel:#0d131a; --surface:#141c25; --surface2:#0f161e;
+    --ink:#e2e9ee; --ink2:#8a9ba8; --line:#26333f; --grid:#131c25;
+    --accent:#4ad6e8; --flow:#3fb6c9; --up:#25d08b; --down:#ff5c6a; --warn:#f2b23c;
+  }
+
+  *{box-sizing:border-box}
+  body{margin:0; background:var(--void); color:var(--ink); font-family:var(--sans); line-height:1.55; -webkit-font-smoothing:antialiased; overflow-x:hidden}
+  .wrap{max-width:1120px; margin:0 auto; padding:56px 24px 100px; position:relative; z-index:1}
+
+  /* the Sentinel brand mark (Spartan barbute helmet) — faint fixed watermark + crisp header mark */
+  .watermark{position:fixed; z-index:0; pointer-events:none; top:50%; right:-2vw; transform:translateY(-50%); width:clamp(300px,40vw,560px); height:auto; fill:var(--accent); opacity:.18; filter:drop-shadow(0 0 55px color-mix(in srgb,var(--accent) 60%,transparent))}
+  .brandmark{width:16px; height:16px; flex:0 0 auto; fill:var(--accent); filter:drop-shadow(0 0 5px color-mix(in srgb,var(--accent) 50%,transparent))}
+
+  .kicker{font-family:var(--mono); font-size:11px; letter-spacing:.34em; text-transform:uppercase; color:var(--accent); display:flex; align-items:center; gap:9px; margin:0 0 14px}
+  .livedot{width:8px; height:8px; border-radius:50%; background:var(--accent); animation:pulse 2.4s ease-out infinite}
+  @keyframes pulse{0%{box-shadow:0 0 0 0 color-mix(in srgb,var(--accent) 55%,transparent)}70%{box-shadow:0 0 0 7px transparent}100%{box-shadow:0 0 0 0 transparent}}
+  h1{font-family:var(--mono); font-weight:700; font-size:clamp(30px,5.4vw,50px); letter-spacing:-.015em; margin:0 0 14px; text-wrap:balance}
+  .lede{font-size:18px; color:var(--ink2); max-width:66ch; margin:0 0 4px}
+  .lede b{color:var(--ink); font-weight:600}
+
+  .oneline{display:flex; flex-wrap:wrap; gap:7px; align-items:center; margin:28px 0 6px}
+  .oneline .s{font-family:var(--mono); font-size:12px; color:var(--ink); background:var(--surface); border:1px solid var(--line); border-radius:999px; padding:6px 13px}
+  .oneline .s b{color:var(--accent); font-weight:700}
+  .oneline .sep{color:var(--ink2); font-family:var(--mono)}
+
+  .toc{display:flex; flex-wrap:wrap; gap:6px 20px; margin:22px 0 6px; padding:16px 18px; border:1px solid var(--line); border-radius:12px; background:var(--panel)}
+  .toc a{font-family:var(--mono); font-size:12.5px; color:var(--ink2); text-decoration:none; white-space:nowrap}
+  .toc a:hover{color:var(--accent)}
+  .toc a b{color:var(--accent); font-weight:700; margin-right:6px}
+
+  .legend{display:flex; flex-wrap:wrap; gap:8px 18px; margin:18px 0 6px; padding:13px 16px; border:1px solid var(--line); border-radius:12px; background:var(--panel)}
+  .legend .k{display:flex; align-items:center; gap:8px; font-family:var(--mono); font-size:12px; color:var(--ink2)}
+  .swatch{width:22px; height:4px; border-radius:2px}
+  .swatch.a{background:var(--flow)} .swatch.u{background:var(--up)} .swatch.d{background:var(--down)} .swatch.w{background:var(--warn)}
+  .legend .k b{color:var(--ink); font-weight:600}
+
+  .part{display:flex; align-items:baseline; gap:16px; margin:80px 0 8px; padding-bottom:14px; border-bottom:1px solid var(--line)}
+  .part .pn{font-family:var(--mono); font-size:13px; font-weight:700; color:var(--accent); letter-spacing:.2em; white-space:nowrap}
+  .part h2{font-family:var(--mono); font-weight:700; font-size:15px; letter-spacing:.22em; text-transform:uppercase; color:var(--ink); margin:0}
+  .part .pd{margin-left:auto; font-size:13px; color:var(--ink2); font-family:var(--mono); text-align:right}
+
+  section{margin-top:44px}
+  .eyebrow{font-family:var(--mono); font-size:11px; letter-spacing:.24em; text-transform:uppercase; color:var(--accent); margin:0 0 8px; display:flex; gap:10px; align-items:baseline}
+  .eyebrow .num{color:var(--ink2); opacity:.7}
+  h3{font-family:var(--mono); font-weight:700; font-size:22px; margin:0 0 6px; letter-spacing:-.01em; text-wrap:balance}
+  .desc{color:var(--ink2); font-size:15px; margin:0 0 20px; max-width:74ch}
+  .desc b{color:var(--ink); font-weight:600}
+  code{font-family:var(--mono); font-size:.9em; background:var(--surface2); border:1px solid var(--line); border-radius:5px; padding:1px 5px; color:var(--ink)}
+
+  .panel{border:1px solid var(--line); border-radius:14px; background:var(--panel);
+    background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);
+    background-size:26px 26px; background-position:-1px -1px; padding:34px 30px; overflow-x:auto}
+
+  .node{background:var(--surface); border:1px solid var(--line); border-radius:11px; padding:11px 14px; min-width:120px; text-align:center; position:relative; box-shadow:0 1px 0 color-mix(in srgb,var(--ink) 6%,transparent)}
+  .node .t{font-family:var(--mono); font-weight:700; font-size:13px; color:var(--ink); white-space:nowrap}
+  .node .s{font-family:var(--mono); font-size:10.5px; color:var(--ink2); margin-top:3px; white-space:nowrap}
+  .node.accent{border-color:color-mix(in srgb,var(--accent) 55%,var(--line))}
+  .node.accent::before,.node.up::before,.node.down::before,.node.warn::before{content:""; position:absolute; left:0; top:9px; bottom:9px; width:3px; border-radius:3px}
+  .node.accent::before{background:var(--accent)}
+  .node.up::before{background:var(--up)} .node.up .t{color:color-mix(in srgb,var(--up) 78%,var(--ink))}
+  .node.down::before{background:var(--down)} .node.down .t{color:color-mix(in srgb,var(--down) 82%,var(--ink))}
+  .node.warn::before{background:var(--warn)}
+  .node.big{min-width:150px; padding:14px 16px}
+
+  .chip{font-family:var(--mono); font-size:11px; color:var(--ink); background:var(--surface2); border:1px solid var(--line); border-radius:7px; padding:5px 8px; white-space:nowrap; display:flex; justify-content:space-between; gap:10px; align-items:center}
+  .chip .w{color:var(--ink2); font-size:10px}
+  .chip.mute{color:var(--ink2)}
+
+  .flow{display:flex; align-items:center; justify-content:center; min-width:min-content}
+  .arrow{position:relative; flex:0 0 var(--aw,50px); height:2px; align-self:center; background:linear-gradient(90deg,color-mix(in srgb,var(--flow) 25%,transparent),var(--flow)); --c:var(--flow)}
+  .arrow::after{content:""; position:absolute; right:-1px; top:50%; transform:translateY(-50%); border-left:8px solid var(--c); border-top:5px solid transparent; border-bottom:5px solid transparent}
+  .arrow[data-l]::before{content:attr(data-l); position:absolute; left:50%; top:-15px; transform:translateX(-50%); font-family:var(--mono); font-size:9px; letter-spacing:.06em; text-transform:uppercase; color:var(--ink2); white-space:nowrap}
+  .arrow.up{--c:var(--up); background:linear-gradient(90deg,color-mix(in srgb,var(--up) 25%,transparent),var(--up))}
+  .arrow.down{--c:var(--down); background:linear-gradient(90deg,color-mix(in srgb,var(--down) 25%,transparent),var(--down))}
+  .arrow.warn{--c:var(--warn); background:linear-gradient(90deg,color-mix(in srgb,var(--warn) 25%,transparent),var(--warn))}
+  .arrow.v{width:2px; height:var(--ah,38px); flex:none; margin:0 auto; background:linear-gradient(180deg,color-mix(in srgb,var(--flow) 25%,transparent),var(--flow))}
+  .arrow.v::after{right:50%; top:auto; bottom:-1px; left:auto; transform:translateX(50%); border-left:5px solid transparent; border-right:5px solid transparent; border-top:8px solid var(--c); border-bottom:0}
+  .arrow.v.up-dir{background:linear-gradient(0deg,color-mix(in srgb,var(--flow) 25%,transparent),var(--flow))}
+  .arrow.v.up-dir::after{bottom:auto; top:-1px; border-top:0; border-bottom:8px solid var(--c)}
+  .arrow.v[data-l]::before{left:12px; top:50%; transform:translateY(-50%)}
+  .live .arrow{background-size:220% 100%; animation:travel 2.6s linear infinite}
+  @keyframes travel{0%{background-position:120% 0}100%{background-position:-40% 0}}
+
+  .group{border:1px dashed color-mix(in srgb,var(--line) 92%,var(--ink)); border-radius:11px; padding:12px; background:color-mix(in srgb,var(--surface) 55%,transparent)}
+  .group .gl{font-family:var(--mono); font-size:10px; letter-spacing:.14em; text-transform:uppercase; color:var(--ink2); margin:0 0 10px; text-align:center}
+  .grid2{display:grid; grid-template-columns:repeat(2,minmax(96px,1fr)); gap:6px}
+  .grid1{display:grid; gap:6px}
+  .rowflow{display:flex; align-items:center; justify-content:center; gap:0; min-width:min-content}
+  .stack{display:flex; flex-direction:column; align-items:center}
+  .band{display:flex; gap:8px; justify-content:center; flex-wrap:wrap; max-width:520px}
+
+  .verdict{background:var(--surface); border:1px solid color-mix(in srgb,var(--accent) 45%,var(--line)); border-radius:11px; padding:14px 16px; min-width:180px}
+  .verdict .vt{font-family:var(--mono); font-weight:700; font-size:12px; color:var(--accent); letter-spacing:.14em; margin-bottom:10px}
+  .vrow{display:flex; justify-content:space-between; gap:16px; font-family:var(--mono); font-size:12px; padding:4px 0; border-top:1px solid var(--line)}
+  .vrow span:first-child{color:var(--ink2)} .vrow span:last-child{color:var(--ink); font-weight:600}
+
+  .drow{display:flex; align-items:center; gap:14px; justify-content:center}
+  .branch{display:flex; align-items:center; gap:10px}
+  .blabel{font-family:var(--mono); font-size:9px; letter-spacing:.08em; text-transform:uppercase; color:var(--ink2)}
+  .qnode{background:var(--surface); border:1px solid var(--line); border-radius:11px; padding:12px 16px; text-align:center; position:relative}
+  .qnode.dec{border-color:color-mix(in srgb,var(--accent) 40%,var(--line))}
+  .qnode .t{font-family:var(--mono); font-weight:700; font-size:12.5px; color:var(--ink)}
+  .qnode .s{font-family:var(--mono); font-size:10px; color:var(--ink2); margin-top:4px}
+  .spine{display:flex; flex-direction:column; align-items:center}
+
+  .cast{display:grid; grid-template-columns:repeat(auto-fill,minmax(232px,1fr)); gap:12px}
+  .castcard{border:1px solid var(--line); border-radius:12px; background:var(--surface); padding:14px 15px; display:flex; flex-direction:column; gap:6px}
+  .castcard .role{font-family:var(--mono); font-size:9.5px; letter-spacing:.16em; text-transform:uppercase; color:var(--accent)}
+  .castcard .nm{font-family:var(--mono); font-weight:700; font-size:15px; color:var(--ink)}
+  .castcard p{margin:0; font-size:13px; color:var(--ink2)}
+  .castcard .seam{margin-top:auto; font-family:var(--mono); font-size:10.5px; color:var(--ink2); border-top:1px dashed var(--line); padding-top:7px}
+  .castcard .seam b{color:var(--ink); font-weight:600}
+
+  .two{display:grid; grid-template-columns:1.1fr .9fr; gap:26px; align-items:start}
+  .two .panel{margin:0}
+  .anno{display:flex; flex-direction:column; gap:12px}
+  .anno .a{display:flex; gap:12px; align-items:flex-start}
+  .anno .n{flex:0 0 22px; height:22px; border-radius:6px; background:var(--surface2); border:1px solid var(--line); color:var(--accent); font-family:var(--mono); font-weight:700; font-size:11px; display:flex; align-items:center; justify-content:center; margin-top:1px}
+  .anno .a div b{font-family:var(--mono); font-size:12.5px; color:var(--ink)}
+  .anno .a div p{margin:2px 0 0; font-size:13px; color:var(--ink2)}
+
+  .tblwrap{overflow-x:auto; border:1px solid var(--line); border-radius:12px; margin:8px 0}
+  table{width:100%; border-collapse:collapse; font-family:var(--mono); font-size:12.5px; min-width:640px}
+  thead th{text-align:left; font-size:10px; letter-spacing:.12em; text-transform:uppercase; color:var(--ink2); font-weight:600; padding:12px 14px; background:var(--panel); border-bottom:1px solid var(--line); white-space:nowrap}
+  tbody td{padding:10px 14px; border-bottom:1px solid var(--line); color:var(--ink); vertical-align:top}
+  tbody tr:last-child td{border-bottom:0}
+  td .vt{color:var(--ink2); font-size:11.5px}
+  td b{color:var(--ink)}
+  .wt{font-variant-numeric:tabular-nums; color:var(--accent); font-weight:700}
+  .ax-orth{color:var(--accent)} .ax-price{color:var(--ink2)}
+  .st{font-size:11px; color:var(--ink2)}
+
+  .principles{display:grid; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); gap:16px}
+  .pr{border:1px solid var(--line); border-left:3px solid var(--accent); border-radius:0 12px 12px 0; background:var(--surface); padding:16px 18px}
+  .pr h4{font-family:var(--mono); font-size:14px; margin:0 0 6px; color:var(--ink)}
+  .pr p{margin:0; font-size:13.5px; color:var(--ink2)}
+  .pr p b{color:var(--ink); font-weight:600}
+
+  .layers{display:flex; flex-direction:column; gap:12px}
+  .layer{display:grid; grid-template-columns:138px 1fr auto; align-items:center; gap:16px; border:1px solid var(--line); border-radius:12px; background:var(--surface); padding:14px 16px}
+  .layer .lb{font-family:var(--mono); font-size:10px; letter-spacing:.14em; text-transform:uppercase; color:var(--accent)}
+  .layer .lb b{display:block; color:var(--ink); font-size:14px; letter-spacing:0; margin-top:3px; text-transform:none}
+  .layer .lc{display:flex; flex-wrap:wrap; gap:6px}
+  .layer .lo{font-family:var(--mono); font-size:10.5px; color:var(--ink2); white-space:nowrap; text-align:right; line-height:1.5}
+  @media(max-width:640px){.layer{grid-template-columns:1fr; gap:10px} .layer .lo{text-align:left}}
+
+  /* prose + reference */
+  .prose{max-width:76ch}
+  .prose p{margin:0 0 14px; font-size:15px; color:var(--ink)}
+  .prose p.muted{color:var(--ink2)}
+  .callout{border:1px solid var(--line); border-left:3px solid var(--accent); border-radius:0 12px 12px 0; background:var(--surface); padding:14px 18px; margin:18px 0; font-size:14.5px; color:var(--ink); max-width:80ch}
+  .callout.warn{border-left-color:var(--warn)} .callout.caveat{border-left-color:var(--down)}
+  .callout b{color:var(--ink)}
+  .callout .cl{display:block; font-family:var(--mono); font-size:10px; letter-spacing:.16em; text-transform:uppercase; margin-bottom:6px; color:var(--accent)}
+  .callout.warn .cl{color:var(--warn)} .callout.caveat .cl{color:var(--down)}
+  .steps{list-style:none; counter-reset:s; padding:0; margin:0; display:flex; flex-direction:column; gap:12px; max-width:80ch}
+  .steps li{counter-increment:s; display:grid; grid-template-columns:28px minmax(0,1fr); column-gap:14px; row-gap:2px; align-items:start}
+  .steps li::before{content:counter(s); grid-column:1; grid-row:1; height:26px; width:26px; border-radius:7px; background:var(--surface2); border:1px solid var(--line); color:var(--accent); font-family:var(--mono); font-weight:700; font-size:12px; display:flex; align-items:center; justify-content:center}
+  .steps li b{grid-column:2; grid-row:1; color:var(--ink)} .steps li p{grid-column:2; grid-row:2; margin:3px 0 0; color:var(--ink2); font-size:14px}
+  .steps li code{font-size:.85em}
+  .code{background:var(--surface2); border:1px solid var(--line); border-radius:10px; padding:13px 15px; overflow-x:auto; font-family:var(--mono); font-size:12px; color:var(--ink); line-height:1.65; margin:14px 0; white-space:pre; max-width:100%}
+  .code .c{color:var(--ink2)} .code .k{color:var(--accent)}
+  .defs{display:grid; gap:0; max-width:80ch}
+  .defs .row{display:grid; grid-template-columns:170px 1fr; gap:16px; font-size:14px; padding:11px 0; border-bottom:1px solid var(--line)}
+  .defs b{font-family:var(--mono); font-size:12.5px; color:var(--ink)}
+  .defs .d{color:var(--ink2)}
+  .gauntlet{display:flex; flex-direction:column; gap:3px; font-family:var(--mono); font-size:12.5px; max-width:660px}
+  .gauntlet .g{display:flex; align-items:center; gap:12px; padding:10px 13px; border:1px solid var(--line); border-radius:8px; background:var(--surface)}
+  .gauntlet .g .ck{color:var(--up); font-weight:700; flex:0 0 auto}
+  .gauntlet .g .cond{color:var(--ink)} .gauntlet .g .res{margin-left:auto; color:var(--ink2); white-space:nowrap}
+  .reading{display:grid; grid-template-columns:1fr 1fr; gap:14px; margin:20px 0 6px; max-width:80ch}
+  .rp{border:1px solid var(--line); border-radius:12px; background:var(--surface); padding:14px 16px}
+  .rp .rt{font-family:var(--mono); font-size:11px; letter-spacing:.12em; text-transform:uppercase; color:var(--accent); margin-bottom:6px}
+  .rp p{margin:0; font-size:13.5px; color:var(--ink2)}
+  .rp b{color:var(--ink)}
+  @media(max-width:640px){ .reading{grid-template-columns:1fr} .defs .row{grid-template-columns:1fr; gap:2px} }
+
+  /* screenshot placeholders */
+  .shots{display:grid; grid-template-columns:repeat(auto-fit,minmax(238px,1fr)); gap:14px; margin:6px 0}
+  .shot{border:1.5px dashed color-mix(in srgb,var(--line) 78%,var(--ink)); border-radius:12px; background:var(--surface2); min-height:160px; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:18px 16px; gap:7px; margin:0}
+  .shot svg{color:var(--ink2); opacity:.55; margin-bottom:2px}
+  .shot .sid{font-family:var(--mono); font-size:10px; letter-spacing:.18em; font-weight:700; color:var(--accent)}
+  .shot .stt{font-family:var(--mono); font-size:13px; font-weight:700; color:var(--ink)}
+  .shot .scap{font-size:12px; color:var(--ink2); line-height:1.45; max-width:30ch}
+  .shot .sfile{font-family:var(--mono); font-size:9.5px; color:var(--ink2); opacity:.72; margin-top:3px}
+
+  footer{margin-top:72px; padding-top:22px; border-top:1px solid var(--line); font-family:var(--mono); font-size:11.5px; color:var(--ink2); display:flex; flex-wrap:wrap; gap:6px 18px; justify-content:space-between}
+  footer b{color:var(--ink); font-weight:600}
+
+  @media (prefers-reduced-motion:reduce){ .live .arrow{animation:none} .livedot{animation:none} }
+  @media (max-width:760px){ .two{grid-template-columns:1fr} }
+  @media (max-width:640px){ .wrap{padding:40px 14px 72px} .panel{padding:24px 16px} }
+</style>
+<style>
+  .wrap{max-width:900px}
+  .kicker .navsep{opacity:.45;margin:0 3px}
+  .kicker a.navhome{color:var(--ink2);border-bottom:0;text-decoration:none}
+  .kicker a.navhome:hover{color:var(--accent)}
+  .doc h2{font-family:var(--mono);font-weight:700;font-size:15px;letter-spacing:.2em;text-transform:uppercase;
+    color:var(--ink);margin:64px 0 4px;padding-bottom:12px;border-bottom:1px solid var(--line)}
+  .doc h2 .hn{color:var(--accent);margin-right:12px}
+  .doc h3{margin:34px 0 8px}
+  .doc p{font-size:15.5px;color:var(--ink);margin:0 0 15px;max-width:78ch}
+  .doc a{color:var(--accent);text-decoration:none;border-bottom:1px solid color-mix(in srgb,var(--accent) 40%,transparent)}
+  .doc a:hover{border-bottom-color:var(--accent)}
+  .doc strong{color:var(--ink);font-weight:670}
+  .doc em{color:var(--ink2);font-style:italic}
+  .doc ul,.doc ol{max-width:78ch;padding-left:1.3em;margin:0 0 15px}
+  .doc li{margin:.42em 0;font-size:15px;color:var(--ink)}
+  .doc li::marker{color:var(--accent)}
+  .doc hr{border:0;border-top:1px solid var(--line);margin:8px 0}
+  .doc blockquote{margin:18px 0;padding:14px 18px;border:1px solid var(--line);border-left:3px solid var(--accent);
+    border-radius:0 12px 12px 0;background:var(--surface);color:var(--ink2);max-width:80ch}
+  .doc blockquote p{color:var(--ink2);margin:0}
+  .doc blockquote strong{color:var(--ink)}
+  .doc pre{background:var(--surface2);border:1px solid var(--line);border-radius:10px;padding:14px 16px;
+    overflow-x:auto;font-family:var(--mono);font-size:12px;color:var(--ink);line-height:1.6;margin:16px 0;white-space:pre}
+  .doc pre code{background:none;border:0;padding:0;font-size:1em;color:inherit}
+</style>
+</head><body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><symbol id="helm" viewBox="0 0 512 512"><path fill-rule="nonzero" d="M255.406 17.75C189.313 39.42 124.536 85.124 79.03 150.344c21.238 57.44 32.72 94.314 32.72 131.375 0 36.493-11.52 73.723-32.125 129.655 49.72 36.73 100.08 58.95 150.313 64.938-5.052-60.378-9.83-120.748 1.593-181.125-30.644-3.28-61.384-13.286-92.03-30.72v-71.312c80.67 42.255 158.908 41.547 242.063 0v71.313c-30.06 14.376-60.192 24.722-90.25 29.28 8.684 60.46 7.723 120.915 2.03 181.375 46.386-7.335 92.89-28.824 139.032-64.312-33.966-112.954-34.03-145.933.594-260.47C391.162 84.844 317.924 39.89 255.405 17.75zm-75.125 212c-11.16-.13-19.646 3.174-21.25 9.156-2.33 8.7 10.778 19.76 29.282 24.72 18.505 4.957 35.388 1.92 37.72-6.782 2.33-8.7-10.775-19.76-29.282-24.72-5.783-1.55-11.396-2.315-16.47-2.374zm160.69 0c-5.074.06-10.687.825-16.47 2.375-18.507 4.96-31.613 16.018-29.28 24.72 2.33 8.7 19.213 11.738 37.717 6.78 18.505-4.958 31.613-16.018 29.282-24.72-1.604-5.98-10.09-9.286-21.25-9.155z"/></symbol></svg>
+<svg class="watermark" viewBox="0 0 512 512" aria-hidden="true"><use href="#helm"/></svg>
+<div class="wrap doc">
+<header>
+<p class="kicker"><svg class="brandmark" viewBox="0 0 512 512" aria-hidden="true"><use href="#helm"/></svg><span class="livedot"></span> Sentinel Suite · NinjaTrader 8 · living document<span class="navsep">·</span><a class="navhome" href="SENTINEL_DOCS.html">Docs home →</a></p>
+<h1>Sentinel System Builder — Spec</h1>
+</header>
+<blockquote><p>A GUI surface that lets the operator <strong>compose a per-scope sensor system</strong> — pick the sensors, set their weights and kind, set the conviction floor — and <strong>materialize</strong> it: write the scope's <code>Roster.conf</code> (what the brain <em>expects</em>) <strong>and</strong> lay those sensors onto a chart (what the chart <em>provides</em>), so the Council fuses exactly the declared system and <code>RosterComplete</code> verifies the two agree.</p></blockquote>
+<p><strong>Status:</strong> Phases 0 + 1 <strong>BUILT</strong> (bridge-compile clean; needs one authoritative F5) · 2026-07-12   · SentinelCore <strong>v1.31.0</strong> (<code>VoterCatalog</code> + <code>RosterIO</code>) · Council <strong>v1.6.3</strong> (consumes <code>RosterIO</code>) · SentinelCockpit <strong>v0.3.0</strong> (⑤ BUILD mode) <strong>Host:</strong> extends <code>SentinelCockpit</code> (the per-scope decision surface) — new <strong>BUILD mode</strong> <strong>Depends on:</strong> <code>SentinelCore</code> (new <code>VoterCatalog</code> + <code>RosterIO</code>), <code>Council_v1_x</code> (unchanged consumer) <strong>Related:</strong> [[council-custom-voters]] · [[sentinel-cockpit]] · [[seam-scope-migration]] · [[declared-roster]] · [[conditions-vs-latches]]</p>
+<hr>
+<h2><span class="hn">0.</span>Why this is the natural next tool (not a novelty)</h2>
+<p>The Council is <strong>already</strong> a config-driven linear model over a <strong>declared roster</strong> — it reads <code>Roster.conf</code>, folds each declared voter's <code>w=</code> and <code>state/trigger</code> kind into a weighted vote, and reports <code>RosterComplete</code> when the declared set matches what actually published. Today that roster is edited by hand in a text file. <strong>This tool is the visual front-end for a decision already recorded</strong> ([[council-custom-voters]]: <em>the roster must be user-customizable — build a generic vote registry, not a locked dev set</em>).</p>
+<p>Three facts make it fall out of the existing architecture rather than fight it:</p>
+<ol>
+<li><strong>A "system" is defined per SCOPE</strong> (instrument + bar type). That is exactly the coordinate a model is defined over ([[seam-scope-migration]]), and EXP-0002 proved the <strong>edge lives per bar type</strong> — so the builder is scoped by construction, not by afterthought.</li>
+<li><strong>The persistence format already exists and is already consumed.</strong> <code>Roster.conf</code> is parsed by the Council at Council_v1_0_0.cs:1046. The builder writes the same file; nothing new has to learn to read it.</li>
+<li><strong>The correctness check already exists.</strong> <code>RosterInfo</code> (Declared/Present/Missing/Unexpected/Complete) is the Council's own verdict on whether the loaded chart matches the declared system. The builder makes that verdict its <em>post-apply confirmation</em> — the same mechanism that catches a crashed sensor ([[eye-never-loads-bug]]) validates the build.</li>
+</ol>
+<p>The result is a genuinely closed loop: <strong>one author</strong> for <em>what the brain expects</em> and <em>what the chart provides</em>, and the Council's existing <code>RosterComplete</code> tells you they match.</p>
+<hr>
+<h2><span class="hn">1.</span>The artifact: a <strong>System</strong></h2>
+<p>A System is <code>(scope, roster, presence)</code>:</p>
+<div class="tblwrap"><table><thead><tr><th>Part</th><th>Definition</th><th>Persisted as</th></tr></thead><tbody><tr><td><strong>Scope</strong></td><td>instrument + bar-type tag, e.g. <code>GC.69697v6x24</code> (<code>SentinelCore.ScopeOf</code> / <code>BarTag</code>)</td><td>implied by file path</td></tr><tr><td><strong>Roster</strong></td><td>ordered <code>{tag, included, weight, kind}</code> + <code>ConvictionFloor</code> / <code>Deadband</code> / <code>BaseContracts</code></td><td><code>Roster.conf</code> (Council-consumed)</td></tr><tr><td><strong>Presence</strong></td><td>the indicator instances (+ params) that must load so those tags publish their seams</td><td>generated chart template</td></tr><tr><td><strong>Manifest</strong></td><td>the builder's own superset record (catalog picks + params + template name + floor/etc.) so a system round-trips</td><td><code>System.conf</code></td></tr></tbody></table></div>
+<p>Systems live under the scope directory the Council already searches:</p>
+<pre><code>Sentinel\Models\&lt;INST&gt;\&lt;bartag&gt;\Roster.conf     # consumed by the Council (exists today)
+Sentinel\Models\&lt;INST&gt;\&lt;bartag&gt;\System.conf     # builder manifest (new; superset of the roster)
+templates\Chart\Sentinel_&lt;INST&gt;_&lt;bartag&gt;.xml    # generated chart template (new)</code></pre>
+<hr>
+<h2><span class="hn">2.</span>The two halves (very different risk)</h2>
+<p>The consult established the split; the spec commits to it.</p>
+<h3>Half 1 — the system DEFINITION <em>(easy; plumbing exists)</em></h3>
+<p>A visual editor over <code>Roster.conf</code>. Read the cascade, edit an in-memory model, write the file back in the exact <code>ParseRoster</code> format. <strong>Zero chart risk</strong> — it only edits a config file the Council already parses. This is the Cockpit's read surface made <em>writable</em>. <strong>Ships value on its own.</strong></p>
+<h3>Half 2 — the chart MATERIALIZATION <em>(the crux; staged, de-risked)</em></h3>
+<p>Get the selected sensors actually <strong>loaded on a chart</strong> so they publish. Recommended mechanism = a generated <strong>chart template</strong> (NT owns instantiation + data-series wiring; survives reload). A runtime <code>ChartControl.Indicators.Add(...)</code> path exists but is brittle — prototype before committing.</p>
+<hr>
+<h2><span class="hn">3.</span>The missing artifact: the <strong>Voter Catalog</strong></h2>
+<p><code>Roster.conf</code> speaks in <strong>voter tags</strong> (<code>EYE</code>, <code>TRND</code>, <code>FLOW</code>, <code>FLUX</code>…), but a chart loads <strong>indicator classes</strong> (<code>Eye_v1_1_0</code>, <code>SentinelTrend_v1_0_0</code>, <code>SentinelFlow…</code>, and the <code>SentinelFlux</code> bar type for <code>FLUX</code>). The builder needs a <strong>catalog</strong> mapping one to the other. This is the one genuinely new data structure the tool requires.</p>
+<blockquote><p><strong>Catalog note:</strong> the <code>VoterCatalog</code> must now include the <strong>FLUX</strong> voter alongside FLOW — <code>FLUX</code> is published by the <code>SentinelFlux</code> order-flow-imbalance <strong>bar type</strong> (not a chart indicator), so its <code>CatalogEntry</code> "presence" is satisfied when the chart runs on <code>SentinelFlux</code> bars and <code>FluxState</code> is fresh, rather than by loading an indicator.</p></blockquote>
+<p><strong>Location:</strong> <code>SentinelCore.VoterCatalog</code> — a static table (single source of truth), optionally overridable by <code>Sentinel\Models\Catalog.conf</code> for user-added sensors.</p>
+<pre><code>public sealed class CatalogEntry
+{
+    public string   Tag;          // "EYE"  — the Roster.conf token
+    public string   Display;      // "Eye"
+    public string   TypeName;     // "Eye_v1_1_0" — the NT indicator class to instantiate/template
+    public Role     Role;         // Voter | Modulator | Veto | ContextAxis
+    public VoterKind DefaultKind; // State | Trigger
+    public double   DefaultWeight;// the F6 default weight
+    public string   Seam;         // "EyeVerdict" — the …State seam it must publish to count as Present
+    public string   Notes;        // "instrument-keyed by design", "delayed feed", etc.
+}</code></pre>
+<p>Seed it from the Council's own <code>KnownVoters</code> + weight/kind maps (Council_v1_0_0.cs:266, <code>BaseWeight</code>, <code>KindFor</code>) plus the context axes (Clock / Participation / MTF / Location / Intermarket) that are modulators/vetoes rather than voters. Every row carries its <strong>role</strong>, so the UI can group <em>voters</em> (weighted) apart from <em>modulators / vetoes / context</em> (present-or-absent).</p>
+<blockquote><p><strong>Future — self-registration.</strong> Fold catalog registration into the standing sensor protocol (design system §9): a "born-compliant" sensor already publishes a <code>…State</code> seam and wires into the Council; add <em>"registers a <code>CatalogEntry</code> in <code>SetDefaults</code>"</em> so the catalog is never hand-maintained as new sensors land. Until then the static table + <code>Catalog.conf</code> override covers it.</p></blockquote>
+<hr>
+<h2><span class="hn">4.</span>Single source of truth: extract <code>RosterIO</code></h2>
+<p>Today <code>ParseRoster</code> lives <strong>inside the Council</strong>. If the builder writes <code>Roster.conf</code> with its own serializer, the read and write formats can drift. <strong>Extract the parser (and a matching writer) into <code>SentinelCore.RosterIO</code></strong>; the Council consumes it (no behavior change), the builder consumes it. One format, two clients.</p>
+<pre><code>public static class RosterIO
+{
+    public static RosterDoc  Read(string scopeInst, string barTag);   // cascade-resolves, returns entries + source path
+    public static void       Write(string scopeInst, string barTag, RosterDoc doc); // atomic (temp + File.Replace)
+    // RosterDoc = ordered List&lt;RosterLine{ Tag, Weight?, Kind?, Comment }&gt; + ConvictionFloor?/Deadband?/BaseContracts?
+}</code></pre>
+<p>Atomic write (temp file + <code>File.Replace</code>) so a half-written roster can never be read by a live Council.</p>
+<hr>
+<h2><span class="hn">5.</span>UI — a Cockpit <strong>BUILD mode</strong></h2>
+<p>Host it in the <strong>Cockpit</strong>, not the Dashboard: the Cockpit is already the per-scope <em>"is my brain alive / why isn't it trading"</em> surface, floatable and pinnable, scope-picker driven. The System Builder is its <strong>write-side twin</strong>. Add a header toggle <strong>MONITOR ⇄ BUILD</strong> (editing needs more room and a different interaction than the monitoring column).</p>
+<pre><code>┌─ SENTINEL COCKPIT ····························· [MONITOR|BUILD] 📌 ─┐
+│ Scope:  [GC ▾]   bartype [TBars 6/24 ▾]   →  GC.69697v6x24          │
+│ Source: Models\GC\69697v6x24\Roster.conf   ● live Council on chart  │
+├────────────────────────────────────────────────────────────────────┤
+│  VOTERS                                    w        kind      seam   │
+│  ☑ Eye            ▓▓▓▓▓░░░░  1.4   ● state ○ trigger        ● fresh │
+│  ☑ SentinelTrend  ▓▓▓░░░░░░  1.0   ● state ○ trigger        ● fresh │
+│  ☑ WoodiesCCI     ▓▓░░░░░░░  0.8   ● state ○ trigger        ● stale │
+│  ☐ ADXPro         ░░░░░░░░░  0.6   …                        ○ absent│
+│  ☑ Flow           ▓▓░░░░░░░  0.7   ● state ○ trigger        ● fresh │
+│  ☑ Flux           ▓▓░░░░░░░  0.7   ● state ○ trigger        ● fresh │
+│  … (22 voter rows, catalog-driven)                                  │
+│                                                                     │
+│  MODULATORS / VETOES / CONTEXT              include                 │
+│  ☑ Clock   ☑ Participation   ☑ MTF   ☑ Location   ☑ Intermarket     │
+├────────────────────────────────────────────────────────────────────┤
+│  ConvictionFloor  0.20 ▓▓░░░░   Deadband 0.15   BaseContracts 2     │
+│  declaredW 7.80   stateW 4.10 (quiet-bar denom)                     │
+│  RosterComplete? ● 20/22 present · missing: ADX, BRK                 │
+├────────────────────────────────────────────────────────────────────┤
+│  [ Load from live ]  [ Save Roster ]  [ Generate Template ]  [ Apply]│
+└────────────────────────────────────────────────────────────────────┘</code></pre>
+<p>Row anatomy (voter): <strong>include checkbox · display name · weight slider + numeric · state/trigger toggle · live-seam dot</strong> (fresh / stale / absent, reusing the Cockpit's three-seam-state coloring). <code>w=0</code> is expressible directly (the <strong>exploration primitive</strong> — recorded, contributes nothing).</p>
+<p><strong>Live preview (no save required):</strong> as the operator edits, recompute and show <code>declaredW</code>, <code>stateW</code> (the quiet-trigger denominator — [[state-vs-trigger-voters]]), and a <em>predicted</em> <code>RosterComplete</code> by checking which declared tags currently have a fresh seam for the scope (via <code>AllCouncilStates</code> / the per-seam getters). This makes the cost of each toggle visible <strong>before</strong> it's committed.</p>
+<hr>
+<h2><span class="hn">6.</span>Half 1 — Roster editor <em>(Phase 1, low risk)</em></h2>
+<ul>
+<li><strong>Read:</strong> <code>RosterIO.Read(inst, barTag)</code> mirrors the Council's cascade; show which file won (scope ▸ instrument ▸ global ▸ <em>default-derived</em>). If default-derived, seed the editor from configured weights.</li>
+<li><strong>Edit:</strong> in-memory <code>RosterDoc</code>; sliders/toggles mutate it; preview recomputes.</li>
+<li><strong>Write:</strong> <code>RosterIO.Write</code> → <code>Models\&lt;INST&gt;\&lt;bartag&gt;\Roster.conf</code>, atomic, with a generated header comment (<code># generated by Sentinel System Builder &lt;UTC&gt; — hand-edits below the line are preserved</code>).</li>
+<li><strong>Reload semantics (decision point):</strong> the Council caches its roster at load (Council_v1_0_0.cs:405, inside <code>State.Configure</code>/<code>DataLoaded</code>). A live edit therefore <strong>applies on the Council's next reload</strong> (chart reload / indicator re-add).</li>
+<li><strong>Phase 1:</strong> accept next-reload; the UI says so plainly ("saved — reloads on next chart load").</li>
+<li><strong>Phase 4:</strong> hot-reload via a roster <strong>version stamp</strong> the Council polls on <code>OnBarClose</code> (bump a <code>SentinelCore.RosterVersion(scope)</code> on write; Council re-runs <code>LoadRoster</code> when it changes). No lookahead risk — it's config, not market data.</li>
+</ul>
+<hr>
+<h2><span class="hn">7.</span>Half 2 — chart materialization</h2>
+<blockquote><p><strong>RESOLVED by reflection (2026-07-12): NT exposes a clean apply path.</strong> <code>NinjaTrader.Gui.Chart.ChartControl</code> carries <code>TemplateLoad(string)</code> <em>(private)</em>, <strong><code>TemplateLoadIndicators(XElement)</code> <em>(internal)</strong></em>, <code>TemplateSave(string)</code> <em>(private)</em>, <code>RemoveIndicator(IndicatorRenderBase)</code> <em>(private)</em>, and a <strong>public</strong> <code>Indicators</code> getter (<code>ChartObjectCollection&lt;IndicatorRenderBase&gt;</code>). The methods are private/internal — reachable from an AddOn <strong>via reflection</strong> (the accepted NT hatch; the suite already reflects into NT). Crucially, <strong><code>TemplateLoadIndicators</code> IS NT's own indicator-instantiation path</strong>, so it does the <code>BarsArray</code>/data-series wiring for us. This supersedes the old "seed + patch + manual load" plan and <strong>retires the runtime-<code>.Add</code> spike entirely.</strong></p></blockquote>
+<h3>7A. Reflected <code>TemplateLoadIndicators</code> <em>(recommended)</em></h3>
+<ol>
+<li><strong>Learn the schema once</strong> — reflect-invoke <code>TemplateSave(tempPath)</code> on a chart that has the sensors loaded, read the resulting XML, and lift the indicators sub-tree. That is the exact <code>XElement</code> shape <code>TemplateLoadIndicators</code> consumes — no guessing at NT's schema.</li>
+<li><strong>Build the element</strong> — from the System's included catalog entries (<code>TypeName</code> + params), assemble an <code>&lt;indicators&gt;</code> <code>XElement</code> matching that shape.</li>
+<li><strong>Apply</strong> — get the target chart's <code>ChartControl</code> (enumerate open chart windows, or target the active chart), then on the <strong>UI thread</strong> (<code>chartControl.Dispatcher.InvokeAsync</code>) reflect-invoke <code>TemplateLoadIndicators(xel)</code>. This swaps the indicator set <strong>without disturbing the rest of the chart</strong> (bars, panels, colors) — surgical, unlike a whole-template load.</li>
+<li><strong>Prune</strong> — for sensors the System <em>excludes</em> that are currently present, reflect-invoke <code>RemoveIndicator</code> per the public <code>Indicators</code> enumeration (the suite's existing remove pattern).</li>
+</ol>
+<p>Whole-chart <code>TemplateLoad(fileName)</code> remains the fallback if a full rebuild is ever wanted (it is literally the menu action, invoked in code).</p>
+<h3>7B. Runtime add <em>(RETIRED)</em></h3>
+<p>The earlier plan to <code>ChartControl.Indicators.Add(instance)</code> and hand-wire <code>BarsArray</code>/inputs is <strong>no longer needed</strong> — <code>TemplateLoadIndicators</code> is NT's own path and does that wiring internally. Kept here only as a record of the discarded approach.</p>
+<p><strong>Recommendation:</strong> implement 7A. The remaining unknown is not <em>whether</em> it works but the <code>&lt;indicators&gt;</code> XElement schema — which the <code>TemplateSave</code> round-trip hands us directly. A ~1-hour spike (save → read → re-apply a modified set → confirm the sensor loads + publishes its seam) confirms the whole path.</p>
+<hr>
+<h2><span class="hn">8.</span>The closed loop (why this is self-verifying)</h2>
+<pre><code>   Builder ─┬─► Roster.conf  (what the brain EXPECTS)  ─┐
+            └─► chart template (what the chart PROVIDES)─┤
+                                                         ▼
+                                              Council loads scope
+                                                         │
+                                              ResolveRoster() ──► RosterInfo
+                                                         │
+   Builder reads back ◄──────────────────────────────────┘
+     Complete  → green
+     Missing   → declared but not publishing (indicator failed to load / crashed — eye-never-loads class)
+     Unexpected→ loaded but undeclared (present + folded-out of the fusion)</code></pre>
+<p>After <strong>Apply</strong>, the builder polls the scope's <code>RosterInfo</code> and reports it. A green <code>Complete</code> is proof the materialized chart matches the declared system. A <code>Missing</code> entry is exactly the crashed-sensor signal the declared roster exists to surface — surfaced now at <em>build time</em>, in the tool that built it.</p>
+<hr>
+<h2><span class="hn">9.</span>Scope &amp; multi-chart guardrails</h2>
+<ul>
+<li>The builder edits <strong>one scope at a time</strong>; the scope picker is the mode's anchor.</li>
+<li><strong>Scope contention:</strong> two charts sharing instrument + bar type collide (the Council already logs <code>SCOPE CONTENTION</code> — [[scope-contention-detector]]). If the operator applies to a scope that already has a live Council on another chart, <strong>warn before writing</strong>.</li>
+<li><strong>Instrument-keyed-by-design seams</strong> (Clock, Intermarket) are shared across bar types by design ([[seam-scope-migration]]). The builder shows them in the MODULATOR/CONTEXT group and labels them <em>global</em> — toggling them is not per-scope.</li>
+<li><strong>Participation is scope-keyed</strong> ⇒ if included, it must be loaded on <em>this</em> chart — the builder's presence check enforces exactly that.</li>
+</ul>
+<hr>
+<h2><span class="hn">10.</span>SentinelCore additions (summary)</h2>
+<div class="tblwrap"><table><thead><tr><th>Addition</th><th>Purpose</th><th>Risk</th></tr></thead><tbody><tr><td><code>VoterCatalog</code> + <code>CatalogEntry</code></td><td>tag → indicator class + role + seam + defaults</td><td>additive, none</td></tr><tr><td><code>RosterIO.Read/Write</code> (extract <code>ParseRoster</code>)</td><td>one parser/writer for Council + Builder</td><td>Council swap to shared parser — verify parity</td></tr><tr><td><code>RosterVersion(scope)</code> (Phase 4)</td><td>hot-reload signal</td><td>additive</td></tr><tr><td>optional <code>Catalog.conf</code> override</td><td>user-added sensors without a recompile</td><td>additive</td></tr></tbody></table></div>
+<p>Version bump on <code>SentinelCore</code>; extend the Cockpit (bump <code>SentinelCockpit_v0_2_0</code>) rather than a new AddOn — keep one command surface. Follow the federated naming law (AddOn base <code>…AddOns.Sentinel</code>, display <code>Sentinel Cockpit</code>).</p>
+<hr>
+<h2><span class="hn">11.</span>Build order</h2>
+<div class="tblwrap"><table><thead><tr><th>Phase</th><th>Deliverable</th><th>Ships value</th><th>Chart risk</th></tr></thead><tbody><tr><td><strong>0</strong> ✅</td><td><code>SentinelCore.VoterCatalog</code> + extract <code>RosterIO</code> (Council swaps to it, bridge-compile clean, parity-preserved)</td><td>infra</td><td>none</td></tr><tr><td><strong>1</strong> ✅</td><td>Cockpit <strong>BUILD mode</strong> — Roster editor: read/edit/save + live <code>declaredW</code>/<code>stateW</code>/predicted <code>RosterComplete</code></td><td><strong>yes — full config UI, zero chart risk</strong></td><td>none</td></tr><tr><td><strong>2</strong></td><td><code>System.conf</code> manifest + <strong>template generation</strong> (seed+patch, written to <code>templates\Chart\</code>, manual apply)</td><td>yes</td><td>low (writes a file)</td></tr><tr><td><strong>3</strong></td><td><strong>Apply-to-chart</strong> — reflect-invoke <code>TemplateLoadIndicators</code> on the chart <code>ChartControl</code> (UI thread); prune via <code>RemoveIndicator</code></td><td>yes</td><td>low–medium (schema via <code>TemplateSave</code> round-trip)</td></tr><tr><td><strong>4</strong></td><td><strong>Hot roster reload</strong> (version stamp; no chart reload needed)</td><td>polish</td><td>none</td></tr></tbody></table></div>
+<p>Phase 1 alone replaces hand-editing <code>Roster.conf</code> and is the low-risk, high-payoff cut. Everything after it is materialization.</p>
+<hr>
+<h2><span class="hn">12.</span>Open questions / decisions to lock</h2>
+<ol>
+<li><strong>Reload:</strong> next-reload (Phase 1) vs. version-stamp hot-reload (Phase 4) — confirm Phase 1 accepts next-reload.</li>
+<li><strong>Template apply API:</strong> ✅ RESOLVED — <code>ChartControl.TemplateLoadIndicators(XElement)</code> exists (internal; reflection). Phase 3 is reflect-and-invoke, not a manual-load fallback. Remaining sub-task = confirm the <code>&lt;indicators&gt;</code> XElement schema via a <code>TemplateSave</code> round-trip.</li>
+<li><strong>7B runtime-add:</strong> ✅ RETIRED — <code>TemplateLoadIndicators</code> supersedes manual <code>.Add</code>. No spike needed for it.</li>
+<li><strong>Catalog maintenance:</strong> static table now, self-registration later — confirm the standing-protocol amendment (sensor registers its <code>CatalogEntry</code>).</li>
+<li><strong>Manifest scope:</strong> does <code>System.conf</code> also capture per-indicator param overrides (beyond catalog defaults), or is Phase 2 defaults-only?</li>
+</ol>
+<hr>
+<h2><span class="hn">13.</span>One-paragraph pitch</h2>
+<p>Everything the Council needs to be told is already a file it reads and a check it runs. The System Builder is the surface that writes that file with sliders instead of a text editor, lays the matching sensors onto the chart, and then reads the Council's own <code>RosterComplete</code> back as proof the two agree — turning the declared-roster invariant from a thing you maintain into a thing you <em>compose</em>.</p>
+<hr>
+<h2><span class="hn">14.</span>Per-Lane Rosters — authoring A/B test systems <em>(2026-07-14, ✅ BUILT — both phases)</em></h2>
+<blockquote><p><strong>BUILT &amp; compiling</strong> (via <code>nt8bridge</code>; loads on the next F5). As shipped: <strong>SentinelCore v1.33.0</strong> (<code>RosterIO</code> baseline-inherit cascade + <code>LaneIO</code> for <code>Lane.conf</code>) · <strong>Council v1.8.0</strong> (<code>ApplyLaneProfile</code> — reads <code>Lane.conf</code> on load and overrides the F6 fusion knobs) · <strong>Cockpit v0.4.0</strong> (⑤ BUILD gains a <strong>lane field</strong> + a <strong>Lane.conf profile editor</strong>). Phase 1 (per-lane roster + fork) AND Phase 2 (per-lane <code>Lane.conf</code> profile) both landed. The design below is the as-built spec; §14.7's "Phase 2 optional" decision was taken — Phase 2 is IN.</p></blockquote>
+<p><strong>Goal.</strong> Author, edit, and FORK a <strong>per-lane</strong> <code>Roster.conf</code> <strong>+ <code>Lane.conf</code> profile</strong> from the Cockpit, so you can run two charts on <em>identical bars</em> (same instrument + bar type + size) with <strong>different systems</strong> and compare them — without hand-editing files. This is the write-side companion to the per-chart <strong>LANE</strong> feature (<code>SentinelCore v1.32.0</code> · <code>Council v1.7.0</code>; see the <code>per-chart-lane</code> memory). A lane makes the scope <code>GC.212202v6x24@A</code>; this section makes the System Builder able to target that <code>@A</code>.</p>
+<h3>14.1 What's already true (so this is small)</h3>
+<ul>
+<li><strong><code>RosterIO</code> already handles laned tags.</strong> <code>Read</code>/<code>Write</code>/<code>PathFor</code>/<code>Candidates</code> take <code>(inst, barTag)</code> and <code>barTag</code> is an <strong>opaque string</strong> — <code>"212202v6x24@A"</code> already resolves to <code>Models\GC\212202v6x24@A\Roster.conf</code>. No I/O change needed to <em>store</em> a lane roster; the Council already <em>reads</em> it (it passes the laned tag to <code>RosterIO.Read</code>).</li>
+<li>The Cockpit ⑤ BUILD editor already Read/Write/previews a roster for a scope. It just has <strong>no lane dimension</strong> in its target picker, so today it can only write the <em>bare</em> scope.</li>
+</ul>
+<p>So the gap is three things: (a) let the Cockpit TARGET a lane, (b) one cascade nicety, (c) a FORK action.</p>
+<h3>14.2 RosterIO cascade — a lane inherits its bar type's baseline <em>(Core, ~6 lines)</em></h3>
+<p>Today <code>Candidates(inst, "212202v6x24@A")</code> = <code>…\212202v6x24@A\</code> ▸ <code>…\GC\</code> ▸ <code>…\</code> — it <strong>skips the bare-bartype roster</strong>. Make a laned tag fall through the bare-bartype rung so a fresh lane isn't empty:</p>
+<pre><code>Models\GC\212202v6x24@A\Roster.conf   (the lane — what you fork/edit)
+  ▸ Models\GC\212202v6x24\Roster.conf (the BAR-TYPE baseline — inherited until you fork)   ← NEW rung
+  ▸ Models\GC\Roster.conf             (instrument default)
+  ▸ Models\Roster.conf                (global)</code></pre>
+<p>Implementation: in <code>Candidates</code>, if <code>barTag</code> contains <code>'@'</code>, insert the pre-<code>@</code> (bare-bartype) path right after the laned path. <code>PathFor</code> is <strong>unchanged</strong> (a Write still targets the most-specific = the laned path). Net: a new lane <strong>reads as</strong> the bar-type baseline until you Save a lane file, then diverges. Clean default, no empty lanes.</p>
+<h3>14.3 Cockpit ⑤ — the lane dimension <em>(the real work)</em></h3>
+<p>The build target becomes <code>&lt;instrument&gt; . &lt;bartag&gt; [@ &lt;lane&gt;]</code>. Three UI pieces (Cockpit → <strong>v0.4.0</strong>):</p>
+<ol>
+<li><strong>Scope picker (primary).</strong> Extend the current instrument combo to a <strong>scope</strong> combo populated from <code>AllCouncilStates()</code> — it already surfaces <code>GC.212202v6x24@A</code>, <code>@B</code>, … as live scopes. Pick the live laned chart you want to configure; the Cockpit parses <code>inst / bartag / lane</code> from the scope string. (Instrument-only stays valid → bare-bartype roster.)</li>
+<li><strong>Editable "Lane" field.</strong> A small alnum text field beside the scope so you can author a lane that <strong>isn't live yet</strong> (prepare lane <code>C</code> before opening its chart), or blank it to edit the bar-type baseline. Sanitized to match Core (<code>SanitizeLane</code>).</li>
+<li><strong>Header truth line.</strong> Show the resolved target + which cascade file actually wins, e.g. <code>editing GC.212202v6x24@A — NEW file (inherits 212202v6x24 baseline)</code> vs <code>editing … — existing lane file</code>. So you always know whether you're forking or editing.</li>
+</ol>
+<h3>14.4 Fork-to-lane — the A/B killer action</h3>
+<p>A <strong><code>Fork → lane…</code></strong> button in BUILD: take the roster <strong>currently in the editor</strong> and Save it under a NEW lane, then switch the editor to that lane. Workflow becomes two clicks per variant:</p>
+<pre><code>compose a baseline  →  Fork → A  →  tweak weights/kind/voters  →  Save
+                    →  Fork → B  (from the baseline)  →  tweak differently  →  Save</code></pre>
+<p>Optional companion: <strong><code>Clone from…</code></strong> — seed the current lane's editor from any existing scope's roster (copy B's tuning onto C to iterate). Both are pure <code>RosterIO.Read</code>→edit→<code>RosterIO.Write</code> — no new plumbing.</p>
+<h3>14.5 Save &amp; apply</h3>
+<p><code>RosterIO.Write(inst, ladedTag, doc)</code> → <code>Models\GC\212202v6x24@A\Roster.conf</code> (atomic, as today). Applies on the Council's <strong>next reload</strong> (F6 disable/enable or reload the chart) — hot-reload remains the later phase from §7. The live preview (declaredW / stateW / <code>RosterComplete</code> vs the live Council mask) works unchanged, now against the laned Council.</p>
+<h3>14.6 How you USE it — the end-to-end A/B test</h3>
+<ol>
+<li>Two charts, identical bars (GC · <code>212202v6x24</code>). Council <strong>Scope Lane</strong> = <code>A</code> on one, <code>B</code> on the other. Both inherit the bar-type baseline roster until forked.</li>
+<li>Cockpit → <strong>BUILD</strong> → scope <code>GC.212202v6x24@A</code> → adjust variant A → <strong>Save</strong>. Then <code>@B</code> (or <strong>Fork → B</strong>) → adjust → <strong>Save</strong>.</li>
+<li>Reload both Councils. <code>sentinel.log</code> shows the two lanes with <strong>different rosters/denominators</strong> — the proof they diverged.</li>
+<li>(If auto-trading) set each <strong>Bridge / GTrader21</strong> <code>Scope Lane</code> to <code>A</code> / <code>B</code> so each trades its own lane.</li>
+<li>Bake clean schema-1.3 rows — the Recorder files each lane separately (<code>bartype=212202v6x24@A</code> / <code>@B</code>).</li>
+<li><code>Lab\train.py</code> / <code>council_paths.py</code> group by scope → <strong>grade A vs B on identical bars</strong>. Promote the winner (copy its roster to the bar-type baseline, or keep the lane).</li>
+</ol>
+<h3>14.7 Decision to lock — is a "lane" just a Roster.conf, or a full system profile?</h3>
+<p><code>Roster.conf</code> carries <strong>voters + weights + kind</strong>. But a lane's <em>behavior</em> also depends on Council F6 settings the roster file does <strong>not</strong> hold: <strong><code>ConvictionFloor</code></strong>, the consult toggles, and the modulator damps. Those are already <strong>per-chart</strong> (each chart's Council has its own F6), so they're <em>already</em> per-lane — but they live in the workspace, not in the lane file.</p>
+<ul>
+<li><strong>Phase 1 (recommended, this section):</strong> the System Builder authors the <strong><code>Roster.conf</code> only</strong>. Simple, matches the tool's remit. ⚠ Footgun: if lanes should differ by <strong>floor</strong>, you must also set each chart's F6 floor by hand — the Cockpit won't capture it.</li>
+<li><strong>Phase 2 (optional):</strong> promote a lane to a <strong>one-file reproducible SYSTEM</strong> — extend the lane folder with a sibling <code>Lane.conf</code> (or a header block in <code>Roster.conf</code>) carrying <code>floor=</code>, <code>consult*</code>, damps. The Council reads it on load (overrides F6 for that lane); the Cockpit edits it beside the roster. This makes an experiment a single shareable, versionable artifact — the honest unit for "system A vs system B". <strong>Recommend deferring to Phase 2</strong> but designing the file layout now so Phase 1 files are forward-compatible.</li>
+</ul>
+<h3>14.8 Scope / non-goals</h3>
+<ul>
+<li>No <code>Roster.conf</code> <strong>grammar</strong> change (Phase 1). Only: RosterIO cascade (§14.2), Cockpit target+fork (§14.3–4), version bump to <strong>Cockpit v0.4.0</strong>.</li>
+<li><strong>Not</strong> hot-reload (still §7's later phase). <strong>Not</strong> the per-lane full profile (Phase 2, §14.7). <strong>Not</strong> chart materialization (§7). <strong>Not</strong> laning individual sensors (a lane shares sensors by design — see the <code>per-chart-lane</code> memory).</li>
+</ul>
+<footer><span>Sentinel Suite · <b>Sentinel System Builder — Spec</b></span><span>living document · rendered from Markdown</span></footer>
+</div></body></html>

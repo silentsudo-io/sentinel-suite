@@ -1,0 +1,61 @@
+<!-- Daylight — the Sentinel LIGHT chart skin (parallels the dark ChartControl.xaml) -->
+<ResourceDictionary	xmlns		="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+					xmlns:x		="http://schemas.microsoft.com/winfx/2006/xaml"
+					xmlns:po	="http://schemas.microsoft.com/winfx/2006/xaml/presentation/options">
+
+	<LinearGradientBrush	po:Freeze="true"	x:Key="ChartTrader.ButtonBackground" StartPoint="0.5,-0.05"	EndPoint="0.5,0.66">
+		<LinearGradientBrush.GradientStops>
+			<GradientStop Color="#EDF1F7" Offset="0"/>
+			<GradientStop Color="#EDF1F7" Offset="1"/>
+		</LinearGradientBrush.GradientStops>
+	</LinearGradientBrush>
+	<LinearGradientBrush	po:Freeze="true"	x:Key="ChartTrader.ActionButtonsBackground" StartPoint="0.5,-0.05"	EndPoint="0.5,0.66">
+		<LinearGradientBrush.GradientStops>
+			<GradientStop Color="#EDF1F7" Offset="0"/>
+			<GradientStop Color="#EDF1F7" Offset="1"/>
+		</LinearGradientBrush.GradientStops>
+	</LinearGradientBrush>
+	<LinearGradientBrush	po:Freeze="true"	x:Key="ChartTrader.BuyButtonsBackground" StartPoint="0.5,-0.05"	EndPoint="0.5,0.66"><!-- Sentinel up (deep, reads on light) -->
+		<LinearGradientBrush.GradientStops>
+			<GradientStop Color="#149A5F" Offset="0"/>
+			<GradientStop Color="#0E7A4B" Offset="1"/>
+		</LinearGradientBrush.GradientStops>
+	</LinearGradientBrush>
+	<LinearGradientBrush	po:Freeze="true"	x:Key="ChartTrader.SellButtonsBackground" StartPoint="0.5,-0.05"	EndPoint="0.5,0.66"><!-- Sentinel down (deep) -->
+		<LinearGradientBrush.GradientStops>
+			<GradientStop Color="#D33A46" Offset="0"/>
+			<GradientStop Color="#A62B34" Offset="1"/>
+		</LinearGradientBrush.GradientStops>
+	</LinearGradientBrush>
+	<SolidColorBrush	x:Key="ChartControl.ChartBackground"				Color="#FFE6EBF1"			po:Freeze="true" /><!-- Sentinel Light: SOFT cool-grey price panel (calmer than near-white to kill glare) -->
+	<SolidColorBrush	x:Key="ChartControl.ChartText"						Color="#FF18202E"		po:Freeze="true" /><!-- dark slate ink -->
+	<SolidColorBrush	x:Key="ChartControl.InactivePriceMarkersBackground"	Color="#FFDDE4EE"			po:Freeze="true" />
+	<SolidColorBrush	x:Key="ChartControl.CrosshairLabelBackground"		Color="#FFDDE4EE"			po:Freeze="true" />
+
+	<Pen				x:Key="ChartControl.AxisPen"						Brush="#FF8A96A8"		po:Freeze="true"	Thickness="1"/>
+	<Pen				x:Key="ChartControl.CrosshairPen"					Brush="#FF8A96A8"		po:Freeze="true"	Thickness="1"/>
+	<Pen				x:Key="ChartControl.GridLineHPen"											po:Freeze="true"	Thickness="1">
+		<Pen.Brush>
+			<SolidColorBrush Color="#E2E7F0" Opacity="1" po:Freeze="true"></SolidColorBrush>
+		</Pen.Brush>
+	</Pen>
+	<Pen				x:Key="ChartControl.GridLineVPen"					po:Freeze="true"	Thickness="1">
+		<Pen.Brush>
+			<SolidColorBrush Color="#E2E7F0" Opacity="1" po:Freeze="true"></SolidColorBrush>
+		</Pen.Brush>
+	</Pen>
+	<Pen				x:Key="ChartControl.PanelSplitterPen"				Brush="#FFB8C2D0"		po:Freeze="true"		Thickness="1"/>
+
+	<SolidColorBrush	x:Key="ChartControl.DataBoxPanelLabelBackground"	Color="#FFDDE4EE"		po:Freeze="true" />
+	<SolidColorBrush	x:Key="ChartControl.DataBoxItemLabelBackground"		Color="#FFC8D0DC"		po:Freeze="true" />
+	<SolidColorBrush	x:Key="ChartControl.DataBoxBackground"				Color="#FFF4F6FA"			po:Freeze="true"		Opacity="0.8"/>
+	<SolidColorBrush	x:Key="ChartControl.DataBoxForeground"				Color="#FF48566B"		po:Freeze="true" />
+	<SolidColorBrush	x:Key="ChartControl.TimeHighBrush"					Color="#FF0D94A8"			po:Freeze="true"		Opacity="0.20"/>
+	<SolidColorBrush	x:Key="ChartControl.DropHighlight"					Color="#4488CC"			po:Freeze="true"		Opacity="0.5"/>
+	<SolidColorBrush	x:Key="ChartControl.SelectedMarkerBrush"			Color="#FF0D94A8"	po:Freeze="true" />
+	<SolidColorBrush	x:Key="ChartControl.UpBrush"						Color="#FF009999"		po:Freeze="true" /><!-- teal up bars (reads on light) -->
+	<SolidColorBrush	x:Key="ChartControl.DownBrush"						Color="#FF6E7787"				po:Freeze="true" /><!-- darkened grey down bars (light-legible; was #8E8E8E) -->
+	<SolidColorBrush	x:Key="ChartControl.VolumetricText"					Color="#FF18202E"			po:Freeze="true" />
+	<Pen				x:Key="ChartControl.Stroke"							Brush="#FF009999"		po:Freeze="true"		Thickness="1"/><!-- outline matches up body -->
+	<Pen				x:Key="ChartControl.Stroke2"						Brush="#FF6E7787"		po:Freeze="true"		Thickness="1"/><!-- outline matches down body -->
+</ResourceDictionary>

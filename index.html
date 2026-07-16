@@ -1,0 +1,488 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sentinel Suite — beautiful, intelligent NinjaTrader 8 instruments</title>
+<meta name="description" content="Open-source NinjaTrader 8 instruments: a design system that reskins your whole platform, and sensors that read the tape. Free, MPL-2.0.">
+<link rel="icon" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1MTIgNTEyIj48cGF0aCBmaWxsPSIjM0ZEMUUwIiBkPSJNMjU1LjQwNiAxNy43NUMxODkuMzEzIDM5LjQyIDEyNC41MzYgODUuMTI0IDc5LjAzIDE1MC4zNDRjMjEuMjM4IDU3LjQ0IDMyLjcyIDk0LjMxNCAzMi43MiAxMzEuMzc1IDAgMzYuNDkzLTExLjUyIDczLjcyMy0zMi4xMjUgMTI5LjY1NSA0OS43MiAzNi43MyAxMDAuMDggNTguOTUgMTUwLjMxMyA2NC45MzgtNS4wNTItNjAuMzc4LTkuODMtMTIwLjc0OCAxLjU5My0xODEuMTI1LTMwLjY0NC0zLjI4LTYxLjM4NC0xMy4yODYtOTIuMDMtMzAuNzJ2LTcxLjMxMmM4MC42NyA0Mi4yNTUgMTU4LjkwOCA0MS41NDcgMjQyLjA2MyAwdjcxLjMxM2MtMzAuMDYgMTQuMzc2LTYwLjE5MiAyNC43MjItOTAuMjUgMjkuMjggOC42ODQgNjAuNDYgNy43MjMgMTIwLjkxNSAyLjAzIDE4MS4zNzUgNDYuMzg2LTcuMzM1IDkyLjg5LTI4LjgyNCAxMzkuMDMyLTY0LjMxMi0zMy45NjYtMTEyLjk1NC0zNC4wMy0xNDUuOTMzLjU5NC0yNjAuNDdDMzkxLjE2MiA4NC44NDQgMzE3LjkyNCAzOS44OSAyNTUuNDA1IDE3Ljc1em0tNzUuMTI1IDIxMmMtMTEuMTYtLjEzLTE5LjY0NiAzLjE3NC0yMS4yNSA5LjE1Ni0yLjMzIDguNyAxMC43NzggMTkuNzYgMjkuMjgyIDI0LjcyIDE4LjUwNSA0Ljk1NyAzNS4zODggMS45MiAzNy43Mi02Ljc4MiAyLjMzLTguNy0xMC43NzUtMTkuNzYtMjkuMjgyLTI0LjcyLTUuNzgzLTEuNTUtMTEuMzk2LTIuMzE1LTE2LjQ3LTIuMzc0em0xNjAuNjkgMGMtNS4wNzQuMDYtMTAuNjg3LjgyNS0xNi40NyAyLjM3NS0xOC41MDcgNC45Ni0zMS42MTMgMTYuMDE4LTI5LjI4IDI0LjcyIDIuMzMgOC43IDE5LjIxMyAxMS43MzggMzcuNzE3IDYuNzggMTguNTA1LTQuOTU4IDMxLjYxMy0xNi4wMTggMjkuMjgyLTI0LjcyLTEuNjA0LTUuOTgtMTAuMDktOS4yODYtMjEuMjUtOS4xNTV6Ii8+PC9zdmc+">
+<script>try{var s=localStorage.getItem('sentinel-theme');if(s)document.documentElement.setAttribute('data-theme',s);}catch(e){}</script>
+</head>
+<body>
+<style>
+  :root{
+    /* Sentinel Dark tokens (authoritative palette) */
+    --void:#0A0E17; --panel:#111726; --card2:#0E1420; --line:#1E2A3D;
+    --dim:#1B2536; --faint:#26344C; --ink:#E9EEF7; --ink2:#AEBACE; --mute:#6C7A92;
+    --accent:#3FD1E0; --accent-deep:#1E9DAD; --up:#25D08B; --down:#FF5C6A; --warn:#F2B34C;
+    --glass-top:rgba(23,32,50,.72); --glass-bot:rgba(10,14,23,.86);
+    --wash:rgba(63,209,224,.10); --hair:rgba(63,209,224,.22);
+    --shadow:0 24px 60px -30px rgba(0,0,0,.8);
+    --font-display:"Segoe UI",system-ui,-apple-system,"Helvetica Neue",sans-serif;
+    --font-body:"Segoe UI",system-ui,-apple-system,sans-serif;
+    --font-mono:ui-monospace,"Cascadia Code","Cascadia Mono","SF Mono",Consolas,"Liberation Mono",monospace;
+    --maxw:1080px;
+  }
+  @media (prefers-color-scheme: light){
+    :root{
+      --void:#DEE4EC; --panel:#EEF2F7; --card2:#E6ECF3; --line:#C6D0DD;
+      --dim:#DDE4EC; --faint:#CBD5E1; --ink:#1B2432; --ink2:#41506A; --mute:#6C7A92;
+      --accent:#0C8CA0; --accent-deep:#0A6F7E; --up:#0E9E6A; --down:#D53442; --warn:#B7791F;
+      --glass-top:rgba(255,255,255,.78); --glass-bot:rgba(230,236,243,.9);
+      --wash:rgba(12,140,160,.08); --hair:rgba(12,140,160,.24);
+      --shadow:0 24px 50px -30px rgba(30,45,70,.4);
+    }
+  }
+  :root[data-theme="light"]{
+    --void:#DEE4EC; --panel:#EEF2F7; --card2:#E6ECF3; --line:#C6D0DD;
+    --dim:#DDE4EC; --faint:#CBD5E1; --ink:#1B2432; --ink2:#41506A; --mute:#6C7A92;
+    --accent:#0C8CA0; --accent-deep:#0A6F7E; --up:#0E9E6A; --down:#D53442; --warn:#B7791F;
+    --glass-top:rgba(255,255,255,.78); --glass-bot:rgba(230,236,243,.9);
+    --wash:rgba(12,140,160,.08); --hair:rgba(12,140,160,.24);
+    --shadow:0 24px 50px -30px rgba(30,45,70,.4);
+  }
+  :root[data-theme="dark"]{
+    --void:#0A0E17; --panel:#111726; --card2:#0E1420; --line:#1E2A3D;
+    --dim:#1B2536; --faint:#26344C; --ink:#E9EEF7; --ink2:#AEBACE; --mute:#6C7A92;
+    --accent:#3FD1E0; --accent-deep:#1E9DAD; --up:#25D08B; --down:#FF5C6A; --warn:#F2B34C;
+    --glass-top:rgba(23,32,50,.72); --glass-bot:rgba(10,14,23,.86);
+    --wash:rgba(63,209,224,.10); --hair:rgba(63,209,224,.22);
+    --shadow:0 24px 60px -30px rgba(0,0,0,.8);
+  }
+
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--void);color:var(--ink);font-family:var(--font-body);
+    line-height:1.6;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+  .wrap{max-width:var(--maxw);margin:0 auto;padding:0 24px}
+  a{color:inherit;text-decoration:none}
+  h1,h2,h3{text-wrap:balance;margin:0;font-family:var(--font-display);letter-spacing:-.02em}
+
+  /* eyebrow / mono labels — the signature voice */
+  .ey{font-family:var(--font-mono);font-size:12px;letter-spacing:.24em;text-transform:uppercase;
+    color:var(--accent);font-weight:600}
+  .mut{color:var(--mute)}
+
+  /* nav */
+  nav{position:sticky;top:0;z-index:30;backdrop-filter:blur(14px);
+    background:linear-gradient(var(--glass-top),var(--glass-bot));border-bottom:1px solid var(--line)}
+  nav .wrap{display:flex;align-items:center;gap:18px;height:60px}
+  .brand{display:flex;align-items:center;gap:11px;font-family:var(--font-mono);font-weight:700;
+    letter-spacing:.14em;font-size:15px}
+  .helm{fill:currentColor;color:var(--accent);flex:none}
+  .brand .helm{width:24px;height:24px;filter:drop-shadow(0 0 5px var(--accent));
+    animation:breathe 2.8s ease-in-out infinite}
+  @keyframes breathe{0%,100%{opacity:1;filter:drop-shadow(0 0 4px var(--accent))}
+    50%{opacity:.72;filter:drop-shadow(0 0 11px var(--accent))}}
+  .helm-ghost{position:absolute;right:-30px;top:8px;width:540px;height:540px;color:var(--accent);
+    opacity:.07;z-index:1;pointer-events:none}
+  @media(max-width:820px){.helm-ghost{right:-160px;opacity:.045}}
+  nav .links{margin-left:auto;display:flex;gap:22px;font-family:var(--font-mono);font-size:12.5px;
+    letter-spacing:.08em;text-transform:uppercase;color:var(--ink2)}
+  nav .links a:hover{color:var(--accent)}
+  .tt{margin-left:14px;font-family:var(--font-mono);font-size:15px;background:none;border:1px solid var(--line);
+    color:var(--ink2);width:34px;height:32px;border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex:none}
+  .tt:hover{border-color:var(--accent);color:var(--accent)}
+  @media(max-width:720px){nav .links{display:none} .tt{margin-left:auto}}
+
+  /* hero */
+  header{position:relative;padding:76px 0 44px;overflow:hidden}
+  #tape{position:absolute;inset:0;width:100%;height:100%;opacity:.55;pointer-events:none}
+  header .wrap{position:relative;z-index:2}
+  .hglow{position:absolute;left:50%;top:-10%;width:760px;height:520px;transform:translateX(-50%);
+    background:radial-gradient(closest-side,var(--wash),transparent 72%);z-index:1;pointer-events:none}
+  h1{font-size:clamp(38px,6.5vw,72px);font-weight:800;line-height:1.02;margin:22px 0 0;max-width:16ch}
+  h1 .cy{color:var(--accent)}
+  .sub{margin:22px 0 0;font-size:clamp(16px,2vw,19px);color:var(--ink2);max-width:60ch}
+  .cta{display:flex;gap:14px;flex-wrap:wrap;margin-top:30px}
+  .btn{font-family:var(--font-mono);font-size:13.5px;letter-spacing:.05em;font-weight:600;
+    padding:13px 22px;border-radius:11px;border:1px solid transparent;cursor:pointer;
+    display:inline-flex;align-items:center;gap:9px;transition:transform .12s ease,box-shadow .2s ease}
+  .btn:hover{transform:translateY(-2px)}
+  .btn.p{background:var(--accent);color:var(--void);box-shadow:0 10px 30px -10px var(--accent)}
+  .btn.s{background:transparent;border-color:var(--line);color:var(--ink)}
+  .btn.s:hover{border-color:var(--accent);color:var(--accent)}
+
+  /* stat strip — glass HUD */
+  .stats{margin-top:44px;display:grid;grid-template-columns:repeat(4,1fr);gap:1px;
+    background:var(--line);border:1px solid var(--line);border-radius:14px;overflow:hidden;box-shadow:var(--shadow)}
+  .stat{background:linear-gradient(var(--glass-top),var(--glass-bot));padding:20px 22px}
+  .stat b{display:block;font-family:var(--font-mono);font-size:30px;font-weight:700;color:var(--ink);
+    font-variant-numeric:tabular-nums;line-height:1}
+  .stat b .u{color:var(--accent);font-size:18px}
+  .stat span{display:block;margin-top:8px;font-family:var(--font-mono);font-size:11px;letter-spacing:.14em;
+    text-transform:uppercase;color:var(--mute)}
+  @media(max-width:720px){.stats{grid-template-columns:repeat(2,1fr)}}
+
+  /* sections */
+  section{padding:64px 0}
+  .lead{display:flex;flex-direction:column;gap:12px;margin-bottom:40px;max-width:62ch}
+  .lead h2{font-size:clamp(26px,4vw,38px);font-weight:800}
+  .lead p{margin:0;color:var(--ink2);font-size:17px}
+
+  /* two-axis */
+  .axes{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+  @media(max-width:760px){.axes{grid-template-columns:1fr}}
+  .axis{background:linear-gradient(var(--glass-top),var(--glass-bot));border:1px solid var(--line);
+    border-radius:16px;padding:30px;position:relative;box-shadow:var(--shadow)}
+  .axis .tag{font-family:var(--font-mono);font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--accent)}
+  .axis h3{font-size:23px;margin-top:12px;font-weight:750}
+  .axis p{color:var(--ink2);margin:12px 0 0;font-size:15.5px}
+  .perp{display:flex;align-items:center;justify-content:center;font-family:var(--font-mono);
+    color:var(--mute);font-size:13px;letter-spacing:.2em}
+
+  /* bundles */
+  .cards{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+  @media(max-width:860px){.cards{grid-template-columns:1fr}}
+  .card{background:linear-gradient(var(--glass-top),var(--glass-bot));border:1px solid var(--line);
+    border-radius:16px;padding:26px;display:flex;flex-direction:column;box-shadow:var(--shadow);
+    overflow:hidden;transition:border-color .2s ease,transform .2s ease}
+  .card:hover{border-color:var(--hair);transform:translateY(-3px)}
+  .card .thumb{margin:-26px -26px 20px;height:148px;overflow:hidden;border-bottom:1px solid var(--line);background:var(--void)}
+  .card .thumb img{width:100%;height:100%;object-fit:cover;object-position:top left;display:block;
+    transition:transform .4s ease}
+  .card:hover .thumb img{transform:scale(1.04)}
+  .card .k{font-family:var(--font-mono);font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--mute)}
+  .card h3{font-size:21px;margin-top:6px;font-weight:750}
+  .card .rung{font-family:var(--font-mono);font-size:11px;color:var(--accent);letter-spacing:.1em}
+  .card p{color:var(--ink2);font-size:14.5px;margin:12px 0 16px}
+  .card ul{list-style:none;padding:0;margin:0 0 20px;display:flex;flex-direction:column;gap:9px}
+  .card li{font-size:14px;color:var(--ink2);display:flex;gap:10px;align-items:flex-start}
+  .card li::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--accent);
+    margin-top:8px;flex:none;box-shadow:0 0 8px var(--accent)}
+  .card .foot{margin-top:auto;font-family:var(--font-mono);font-size:12px;color:var(--mute);
+    border-top:1px solid var(--line);padding-top:16px;display:flex;justify-content:space-between}
+  .card .foot b{color:var(--ink);font-weight:600}
+
+  /* ladder */
+  .ladder{display:flex;flex-direction:column;gap:8px}
+  .rung{display:grid;grid-template-columns:52px 1fr auto;align-items:center;gap:18px;
+    padding:15px 20px;border:1px solid var(--line);border-radius:12px;
+    background:linear-gradient(var(--glass-top),var(--glass-bot))}
+  .rung.live{border-color:var(--hair)}
+  .rung .n{font-family:var(--font-mono);font-size:20px;font-weight:700;color:var(--mute);
+    font-variant-numeric:tabular-nums;text-align:center}
+  .rung.live .n{color:var(--accent)}
+  .rung .t b{font-size:15.5px;font-weight:650}
+  .rung .t span{display:block;color:var(--mute);font-size:13px}
+  .rung.locked{opacity:.62}
+  .badge{font-family:var(--font-mono);font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;
+    padding:5px 11px;border-radius:20px;white-space:nowrap}
+  .badge.on{color:var(--void);background:var(--accent)}
+  .badge.dev{color:var(--mute);border:1px solid var(--line)}
+
+  /* install */
+  .term{background:var(--card2);border:1px solid var(--line);border-radius:14px;overflow:hidden;box-shadow:var(--shadow)}
+  .term .bar{display:flex;align-items:center;gap:8px;padding:12px 16px;border-bottom:1px solid var(--line);
+    font-family:var(--font-mono);font-size:12px;color:var(--mute)}
+  .term .bar i{width:11px;height:11px;border-radius:50%;background:var(--faint);display:inline-block}
+  .term .body{padding:22px 20px;font-family:var(--font-mono);font-size:13.5px;line-height:2}
+  .term .body .c{color:var(--mute)}
+  .term .body .g{color:var(--up)}
+  .term .body .a{color:var(--accent)}
+  .term .body .p{color:var(--ink)}
+
+  /* footer */
+  footer{border-top:1px solid var(--line);padding:48px 0 60px;margin-top:20px;color:var(--ink2)}
+  footer .row{display:flex;flex-wrap:wrap;gap:24px;justify-content:space-between;align-items:flex-start}
+  footer .lic{font-family:var(--font-mono);font-size:12px;color:var(--mute);max-width:46ch;line-height:1.8}
+  footer a.fl{font-family:var(--font-mono);font-size:12.5px;letter-spacing:.06em;color:var(--ink2)}
+  footer a.fl:hover{color:var(--accent)}
+  .money{display:inline-flex;gap:6px;align-items:center;font-family:var(--font-mono);font-size:12px}
+  .money .u{color:var(--up)} .money .d{color:var(--down)}
+
+  /* showcase */
+  .showcase{padding:8px 0 8px}
+  .shot{margin:0;border:1px solid var(--line);border-radius:16px;overflow:hidden;
+    box-shadow:var(--shadow);background:var(--card2);position:relative}
+  .shot::after{content:"";position:absolute;inset:0;border-radius:16px;pointer-events:none;
+    box-shadow:inset 0 0 0 1px var(--hair)}
+  .shot img{display:block;width:100%;height:auto}
+  .shot figcaption{font-family:var(--font-mono);font-size:12.5px;color:var(--ink2);
+    padding:14px 18px;border-top:1px solid var(--line);display:flex;gap:8px;align-items:center}
+  .shot figcaption b{color:var(--accent);font-weight:600}
+  .shot figcaption .tag{margin-left:auto;color:var(--mute)}
+
+  /* theme gallery */
+  .gallery{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px}
+  .gallery figure{margin:0;border:1px solid var(--line);border-radius:13px;overflow:hidden;
+    background:var(--card2);box-shadow:var(--shadow);transition:transform .2s ease,border-color .2s ease}
+  .gallery figure:hover{transform:translateY(-3px);border-color:var(--hair)}
+  .gallery img{display:block;width:100%;height:auto;aspect-ratio:16/10;object-fit:cover;object-position:top left}
+  .gallery figcaption{font-family:var(--font-mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;
+    color:var(--ink2);padding:11px 14px;display:flex;align-items:center;gap:8px}
+  .gallery figcaption i{width:8px;height:8px;border-radius:50%;background:var(--accent);flex:none}
+  .gallery figure.soon{display:flex;flex-direction:column;align-items:center;justify-content:center;
+    min-height:170px;background:linear-gradient(135deg,#0A0E17,#132a2e);border-style:dashed}
+  .gallery figure.soon .nz{font-family:var(--font-display);font-weight:800;font-size:26px;
+    background:linear-gradient(90deg,#3FD1E0,#25D08B);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .gallery figure.soon figcaption{color:var(--mute);justify-content:center}
+
+  @media (prefers-reduced-motion: reduce){
+    .dot,.helm{animation:none}
+    *{scroll-behavior:auto}
+  }
+</style>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><symbol id="helm" viewBox="0 0 512 512"><path d="M255.406 17.75C189.313 39.42 124.536 85.124 79.03 150.344c21.238 57.44 32.72 94.314 32.72 131.375 0 36.493-11.52 73.723-32.125 129.655 49.72 36.73 100.08 58.95 150.313 64.938-5.052-60.378-9.83-120.748 1.593-181.125-30.644-3.28-61.384-13.286-92.03-30.72v-71.312c80.67 42.255 158.908 41.547 242.063 0v71.313c-30.06 14.376-60.192 24.722-90.25 29.28 8.684 60.46 7.723 120.915 2.03 181.375 46.386-7.335 92.89-28.824 139.032-64.312-33.966-112.954-34.03-145.933.594-260.47C391.162 84.844 317.924 39.89 255.405 17.75zm-75.125 212c-11.16-.13-19.646 3.174-21.25 9.156-2.33 8.7 10.778 19.76 29.282 24.72 18.505 4.957 35.388 1.92 37.72-6.782 2.33-8.7-10.775-19.76-29.282-24.72-5.783-1.55-11.396-2.315-16.47-2.374zm160.69 0c-5.074.06-10.687.825-16.47 2.375-18.507 4.96-31.613 16.018-29.28 24.72 2.33 8.7 19.213 11.738 37.717 6.78 18.505-4.958 31.613-16.018 29.282-24.72-1.604-5.98-10.09-9.286-21.25-9.155z"/></symbol></svg>
+
+<nav><div class="wrap">
+  <div class="brand"><svg class="helm" aria-hidden="true"><use href="#helm"></use></svg>SENTINEL</div>
+  <div class="links">
+    <a href="#axes">The Two Axes</a>
+    <a href="#bundles">Bundles</a>
+    <a href="#ladder">The Ladder</a>
+    <a href="#install">Install</a>
+    <a href="#gh">GitHub</a>
+  </div>
+  <button id="tt" class="tt" type="button" aria-label="Toggle light or dark theme" title="Toggle theme">◐</button>
+</div></nav>
+
+<header>
+  <canvas id="tape" aria-hidden="true"></canvas>
+  <svg class="helm-ghost" aria-hidden="true"><use href="#helm"></use></svg>
+  <div class="hglow" aria-hidden="true"></div>
+  <div class="wrap">
+    <div class="ey">Open Source · MPL-2.0 · NinjaTrader&nbsp;8</div>
+    <h1>Make any chart <span class="cy">beautiful.</span><br>Then make it <span class="cy">think.</span></h1>
+    <p class="sub">Sentinel is a suite of NinjaTrader&nbsp;8 instruments — a design system that reskins your
+      whole platform, and a family of sensors that read the tape. One switch recolors everything. Every
+      tool stands alone. Free, forever, and yours to extend.</p>
+    <div class="cta">
+      <a class="btn p" href="#install">▸ Install the Suite</a>
+      <a class="btn s" href="#gh">View on GitHub</a>
+    </div>
+    <div class="stats">
+      <div class="stat"><b>47<span class="u"></span></b><span>Instruments</span></div>
+      <div class="stat"><b>7</b><span>Platform Themes</span></div>
+      <div class="stat"><b>3</b><span>Standalone Bundles</span></div>
+      <div class="stat"><b>0<span class="u">×</span></b><span>Order Risk</span></div>
+    </div>
+  </div>
+</header>
+
+<section class="showcase">
+  <div class="wrap">
+    <figure class="shot">
+      <img src="assets/screenshots/cohesion.png" loading="lazy"
+        alt="The Sentinel suite on a GC futures chart: glass HUD cards for God Reversal, Liquidity Walls, Vol Envelope, Sentinel Trend, Compression, ADX, Woodies CCI and WAE, plus the Sentinel Deck order panel — all in the Sentinel Dark theme.">
+      <figcaption>One GC chart, the whole suite — sensors, an order-flow bar type, and the Deck.
+        <span class="tag">Sentinel Dark</span></figcaption>
+    </figure>
+  </div>
+</section>
+
+<section id="axes">
+  <div class="wrap">
+    <div class="lead">
+      <div class="ey">The design decouples on purpose</div>
+      <h2>Two axes of value. Independently useful. Better together.</h2>
+      <p>Aesthetics and intelligence are separable by design — the same publish/consult split that runs
+        through the code. Take the beauty with none of the logic, or the logic on a plain chart. Your call.</p>
+    </div>
+    <div class="axes">
+      <div class="axis">
+        <div class="tag">Axis A — Beauty</div>
+        <h3>The Skin &amp; drawing framework</h3>
+        <p>A flight-deck design system that makes <em>any</em> NinjaTrader chart beautiful — glass HUD
+          cards, seven cohesive themes, a theme-aware wallpaper. Needs zero intelligence. Flip one switch
+          and the whole platform re-colors: charts, panels, chrome.</p>
+      </div>
+      <div class="axis">
+        <div class="tag">Axis B — Intelligence</div>
+        <h3>The sensors that read the tape</h3>
+        <p>Trend, momentum, regime, compression, liquidity, order-flow — each a standalone indicator that
+          publishes a clean state seam. Works with plain NT rendering. Needs zero skin. The one accent
+          rule: <span style="color:var(--accent)">cyan means live and watching.</span></p>
+      </div>
+    </div>
+    <div class="perp" style="margin-top:18px">BEAUTY&nbsp;&nbsp;⊥&nbsp;&nbsp;INTELLIGENCE</div>
+  </div>
+</section>
+
+<section id="themes">
+  <div class="wrap">
+    <div class="lead">
+      <div class="ey">Axis A — Beauty</div>
+      <h2>Seven themes. One switch.</h2>
+      <p>Pick a look and the whole platform follows — charts, glass cards, panels, chrome, wallpaper.
+        None of them are inverted from another; each is designed on its own ground.</p>
+    </div>
+    <div class="gallery">
+      <figure><img src="assets/screenshots/theme-dark.png" loading="lazy" alt="Sentinel Dark theme"><figcaption><i></i>Dark</figcaption></figure>
+      <figure><img src="assets/screenshots/theme-light.png" loading="lazy" alt="Sentinel Light theme"><figcaption><i></i>Light</figcaption></figure>
+      <figure><img src="assets/screenshots/theme-silver.png" loading="lazy" alt="Sentinel Silver theme"><figcaption><i></i>Silver</figcaption></figure>
+      <figure><img src="assets/screenshots/theme-obsidian.png" loading="lazy" alt="Sentinel Obsidian theme"><figcaption><i></i>Obsidian</figcaption></figure>
+      <figure><img src="assets/screenshots/theme-blueprint.png" loading="lazy" alt="Sentinel Blueprint theme"><figcaption><i></i>Blueprint</figcaption></figure>
+      <figure><img src="assets/screenshots/theme-amber.png" loading="lazy" alt="Sentinel Amber theme"><figcaption><i></i>Amber</figcaption></figure>
+      <figure class="soon"><div class="nz">NEON</div><figcaption>shot coming</figcaption></figure>
+    </div>
+  </div>
+</section>
+
+<section id="bundles" style="background:var(--panel);border-block:1px solid var(--line)">
+  <div class="wrap">
+    <div class="lead">
+      <div class="ey">Available now — zero order risk</div>
+      <h2>Three bundles. Install what you want, ignore the rest.</h2>
+      <p>Each carries the runtime it needs and installs into NinjaTrader's one assembly cleanly. Start
+        with beauty, add sensors when you're ready.</p>
+    </div>
+    <div class="cards">
+      <div class="card">
+        <div class="thumb"><img src="assets/screenshots/platform.png" loading="lazy" alt="NinjaTrader platform reskinned by Sentinel"></div>
+        <div class="k">Rung 0 · Beauty</div>
+        <h3>Sentinel Skins</h3>
+        <div class="rung">makes any chart beautiful</div>
+        <p>The design system and platform skin. The widest, easiest entry — no intelligence required.</p>
+        <ul>
+          <li>7 cohesive themes — Dark, Light, Silver, Obsidian, Blueprint, Amber, Neon</li>
+          <li><b>SentinelSkin</b> drawing framework — glass cards, auto-layout</li>
+          <li>Theme-aware ghosted chart wallpaper</li>
+        </ul>
+        <div class="foot"><span>Themes</span><b>7</b></div>
+      </div>
+      <div class="card">
+        <div class="thumb"><img src="assets/screenshots/flux.png" loading="lazy" alt="Sentinel sensors on a SentinelFlux order-flow chart"></div>
+        <div class="k">Rung 1 · Intelligence</div>
+        <h3>Sentinel Sensors</h3>
+        <div class="rung">read the tape, publish a verdict</div>
+        <p>Eight hero signals plus a fleet of regime, structure and order-flow sensors — and three
+          adaptive bar types.</p>
+        <ul>
+          <li>8 heroes — Trend, ADX, Woodies CCI, VolEnvelope, Compression, Liquidity Walls, God Reversal, WAE</li>
+          <li>13 more — SuperTrend, Regime, Structure, VIDYA, Parabolic SAR &amp; friends</li>
+          <li>3 bar types — TBars, TbarsCount, <b>Flux</b> (order-flow imbalance)</li>
+        </ul>
+        <div class="foot"><span>Instruments</span><b>24</b></div>
+      </div>
+      <div class="card">
+        <div class="thumb"><img src="assets/screenshots/smoothers.png" loading="lazy" alt="Sentinel smoothers stacked on an NQ chart"></div>
+        <div class="k">Rung 1 · Beauty × Data</div>
+        <h3>Sentinel Smoothers</h3>
+        <div class="rung">the moving-average toolkit</div>
+        <p>A clean-room pack of every moving average and filter worth having, all rebuilt to the suite's
+          card and color language.</p>
+        <ul>
+          <li>Classics — EMA, SMA, WMA, DEMA, TEMA, HMA, VWMA</li>
+          <li>Zero-lag family — ZLEMA, ZeroLag TEMA, HoltEMA</li>
+          <li>DSP filters — Ehlers, Gaussian, Butterworth, Super Smoother</li>
+        </ul>
+        <div class="foot"><span>Filters</span><b>23</b></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="ladder">
+  <div class="wrap">
+    <div class="lead">
+      <div class="ey">A ladder, not a wall</div>
+      <h2>Climb as far as you like.</h2>
+      <p>Every rung stands alone <em>and</em> unlocks the next. Rungs 0–1 are live today. The rest are
+        built and under active development — here's the whole map, so you can see where it goes.</p>
+    </div>
+    <div class="ladder">
+      <div class="rung live"><div class="n">0</div><div class="t"><b>Skins</b><span>make any chart beautiful</span></div><div class="badge on">Live</div></div>
+      <div class="rung live"><div class="n">1</div><div class="t"><b>Sensors &amp; Smoothers</b><span>read the tape · standalone signals</span></div><div class="badge on">Live</div></div>
+      <div class="rung locked"><div class="n">2</div><div class="t"><b>Recorder &amp; Log</b><span>capture every outcome to disk</span></div><div class="badge dev">In dev</div></div>
+      <div class="rung locked"><div class="n">3</div><div class="t"><b>Observatory</b><span>understand your recorded trades</span></div><div class="badge dev">In dev</div></div>
+      <div class="rung locked"><div class="n">4</div><div class="t"><b>The Council</b><span>one honest verdict, fused from every sensor</span></div><div class="badge dev">In dev</div></div>
+      <div class="rung locked"><div class="n">5</div><div class="t"><b>Deck &amp; Cockpit</b><span>advanced manual command surface</span></div><div class="badge dev">In dev</div></div>
+      <div class="rung locked"><div class="n">6</div><div class="t"><b>Prop-Survival Kit</b><span>keep your funded account alive</span></div><div class="badge dev">In dev</div></div>
+      <div class="rung locked"><div class="n">7</div><div class="t"><b>The Bridge</b><span>autopilot that consumes the Council</span></div><div class="badge dev">In dev</div></div>
+      <div class="rung locked"><div class="n">8</div><div class="t"><b>The Copier</b><span>mirror one account to many</span></div><div class="badge dev">In dev</div></div>
+      <div class="rung locked"><div class="n">9</div><div class="t"><b>Helm</b><span>the human hand on the tiller</span></div><div class="badge dev">In dev</div></div>
+      <div class="rung locked"><div class="n">10</div><div class="t"><b>The ML Lab</b><span>the system fits its own weights</span></div><div class="badge dev">In dev</div></div>
+    </div>
+  </div>
+</section>
+
+<section id="install" style="background:var(--panel);border-block:1px solid var(--line)">
+  <div class="wrap">
+    <div class="lead">
+      <div class="ey">Three steps · about a minute</div>
+      <h2>Install.</h2>
+      <p>No package manager, no build step. NinjaScript source drops straight into the platform. You bring
+        NinjaTrader 8 — we ship no NT binaries.</p>
+    </div>
+    <div class="term">
+      <div class="bar"><i></i><i></i><i></i>&nbsp;&nbsp;sentinel — install</div>
+      <div class="body">
+        <div><span class="c"># 1 · get the source</span></div>
+        <div><span class="g">git clone</span> <span class="a">https://github.com/silentsudo-io/sentinel-suite</span></div>
+        <div>&nbsp;</div>
+        <div><span class="c"># 2 · copy the bundle(s) you want into NinjaTrader's Custom tree</span></div>
+        <div><span class="p">Documents\NinjaTrader 8\bin\Custom\</span></div>
+        <div>&nbsp;</div>
+        <div><span class="c"># 3 · in NinjaScript Editor, press</span> <span class="a">F5</span> <span class="c">to compile</span></div>
+        <div><span class="g">✓</span> <span class="p">right-click a chart → Skins, Indicators, Bar Types → Sentinel</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer id="gh">
+  <div class="wrap">
+    <div class="row">
+      <div>
+        <div class="brand" style="font-size:14px"><svg class="helm" style="width:20px;height:20px" aria-hidden="true"><use href="#helm"></use></svg>SENTINEL&nbsp;SUITE</div>
+        <p class="lic">Free and open source under the Mozilla Public License 2.0.<br>
+          The SENTINEL name is a retained trademark. Not financial advice — for education and research.<br>
+          Helmet mark: “barbute” by Lorc, game-icons.net — CC BY 3.0.<br>
+          <span class="money">Color law: <span class="u">▲ green = up/long</span> · <span class="d">▼ red = down/short</span> · <span style="color:var(--accent)">◆ cyan = live</span></span></p>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:12px">
+        <a class="fl" href="#gh">→ github.com/silentsudo-io/sentinel-suite</a>
+        <a class="fl" href="#bundles">→ Bundles &amp; install</a>
+        <a class="fl" href="#ladder">→ The full ladder</a>
+        <a class="fl" href="#axes">→ Field manual &amp; docs</a>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<script>
+(function(){
+  var c=document.getElementById('tape'); if(!c) return;
+  var ctx=c.getContext('2d'), W,H,dpr, t=0;
+  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  function accent(){ return getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() || '#3FD1E0'; }
+  function size(){ dpr=Math.min(window.devicePixelRatio||1,2); W=c.clientWidth; H=c.clientHeight;
+    c.width=W*dpr; c.height=H*dpr; ctx.setTransform(dpr,0,0,dpr,0,0); }
+  function line(yBase,amp,freq,alpha,speed){
+    ctx.beginPath();
+    for(var x=0;x<=W;x+=6){
+      var y=yBase + Math.sin((x*freq)+(t*speed))*amp + Math.sin((x*freq*2.3)+(t*speed*1.7))*(amp*0.35);
+      x===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
+    }
+    var col=accent();
+    ctx.strokeStyle=col; ctx.globalAlpha=alpha; ctx.lineWidth=1.4; ctx.stroke(); ctx.globalAlpha=1;
+  }
+  function draw(){
+    ctx.clearRect(0,0,W,H);
+    line(H*0.42,26,0.010,0.5,1);
+    line(H*0.58,16,0.014,0.28,-0.7);
+    line(H*0.5,40,0.006,0.14,0.4);
+    if(!reduce){ t+=0.02; requestAnimationFrame(draw); }
+  }
+  window.addEventListener('resize',function(){ size(); if(reduce) draw(); });
+  size(); draw();
+})();
+</script>
+<script>
+(function(){
+  var root=document.documentElement, KEY='sentinel-theme', b=document.getElementById('tt');
+  try{ var s=localStorage.getItem(KEY); if(s) root.setAttribute('data-theme',s); }catch(e){}
+  if(!b) return;
+  b.addEventListener('click',function(){
+    var cur=root.getAttribute('data-theme');
+    if(!cur){ cur = (window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark':'light'; }
+    var next = cur==='dark' ? 'light':'dark';
+    root.setAttribute('data-theme', next);
+    try{ localStorage.setItem(KEY, next); }catch(e){}
+  });
+})();
+</script>
+
+</body>
+</html>

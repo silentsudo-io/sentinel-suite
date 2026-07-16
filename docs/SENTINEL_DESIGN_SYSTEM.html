@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sentinel · Sentinel Suite — Design System &amp; Build Framework</title>
+<style>
+  :root{
+    --void:#e7edf1; --panel:#f3f7f9; --surface:#ffffff; --surface2:#eaf0f3;
+    --ink:#16222c; --ink2:#586873; --line:#cdd8de; --grid:#dde5ea;
+    --accent:#0b8ea1; --flow:#0d8fa2;
+    --up:#12a56f; --down:#e0424f; --warn:#c9861a;
+    --mono:ui-monospace,"Cascadia Code","SF Mono",Consolas,Menlo,monospace;
+    --sans:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  }
+  @media (prefers-color-scheme:dark){
+    :root{
+      --void:#0a0e13; --panel:#0d131a; --surface:#141c25; --surface2:#0f161e;
+      --ink:#e2e9ee; --ink2:#8a9ba8; --line:#26333f; --grid:#131c25;
+      --accent:#4ad6e8; --flow:#3fb6c9; --up:#25d08b; --down:#ff5c6a; --warn:#f2b23c;
+    }
+  }
+  :root[data-theme="light"]{
+    --void:#e7edf1; --panel:#f3f7f9; --surface:#ffffff; --surface2:#eaf0f3;
+    --ink:#16222c; --ink2:#586873; --line:#cdd8de; --grid:#dde5ea;
+    --accent:#0b8ea1; --flow:#0d8fa2; --up:#12a56f; --down:#e0424f; --warn:#c9861a;
+  }
+  :root[data-theme="dark"]{
+    --void:#0a0e13; --panel:#0d131a; --surface:#141c25; --surface2:#0f161e;
+    --ink:#e2e9ee; --ink2:#8a9ba8; --line:#26333f; --grid:#131c25;
+    --accent:#4ad6e8; --flow:#3fb6c9; --up:#25d08b; --down:#ff5c6a; --warn:#f2b23c;
+  }
+
+  *{box-sizing:border-box}
+  body{margin:0; background:var(--void); color:var(--ink); font-family:var(--sans); line-height:1.55; -webkit-font-smoothing:antialiased; overflow-x:hidden}
+  .wrap{max-width:1120px; margin:0 auto; padding:56px 24px 100px; position:relative; z-index:1}
+
+  /* the Sentinel brand mark (Spartan barbute helmet) — faint fixed watermark + crisp header mark */
+  .watermark{position:fixed; z-index:0; pointer-events:none; top:50%; right:-2vw; transform:translateY(-50%); width:clamp(300px,40vw,560px); height:auto; fill:var(--accent); opacity:.18; filter:drop-shadow(0 0 55px color-mix(in srgb,var(--accent) 60%,transparent))}
+  .brandmark{width:16px; height:16px; flex:0 0 auto; fill:var(--accent); filter:drop-shadow(0 0 5px color-mix(in srgb,var(--accent) 50%,transparent))}
+
+  .kicker{font-family:var(--mono); font-size:11px; letter-spacing:.34em; text-transform:uppercase; color:var(--accent); display:flex; align-items:center; gap:9px; margin:0 0 14px}
+  .livedot{width:8px; height:8px; border-radius:50%; background:var(--accent); animation:pulse 2.4s ease-out infinite}
+  @keyframes pulse{0%{box-shadow:0 0 0 0 color-mix(in srgb,var(--accent) 55%,transparent)}70%{box-shadow:0 0 0 7px transparent}100%{box-shadow:0 0 0 0 transparent}}
+  h1{font-family:var(--mono); font-weight:700; font-size:clamp(30px,5.4vw,50px); letter-spacing:-.015em; margin:0 0 14px; text-wrap:balance}
+  .lede{font-size:18px; color:var(--ink2); max-width:66ch; margin:0 0 4px}
+  .lede b{color:var(--ink); font-weight:600}
+
+  .oneline{display:flex; flex-wrap:wrap; gap:7px; align-items:center; margin:28px 0 6px}
+  .oneline .s{font-family:var(--mono); font-size:12px; color:var(--ink); background:var(--surface); border:1px solid var(--line); border-radius:999px; padding:6px 13px}
+  .oneline .s b{color:var(--accent); font-weight:700}
+  .oneline .sep{color:var(--ink2); font-family:var(--mono)}
+
+  .toc{display:flex; flex-wrap:wrap; gap:6px 20px; margin:22px 0 6px; padding:16px 18px; border:1px solid var(--line); border-radius:12px; background:var(--panel)}
+  .toc a{font-family:var(--mono); font-size:12.5px; color:var(--ink2); text-decoration:none; white-space:nowrap}
+  .toc a:hover{color:var(--accent)}
+  .toc a b{color:var(--accent); font-weight:700; margin-right:6px}
+
+  .legend{display:flex; flex-wrap:wrap; gap:8px 18px; margin:18px 0 6px; padding:13px 16px; border:1px solid var(--line); border-radius:12px; background:var(--panel)}
+  .legend .k{display:flex; align-items:center; gap:8px; font-family:var(--mono); font-size:12px; color:var(--ink2)}
+  .swatch{width:22px; height:4px; border-radius:2px}
+  .swatch.a{background:var(--flow)} .swatch.u{background:var(--up)} .swatch.d{background:var(--down)} .swatch.w{background:var(--warn)}
+  .legend .k b{color:var(--ink); font-weight:600}
+
+  .part{display:flex; align-items:baseline; gap:16px; margin:80px 0 8px; padding-bottom:14px; border-bottom:1px solid var(--line)}
+  .part .pn{font-family:var(--mono); font-size:13px; font-weight:700; color:var(--accent); letter-spacing:.2em; white-space:nowrap}
+  .part h2{font-family:var(--mono); font-weight:700; font-size:15px; letter-spacing:.22em; text-transform:uppercase; color:var(--ink); margin:0}
+  .part .pd{margin-left:auto; font-size:13px; color:var(--ink2); font-family:var(--mono); text-align:right}
+
+  section{margin-top:44px}
+  .eyebrow{font-family:var(--mono); font-size:11px; letter-spacing:.24em; text-transform:uppercase; color:var(--accent); margin:0 0 8px; display:flex; gap:10px; align-items:baseline}
+  .eyebrow .num{color:var(--ink2); opacity:.7}
+  h3{font-family:var(--mono); font-weight:700; font-size:22px; margin:0 0 6px; letter-spacing:-.01em; text-wrap:balance}
+  .desc{color:var(--ink2); font-size:15px; margin:0 0 20px; max-width:74ch}
+  .desc b{color:var(--ink); font-weight:600}
+  code{font-family:var(--mono); font-size:.9em; background:var(--surface2); border:1px solid var(--line); border-radius:5px; padding:1px 5px; color:var(--ink)}
+
+  .panel{border:1px solid var(--line); border-radius:14px; background:var(--panel);
+    background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);
+    background-size:26px 26px; background-position:-1px -1px; padding:34px 30px; overflow-x:auto}
+
+  .node{background:var(--surface); border:1px solid var(--line); border-radius:11px; padding:11px 14px; min-width:120px; text-align:center; position:relative; box-shadow:0 1px 0 color-mix(in srgb,var(--ink) 6%,transparent)}
+  .node .t{font-family:var(--mono); font-weight:700; font-size:13px; color:var(--ink); white-space:nowrap}
+  .node .s{font-family:var(--mono); font-size:10.5px; color:var(--ink2); margin-top:3px; white-space:nowrap}
+  .node.accent{border-color:color-mix(in srgb,var(--accent) 55%,var(--line))}
+  .node.accent::before,.node.up::before,.node.down::before,.node.warn::before{content:""; position:absolute; left:0; top:9px; bottom:9px; width:3px; border-radius:3px}
+  .node.accent::before{background:var(--accent)}
+  .node.up::before{background:var(--up)} .node.up .t{color:color-mix(in srgb,var(--up) 78%,var(--ink))}
+  .node.down::before{background:var(--down)} .node.down .t{color:color-mix(in srgb,var(--down) 82%,var(--ink))}
+  .node.warn::before{background:var(--warn)}
+  .node.big{min-width:150px; padding:14px 16px}
+
+  .chip{font-family:var(--mono); font-size:11px; color:var(--ink); background:var(--surface2); border:1px solid var(--line); border-radius:7px; padding:5px 8px; white-space:nowrap; display:flex; justify-content:space-between; gap:10px; align-items:center}
+  .chip .w{color:var(--ink2); font-size:10px}
+  .chip.mute{color:var(--ink2)}
+
+  .flow{display:flex; align-items:center; justify-content:center; min-width:min-content}
+  .arrow{position:relative; flex:0 0 var(--aw,50px); height:2px; align-self:center; background:linear-gradient(90deg,color-mix(in srgb,var(--flow) 25%,transparent),var(--flow)); --c:var(--flow)}
+  .arrow::after{content:""; position:absolute; right:-1px; top:50%; transform:translateY(-50%); border-left:8px solid var(--c); border-top:5px solid transparent; border-bottom:5px solid transparent}
+  .arrow[data-l]::before{content:attr(data-l); position:absolute; left:50%; top:-15px; transform:translateX(-50%); font-family:var(--mono); font-size:9px; letter-spacing:.06em; text-transform:uppercase; color:var(--ink2); white-space:nowrap}
+  .arrow.up{--c:var(--up); background:linear-gradient(90deg,color-mix(in srgb,var(--up) 25%,transparent),var(--up))}
+  .arrow.down{--c:var(--down); background:linear-gradient(90deg,color-mix(in srgb,var(--down) 25%,transparent),var(--down))}
+  .arrow.warn{--c:var(--warn); background:linear-gradient(90deg,color-mix(in srgb,var(--warn) 25%,transparent),var(--warn))}
+  .arrow.v{width:2px; height:var(--ah,38px); flex:none; margin:0 auto; background:linear-gradient(180deg,color-mix(in srgb,var(--flow) 25%,transparent),var(--flow))}
+  .arrow.v::after{right:50%; top:auto; bottom:-1px; left:auto; transform:translateX(50%); border-left:5px solid transparent; border-right:5px solid transparent; border-top:8px solid var(--c); border-bottom:0}
+  .arrow.v.up-dir{background:linear-gradient(0deg,color-mix(in srgb,var(--flow) 25%,transparent),var(--flow))}
+  .arrow.v.up-dir::after{bottom:auto; top:-1px; border-top:0; border-bottom:8px solid var(--c)}
+  .arrow.v[data-l]::before{left:12px; top:50%; transform:translateY(-50%)}
+  .live .arrow{background-size:220% 100%; animation:travel 2.6s linear infinite}
+  @keyframes travel{0%{background-position:120% 0}100%{background-position:-40% 0}}
+
+  .group{border:1px dashed color-mix(in srgb,var(--line) 92%,var(--ink)); border-radius:11px; padding:12px; background:color-mix(in srgb,var(--surface) 55%,transparent)}
+  .group .gl{font-family:var(--mono); font-size:10px; letter-spacing:.14em; text-transform:uppercase; color:var(--ink2); margin:0 0 10px; text-align:center}
+  .grid2{display:grid; grid-template-columns:repeat(2,minmax(96px,1fr)); gap:6px}
+  .grid1{display:grid; gap:6px}
+  .rowflow{display:flex; align-items:center; justify-content:center; gap:0; min-width:min-content}
+  .stack{display:flex; flex-direction:column; align-items:center}
+  .band{display:flex; gap:8px; justify-content:center; flex-wrap:wrap; max-width:520px}
+
+  .verdict{background:var(--surface); border:1px solid color-mix(in srgb,var(--accent) 45%,var(--line)); border-radius:11px; padding:14px 16px; min-width:180px}
+  .verdict .vt{font-family:var(--mono); font-weight:700; font-size:12px; color:var(--accent); letter-spacing:.14em; margin-bottom:10px}
+  .vrow{display:flex; justify-content:space-between; gap:16px; font-family:var(--mono); font-size:12px; padding:4px 0; border-top:1px solid var(--line)}
+  .vrow span:first-child{color:var(--ink2)} .vrow span:last-child{color:var(--ink); font-weight:600}
+
+  .drow{display:flex; align-items:center; gap:14px; justify-content:center}
+  .branch{display:flex; align-items:center; gap:10px}
+  .blabel{font-family:var(--mono); font-size:9px; letter-spacing:.08em; text-transform:uppercase; color:var(--ink2)}
+  .qnode{background:var(--surface); border:1px solid var(--line); border-radius:11px; padding:12px 16px; text-align:center; position:relative}
+  .qnode.dec{border-color:color-mix(in srgb,var(--accent) 40%,var(--line))}
+  .qnode .t{font-family:var(--mono); font-weight:700; font-size:12.5px; color:var(--ink)}
+  .qnode .s{font-family:var(--mono); font-size:10px; color:var(--ink2); margin-top:4px}
+  .spine{display:flex; flex-direction:column; align-items:center}
+
+  .cast{display:grid; grid-template-columns:repeat(auto-fill,minmax(232px,1fr)); gap:12px}
+  .castcard{border:1px solid var(--line); border-radius:12px; background:var(--surface); padding:14px 15px; display:flex; flex-direction:column; gap:6px}
+  .castcard .role{font-family:var(--mono); font-size:9.5px; letter-spacing:.16em; text-transform:uppercase; color:var(--accent)}
+  .castcard .nm{font-family:var(--mono); font-weight:700; font-size:15px; color:var(--ink)}
+  .castcard p{margin:0; font-size:13px; color:var(--ink2)}
+  .castcard .seam{margin-top:auto; font-family:var(--mono); font-size:10.5px; color:var(--ink2); border-top:1px dashed var(--line); padding-top:7px}
+  .castcard .seam b{color:var(--ink); font-weight:600}
+
+  .two{display:grid; grid-template-columns:1.1fr .9fr; gap:26px; align-items:start}
+  .two .panel{margin:0}
+  .anno{display:flex; flex-direction:column; gap:12px}
+  .anno .a{display:flex; gap:12px; align-items:flex-start}
+  .anno .n{flex:0 0 22px; height:22px; border-radius:6px; background:var(--surface2); border:1px solid var(--line); color:var(--accent); font-family:var(--mono); font-weight:700; font-size:11px; display:flex; align-items:center; justify-content:center; margin-top:1px}
+  .anno .a div b{font-family:var(--mono); font-size:12.5px; color:var(--ink)}
+  .anno .a div p{margin:2px 0 0; font-size:13px; color:var(--ink2)}
+
+  .tblwrap{overflow-x:auto; border:1px solid var(--line); border-radius:12px; margin:8px 0}
+  table{width:100%; border-collapse:collapse; font-family:var(--mono); font-size:12.5px; min-width:640px}
+  thead th{text-align:left; font-size:10px; letter-spacing:.12em; text-transform:uppercase; color:var(--ink2); font-weight:600; padding:12px 14px; background:var(--panel); border-bottom:1px solid var(--line); white-space:nowrap}
+  tbody td{padding:10px 14px; border-bottom:1px solid var(--line); color:var(--ink); vertical-align:top}
+  tbody tr:last-child td{border-bottom:0}
+  td .vt{color:var(--ink2); font-size:11.5px}
+  td b{color:var(--ink)}
+  .wt{font-variant-numeric:tabular-nums; color:var(--accent); font-weight:700}
+  .ax-orth{color:var(--accent)} .ax-price{color:var(--ink2)}
+  .st{font-size:11px; color:var(--ink2)}
+
+  .principles{display:grid; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); gap:16px}
+  .pr{border:1px solid var(--line); border-left:3px solid var(--accent); border-radius:0 12px 12px 0; background:var(--surface); padding:16px 18px}
+  .pr h4{font-family:var(--mono); font-size:14px; margin:0 0 6px; color:var(--ink)}
+  .pr p{margin:0; font-size:13.5px; color:var(--ink2)}
+  .pr p b{color:var(--ink); font-weight:600}
+
+  .layers{display:flex; flex-direction:column; gap:12px}
+  .layer{display:grid; grid-template-columns:138px 1fr auto; align-items:center; gap:16px; border:1px solid var(--line); border-radius:12px; background:var(--surface); padding:14px 16px}
+  .layer .lb{font-family:var(--mono); font-size:10px; letter-spacing:.14em; text-transform:uppercase; color:var(--accent)}
+  .layer .lb b{display:block; color:var(--ink); font-size:14px; letter-spacing:0; margin-top:3px; text-transform:none}
+  .layer .lc{display:flex; flex-wrap:wrap; gap:6px}
+  .layer .lo{font-family:var(--mono); font-size:10.5px; color:var(--ink2); white-space:nowrap; text-align:right; line-height:1.5}
+  @media(max-width:640px){.layer{grid-template-columns:1fr; gap:10px} .layer .lo{text-align:left}}
+
+  /* prose + reference */
+  .prose{max-width:76ch}
+  .prose p{margin:0 0 14px; font-size:15px; color:var(--ink)}
+  .prose p.muted{color:var(--ink2)}
+  .callout{border:1px solid var(--line); border-left:3px solid var(--accent); border-radius:0 12px 12px 0; background:var(--surface); padding:14px 18px; margin:18px 0; font-size:14.5px; color:var(--ink); max-width:80ch}
+  .callout.warn{border-left-color:var(--warn)} .callout.caveat{border-left-color:var(--down)}
+  .callout b{color:var(--ink)}
+  .callout .cl{display:block; font-family:var(--mono); font-size:10px; letter-spacing:.16em; text-transform:uppercase; margin-bottom:6px; color:var(--accent)}
+  .callout.warn .cl{color:var(--warn)} .callout.caveat .cl{color:var(--down)}
+  .steps{list-style:none; counter-reset:s; padding:0; margin:0; display:flex; flex-direction:column; gap:12px; max-width:80ch}
+  .steps li{counter-increment:s; display:grid; grid-template-columns:28px minmax(0,1fr); column-gap:14px; row-gap:2px; align-items:start}
+  .steps li::before{content:counter(s); grid-column:1; grid-row:1; height:26px; width:26px; border-radius:7px; background:var(--surface2); border:1px solid var(--line); color:var(--accent); font-family:var(--mono); font-weight:700; font-size:12px; display:flex; align-items:center; justify-content:center}
+  .steps li b{grid-column:2; grid-row:1; color:var(--ink)} .steps li p{grid-column:2; grid-row:2; margin:3px 0 0; color:var(--ink2); font-size:14px}
+  .steps li code{font-size:.85em}
+  .code{background:var(--surface2); border:1px solid var(--line); border-radius:10px; padding:13px 15px; overflow-x:auto; font-family:var(--mono); font-size:12px; color:var(--ink); line-height:1.65; margin:14px 0; white-space:pre; max-width:100%}
+  .code .c{color:var(--ink2)} .code .k{color:var(--accent)}
+  .defs{display:grid; gap:0; max-width:80ch}
+  .defs .row{display:grid; grid-template-columns:170px 1fr; gap:16px; font-size:14px; padding:11px 0; border-bottom:1px solid var(--line)}
+  .defs b{font-family:var(--mono); font-size:12.5px; color:var(--ink)}
+  .defs .d{color:var(--ink2)}
+  .gauntlet{display:flex; flex-direction:column; gap:3px; font-family:var(--mono); font-size:12.5px; max-width:660px}
+  .gauntlet .g{display:flex; align-items:center; gap:12px; padding:10px 13px; border:1px solid var(--line); border-radius:8px; background:var(--surface)}
+  .gauntlet .g .ck{color:var(--up); font-weight:700; flex:0 0 auto}
+  .gauntlet .g .cond{color:var(--ink)} .gauntlet .g .res{margin-left:auto; color:var(--ink2); white-space:nowrap}
+  .reading{display:grid; grid-template-columns:1fr 1fr; gap:14px; margin:20px 0 6px; max-width:80ch}
+  .rp{border:1px solid var(--line); border-radius:12px; background:var(--surface); padding:14px 16px}
+  .rp .rt{font-family:var(--mono); font-size:11px; letter-spacing:.12em; text-transform:uppercase; color:var(--accent); margin-bottom:6px}
+  .rp p{margin:0; font-size:13.5px; color:var(--ink2)}
+  .rp b{color:var(--ink)}
+  @media(max-width:640px){ .reading{grid-template-columns:1fr} .defs .row{grid-template-columns:1fr; gap:2px} }
+
+  /* screenshot placeholders */
+  .shots{display:grid; grid-template-columns:repeat(auto-fit,minmax(238px,1fr)); gap:14px; margin:6px 0}
+  .shot{border:1.5px dashed color-mix(in srgb,var(--line) 78%,var(--ink)); border-radius:12px; background:var(--surface2); min-height:160px; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:18px 16px; gap:7px; margin:0}
+  .shot svg{color:var(--ink2); opacity:.55; margin-bottom:2px}
+  .shot .sid{font-family:var(--mono); font-size:10px; letter-spacing:.18em; font-weight:700; color:var(--accent)}
+  .shot .stt{font-family:var(--mono); font-size:13px; font-weight:700; color:var(--ink)}
+  .shot .scap{font-size:12px; color:var(--ink2); line-height:1.45; max-width:30ch}
+  .shot .sfile{font-family:var(--mono); font-size:9.5px; color:var(--ink2); opacity:.72; margin-top:3px}
+
+  footer{margin-top:72px; padding-top:22px; border-top:1px solid var(--line); font-family:var(--mono); font-size:11.5px; color:var(--ink2); display:flex; flex-wrap:wrap; gap:6px 18px; justify-content:space-between}
+  footer b{color:var(--ink); font-weight:600}
+
+  @media (prefers-reduced-motion:reduce){ .live .arrow{animation:none} .livedot{animation:none} }
+  @media (max-width:760px){ .two{grid-template-columns:1fr} }
+  @media (max-width:640px){ .wrap{padding:40px 14px 72px} .panel{padding:24px 16px} }
+</style>
+<style>
+  .wrap{max-width:900px}
+  .kicker .navsep{opacity:.45;margin:0 3px}
+  .kicker a.navhome{color:var(--ink2);border-bottom:0;text-decoration:none}
+  .kicker a.navhome:hover{color:var(--accent)}
+  .doc h2{font-family:var(--mono);font-weight:700;font-size:15px;letter-spacing:.2em;text-transform:uppercase;
+    color:var(--ink);margin:64px 0 4px;padding-bottom:12px;border-bottom:1px solid var(--line)}
+  .doc h2 .hn{color:var(--accent);margin-right:12px}
+  .doc h3{margin:34px 0 8px}
+  .doc p{font-size:15.5px;color:var(--ink);margin:0 0 15px;max-width:78ch}
+  .doc a{color:var(--accent);text-decoration:none;border-bottom:1px solid color-mix(in srgb,var(--accent) 40%,transparent)}
+  .doc a:hover{border-bottom-color:var(--accent)}
+  .doc strong{color:var(--ink);font-weight:670}
+  .doc em{color:var(--ink2);font-style:italic}
+  .doc ul,.doc ol{max-width:78ch;padding-left:1.3em;margin:0 0 15px}
+  .doc li{margin:.42em 0;font-size:15px;color:var(--ink)}
+  .doc li::marker{color:var(--accent)}
+  .doc hr{border:0;border-top:1px solid var(--line);margin:8px 0}
+  .doc blockquote{margin:18px 0;padding:14px 18px;border:1px solid var(--line);border-left:3px solid var(--accent);
+    border-radius:0 12px 12px 0;background:var(--surface);color:var(--ink2);max-width:80ch}
+  .doc blockquote p{color:var(--ink2);margin:0}
+  .doc blockquote strong{color:var(--ink)}
+  .doc pre{background:var(--surface2);border:1px solid var(--line);border-radius:10px;padding:14px 16px;
+    overflow-x:auto;font-family:var(--mono);font-size:12px;color:var(--ink);line-height:1.6;margin:16px 0;white-space:pre}
+  .doc pre code{background:none;border:0;padding:0;font-size:1em;color:inherit}
+</style>
+</head><body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><symbol id="helm" viewBox="0 0 512 512"><path fill-rule="nonzero" d="M255.406 17.75C189.313 39.42 124.536 85.124 79.03 150.344c21.238 57.44 32.72 94.314 32.72 131.375 0 36.493-11.52 73.723-32.125 129.655 49.72 36.73 100.08 58.95 150.313 64.938-5.052-60.378-9.83-120.748 1.593-181.125-30.644-3.28-61.384-13.286-92.03-30.72v-71.312c80.67 42.255 158.908 41.547 242.063 0v71.313c-30.06 14.376-60.192 24.722-90.25 29.28 8.684 60.46 7.723 120.915 2.03 181.375 46.386-7.335 92.89-28.824 139.032-64.312-33.966-112.954-34.03-145.933.594-260.47C391.162 84.844 317.924 39.89 255.405 17.75zm-75.125 212c-11.16-.13-19.646 3.174-21.25 9.156-2.33 8.7 10.778 19.76 29.282 24.72 18.505 4.957 35.388 1.92 37.72-6.782 2.33-8.7-10.775-19.76-29.282-24.72-5.783-1.55-11.396-2.315-16.47-2.374zm160.69 0c-5.074.06-10.687.825-16.47 2.375-18.507 4.96-31.613 16.018-29.28 24.72 2.33 8.7 19.213 11.738 37.717 6.78 18.505-4.958 31.613-16.018 29.282-24.72-1.604-5.98-10.09-9.286-21.25-9.155z"/></symbol></svg>
+<svg class="watermark" viewBox="0 0 512 512" aria-hidden="true"><use href="#helm"/></svg>
+<div class="wrap doc">
+<header>
+<p class="kicker"><svg class="brandmark" viewBox="0 0 512 512" aria-hidden="true"><use href="#helm"/></svg><span class="livedot"></span> Sentinel Suite · NinjaTrader 8 · living document<span class="navsep">·</span><a class="navhome" href="SENTINEL_DOCS.html">Docs home →</a></p>
+<h1>Sentinel Suite — Design System &amp; Build Framework</h1>
+<p class="lede"><strong>The single source of truth for building any Sentinel tool so it stays visually seamless and architecturally consistent.</strong> Read this before creating or restyling a Sentinel indicator, strategy, AddOn, or dashboard tab. Update it whenever a convention changes — it is a <em>living</em> spec, not a snapshot.</p>
+</header>
+<blockquote><p>Proven across: <code>SentinelDashboard</code>, <code>GTrader21</code> panel + on-chart risk card, <code>SentinelDeck</code>. When a fourth tool needs something new, add the pattern here first, then build to it.</p></blockquote>
+<hr>
+<h2><span class="hn">0.</span>The one rule</h2>
+<blockquote><p><strong>Cyan is the only accent, and it means LIVE / watching / active.</strong> <strong>Green and red are reserved for money + direction (P&amp;L, long/short, buy/sell).</strong> Everything else is a blue-biased neutral. Amber = caution/advisory. That's the whole language.</p></blockquote>
+<p>If you're reaching for a second accent color, stop — restraint <em>is</em> the identity.</p>
+<hr>
+<h2><span class="hn">1.</span>Palette tokens (exact hex — never approximate)</h2>
+<div class="tblwrap"><table><thead><tr><th>Token</th><th>Hex</th><th>RGB</th><th>Use</th></tr></thead><tbody><tr><td><code>void</code></td><td><code>#0A0E17</code></td><td>10,14,23</td><td>app/window ground, deepest bg</td></tr><tr><td><code>panel</code></td><td><code>#111726</code></td><td>17,23,38</td><td>panel surface, caption bar</td></tr><tr><td><code>card2</code></td><td><code>#0E1420</code></td><td>14,20,32</td><td>deeper card / gradient bottom</td></tr><tr><td><code>line</code></td><td><code>#1E2A3D</code></td><td>30,42,61</td><td>hairline borders, dividers</td></tr><tr><td><code>dim</code></td><td><code>#1B2536</code></td><td>27,37,54</td><td>control / button idle bg</td></tr><tr><td><code>faint</code></td><td><code>#26344C</code></td><td>38,52,76</td><td>track bg, gridlines</td></tr><tr><td><code>ink</code></td><td><code>#E9EEF7</code></td><td>233,238,247</td><td>primary text</td></tr><tr><td><code>ink2</code></td><td><code>#AEBACE</code></td><td>174,186,206</td><td>labels, secondary text</td></tr><tr><td><code>mute</code></td><td><code>#6C7A92</code></td><td>108,122,146</td><td>captions, idle/muted</td></tr><tr><td><strong><code>accent</code></strong></td><td><code>#3FD1E0</code></td><td>63,209,224</td><td><strong>cyan — LIVE/watching (the one accent)</strong></td></tr><tr><td><strong><code>up</code></strong></td><td><code>#25D08B</code></td><td>37,208,139</td><td><strong>green — money up / long / buy</strong></td></tr><tr><td><strong><code>down</code></strong></td><td><code>#FF5C6A</code></td><td>255,92,106</td><td><strong>red — money down / short / sell</strong></td></tr><tr><td><code>warn</code></td><td><code>#F2B34C</code></td><td>242,179,76</td><td>amber — caution / advisory breach</td></tr></tbody></table></div>
+<p>Deep button tints for Buy/Sell surfaces (order buttons): <strong>Buy</strong> <code>#1C8F63</code>→<code>#125C41</code>, <strong>Sell</strong> <code>#B84550</code>→<code>#7E2C34</code>.</p>
+<p><strong>Translucent recipes</strong> (WPF <code>Color.FromArgb</code> / SharpDX alpha):</p>
+<ul>
+<li>Cyan selection wash: <code>#553FD1E0</code> (33% alpha).</li>
+<li>Tinted pill bg: accent at ~28/255 alpha; pill border: accent at ~120/255.</li>
+<li><code>Tint(accent, k)</code> = linear blend from <code>void</code> toward <code>accent</code> by <code>k</code> (solid, reads on all skins). Typical <code>k</code>: chip 0.10, pill 0.12–0.16, armed/selected 0.22, big button 0.30.</li>
+</ul>
+<hr>
+<h2><span class="hn">2.</span>Typography</h2>
+<ul>
+<li><strong>Display / labels / hero numbers:</strong> <code>Segoe UI</code>. Weights: hero numbers <code>Light</code>; labels/titles <code>SemiBold</code>; body <code>Normal</code>.</li>
+<li><strong>Data / monospace / prices / tickers:</strong> <code>Consolas</code> (fallback <code>"Consolas, Courier New"</code>).</li>
+<li><strong>No external/webfont dependency</strong> — both ship with Windows.</li>
+<li>Uppercase micro-labels (<code>SESSION RISK</code>, <code>DAY P&amp;L</code>) at 8.5–9px <code>SemiBold</code>, color <code>mute</code> or <code>ink2</code>.</li>
+<li>Hero numbers 27–38px <code>Light</code>. Section titles 12–13px <code>SemiBold</code>.</li>
+</ul>
+<hr>
+<h2><span class="hn">3.</span>WPF component patterns</h2>
+<p>Every Sentinel WPF surface declares the palette as fields/consts and builds from shared helpers.</p>
+<h3>Palette fields</h3>
+<pre><code>private static readonly Color C_BG=Color.FromRgb(10,14,23),   C_PANEL=Color.FromRgb(17,23,38),
+    C_CARD2=Color.FromRgb(14,20,32),  C_BORDER=Color.FromRgb(30,42,61), C_DIM=Color.FromRgb(27,37,54),
+    C_LABEL=Color.FromRgb(174,186,206), C_MUTED=Color.FromRgb(108,122,146), C_TEXT=Color.FromRgb(233,238,247),
+    C_ACCENT=Color.FromRgb(63,209,224), C_GREEN=Color.FromRgb(37,208,139), C_RED=Color.FromRgb(255,92,106),
+    C_AMBER=Color.FromRgb(242,179,76);
+private Color Tint(Color a,double k)=&gt;Blend(C_BG,a,k);</code></pre>
+<h3>1b. Theme (Dark · Light · Silver · Obsidian · Blueprint · Amber) — the on-chart SharpDX layer</h3>
+<p><code>SentinelSkin</code> tokens (<code>CInk/CAccent/CUp/CVoid/…</code>) are <strong>theme-aware accessors</strong> that read the active <code>SentinelSkin.Palette</code>. One <code>SetTheme(t)</code> recolors <strong>every card + plot-skin across the whole suite</strong> — consumers never change (they still read <code>SentinelSkin.CInk</code>). Card/wash gradients read the <code>CGlassTop/Bot</code> + <code>CWashTop/Bot</code> tokens, so they re-theme too.</p>
+<div class="tblwrap"><table><thead><tr><th>Theme</th><th>Character</th><th>Void</th><th>Ink</th><th>Accent</th><th>GlowMul</th></tr></thead><tbody><tr><td><code>Dark</code></td><td>default; navy flight-deck</td><td><code>#0A0E17</code></td><td><code>#E9EEF7</code></td><td><code>#3FD1E0</code></td><td>1.0</td></tr><tr><td><code>Light</code></td><td>soft daylight, <strong>not</strong> inverted dark</td><td><code>#DEE4EC</code></td><td><code>#1B2432</code></td><td><code>#0C8CA0</code></td><td>1.0 †</td></tr><tr><td><code>Silver</code></td><td>brushed graphite/steel mid-tone</td><td><code>#262B34</code></td><td><code>#E8ECF2</code></td><td><code>#50D6E4</code></td><td>1.0</td></tr><tr><td><code>Obsidian</code></td><td>true-black OLED</td><td><code>#000000</code></td><td><code>#F2F5FA</code></td><td><code>#3FD1E0</code></td><td>0.6</td></tr><tr><td><code>Blueprint</code></td><td>cyanotype drafting paper</td><td><code>#08182F</code></td><td><code>#EAF2FF</code></td><td><code>#5FE3F2</code> ‡</td><td>1.0</td></tr><tr><td><code>Amber</code></td><td>warm dark / night watch</td><td><code>#12100C</code></td><td><code>#F3EDE0</code></td><td><code>#E8A33D</code> §</td><td>0.9</td></tr></tbody></table></div>
+<p>‡ Blueprint <strong>lifts</strong> the accent (<code>#3FD1E0</code> → <code>#5FE3F2</code>): plain cyan sits too close to a blue ground to read as "live". Its platform skin also lifts the <strong>grid lines</strong> well above the paper — the drafting grid is the theme's signature, not an accident of the recolor.</p>
+<p>§ <strong>The accent is not required to be cyan.</strong> The law is "ONE accent = live/watching"; Amber moves that accent to gold, and consumers never notice (they read <code>CAccent</code>). But moving it <strong>forced a second move</strong>: <code>Warn</code> is amber (<code>#F2B34C</code>) in every other theme and would have collided head-on with the accent — <em>live</em> and <em>caution</em> must never share a hue. So Amber's <code>Warn</code> is <strong>cool blue <code>#6FA8FF</code></strong>, the only theme where Warn is not warm. When you invent a theme, check the accent against <code>Warn</code> <strong>and</strong> against <code>Up</code>/<code>Down</code> before you fall in love with it.</p>
+<p>† Light's glow-down is baked into the <code>IsLight</code> branches (tighter radii <strong>and</strong> lower alpha), so its <code>GlowMul</code> stays 1.</p>
+<p><strong>Each theme is a deliberate design, never a brightness knob.</strong> Light uses cool off-white grounds (never glaring white) and DEEPENED accents so cyan/green/red survive on a light ground. Obsidian is not "Dark, darker": its ground ramp is near-neutral (a navy tint over <code>#000</code> reads as haze), its ink is <em>lifted</em> (text on pure black needs less weight to feel bright), and its <strong>glow is dialled back</strong> — a bloom halo that reads as light on navy reads as <strong>smear</strong> on true black.</p>
+<p><strong><code>Palette.GlowMul</code></strong> scales every glow/halo <em>alpha</em> in the Painter (<code>Dot</code> · <code>Pill</code> bloom · <code>HistoBar</code> · <code>GlowLine</code>). ⚠ It is a class <strong>field</strong>, so an unset <code>Palette</code> silently defaults to <code>0</code> (no glow at all) — every palette must set it explicitly.</p>
+<p><strong>Adding a theme touches exactly four places:</strong> a <code>Palette</code> instance · a <code>Theme</code> enum member · a word in <code>TryParseTheme</code> · its skin background hex in <code>SkinBgTheme</code>.</p>
+<h4>Theme resolution — the glue</h4>
+<p><code>Painter.Begin</code> calls <code>MaybeRefreshTheme()</code> (throttled ≤2s), which resolves in priority order:</p>
+<ol>
+<li><strong>Manual pin</strong> — <code>&lt;Documents&gt;\NinjaTrader 8\Sentinel\theme.txt</code> containing a theme word (<code>dark</code>/<code>light</code>/<code>silver</code>/<code>obsidian</code>) pins the on-chart theme and wins over everything.</li>
+<li><strong>The glue</strong> — otherwise (<code>auto</code>/absent) the on-chart theme <strong>follows the active platform skin</strong>, read from <code>ChartControl.ChartBackground</code> in the app resources. So <em>one</em> skin switch re-themes the whole suite within 2s, no F5.</li>
+</ol>
+<p>Skin backgrounds, which are the glue's keys: <code>Sentinel</code> <code>#0F1524</code> · <code>Light</code> <code>#E6EBF1</code> · <code>Silver</code> <code>#2A2F38</code> · <code>Obsidian</code> <code>#000000</code> · <code>Blueprint</code> <code>#0A1E3C</code> · <code>Amber</code> <code>#16130D</code>.</p>
+<p>The glue matches the skin's <strong>exact background hex</strong> (<code>SkinBgTheme</code>), <em>not</em> its luminance. This matters: <strong>luminance cannot separate two dark themes</strong> — <code>Sentinel</code> (<code>#0F1524</code>, lum ≈ .08) and <code>Sentinel Obsidian</code> (<code>#000000</code>, lum 0) sit in the same band, so a luminance-only classifier resolved Obsidian as Dark. Luminance survives only as a <strong>fallback for non-Sentinel skins</strong> (Midnight, Slate Dark, White-Ice…). Keep each skin's <code>ChartControl.xaml</code> background hex in sync with <code>SkinBgTheme</code> — both sides carry a comment saying so.</p>
+<p><strong>Scope.</strong> The token system covers the on-chart SharpDX layer. WPF-hosted surfaces (Deck, Dashboard, Cockpit) read the <strong><code>K*</code> WPF-Color accessors</strong> and re-theme at <strong>build/open time</strong>, not live — the Deck's header theme button rebuilds its panel for exactly this reason. Each theme also needs a parallel <strong>platform skin</strong> folder (<code>templates\Skins\Sentinel</code>, <code>… Light</code>, <code>… Silver</code>, <code>… Obsidian</code>) for the price panel, Control Center and tickets. See §4c for the price panel.</p>
+<p>⚠ Before declaring a tool "themed", grep it for hardcoded <code>RC(</code> / <code>Color.FromRgb(</code> / <code>Color4(</code> — the Deck has <strong>three</strong> themed surfaces (WPF panel, SharpDX risk card, order lines) and each was missed once.</p>
+<h3>Header (every panel/window opens with this)</h3>
+<p>Cyan <strong>eye</strong> dot with a <code>DropShadowEffect</code> glow (Color=accent, BlurRadius 9, ShadowDepth 0, Opacity .85) · wordmark (<code>SENTINEL</code> ink bold + tool name in mute) · a cyan-tinted <strong>version chip</strong> (<code>Tint(accent,.10)</code> bg, accent border @90α, accent text). See <code>SentinelDeck.BuildDeck</code> / dashboard top bar.</p>
+<h3>Section labels &amp; collapsible sections</h3>
+<ul>
+<li>Micro-label: 9px <code>SemiBold</code>, <code>C_LABEL</code>, margin <code>(8,6,8,0)</code>.</li>
+<li>Collapsible header: chevron <code>▶</code>/<code>▼</code> that turns <strong>cyan when expanded</strong>, mute when collapsed; label + a hairline <code>C_BORDER</code> rule filling the row. (See <code>GTrader21Panel.BuildCollapsibleSection</code>.)</li>
+</ul>
+<h3>Buttons</h3>
+<ul>
+<li><strong>Big action</strong> (Buy/Sell/Flatten): <code>Tint(accent,.30)</code> bg, accent fg, accent border 1.5, height 34, 14px bold.</li>
+<li><strong>Small action</strong> (Reverse/Close): <code>Tint(accent,.16)</code> bg, accent fg, border 1, height 24.</li>
+<li><strong>Segmented pill</strong> (order type, tabs): idle = <code>C_DIM</code>/<code>C_MUTED</code>; <strong>selected = <code>Tint(accent,.22)</code> + accent fg + accent border 1.5</strong>.</li>
+<li><strong>Stepper/nudge/preset</strong>: <code>C_DIM</code> bg, <code>C_LABEL</code>/<code>C_MUTED</code> fg, <code>C_BORDER</code> border.</li>
+<li>Directional buttons stay green/red; neutral actions (Close/Flat/Entry) stay dim. Never set <code>Style=null</code> except on tiny glyph buttons (it strips the template).</li>
+</ul>
+<h3>Chips / pills / state badges</h3>
+<p>Translucent colored pill: bg <code>Color.FromArgb(28,c)</code>, border <code>Color.FromArgb(120,c)</code>, radius 7–9, colored <code>SemiBold</code> text. State badges (MANAGED-BY, ACTIVE/HALT) tint by state via <code>Tint(col,.12)</code>.</p>
+<h3>Dashboard cards (reusable set in <code>SentinelDashboard</code>)</h3>
+<ul>
+<li><code>MakeCard(child)</code> — <code>CardBg</code> gradient (<code>#131A28</code>→<code>#0E1420</code>, frozen) + <code>Edge</code> border + CornerRadius 12 + pad.</li>
+<li><code>StatTile(label,value,valueBrush,sub)</code> — the hero-tile: micro-label + big <code>Light</code> number + mono sub.</li>
+<li><code>Track(frac,fill)</code> — 2-star grid progress bar on a <code>Faint</code> track.</li>
+<li><code>Chip(text,col)</code>, <code>GovernorCard(profile,gov)</code> — see source. <strong>New tabs adopt these, don't reinvent.</strong></li>
+</ul>
+<h3>Chart primitives (reusable WPF charts in <code>SentinelDashboard</code>, v1.1.4 — dataviz method)</h3>
+<ul>
+<li><code>HBars(labels,values,hues,fmt,…)</code> — horizontal <strong>magnitude</strong> bars (single hue; identity from the row label).</li>
+<li><code>HDivBars(labels,values,fmt,posIsGood,…)</code> — horizontal <strong>diverging</strong> bars around a center baseline (green/red = money/polarity; Canvas-positioned; <code>posIsGood</code> picks which side is green). Net ticks, slip, P&amp;L, score.</li>
+<li><code>Columns(values,axisLabels,hue,height)</code> — vertical <strong>time histogram</strong> (activity per bucket).</li>
+<li><strong>Rules (from the dataviz skill):</strong> cyan(Accent)=magnitude, Green/Red=polarity, Amber=caution; <strong>no rainbow categorical</strong> (the suite reserves ONE accent — identity comes from the label, not a hue). Thin bars, rounded DATA end / square at the baseline, recessive <code>Faint</code>/<code>Edge</code> gridlines, <strong>values &amp; labels in TEXT tokens, never the bar hue</strong>. Put a chart ABOVE its text rows (chart + table = the accessibility pair). Prefer counts/tables over bars when values span orders of magnitude and the small ones matter (e.g. the Test tab safety audit).</li>
+</ul>
+<h3>TextBoxes</h3>
+<p><code>C_DIM</code> bg, <code>C_TEXT</code> fg, <code>C_BORDER</code> border, <code>Consolas</code> 12px, <code>VerticalContentAlignment=Center</code>.</p>
+<hr>
+<h2><span class="hn">4.</span>On-chart risk card (SharpDX / Direct2D)</h2>
+<p>The signature "glass instrument card." Reference: <code>GTrader21Panel.OnRenderRiskCard</code>, <code>SentinelDeck.OnRender</code>.</p>
+<ul>
+<li><strong>Glass fill:</strong> vertical <code>LinearGradientBrush</code> <code>#1720324F..EE</code> → <code>#0A0E17..EF</code> (≈0.94 alpha), <code>RoundedRectangle</code> radius 13–14.</li>
+<li><strong>Border:</strong> <code>line</code> normally; <code>warn</code>/<code>down</code> when an advisory/lock state is active.</li>
+<li><strong>Top highlight:</strong> 1px line at <code>y+1.4</code> in <code>ink @ 0.06α</code>.</li>
+<li><strong>Header:</strong> glow dot (fill accent@0.26 halo + solid accent core) + <code>SENTINEL &lt;TOOL&gt;</code> ink SemiBold + right-aligned context + a state <strong>pill</strong>.</li>
+<li><strong>Hero number (P&amp;L):</strong> small currency mark <code>+$</code>/<code>-$</code> <strong>right-aligned in a 24px box ending where the number starts</strong> (kills the <code>+$   0</code> kerning gap), then the big <code>Light</code> number at <code>ix+24</code>.</li>
+<li><strong>Gauge</strong> (R-multiple etc.): <code>PathGeometry</code> + <code>ArcSegment</code>, 240° sweep (a0=150°, a1=390°), round <code>StrokeStyle</code>.</li>
+<li><strong>Sparkline / area:</strong> <code>PathGeometry</code>; emphasize the endpoint with a filled dot.</li>
+<li><strong>Track bar:</strong> <code>RoundedRectangle</code> on <code>faint</code>, fill in accent or a gradient.</li>
+<li><strong>Footer stats:</strong> <code>LABEL</code> mute + value, divider line in <code>ink@0.06</code>.</li>
+<li><strong>Perf:</strong> cache brushes/stroke-style keyed to the <code>RenderTarget</code> (rebuild only on device change) OR pool per-frame disposables in a <code>List</code> and dispose in <code>finally</code>. Cache the <code>DirectWrite.Factory</code> for the tool's lifetime; dispose in <code>Terminated</code>. <strong>Never allocate a Factory per frame.</strong></li>
+<li><strong>⚠ POSITION FROM <code>ChartPanel</code>, NOT <code>chartControl.ActualHeight</code>.</strong> <code>ActualHeight/ActualWidth</code> is the WHOLE chart (incl. subpanels like an ADX pane + the time axis), so a Bottom-anchored card computed from it lands BELOW the price panel and is <strong>clipped → invisible</strong> (only shows on charts with no subpanel). Use <code>ChartPanel.X/Y/W/H</code> (the price panel) for both cards and on-chart lines. Bit the Deck risk card (v0.2.1 fix, 2026-07-05).</li>
+<li>Colors via <code>RC(r,g,b)</code> → <code>SharpDX.Color4</code>. Alpha variants via <code>new Color4(c.Red,c.Green,c.Blue,a)</code>.</li>
+</ul>
+<p><strong>Don't hand-roll any of the above — use the shared framework (§4b).</strong> §4 is the <em>recipe</em> the framework implements; reach for it only when extending <code>SentinelSkin</code> itself.</p>
+<hr>
+<h2><span class="hn">4b.</span>The indicator framework — <code>SentinelSkin</code> (USE THIS)</h2>
+<p><code>AddOns/SentinelSkin.cs</code> is the single library every Sentinel indicator/strategy draws with, so they're cohesive by construction. It packages the whole §4 vocabulary + the §1 palette + §2 fonts. Namespace <code>NinjaTrader.NinjaScript.AddOns.Sentinel</code> — add <code>using NinjaTrader.NinjaScript.AddOns.Sentinel;</code>.</p>
+<blockquote><p><strong>Live reference implementation: <code>CompressionBase_v1_3_0</code></strong> (in <code>Indicators.Sentinel</code>) — its OnRender glass card (header dot + title + state pill + coil-vs-threshold Track + mono stat rows) is the pattern to copy for retrofitting any plain <code>Draw.TextFixed</code>/hand-rolled on-chart readout. <strong>Retrofitted (all Sentinel-homed):</strong> <code>CompressionBase_v1_3_0</code>, <code>ADXPro_v1_2_0</code> (gauge hero + DI tracks + ADX sparkline + regime publish), <code>Eye_v1_1_0</code> (perf grid), <code>SignalExcursionRecorder_v1_3</code> (a previously-headless recorder that <em>gained</em> a card: REC/IDLE pill · tracking-count hero · regime+ADX track · BG/FC/OBR tally · latest-record MFE/MAE). All place their card via <code>CardLayout</code> (below) so they never overlap, and all carry the label remover (below). <strong>Still to sweep:</strong> any remaining tool with a plain <code>Draw.TextFixed</code> readout — give each a <code>CardCorner</code> + <code>CardLayout</code> + the label remover. <strong>FORK GOTCHA:</strong> when you <code>cp</code> a versioned indicator to fork it, the copy carries its NT generated <code>#region</code>s and running NT appends more → CS0111/CS0102. <strong>Strip ALL generated regions to EOF right after the copy</strong> (<code>head -n &lt;lastRealLine&gt; file &gt; tmp &amp;&amp; mv</code>); NT regenerates one clean copy on F5.</p></blockquote>
+<p><strong>Palette (no local color fields anymore):</strong> <code>SentinelSkin.CVoid/CPanel/CCard/CLine/CDim/CFaint/CInk/ CInk2/CMute/CAccent/CUp/CDown/CWarn</code> (SharpDX <code>Color4</code> for OnRender) and <code>WVoid…WWarn</code> (WPF <code>Color</code> for hosted panels). <code>RC(r,g,b,a)</code>, <code>Alpha(c,a)</code>, <code>W(r,g,b)</code>. Fonts: <code>SentinelSkin.FSans</code> / <code>FMono</code>.</p>
+<p><strong>The <code>Painter</code></strong> — hold one as a field, <code>Begin()</code> each frame, <code>Dispose()</code> in Terminated:</p>
+<pre><code>private readonly SentinelSkin.Painter _sp = new SentinelSkin.Painter();
+
+protected override void OnRender(ChartControl cc, ChartScale cs) {
+    base.OnRender(cc, cs);
+    if (RenderTarget == null) return;
+    _sp.Begin(RenderTarget);
+    var r = _sp.Card(x, y, 300f, 148f, active ? SentinelSkin.CLine : SentinelSkin.CWarn);   // glass card → inner rect
+    _sp.Dot(r.Left + 4f, r.Top + 8f, active ? SentinelSkin.CAccent : SentinelSkin.CWarn);    // live glow dot
+    _sp.Text("SENTINEL EYE", r.Left + 15f, r.Top - 1f, 160f, 18f, SentinelSkin.CInk, 12f, semibold:true);
+    _sp.Pill(state, r.Right, r.Top - 2f, dotColor);                                          // state pill
+    _sp.Money(r.Left - 2f, r.Top + 40f, pnl, pnl &gt;= 0 ? SentinelSkin.CUp : SentinelSkin.CDown);  // kerned hero
+    _sp.Track(r.Left, r.Top + 96f, r.Width, frac, SentinelSkin.CAccent);                     // progress bar
+    _sp.Gauge(r.Left + 44f, r.Top + 110f, 34f, rFrac, SentinelSkin.CFaint, SentinelSkin.CAccent);
+    _sp.Sparkline(r.Left, r.Top + 70f, r.Width, 22f, history, SentinelSkin.CUp);
+    _sp.Divider(r.Left, r.Top + 120f, r.Right);
+    _sp.End();   // releases per-frame gradients/geometries
+}
+protected override void OnStateChange() { /* … */ if (State == State.Terminated) _sp.Dispose(); }</code></pre>
+<p><code>B(color)</code> gives a cached brush if you need raw draws. The Painter caches brushes (per RenderTarget) + text formats + a round stroke, and owns its DirectWrite factory — no per-frame allocation beyond the gradients/geometries <code>End()</code> frees. <strong>Any on-chart Sentinel drawing goes through the Painter</strong> so the look stays identical everywhere; if you need a new primitive, add it to the Painter, not to one tool.</p>
+<p><strong>Chart data-series / candles + drawn-text fonts</strong> are handled by the <strong>Sentinel skin</strong>, not per tool: <code>ChartControl.UpBrush/DownBrush</code> = candle bodies, <code>Stroke/Stroke2</code> match the bodies (set all four together), selection = cyan, chart text = crisp ink-grey (<code>Docs</code>/[[sentinel-skin]]). <strong>Current candle colors (2026-07-05, user pick): up = teal <code>#FF009999</code>, down = grey <code>#FF8E8E8E</code></strong> (was green/red <code>#FF25D08B</code>/<code>#FFFF5C6A</code>). Skin color edits load only when the skin (re)loads — <strong>re-select the skin or restart NT; a NinjaScript F5 does NOT reload skins.</strong> For a <em>saved</em> data-series template, NT stores <code>UpBrushSerialize</code>/<code>DownBrushSerialize</code> inside the ChartStyle — set those to the same hex if you export one, but the skin default is the cohesive path.</p>
+<p><strong>Chart right-side margin is NOT a skin resource.</strong> Skins carry only brushes/pens/fonts/UI-margins — there is no <code>ChartControl</code> key for the price-panel right margin (confirmed by grep). It is a <strong>per-chart property</strong>: right-click chart → Properties → <em>Right side margin</em>. To make it global-ish, set it on a chart then <strong>right-click → Templates → Save As → "Default"</strong> so every new chart inherits it (e.g. 350px to keep the stacked glass cards clear of price action). If a true app-level default exists, it lives in NT's user config, not the skin.</p>
+<p><strong>Card placement — <code>SentinelSkin.CardLayout</code> (USE THIS; never hardcode the corner).</strong> Cards from different tools all defaulting to <code>ChartPanel.X + W - cw - 12</code> collide (two cards → one on top of the other). Instead ask the shared registry for the rect each frame:</p>
+<pre><code>var slot = SentinelSkin.CardLayout.Place(this, ChartPanel,
+    ChartPanel.X, ChartPanel.Y, ChartPanel.W, ChartPanel.H, CardCorner, cw, ch);   // → SharpDX.RectangleF
+var r = _sp.Card(slot.X, slot.Y, cw, ch, edge);</code></pre>
+<ul>
+<li><code>key</code> = a stable per-card identity (pass <code>this</code>). <code>panelKey</code> = the <code>ChartPanel</code> (groups cards on one panel).</li>
+<li>Cards docked to the <strong>same corner</strong> of the same panel <strong>auto-stack</strong> vertically (gap-separated), in first-render order — so N tools never overlap. Expose a <code>SentinelCardCorner CardCorner</code> <code>[NinjaScriptProperty]</code> (default <code>TopRight</code>) so the user can spread cards across the four corners too.</li>
+<li>Entries the caller stops drawing (ShowInfo off / indicator removed) <strong>self-prune after ~2s</strong>; also call <code>SentinelSkin.CardLayout.Release(this)</code> in <code>Terminated</code> for immediate cleanup. All lock-guarded (render thread).</li>
+</ul>
+<p><strong>Retrofitting an existing indicator</strong> (SentinelEye, SignalExcursionRecorder, CompressionBase, …): delete its local color consts + hand-rolled OnRender card, add the <code>_sp</code> field + <code>Dispose()</code>, redraw via the Painter, and place the card with <code>CardLayout</code> (+ a <code>CardCorner</code> property). Bump the version + changelog per §7.</p>
+<h3>4c. The Sub-panel PLOT STANDARD (bring histograms/lines up to the card's material)</h3>
+<p>A gorgeous card floating over stock NT plots (flat bars in raw WPF brushes, flat-black panel, default grid) is the #1 vibe-killer. Fix it by rendering the <strong>plots themselves</strong> through the Painter, in the SAME <code>OnRender</code> frame as the card. <strong>The key trick: NT draws its stock plots BEFORE <code>OnRender</code>, so an OPAQUE <code>PanelWash</code> drawn first in <code>OnRender</code> covers them</strong> — which also defeats the chart's saved-plot-color override (no remove/re-add needed). Reference impl: <strong><code>SentinelWAE_v1_0_0</code></strong> (<code>RenderPlotSkin</code>).</p>
+<p>New <code>Painter</code> primitives (the sub-panel counterpart to the card set):</p>
+<ul>
+<li><code>PanelWash(x,y,w,h)</code> — the navy glass gradient behind everything. Draw FIRST (after <code>base.OnRender</code>).</li>
+<li><code>RegimeShade(x,y,w,h,col,alpha)</code> — a faint full-panel state wash (cyan live / green-red bias). Low alpha.</li>
+<li><code>Baseline(x0,x1,y,col)</code> — a themed zero/reference line (turn NT's own grid OFF in <code>SetDefaults</code>).</li>
+<li><code>HistoBar(cx,yZero,yVal,halfW,col,glow)</code> — a card-material histogram column: vertical gradient (bright tip → translucent base), soft-rounded ends, optional glow. Palette: <code>CUp</code>/<code>CDown</code> (NOT raw green/red), dim the alpha for the "weakening" tone instead of clashing lime/orange.</li>
+<li><code>GlowLine(pts,col,width,glow)</code> — an oscillator/reference line as a soft glow underlay + crisp stroke.</li>
+</ul>
+<p>The <code>OnRender</code> recipe (chart-space; read series by <strong>absolute</strong> bar index — barsAgo throws in render):</p>
+<pre><code>base.OnRender(cc, cs);
+if (RenderTarget == null || ChartPanel == null) return;
+_sp.Begin(RenderTarget);
+try { if (SentinelPlotSkin) RenderPlotSkin(cc, cs); } catch { }   // wash → shade → baseline → histobars → lines
+try { if (ShowCard) RenderCard(); } catch { }                     // card LAST, on top
+_sp.End();
+// inside RenderPlotSkin: for idx in [ChartBars.FromIndex..ToIndex]:
+//   x = cc.GetXByBarIndex(ChartBars, idx);  y = cs.GetYByValue(Values[i].GetValueAt(idx));</code></pre>
+<p>Expose a <code>SentinelPlotSkin</code> toggle — deliberately <strong>NOT</strong> <code>[NinjaScriptProperty]</code> (a plain <code>[Display]</code> get/set serializes without a constructor-param / codegen churn), default ON, so a user can fall back to stock plots.</p>
+<p><strong>Adopted (2026-07-07):</strong> <code>SentinelWAE</code> (reference) · <code>ADXPro_v1_2_0</code> (wash + per-bar regime bands that supersede its muddy <code>BackBrushes</code> + glowing ADX/DI lines + trigger/strong reference lines) · <code>WoodiesCCIPro_v1_0_0</code> (wash + bottom trend ribbon + glowing Main/Turbo lines + 0/±100 lines) · <code>BuySellVolumePressureMountain_v1_0_0</code> (wash + two-sided gradient histobars). Each keeps a <code>SentinelPlotSkin</code> toggle. <strong>Still stock:</strong> VolEnvelope (a price-panel overlay/cone — different case), and any newly ported panel.</p>
+<p><strong>The PRICE panel is different — it lives in the skin, not an indicator.</strong> You can't <code>PanelWash</code> the price panel: <code>OnRender</code> draws <em>over</em> the candles, so an opaque wash there would hide them. The candle-safe home for the price-panel background is the platform skin's <code>ChartControl.ChartBackground</code> (drawn <em>behind</em> the bars) — set it to the same navy as the wash (<code>templates\Skins\Sentinel\ChartControl.xaml</code>, currently <code>#0F1524</code>, between CPanel and CVoid). NOTE: a skin edit needs a <strong>skin reapply / NT restart</strong> to take effect — it is NOT picked up by an F5.</p>
+<h3>MANDATORY on EVERY Sentinel indicator — the label remover</h3>
+<p>The chart is a flight instrument; NT's default top-left name-label is clutter. <strong>Every Sentinel indicator hides it by default</strong> with a trader toggle to restore it. <strong>NT draws the chart panel label from the indicator's <code>Name</code> property</strong> (NOT <code>ToString()</code> — that override is inert here; VERIFIED 2026-07-05 against the shipped <code>LabelRemover.cs</code>, which blanks other indicators via <code>indicator.Name = ""</code>). So blank <code>Name</code> at <code>DataLoaded</code> when the toggle is off:</p>
+<pre><code>[NinjaScriptProperty]
+[Display(Name = "Show indicator label", Description = "Show NinjaTrader's chart name label. Sentinel default = OFF (clean chart).", GroupName = "Sentinel", Order = 100)]
+public bool ShowIndicatorLabel { get; set; }
+// SetDefaults:  Name = "&lt;Thing&gt;_vX_Y_Z"; … ShowIndicatorLabel = false;
+// DataLoaded (FIRST line):  if (!ShowIndicatorLabel) Name = string.Empty;</code></pre>
+<p><code>Name</code> is set to the real identity in <code>SetDefaults</code> (picker/serialization see it) and blanked at <code>DataLoaded</code> (the chart label reads the runtime value → hidden). Toggling the property re-runs OnStateChange, so it takes effect on Apply. Default OFF = clean chart. (Trade-off: when OFF the indicator also reads blank in the Indicators-dialog "Configured" list — acceptable; identify by the picker folder.) Applied to CompressionBase_v1_3_0, SignalExcursionRecorder_v1_3, ADXPro_v1_2_0, Eye_v1_1_0, Deck_v0_2_1; <strong>required on all future ones.</strong></p>
+<ul>
+<li><strong>⚠ ON A STRATEGY THE LABEL SURVIVES UNTIL IT IS ENABLED (verified 2026-07-09, SentinelBridge).</strong> A strategy that is on the chart but <strong>disabled never reaches <code>State.DataLoaded</code></strong>, so the blanking line never runs and NT keeps drawing <code>(D) &lt;Name&gt;(param, param, …)</code> across the top-left. It disappears the moment the strategy is enabled. <strong>Do NOT "fix" this by blanking <code>Name</code> in <code>SetDefaults</code></strong> — that is the identity the Control Center's Strategies grid displays, and a nameless row is a strategy you cannot find in order to disable it. Live with the <code>(D)</code> label; it is only present precisely when the strategy is inert.</li>
+<li><strong>⚠ ORDER-SUBMITTING tools (Deck, any strategy): DECOUPLE order-tag identity from <code>Name</code> FIRST.</strong> If the tool tags orders with <code>Name</code> (<code>acct.CreateOrder(..., Name + "_SL", …)</code>) or matches fills via <code>order.Name.StartsWith(Name+"_")</code>, blanking <code>Name</code> would corrupt order identity / fill capture. Capture it into a stable field once and use that for tags: <code>private string _tag = "Deck"; … // DataLoaded: _tag = Name; if (!ShowIndicatorLabel) Name = "";</code> then <code>_tag + "_SL"</code> everywhere. (Learned on Deck_v0_2_1 — 11 tag sites + the fill match.)</li>
+</ul>
+<hr>
+<h2><span class="hn">5.</span>NinjaScript architecture patterns</h2>
+<h3>Which type?</h3>
+<ul>
+<li><strong>Indicator</strong> — anything that lives on a chart (order decks, risk cards, scanners, drawing). Manual/discretionary order entry belongs here (<code>SentinelDeck</code>).</li>
+<li><strong>Strategy</strong> — automated entry/exit logic (<code>GTrader21</code>). Strategies CAN <code>OnRender</code> (verified).</li>
+<li><strong>AddOn</strong> (<code>AddOnBase</code> singleton) — headless cross-tool services + the control-center dashboard (<code>SentinelCore</code>, <code>SentinelRiskService</code>, <code>SentinelDashboard</code>). Namespace <code>NinjaTrader.NinjaScript.AddOns.Sentinel</code>.</li>
+</ul>
+<h3>Hosting a panel in the ChartTrader sidebar (the proven recipe)</h3>
+<p>An indicator/strategy injects a WPF panel into ChartTrader's Content <code>Grid</code>:</p>
+<pre><code>_ctChart      = Window.GetWindow(ChartControl.Parent) as Chart;
+var ct        = _ctChart.FindFirst("ChartWindowChartTraderControl") as ChartTrader;
+_ctTraderGrid = ct.Content as Grid;
+// build hudStack → wrap in ScrollViewer → InsertPanel(): add a Star RowDefinition, Grid.SetRow,
+// SetColumnSpan, add to grid.Children. Teardown removes the child + row.</code></pre>
+<p>Account + instrument come from the native selectors — do NOT build your own pickers: <code>GetChartTraderWindow().FindFirst("ChartTraderControlAccountSelector") as AccountSelector</code> → <code>.SelectedAccount</code>; <code>"ChartWindowInstrumentSelector" as InstrumentSelector</code> → <code>.Instrument</code>. (Wrap reads in <code>ChartControl.Dispatcher.Invoke</code>.)</p>
+<h3>Account-level (unmanaged) orders — the manual/deck path</h3>
+<p>An indicator that submits its own orders <strong>fully owns them</strong> (no managed-position desync). Signature:</p>
+<pre><code>acct.CreateOrder(instr, OrderAction, OrderType, OrderEntry.Manual, TimeInForce, qty,
+                 limitPrice, stopPrice, oco, Name+"_tag", Core.Globals.MaxDate, null);
+acct.Submit(new[]{ order });   // acct.Cancel(orders) to pull working orders</code></pre>
+<ul>
+<li>Actions: entry <code>Buy</code>/<code>SellShort</code>; exit <code>Sell</code>/<code>BuyToCover</code>. NT nets automatically.</li>
+<li>Types: <code>Market</code>, <code>Limit</code> (limitPrice), <code>StopMarket</code> (stopPrice), <code>StopLimit</code> (both).</li>
+<li>Always <code>instr.MasterInstrument.RoundToTickSize(px)</code>; tick = <code>.TickSize</code>; $ = <code>.PointValue</code>.</li>
+<li><strong>Chart-scoped flatten:</strong> cancel working orders WHERE <code>Instrument.FullName==this</code> on the selected account, then market-close that position (retry loop, off the UI thread via <code>Task.Run</code>). Never account-wide unless explicitly asked.</li>
+</ul>
+<h3>Managed-framework landmines (do NOT relearn)</h3>
+<ul>
+<li>A managed strategy position must not be closed by raw/panel orders — desyncs <code>Position</code>, blocks new entries ("Position not flat"). Recovery: disable→re-enable.</li>
+<li>The managed framework re-asserts <code>SetStopLoss</code> prices; a panel edit won't stick. Unmanaged mode required for panel-owned exits.</li>
+<li>A panel using <code>Account.Change</code>/<code>Cancel</code> <strong>cannot</strong> touch <em>strategy</em>-submitted orders (throws "Unable to change order"; with <code>RealtimeErrorHandling=StopCancelClose</code> it kills the strategy). Indicators submitting their OWN account orders avoid this entirely.</li>
+</ul>
+<hr>
+<h2><span class="hn">6.</span>Sentinel integration seam (<code>SentinelCore</code>)</h2>
+<p>Reference <code>SentinelCore</code> (<code>AddOns/SentinelCore_v1_0_0.cs</code>) — all statics, namespace <code>...AddOns.Sentinel</code>. Add <code>using NinjaTrader.NinjaScript.AddOns.Sentinel;</code>.</p>
+<div class="tblwrap"><table><thead><tr><th>Call</th><th>Returns</th><th>Use</th></tr></thead><tbody><tr><td><code>CanEnter(instr, acct, out reason)</code></td><td>bool</td><td>composite entry gate (kill+scoped-kill+feed+governor+session+rollover+news)</td></tr><tr><td><code>CanActInstrument(instr, acct, out reason)</code></td><td>bool</td><td>copier/mirror gate</td></tr><tr><td><code>GetGovernorState(account)</code></td><td><code>GovernorState</code></td><td>day P&amp;L / cap / status (<code>.DailyPnl/.Cap/.Allowed/.Status</code>)</td></tr><tr><td><code>TradingAllowedToday(acct)</code> / <code>InAccountSession(p,out r)</code></td><td>bool</td><td>governor / session</td></tr><tr><td><code>InstrumentKillEngaged(instr)</code> · <code>RolloverBlocked</code> · <code>NewsLockoutActive</code></td><td>bool</td><td>scoped states</td></tr><tr><td><code>SizedQuantity(acct, baseQty)</code></td><td>int</td><td>profile-scaled size</td></tr></tbody></table></div>
+<h3>v1.1.0 hardening surface (Gate / Ledger / State / Alerts — USE THESE for anything order- or safety-related)</h3>
+<p>The <strong>Order Gate</strong> is the single pre-submit choke point (<code>Docs/SENTINEL_HARDENING_FRAMEWORK.md</code>). New order paths route through it instead of raw <code>CanEnter</code>.</p>
+<div class="tblwrap"><table><thead><tr><th>Call</th><th>Returns</th><th>Use</th></tr></thead><tbody><tr><td><code>GateEntry(acct, instr, qty, stopTicks=0, riskDollars=0, instr=null)</code></td><td><code>GateDecision {Level (Clear/Advisory/Hard), Reason, Size}</code></td><td>THE entry gate — risk-sizes + classifies. Pass stopTicks+riskDollars+instr to size by $-risk.</td></tr><tr><td><code>SizeForRisk(acct, instr, stopTicks, riskDollars)</code></td><td>int</td><td>contracts for a $-risk (0 = can't afford a 1-lot)</td></tr><tr><td><code>TickValue(instr)</code></td><td>double</td><td>$ per tick (PointValue×TickSize)</td></tr><tr><td><code>NoteOrderSubmitted(account)</code> · <code>SetOrderGuards(maxQty, perWindow, sec)</code></td><td>—</td><td>feed / tune the fat-finger rate guard (call NoteOrderSubmitted after every submit)</td></tr><tr><td><code>Ledger.Order(acct, instr, action, type, qty, px, tag)</code> · <code>Ledger.Action(kind, acct, detail)</code> · <code>Ledger.Fill(acct, instr, action, qty, intended, fill, tickSize, tag)</code></td><td>—</td><td>WRITE (async) to the daily event stream. <code>Fill</code> carries intended-vs-actual price → adverse slip ticks (feeds the Slippage view); call it from <code>OnExecutionUpdate</code> (realtime only).</td></tr><tr><td><code>Ledger.ReadRecent(days)</code> · <code>Ledger.ReadDay(date)</code> · <code>Ledger.Parse(line)</code></td><td><code>List&lt;Ledger.Entry&gt;</code> / <code>Entry</code></td><td>READ the stream → typed rows (<code>Evt</code>/<code>Account</code>/order:<code>Instrument,Action,Type,Qty,Price,Tag</code>/action:<code>Kind,Detail</code>; <code>TimeLocal</code>,<code>IsOrder</code>,<code>IsAlert</code>,<code>IsCritical</code>). The Dashboard <strong>Journal</strong> tab + future audit/slippage are VIEWS of this — never build a 2nd journal.</td></tr><tr><td><code>Ledger.Dir</code> · <code>Ledger.FileFor(date)</code></td><td>string</td><td>ledger folder / a day's JSONL path</td></tr><tr><td><code>State.Save(key,json)</code> · <code>State.Load(key)</code> · <code>State.Clear(key)</code> · <code>State.Age(key)</code> · <code>State.SaveMap(key,map)</code> · <code>State.LoadMap(key)</code></td><td>— / string / <code>Dictionary</code></td><td><strong>intended-state store</strong>: keyed atomic blob (<code>&lt;SettingsDir&gt;\State\&lt;key&gt;.json</code>) so a tool's arm-state (trail high-water / BE-armed / active stop) survives a restart. Save on change, Clear on flat, Load+<strong>reconcile</strong> on restart. Key by tool identity, e.g. `"GTrader21</td><td>&lt;acct&gt;</td><td>&lt;instr&gt;"`.</td></tr><tr><td><code>Alerts.Critical(title, detail)</code> · <code>Alerts.Info(...)</code> · <code>Alerts.Recent(n)</code> · <code>Alerts.Raised</code> event</td><td>—</td><td>2-tier alerts (Critical rare by design). Consumers: dashboard Risk tab (Recent), <strong>SentinelAlertService</strong> (sound + optional push shell command, config <code>Sentinel\Alerts.conf</code>).</td></tr><tr><td><code>HardEnforceArmed(acct)</code> · <code>GovernorResetHour</code> / <code>GovernorResetLabel</code></td><td>bool/int/string</td><td>opt-in hard auto-flatten flag · daily reset clock</td></tr></tbody></table></div>
+<p><strong>Fail-open vs fail-closed on the Gate (the core policy split):</strong></p>
+<ul>
+<li><em>Manual</em> tools (SentinelDeck) = <strong>fail OPEN</strong> — surface a Hard reason loudly but never block a human (they must always be able to exit). <code>if (gate.IsHard) StatusLoud(reason); submit anyway;</code></li>
+<li><em>Automated</em> tools (GTrader21, Copier) = <strong>fail CLOSED</strong> — enter only on <code>gate.IsClear</code>. A code <em>exception</em> still fails open (resilience ≠ gate bypass).</li>
+<li><strong>Exits never gate</strong> — always allow flatten/close.</li>
+</ul>
+<p>Publish/consult registries exist for kill-switch, feed-watch (ref-counted), Eye verdicts, VolEnvelope regime, <strong>ADX regime (v1.2.0 — <code>SetAdxState</code>/<code>GetAdxState</code>/<code>AllAdxStates</code> + <code>AdxState</code>; ADXPro publishes trend strength + bias as INT <code>-1/0/1</code>, <code>.TrendOn</code>/<code>.Building</code>/<code>.Aligned(dir)</code>)</strong>, <strong>trend line (v1.3.0 — <code>SetTrendState</code>/<code>GetTrendState</code>/<code>AllTrendStates</code> + <code>TrendState</code>; SentinelTrend publishes trailing direction INT <code>-1/0/1</code> + line price + signed distance ticks + bars-in-trend + <code>.Flipped</code>, <code>.IsUp</code>/<code>.IsDown</code>/<code>.Aligned(dir)</code>)</strong>, <strong>liquidity walls (v1.4.0 — <code>SetLiquidityState</code>/<code>GetLiquidityState</code>/<code>AllLiquidityStates</code> + <code>LiquidityState</code>; LiquidityWalls publishes absorption z-score + side INT <code>-1</code> support-below/<code>0</code>/<code>1</code> resistance-above + nearest wall above/below price + distances, with <code>.ResistanceAbove</code>/<code>.SupportBelow</code>/<code>.NearWall(ticks)</code>/<code>.BlocksEntry(dir,ticks)</code> so a consumer can veto entries into a wall)</strong>, <strong>CCI trend (v1.5.0 — <code>SetCciState</code>/<code>GetCciState</code>/<code>AllCciStates</code> + <code>CciState</code>; WoodiesCCIPro publishes persisted Woodies trend state INT <code>-2..+2</code> + Main/Turbo CCI + slope + last entry signal, with <code>.Bias</code>/<code>.Strong</code>/<code>.TrendOn</code>/<code>.Aligned(dir)</code>)</strong>, <strong>brick/bar-state (v1.6.0 — <code>SetBrickState</code>/<code>GetBrickState</code>/<code>AllBrickStates</code> + <code>BrickState</code>; the Sentinel bartypes publish adaptive ATR + brick direction INT <code>-1/1</code> + offsets + live tick-countdown, with <code>.IsUp</code>/<code>.AtrTicks(ts)</code>/<code>.Aligned(dir)</code>)</strong>, <strong>the Council verdict (v1.7.0 — <code>SetCouncilState</code>/<code>GetCouncilState</code>/<code>AllCouncilStates</code> + <code>CouncilState</code>; see §6c)</strong>, <strong>session clock (v1.8.0 — <code>SetClockState</code>/<code>GetClockState</code>/<code>AllClockStates</code> + <code>ClockState</code>; Clock publishes session phase INT <code>0/1/2/3</code> + mins-since-open/to-close + kill-window)</strong>, <strong>participation (v1.9.0 — <code>SetParticipationState</code>/<code>GetParticipationState</code>/<code>AllParticipationStates</code> + <code>ParticipationState</code>; Participation publishes relative volume + z-score + climax/dry-up)</strong>, <strong>structural levels (v1.10.0 — <code>SetLevelState</code>(object)/<code>GetLevelState</code> + <code>LevelState</code>; Location publishes VWAP+bands/PDH-PDL/OR/IB/session H-L + nearest level, <code>.InPath(dir,atr)</code>)</strong>, <strong>MTF alignment (v1.10.0 — <code>SetMtfState</code>(object)/<code>GetMtfState</code> + <code>MtfState</code>; MTF publishes higher-TF consensus Bias/AlignmentScore/AllAgree)</strong>, <strong>compression breakout (v1.11.0 — <code>SetCompressionState</code>(object)/<code>GetCompressionState</code> + <code>CompressionState</code>; CompressionBase publishes breakout pulse + held BreakDir + coil)</strong>, <strong>intermarket (v1.12.0 — <code>SetIntermarketState</code>(object)/<code>GetIntermarketState</code> + <code>IntermarketState</code>; Intermarket publishes a configurable correlated-instrument Lean)</strong>, <strong>WAE momentum (v1.13.0 — <code>SetWaeState</code>/<code>GetWaeState</code> + <code>WaeState</code>; SentinelWAE publishes a Waddah-Attar momentum-breakout vote)</strong>, <strong>god-reversal (v1.14.0 — <code>SetGodReversalState</code>/<code>GetGodReversalState</code> + <code>GodReversalState</code>; SentinelGodReversal publishes a candle-grammar reversal trigger)</strong>, <strong>flux order-flow (v1.31.0 — <code>SetFluxState</code>/<code>GetFluxState</code> + <code>FluxState</code>; the <code>SentinelFlux</code> order-flow-imbalance BAR TYPE publishes a signed tape-imbalance vote — the first genuinely ORTHOGONAL axis)</strong>, fleet plan (Arc), config-use, governor, profiles — see <code>SentinelCore</code> (internal v1.31.0) for the setters when a tool should broadcast state. New Profiles.conf keys: <code>resetHour=17</code> (governor daily reset hour, local) · <code>hardEnforce=true</code> (arm auto-flatten at the loss stop).</p>
+<h3>6b. Signals as PLOTS — the generic consumer seam (Deck SIGNAL ARM)</h3>
+<p>Two ways a tool broadcasts a signal; <strong>prefer whichever the consumer needs, but a plot is the universal one:</strong></p>
+<ol>
+<li><strong>Hidden PLOT (universal — any consumer, no coupling):</strong> a signal-emitting indicator exposes its signal as a plot, e.g. <code>Signal[0] = +1/-1/0</code>. Make it <strong>invisible + non-scaling</strong>: <code>AddPlot(new Stroke(Brushes.Transparent,1f), PlotStyle.Line, "Signal")</code> <strong>and set <code>IsAutoScale = false</code></strong> so the ±1 values never render or squash the price panel. Reference: <code>CompressionBase_v1_3_0</code> writes its breakout to <code>Signal</code> inside <code>MarkBreak</code>. Any tool then reads it generically — the <strong>Deck SIGNAL ARM</strong> discovers ALL loaded indicators' plots (<code>ChartControl.Indicators</code> → <code>ind.Values[i]</code>, names via <code>ind.Plots[i].Name</code>) with <strong>zero hardcoding</strong>, and arms / auto-fires off the chosen one.</li>
+<li><strong><code>SentinelCore</code> publish (Sentinel-aware only):</strong> pre-digested state consumed by name, e.g. the Eye's <code>SetEyeVerdict</code>, ADX <code>SetAdxState</code>, Trend <code>SetTrendState</code>. Use when the signal is a rich verdict, not a plottable scalar.</li>
+</ol>
+<p><strong>Consuming another indicator's plots — the rules (memory <code>nt-consume-indicator-plots</code>):</strong> resolve the source ref on the <strong>UI thread</strong> (cache it), READ <code>.Values</code> on the <strong>data thread</strong> (never enumerate <code>ChartControl.Indicators</code> off the UI thread). <strong>A one-bar PULSE plot is race-prone</strong> — read the <strong>just-closed bar</strong> (<code>barsAgo=1</code>) and <strong>re-check every tick</strong> (fires the bar after the signal, non-repaint). <strong>Never write <code>ind.Plots.Count</code></strong> (method group → CS0019, and headless won't catch it) — use the indexer. Sentinel tools <strong>blank <code>Name</code></strong> (label remover) → name a source by <code>GetType().Name</code>.</p>
+<h3>6c. The Council — the confluence arbiter ("the brain")   <em>(SentinelCore ≥ v1.7.0)</em></h3>
+<p><code>Council_v1_0_0</code> (a read-only chart indicator, NO ORDERS) is the one tool that <strong>CONSUMES every sensor seam and FUSES them</strong> into a single verdict, then re-publishes it as <code>CouncilState</code> for everything else to consult. It is the top of the consult chain: sensors publish → <strong>Council fuses</strong> → strategies/Bridge/Deck consult the Council.</p>
+<ul>
+<li><strong>Fusion = a weighted vote.</strong> Each fresh seam (<code>GetEyeVerdict/GetTrendState/GetCciState/GetAdxState/GetEnvelopeState/ GetBrickState</code>) casts a signed vote × weight; stale/absent seams <strong>abstain</strong> (fail-open). <code>Bias = sign(Σ vote×weight)</code> past a deadband; <code>Conviction = |Σ|/Σ(active weight)</code>, damped by voter breadth and a VolEnvelope squeeze. Weights are <code>[NinjaScriptProperty]</code> — <strong>the weights ARE the edge; tune them, then let Lens grade them.</strong></li>
+<li><strong>Hard vetoes are account-free</strong> (an indicator has no <code>Account</code>): consult <code>KillSwitchEngaged</code>, <code>InstrumentKillEngaged(inst)</code>, <code>RolloverBlocked(inst)</code>, <code>NewsLockoutActive(inst)</code>, and <code>LiquidityState.BlocksEntry(bias,ticks)</code> directly — do NOT call <code>CanEnter</code> (it needs an account). Any veto zeroes <code>Conviction</code>/<code>SizeMult</code> and names itself in <code>VetoReason</code>.</li>
+<li><strong>Advisory, not the order gate.</strong> The Council mirrors the gates so its verdict is honest, but a consuming <em>strategy</em> still calls <code>GateEntry</code> at submit. Consumers <strong>gate on <code>HasEdge</code> + <code>Aligned(dir)</code>, size with <code>SizeMult</code></strong>, and <strong>write the verdict into the Ledger/Log <code>ctx</code> on every FIRE</strong> (the Council itself only logs <em>changes</em> to <code>sentinel.log</code>) so Lens can grade it.</li>
+<li>⚠ <strong>Independence caveat (state it in every discussion):</strong> today's voters are nearly all price-derived (ADX/CCI/Trend/ Envelope/Brick echo the same OHLC) — <code>Conviction</code> is <em>agreement</em>, not <em>confirmation</em>. The verdict only gets independent as the <strong>orthogonal axes</strong> below publish their own seams. <strong>Now partly addressed:</strong> the <strong>FLUX</strong> voter (the <code>SentinelFlux</code> order-flow-imbalance bar type, §6d) is the first genuinely orthogonal axis — a tape-sourced vote, not the same OHLC. The Council (v1.6.3) now fuses <strong>22 voters</strong>; interim <code>ConvictionFloor = 0.20</code>.</li>
+</ul>
+<h3>6d. Signal collection — the orthogonal axes (planned seams, build in dependency order)</h3>
+<p>The Council is built to pick these up automatically as each publishes a <code>…State</code> seam. <strong>Rule for every new axis: publish a clean <code>…State</code> seam AND record it to the Ledger on every fire, or Lens can never tell whether it helped.</strong></p>
+<ol>
+<li><strong><code>ClockState</code></strong> — session phase / minsSinceOpen / minsToClose / dayOfWeek / inKillWindow. A <strong>modulator</strong> (scales weights), not a voter. Nearly free; build first.</li>
+<li><strong><code>EventState</code> / event veto</strong> — <strong>already has a live consumer</strong>: <code>SentinelRiskService</code> reads <code>Sentinel\News.conf</code> (<code>YYYY-MM-DD HH:mm | Event | scope | beforeMin | afterMin</code>) → <code>SentinelCore.SetNewsLockouts</code> → folded into <code>CanEnter</code> <strong>and</strong> consulted by the Council. To automate, land <code>EconomicCalendar.py</code>'s <code>block_windows</code> into <code>News.conf</code>. <strong>Consume rules:</strong> (a) <strong>freshness guard</strong> — treat a stale/missing calendar (date ≠ today) as <em>fail-to-caution</em>, never trust yesterday's windows; (b) the script's directional <code>bias_score</code> is <strong>EQUITY (MNQ) specific — do NOT feed it to a gold (GC/MGC) strategy</strong>; only the blackout windows are universal; (c) times are <strong>ET wall-clock — convert ET→session TZ (DST-aware)</strong>.</li>
+<li><strong><code>ParticipationState</code></strong> — time-of-day-normalized RVOL + cumulative-delta divergence + climax/dry-up. Reuses existing delta + the <code>State</code> blob store (persist the per-minute volume curve).</li>
+<li><strong><code>LevelState</code> + <code>MtfState</code> + <code>InternalsState</code></strong> — one shared multi-series "Context" host (all need <code>AddDataSeries</code>). Location = VWAP+bands / PDH-PDL / opening range / IB / session H-L / volume-profile POC-VAH-VAL, ATR-normalized distances. MTF = bias on the 1/5/15/60/240 ladder, <strong>anchored to SentinelTrend's trend definition</strong>. Internals = DXY+yields (gold) or <code>$TICK/$ADD/$VOLD/$TRIN</code> (ES) — <strong>PARKED</strong> on feed availability.</li>
+<li><strong><code>FluxState</code></strong> — ✅ <strong>SHIPPED (v1.31.0): the ORDER-FLOW axis.</strong> The <code>SentinelFlux</code> bar type (BarsPeriodType 212203) closes bars on accumulated signed order-flow imbalance (López de Prado information-driven bars, TBars-stabilised) and publishes a tape-sourced <code>FluxState</code> vote — the suite's <strong>first genuinely orthogonal</strong> axis, wired into the Council as the <strong>FLUX</strong> voter (+ an absorption-damp modulator). This is the piece the §6c "agreement, not confirmation" caveat was waiting on. <em>Parked lower still:</em> book/spread microstructure, VIX/vol-term-structure regime — <strong>note the order-flow slice is now delivered by Flux;</strong> what remains parked is full book/spread microstructure and the VIX regime.</li>
+</ol>
+<h3>6e. Helm — the interdiction seam (the publish/consult idiom pointed the OTHER way)   <em>(SentinelCore ≥ v1.34.0)</em></h3>
+<p>Everywhere else in §6 a <em>sensor</em> publishes state and a <em>consumer</em> reads it. <strong>Helm inverts that: a HUMAN publishes an intent addressed to a RUNNING automated actor, and the actor consumes and executes it with its OWN order handles.</strong> Helm is the interdiction layer — a human grabs the wheel of a running actor <strong>without stopping it</strong>. It completes the trio: <strong>Deck</strong> (you drive) · <strong>Bridge</strong> (it drives) · <strong>Helm</strong> (grab the wheel). <strong>Helm owns NOTHING</strong> — it never touches an order; it publishes an <code>HelmIntent</code> and the actor stays the sole owner of its position and exits.</p>
+<ul>
+<li><strong>Why command-the-owner (the constraint that forces this shape):</strong> a managed position closed by a panel desyncs <code>Position</code>→account; the managed framework re-asserts <code>SetStopLoss</code>; <code>Account.Change</code>/<code>Cancel</code> on a strategy order throws and can terminate the strategy (§5 + the CONTRIBUTING.md order-ownership lessons). So Helm does NOT act on the order — it commands the owner, and the owner acts. Human input becomes a seam.</li>
+<li><strong>The seam (all static on <code>SentinelCore</code>), keyed by <code>instanceKey</code></strong> (<code>&lt;class&gt;#&lt;scope&gt;@&lt;account&gt;</code>, beside the <code>RegisterActor</code> registry):</li>
+</ul>
+<div class="tblwrap"><table><thead><tr><th>Call</th><th>Returns</th><th>Use</th></tr></thead><tbody><tr><td><code>SetHelmIntent(instanceKey, HelmIntent)</code></td><td>—</td><td><strong>PUBLISH</strong> an intent (human side). Auto-fills <code>Id</code>/<code>IssuedUtc</code>/<code>ExpiryUtc</code> (default TTL 120s); FIFO-queued per <code>instanceKey</code>.</td></tr><tr><td><code>TakeHelmIntent(instanceKey)</code></td><td><code>HelmIntent</code></td><td><strong>CONSUME</strong> (idempotent) — pops the next live intent, drops expired ones, returns null when empty. <strong>Drain in a LOOP each pass.</strong></td></tr><tr><td><code>PendingHelmIntents(instanceKey)</code></td><td>int</td><td>non-consuming count of live queued intents.</td></tr><tr><td><code>SetHelmState(instanceKey, HelmState)</code> · <code>GetHelmState(key, maxAgeSec)</code> · <code>AllHelmStates()</code> · <code>ClearHelm(key)</code></td><td>— / <code>HelmState</code> / list / —</td><td>the actor publishes <code>HelmState</code> <strong>BACK</strong> (position/stop/target/paused/override/status) so a surface renders reality; <code>ClearHelm</code> on teardown.</td></tr></tbody></table></div>
+<ul>
+<li><code>enum HelmVerb { Pause, Resume, SkipNext, FlattenNow, MoveStop, MoveTarget, BreakevenNow, Scale, TakeOver, HandBack }</code>.</li>
+<li><code>HelmIntent { Id; InstanceKey; Verb; Price; QtyDelta; Reason; IssuedUtc, ExpiryUtc; IsExpired; IsRiskReducing; IsRiskAdding }</code> — <code>IsRiskReducing</code>/<code>IsRiskAdding</code> answer only the <strong>unambiguous</strong> verbs; <code>MoveStop</code>/<code>MoveTarget</code> are <strong>context-classified by the consumer</strong> (a widen is risk-adding, a tighten is risk-reducing).</li>
+<li><code>HelmState { InstanceKey, Instrument, Account, Scope; PositionQty (signed); AvgPrice, StopPrice, TargetPrice; Paused, SkipArmed, HumanOverride; LastIntentId, Status; UpdatedUtc }</code>.</li>
+<li><strong>The asymmetric gate (applied by the CONSUMER, not the seam):</strong> risk-<strong>reducing</strong> verbs are <strong>fail-OPEN</strong> (a human must always be able to reduce risk); risk-<strong>adding</strong> verbs (<code>Resume</code> / widen-stop / <code>HandBack</code> / scale-UP) pass <code>GateEntry</code> <strong>fail-CLOSED</strong>. The Gate does not care whose finger it was.</li>
+<li><strong>One-shot + expiry are load-bearing.</strong> Intents are <strong>consumed</strong> (never re-read) and <strong>expire</strong> (TTL); they are <strong>RAM-only</strong> (a restart drops them) and the "armed/pending" idea is <strong>never persisted</strong> — a stale intent replayed after a restart is exactly the class of bug that duplicates a stop.</li>
+<li><strong>Consumer contract:</strong> key by <code>instanceKey</code>, <strong>drain <code>TakeHelmIntent</code> in a loop</strong> every pass (a tick-thread drain + an <code>OnBarUpdate</code> backstop), execute with your OWN order handles, and <strong>publish <code>HelmState</code> back</strong> each pass. Reference consumer: <code>SentinelBridge</code> v0.3.0 (<code>Docs/BRIDGE_SPEC.md</code>); reference surface (writer of intents): <code>SentinelCockpit</code> v0.5.0 ⑤ Helm (<code>Docs/SENTINEL_COCKPIT_SPEC.md</code>). Punch list: <code>Docs/HELM_TEST_PUNCHLIST.md</code>.</li>
+</ul>
+<hr>
+<h2><span class="hn">7.</span>Naming &amp; versioning</h2>
+<blockquote><p><strong>⚑ FEDERATED NAMING LAW (RATIFIED 2026-07-07 — this is the single source of truth; supersedes the earlier "drop the prefix" decision).</strong> A novice must be unable to confuse a Sentinel-plumbed tool with a stock NT one — so the "Sentinel" tell shows up on <strong>FOUR layers</strong>. The earlier convention (2026-07-05, <code>sentinel-namespace-and-naming</code>) that <em>dropped</em> the class prefix is <strong>DEPRECATED</strong>; its reasoning (the folder supplies context) held only for the <em>picker</em>, but the on-chart <strong>display <code>Name</code> still read generic</strong> and that's what a novice sees. The ratified law re-adds the prefix on the class <strong>and</strong> puts "Sentinel" in the display Name.</p></blockquote>
+<div class="tblwrap"><table><thead><tr><th>Layer</th><th>Rule</th><th>Example</th><th>Serialization-locked?</th></tr></thead><tbody><tr><td><strong>① Display <code>Name</code></strong> (in <code>SetDefaults</code>)</td><td><strong><code>"Sentinel &lt;Thing&gt; v&lt;M&gt;.&lt;m&gt;.&lt;p&gt;"</code></strong> — mandatory prefix <strong>+ version</strong> (amended 2026-07-10, §9); <code> (DEV)</code> while in dev</td><td><code>Name = "Sentinel Trend v1.0.0";</code></td><td><strong>No</strong> — display-only; <strong>safe to change ANY time</strong></td></tr><tr><td><strong>② Namespace</strong></td><td><strong>Indicators</strong> → <code>…Indicators.Sentinel</code> (→ picker "Sentinel" folder). <strong>⚠ STRATEGIES → BASE <code>…Strategies</code>, NOT <code>.Strategies.Sentinel</code></strong> — NT's Strategy selector does NOT surface sub-namespaced strategies (verified 2026-07-07 on SentinelBridge: compiled clean, never listed); identity carried by class prefix + Name.</td><td><code>namespace …Indicators.Sentinel</code> / <code>namespace …Strategies</code></td><td><strong>YES</strong> — bump only</td></tr><tr><td><strong>③ Class + file</strong></td><td><code>Sentinel&lt;Thing&gt;_vX_Y_Z</code></td><td><code>SentinelTrend_v1_0_0[.cs]</code></td><td><strong>YES</strong> — change at version bump only</td></tr><tr><td><strong>④ Runtime</strong></td><td>cyan glass card + label remover ON (+ publish a <code>…State</code> seam wired to the Council — §9 item 6)</td><td><code>ShowIndicatorLabel = false</code></td><td>n/a</td></tr></tbody></table></div>
+<ul>
+<li><strong>The split that makes migration painless:</strong> layer ① is display-only (the <code>Name</code> property is NOT the serialization identity), so the "Sentinel " display prefix can be <strong>retrofitted across the whole suite right now</strong> without dropping anything off saved charts. Layers ②③ ARE the identity (namespace + class), so they change <strong>only at a tool's next version bump</strong> — frozen old versions keep their old identity.</li>
+<li><strong>Executors (strategies) still follow ①②③</strong> but layer ④'s "publish a seam" clause is for <em>sensors</em>; an executor consumes seams instead (e.g. the <strong>Bridge</strong> reads <code>CouncilState</code>), so it carries the card + label remover but publishes no <code>…State</code>.</li>
+<li><strong>⚠ NAME FIDELITY — the <code>&lt;Thing&gt;</code> is the SOURCE indicator's FULL name (amended 2026-07-10 — see Naming Federation §10; REVERSES the earlier short-name calls).</strong> When a Sentinel tool is a <em>port</em> of a standard indicator, its <code>&lt;Thing&gt;</code> is that indicator's full name, verbatim — <code>StochasticTripleFilter</code> → <code>SentinelStochasticTripleFilter</code> / "Sentinel Stochastic Triple Filter", NOT "Sentinel Stoch Filter". Never abbreviate or re-brand a port; the name must trace back to its source. (Tools with no external source — Council, Clock, Eye, … — keep their own name.) The withdrawn short names (Sentinel ADX/CCI/Envelope/ Compression) become the fidelity names at each tool's next bump.</li>
+<li><strong>⚠ Layer ① carries the VERSION (amended 2026-07-10 — see Naming Federation §9).</strong> The display Name is <code>"Sentinel &lt;Thing&gt; v&lt;M&gt;.&lt;m&gt;.&lt;p&gt;"</code> (e.g. <code>"Sentinel Trend v1.0.0"</code>), plus a trailing <code> (DEV)</code> while the build is under development (dropped as the freeze step). <strong>Reason:</strong> NT's Indicators picker "Available" pane lists tools by display <code>Name</code>, not class name — so the <code>_vX_Y_Z</code> class suffix is invisible at selection time and two in-dev versions read as identical <code>Sentinel &lt;Thing&gt;</code> rows. The version string must match the <code>_vX_Y_Z</code> class suffix + header CHANGELOG; all three move together on a bump. Still display-only, so retrofit freely.</li>
+</ul>
+<p>Base rules:</p>
+<ul>
+<li>File = class = version suffix, all in sync. Keep name, class, <code>Name</code>, version-suffixed enums, and display strings ("v0.1.0") in sync. <strong>Bump the version + update the in-file changelog for any important change</strong> (history is per-file, not git). Old versions are FROZEN — never edit them. Minor bump (0.x.0) = architectural rework; patch (0.0.x) = incremental.</li>
+</ul>
+<h3>Namespace grouping (adopt at each tool's NEXT bump)</h3>
+<p>Suite indicators/strategies live in a sub-namespace so they cohere in code AND cluster in the indicator picker:</p>
+<ul>
+<li><strong>Indicators</strong> → <code>namespace NinjaTrader.NinjaScript.Indicators.Sentinel</code>. <strong>⚠ Strategies STAY in the BASE <code>NinjaTrader.NinjaScript.Strategies</code> namespace</strong> — a sub-namespaced strategy compiles but <strong>never appears in NT's Strategy selector</strong> (verified 2026-07-07, SentinelBridge). Only indicators fold into picker sub-folders; strategies carry the "Sentinel" tell via the class prefix + display Name only. NT's codegen is namespace-aware — it emits <code>Indicators.Sentinel.&lt;Type&gt;</code> wrappers exposed by simple method name, so <strong>hosting from a strategy/indicator/MA-column still works</strong> (proven by vendor <code>Indicators.LizardIndicators</code>, <code>.AlgoTrader</code>, <code>.AlgoAlpha</code>). AddOns already use <code>AddOns.Sentinel</code>. (File folder is independent of namespace.)</li>
+<li><strong>The picker GROUPS BY SUB-NAMESPACE into expandable folders</strong> (VERIFIED 2026-07-05 — a "Sentinel" folder appeared; every vendor pack is likewise a folder). Root-namespace indicators sit flat at the top. The namespace clusters them <strong>and</strong> (per the law above) the class carries the <code>Sentinel</code> prefix, so it reads "Sentinel › SentinelTrend". Class names must stay globally UNIQUE (the version suffix ensures it → no generated-wrapper collision).</li>
+<li><strong>Never retroactively move a placed indicator.</strong> Namespace + class are its serialization identity; changing either drops it off saved charts/workspaces (same as a version bump). Adopt at the <strong>next version bump only</strong>; frozen old versions stay in their old namespace/name. See memory <code>sentinel-namespace-and-naming</code>.</li>
+<li><strong>GOTCHA — custom enums on a <code>.Sentinel</code> indicator: declare them in the class's own <code>…Indicators.Sentinel</code> namespace AND add <code>using …Indicators.Sentinel;</code> at the file top.</strong> VERIFIED 2026-07-05 on Eye (3 tries, cost real time). NT's generated host-wrapper is emitted in <code>namespace …Indicators</code>, references the indicator's own type QUALIFIED (<code>Sentinel.Eye_v1_1_0</code>) but leaves custom <strong>enum params BARE</strong> (<code>SentinelEyeDirectionMode directionMode</code>). KEY FACT: <strong>the generated <code>#region</code> shares THIS file's <code>using</code> directives</strong> (same compilation unit). So:</li>
+<li>enum in <code>.Sentinel</code> <strong>without</strong> the using → bare name can't see the child namespace (<code>CS0246</code>), or binds to a frozen old version's same-named enum in base <code>NinjaTrader.NinjaScript</code> (<code>CS0019</code>/<code>CS0266</code> mismatch).</li>
+<li>enum in <code>.Indicators</code> → resolves, but it <strong>changed how NT qualified the class</strong> in the MA/Strategy partials (emitted <code>Indicators.X</code> instead of <code>Indicators.Sentinel.X</code> → <code>CS0234</code>).</li>
+<li><strong>enum in <code>.Sentinel</code> + <code>using …Indicators.Sentinel;</code></strong> → the region resolves the bare enum via the using, and the class qualifies correctly. This mirrors how CompressionBase's <code>using …AddOns.Sentinel;</code> resolves <code>SentinelCardCorner</code>. ✅ This is the pattern. Also <strong>keep only ONE version of the tool in the tree</strong> — two versions' same-named enums re-collide (<code>CS0101</code>). Another reason to <strong>archive old versions when rehoming</strong> (below).</li>
+<li><strong>Rehome mechanics:</strong> <code>cp</code> the file, strip the generated <code>#region</code> to EOF, change <code>namespace</code>+class+<code>Name</code>+header, add to csproj, <strong>F5 (authoritative)</strong>. NT running re-appends generated regions + auto-adds the csproj entry (dedupe CS2002) and may briefly emit stale-name CS0111/CS0102/CS0246 region ghosts — strip-to-zero + F5 clears them.</li>
+<li><code>SentinelCore</code> and the services are edited <strong>in place</strong> (stable symbol other tools bind to) — internal version const only.</li>
+<li>Every file opens with a header block: purpose, design/order/Sentinel notes, a <code>⚠ validate on SIM</code> line for anything that submits live orders, then <code>CHANGELOG</code>.</li>
+</ul>
+<hr>
+<h2><span class="hn">8.</span>Build &amp; verify workflow</h2>
+<p>NT compiles <strong>every <code>.cs</code> under <code>bin\Custom</code> into one <code>NinjaTrader.Custom.dll</code></strong> — one broken file blocks the whole compile. <strong>NT's F5 is authoritative.</strong></p>
+<p>Headless sanity-check (flaky; produces GHOST errors NT does not hit):</p>
+<pre><code>dotnet build NinjaTrader.Custom.csproj -t:Rebuild -p:UseWPF=false \
+  -p:ImportWindowsDesktopTargets=false -nologo -clp:ErrorsOnly 2&gt;&amp;1 \
+  | grep -E "error CS" | grep -viE "AlightenGEX|Energy\.cs|TrendArchitectBotV13" | sort -u</code></pre>
+<ul>
+<li><strong>Known ghosts to IGNORE:</strong> <code>Energy.cs</code> CS0104 (Brush ambiguous), <code>@@AlightenGEX…</code> CS0234, <code>TrendArchitectBotV13(81)</code> — env artifacts, not real. Also <code>CS0115 OnMarketData</code> on the newest panel, <code>MC1000 Infragistics</code>.</li>
+<li><strong>Real = a localized <code>CS</code> in a file YOU touched.</strong> Cross-file "namespace missing" on vendor files is a ghost.</li>
+<li><strong>csproj-drop gotcha:</strong> NT regenerates <code>NinjaTrader.Custom.csproj</code> on F5 and <strong>drops</strong> <code>&lt;Compile Include&gt;</code> lines for files it still compiles. Before a headless check, re-add the entries for your files (else the build reports "clean" without compiling them). NT re-adds them on its next F5. Watch for <code>CS2002</code> (duplicate) and dedupe.</li>
+<li><strong>WPF gotcha:</strong> <code>using System.Windows.Shapes</code> collides with <code>NinjaTrader.Gui.Line</code> (CS0104) — alias <code>ShapeLine/ShapeEllipse/ShapePolyline/ShapePolygon</code>. NT F5 catches this; headless does not.</li>
+<li><strong>Skin XAML:</strong> validate well-formedness after edits (<code>xml</code>); one malformed file silently falls back to the default skin. Skins load at NT startup / on re-select, independent of the NinjaScript compile.</li>
+</ul>
+<hr>
+<h2><span class="hn">9.</span>New-tool checklist</h2>
+<ol>
+<li>Pick the type (§5). <strong>Apply the §7 FEDERATED NAMING LAW (all 4 layers):</strong> display <code>Name = "Sentinel &lt;Thing&gt; v&lt;M&gt;.&lt;m&gt;.&lt;p&gt;"</code> (+ <code> (DEV)</code> in dev), namespace <code>…Indicators.Sentinel</code> (indicators) <strong>or BASE <code>…Strategies</code></strong> (strategies — sub-ns hides them from the selector), class/file <code>Sentinel&lt;Thing&gt;_vX_Y_Z</code> (lowercase <code>v</code>, three parts, underscores — e.g. <code>SentinelTrend_v1_0_0</code>, <code>SentinelBridge_v0_2_0</code>), cyan card + label remover. File = class = version suffix, all in sync. Header block + changelog + <code>⚠ SIM</code> line if it trades.</li>
+<li>Palette fields (§3) — copy verbatim. No new colors.</li>
+<li>Header: cyan eye + wordmark + version chip. One cyan accent; green/red only for money/direction.</li>
+<li>WPF from the shared helpers (§3); on-chart card from the glass recipe (§4).</li>
+<li>Orders (if any): account-level unmanaged (§5); chart-scoped flatten; <code>OrderEntry.Manual</code>.</li>
+<li>Sentinel: state advisory-vs-blocking in the header; wire <code>SentinelCore</code> (§6). <strong>COUNCIL PROTOCOL (mandatory for any signal/regime/bias/context emitter):</strong> the tool MUST (a) <strong>publish a <code>…State</code> seam</strong> to <code>SentinelCore</code> carrying its read as INT/double/bool (never couple to an enum — publish <code>(int)</code>); (b) gate it behind a <code>PublishState</code> (or <code>Publish…</code>) property that <strong>DEFAULTS ON</strong> — do NOT ship it dark (the 3-voters-off-by-default miss cost us; audited &amp; fixed 2026-07-07); (c) be <strong>wired into the Council</strong> as a VOTER (directional → <code>AddVote</code>), a MODULATOR (context that scales conviction), or a VETO (hard gate) — and added to the Council's card/Reasons audit. A hidden <code>Signal</code> plot alone is NOT enough — the Council reads seams, not plots (that was the CompressionBase gap). If it has no directional/context read, say so in the header. <strong>(Consuming a HUMAN interdiction rather than publishing a sensor read? That's the same idiom pointed the other way — publish <code>HelmIntent</code>, drain by <code>instanceKey</code>, publish <code>HelmState</code> back; see §6e.)</strong></li>
+<li><strong>CORPUS RULE (mandatory) — a sensor NEVER records; only the Recorder records.</strong> A regular signal/regime/context indicator MUST NOT write to the training corpus. <code>Sentinel\Excursions\council\&lt;schema&gt;\</code> is owned <strong>solely</strong> by the dedicated <code>SentinelExcursionRecorder</code> — <strong>one writer, one schema per folder.</strong> A tool that wants to characterize its OWN signal (a baseline) writes to <code>Sentinel\Excursions\_baselines\&lt;signal&gt;\&lt;schema&gt;\</code>, gated behind a property that <strong>DEFAULTS OFF</strong>, opt-in only — never the training path, never on by default. Corpus recording is a <em>training-pipeline</em> concern, not a sensor feature; a corpus that anyone might <code>train.py</code> over must be one-writer/one-schema or the model learns the mix. (CompressionBase shipped a default-ON <code>CBRK</code> logger into the shared dir — it muddied the corpus and cost a debug detour; default-OFF + <code>_baselines\</code> routing, 2026-07-11. See memory <code>corpus-hygiene-and-fill-fidelity</code>.)</li>
+<li>Add <code>&lt;Compile Include&gt;</code> to the csproj; run the headless check (§8); then <strong>F5 in NT (authoritative)</strong>.</li>
+<li>Update this doc if you introduced a new pattern. Update <code>Docs/ROADMAP.md</code> + memory.</li>
+</ol>
+<hr>
+<p><em>Related: <code>CONTRIBUTING.md</code> (build rules/map) · <code>Docs/ROADMAP.md</code> (status) · <code>Docs/SENTINEL-CONTRACTS.md</code> (service seams) · memory <code>sentinel-suite-architecture</code>, <code>sentinel-skin</code>, <code>gtrader21-panel-integration</code>.</em></p>
+<footer><span>Sentinel Suite · <b>Sentinel Suite — Design System &amp; Build Framework</b></span><span>living document · rendered from Markdown</span></footer>
+</div></body></html>

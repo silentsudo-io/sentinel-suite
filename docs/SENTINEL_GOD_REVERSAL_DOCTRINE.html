@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sentinel · God Reversal — Doctrine &amp; Sensor Spec</title>
+<style>
+  :root{
+    --void:#e7edf1; --panel:#f3f7f9; --surface:#ffffff; --surface2:#eaf0f3;
+    --ink:#16222c; --ink2:#586873; --line:#cdd8de; --grid:#dde5ea;
+    --accent:#0b8ea1; --flow:#0d8fa2;
+    --up:#12a56f; --down:#e0424f; --warn:#c9861a;
+    --mono:ui-monospace,"Cascadia Code","SF Mono",Consolas,Menlo,monospace;
+    --sans:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  }
+  @media (prefers-color-scheme:dark){
+    :root{
+      --void:#0a0e13; --panel:#0d131a; --surface:#141c25; --surface2:#0f161e;
+      --ink:#e2e9ee; --ink2:#8a9ba8; --line:#26333f; --grid:#131c25;
+      --accent:#4ad6e8; --flow:#3fb6c9; --up:#25d08b; --down:#ff5c6a; --warn:#f2b23c;
+    }
+  }
+  :root[data-theme="light"]{
+    --void:#e7edf1; --panel:#f3f7f9; --surface:#ffffff; --surface2:#eaf0f3;
+    --ink:#16222c; --ink2:#586873; --line:#cdd8de; --grid:#dde5ea;
+    --accent:#0b8ea1; --flow:#0d8fa2; --up:#12a56f; --down:#e0424f; --warn:#c9861a;
+  }
+  :root[data-theme="dark"]{
+    --void:#0a0e13; --panel:#0d131a; --surface:#141c25; --surface2:#0f161e;
+    --ink:#e2e9ee; --ink2:#8a9ba8; --line:#26333f; --grid:#131c25;
+    --accent:#4ad6e8; --flow:#3fb6c9; --up:#25d08b; --down:#ff5c6a; --warn:#f2b23c;
+  }
+
+  *{box-sizing:border-box}
+  body{margin:0; background:var(--void); color:var(--ink); font-family:var(--sans); line-height:1.55; -webkit-font-smoothing:antialiased; overflow-x:hidden}
+  .wrap{max-width:1120px; margin:0 auto; padding:56px 24px 100px; position:relative; z-index:1}
+
+  /* the Sentinel brand mark (Spartan barbute helmet) — faint fixed watermark + crisp header mark */
+  .watermark{position:fixed; z-index:0; pointer-events:none; top:50%; right:-2vw; transform:translateY(-50%); width:clamp(300px,40vw,560px); height:auto; fill:var(--accent); opacity:.18; filter:drop-shadow(0 0 55px color-mix(in srgb,var(--accent) 60%,transparent))}
+  .brandmark{width:16px; height:16px; flex:0 0 auto; fill:var(--accent); filter:drop-shadow(0 0 5px color-mix(in srgb,var(--accent) 50%,transparent))}
+
+  .kicker{font-family:var(--mono); font-size:11px; letter-spacing:.34em; text-transform:uppercase; color:var(--accent); display:flex; align-items:center; gap:9px; margin:0 0 14px}
+  .livedot{width:8px; height:8px; border-radius:50%; background:var(--accent); animation:pulse 2.4s ease-out infinite}
+  @keyframes pulse{0%{box-shadow:0 0 0 0 color-mix(in srgb,var(--accent) 55%,transparent)}70%{box-shadow:0 0 0 7px transparent}100%{box-shadow:0 0 0 0 transparent}}
+  h1{font-family:var(--mono); font-weight:700; font-size:clamp(30px,5.4vw,50px); letter-spacing:-.015em; margin:0 0 14px; text-wrap:balance}
+  .lede{font-size:18px; color:var(--ink2); max-width:66ch; margin:0 0 4px}
+  .lede b{color:var(--ink); font-weight:600}
+
+  .oneline{display:flex; flex-wrap:wrap; gap:7px; align-items:center; margin:28px 0 6px}
+  .oneline .s{font-family:var(--mono); font-size:12px; color:var(--ink); background:var(--surface); border:1px solid var(--line); border-radius:999px; padding:6px 13px}
+  .oneline .s b{color:var(--accent); font-weight:700}
+  .oneline .sep{color:var(--ink2); font-family:var(--mono)}
+
+  .toc{display:flex; flex-wrap:wrap; gap:6px 20px; margin:22px 0 6px; padding:16px 18px; border:1px solid var(--line); border-radius:12px; background:var(--panel)}
+  .toc a{font-family:var(--mono); font-size:12.5px; color:var(--ink2); text-decoration:none; white-space:nowrap}
+  .toc a:hover{color:var(--accent)}
+  .toc a b{color:var(--accent); font-weight:700; margin-right:6px}
+
+  .legend{display:flex; flex-wrap:wrap; gap:8px 18px; margin:18px 0 6px; padding:13px 16px; border:1px solid var(--line); border-radius:12px; background:var(--panel)}
+  .legend .k{display:flex; align-items:center; gap:8px; font-family:var(--mono); font-size:12px; color:var(--ink2)}
+  .swatch{width:22px; height:4px; border-radius:2px}
+  .swatch.a{background:var(--flow)} .swatch.u{background:var(--up)} .swatch.d{background:var(--down)} .swatch.w{background:var(--warn)}
+  .legend .k b{color:var(--ink); font-weight:600}
+
+  .part{display:flex; align-items:baseline; gap:16px; margin:80px 0 8px; padding-bottom:14px; border-bottom:1px solid var(--line)}
+  .part .pn{font-family:var(--mono); font-size:13px; font-weight:700; color:var(--accent); letter-spacing:.2em; white-space:nowrap}
+  .part h2{font-family:var(--mono); font-weight:700; font-size:15px; letter-spacing:.22em; text-transform:uppercase; color:var(--ink); margin:0}
+  .part .pd{margin-left:auto; font-size:13px; color:var(--ink2); font-family:var(--mono); text-align:right}
+
+  section{margin-top:44px}
+  .eyebrow{font-family:var(--mono); font-size:11px; letter-spacing:.24em; text-transform:uppercase; color:var(--accent); margin:0 0 8px; display:flex; gap:10px; align-items:baseline}
+  .eyebrow .num{color:var(--ink2); opacity:.7}
+  h3{font-family:var(--mono); font-weight:700; font-size:22px; margin:0 0 6px; letter-spacing:-.01em; text-wrap:balance}
+  .desc{color:var(--ink2); font-size:15px; margin:0 0 20px; max-width:74ch}
+  .desc b{color:var(--ink); font-weight:600}
+  code{font-family:var(--mono); font-size:.9em; background:var(--surface2); border:1px solid var(--line); border-radius:5px; padding:1px 5px; color:var(--ink)}
+
+  .panel{border:1px solid var(--line); border-radius:14px; background:var(--panel);
+    background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);
+    background-size:26px 26px; background-position:-1px -1px; padding:34px 30px; overflow-x:auto}
+
+  .node{background:var(--surface); border:1px solid var(--line); border-radius:11px; padding:11px 14px; min-width:120px; text-align:center; position:relative; box-shadow:0 1px 0 color-mix(in srgb,var(--ink) 6%,transparent)}
+  .node .t{font-family:var(--mono); font-weight:700; font-size:13px; color:var(--ink); white-space:nowrap}
+  .node .s{font-family:var(--mono); font-size:10.5px; color:var(--ink2); margin-top:3px; white-space:nowrap}
+  .node.accent{border-color:color-mix(in srgb,var(--accent) 55%,var(--line))}
+  .node.accent::before,.node.up::before,.node.down::before,.node.warn::before{content:""; position:absolute; left:0; top:9px; bottom:9px; width:3px; border-radius:3px}
+  .node.accent::before{background:var(--accent)}
+  .node.up::before{background:var(--up)} .node.up .t{color:color-mix(in srgb,var(--up) 78%,var(--ink))}
+  .node.down::before{background:var(--down)} .node.down .t{color:color-mix(in srgb,var(--down) 82%,var(--ink))}
+  .node.warn::before{background:var(--warn)}
+  .node.big{min-width:150px; padding:14px 16px}
+
+  .chip{font-family:var(--mono); font-size:11px; color:var(--ink); background:var(--surface2); border:1px solid var(--line); border-radius:7px; padding:5px 8px; white-space:nowrap; display:flex; justify-content:space-between; gap:10px; align-items:center}
+  .chip .w{color:var(--ink2); font-size:10px}
+  .chip.mute{color:var(--ink2)}
+
+  .flow{display:flex; align-items:center; justify-content:center; min-width:min-content}
+  .arrow{position:relative; flex:0 0 var(--aw,50px); height:2px; align-self:center; background:linear-gradient(90deg,color-mix(in srgb,var(--flow) 25%,transparent),var(--flow)); --c:var(--flow)}
+  .arrow::after{content:""; position:absolute; right:-1px; top:50%; transform:translateY(-50%); border-left:8px solid var(--c); border-top:5px solid transparent; border-bottom:5px solid transparent}
+  .arrow[data-l]::before{content:attr(data-l); position:absolute; left:50%; top:-15px; transform:translateX(-50%); font-family:var(--mono); font-size:9px; letter-spacing:.06em; text-transform:uppercase; color:var(--ink2); white-space:nowrap}
+  .arrow.up{--c:var(--up); background:linear-gradient(90deg,color-mix(in srgb,var(--up) 25%,transparent),var(--up))}
+  .arrow.down{--c:var(--down); background:linear-gradient(90deg,color-mix(in srgb,var(--down) 25%,transparent),var(--down))}
+  .arrow.warn{--c:var(--warn); background:linear-gradient(90deg,color-mix(in srgb,var(--warn) 25%,transparent),var(--warn))}
+  .arrow.v{width:2px; height:var(--ah,38px); flex:none; margin:0 auto; background:linear-gradient(180deg,color-mix(in srgb,var(--flow) 25%,transparent),var(--flow))}
+  .arrow.v::after{right:50%; top:auto; bottom:-1px; left:auto; transform:translateX(50%); border-left:5px solid transparent; border-right:5px solid transparent; border-top:8px solid var(--c); border-bottom:0}
+  .arrow.v.up-dir{background:linear-gradient(0deg,color-mix(in srgb,var(--flow) 25%,transparent),var(--flow))}
+  .arrow.v.up-dir::after{bottom:auto; top:-1px; border-top:0; border-bottom:8px solid var(--c)}
+  .arrow.v[data-l]::before{left:12px; top:50%; transform:translateY(-50%)}
+  .live .arrow{background-size:220% 100%; animation:travel 2.6s linear infinite}
+  @keyframes travel{0%{background-position:120% 0}100%{background-position:-40% 0}}
+
+  .group{border:1px dashed color-mix(in srgb,var(--line) 92%,var(--ink)); border-radius:11px; padding:12px; background:color-mix(in srgb,var(--surface) 55%,transparent)}
+  .group .gl{font-family:var(--mono); font-size:10px; letter-spacing:.14em; text-transform:uppercase; color:var(--ink2); margin:0 0 10px; text-align:center}
+  .grid2{display:grid; grid-template-columns:repeat(2,minmax(96px,1fr)); gap:6px}
+  .grid1{display:grid; gap:6px}
+  .rowflow{display:flex; align-items:center; justify-content:center; gap:0; min-width:min-content}
+  .stack{display:flex; flex-direction:column; align-items:center}
+  .band{display:flex; gap:8px; justify-content:center; flex-wrap:wrap; max-width:520px}
+
+  .verdict{background:var(--surface); border:1px solid color-mix(in srgb,var(--accent) 45%,var(--line)); border-radius:11px; padding:14px 16px; min-width:180px}
+  .verdict .vt{font-family:var(--mono); font-weight:700; font-size:12px; color:var(--accent); letter-spacing:.14em; margin-bottom:10px}
+  .vrow{display:flex; justify-content:space-between; gap:16px; font-family:var(--mono); font-size:12px; padding:4px 0; border-top:1px solid var(--line)}
+  .vrow span:first-child{color:var(--ink2)} .vrow span:last-child{color:var(--ink); font-weight:600}
+
+  .drow{display:flex; align-items:center; gap:14px; justify-content:center}
+  .branch{display:flex; align-items:center; gap:10px}
+  .blabel{font-family:var(--mono); font-size:9px; letter-spacing:.08em; text-transform:uppercase; color:var(--ink2)}
+  .qnode{background:var(--surface); border:1px solid var(--line); border-radius:11px; padding:12px 16px; text-align:center; position:relative}
+  .qnode.dec{border-color:color-mix(in srgb,var(--accent) 40%,var(--line))}
+  .qnode .t{font-family:var(--mono); font-weight:700; font-size:12.5px; color:var(--ink)}
+  .qnode .s{font-family:var(--mono); font-size:10px; color:var(--ink2); margin-top:4px}
+  .spine{display:flex; flex-direction:column; align-items:center}
+
+  .cast{display:grid; grid-template-columns:repeat(auto-fill,minmax(232px,1fr)); gap:12px}
+  .castcard{border:1px solid var(--line); border-radius:12px; background:var(--surface); padding:14px 15px; display:flex; flex-direction:column; gap:6px}
+  .castcard .role{font-family:var(--mono); font-size:9.5px; letter-spacing:.16em; text-transform:uppercase; color:var(--accent)}
+  .castcard .nm{font-family:var(--mono); font-weight:700; font-size:15px; color:var(--ink)}
+  .castcard p{margin:0; font-size:13px; color:var(--ink2)}
+  .castcard .seam{margin-top:auto; font-family:var(--mono); font-size:10.5px; color:var(--ink2); border-top:1px dashed var(--line); padding-top:7px}
+  .castcard .seam b{color:var(--ink); font-weight:600}
+
+  .two{display:grid; grid-template-columns:1.1fr .9fr; gap:26px; align-items:start}
+  .two .panel{margin:0}
+  .anno{display:flex; flex-direction:column; gap:12px}
+  .anno .a{display:flex; gap:12px; align-items:flex-start}
+  .anno .n{flex:0 0 22px; height:22px; border-radius:6px; background:var(--surface2); border:1px solid var(--line); color:var(--accent); font-family:var(--mono); font-weight:700; font-size:11px; display:flex; align-items:center; justify-content:center; margin-top:1px}
+  .anno .a div b{font-family:var(--mono); font-size:12.5px; color:var(--ink)}
+  .anno .a div p{margin:2px 0 0; font-size:13px; color:var(--ink2)}
+
+  .tblwrap{overflow-x:auto; border:1px solid var(--line); border-radius:12px; margin:8px 0}
+  table{width:100%; border-collapse:collapse; font-family:var(--mono); font-size:12.5px; min-width:640px}
+  thead th{text-align:left; font-size:10px; letter-spacing:.12em; text-transform:uppercase; color:var(--ink2); font-weight:600; padding:12px 14px; background:var(--panel); border-bottom:1px solid var(--line); white-space:nowrap}
+  tbody td{padding:10px 14px; border-bottom:1px solid var(--line); color:var(--ink); vertical-align:top}
+  tbody tr:last-child td{border-bottom:0}
+  td .vt{color:var(--ink2); font-size:11.5px}
+  td b{color:var(--ink)}
+  .wt{font-variant-numeric:tabular-nums; color:var(--accent); font-weight:700}
+  .ax-orth{color:var(--accent)} .ax-price{color:var(--ink2)}
+  .st{font-size:11px; color:var(--ink2)}
+
+  .principles{display:grid; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); gap:16px}
+  .pr{border:1px solid var(--line); border-left:3px solid var(--accent); border-radius:0 12px 12px 0; background:var(--surface); padding:16px 18px}
+  .pr h4{font-family:var(--mono); font-size:14px; margin:0 0 6px; color:var(--ink)}
+  .pr p{margin:0; font-size:13.5px; color:var(--ink2)}
+  .pr p b{color:var(--ink); font-weight:600}
+
+  .layers{display:flex; flex-direction:column; gap:12px}
+  .layer{display:grid; grid-template-columns:138px 1fr auto; align-items:center; gap:16px; border:1px solid var(--line); border-radius:12px; background:var(--surface); padding:14px 16px}
+  .layer .lb{font-family:var(--mono); font-size:10px; letter-spacing:.14em; text-transform:uppercase; color:var(--accent)}
+  .layer .lb b{display:block; color:var(--ink); font-size:14px; letter-spacing:0; margin-top:3px; text-transform:none}
+  .layer .lc{display:flex; flex-wrap:wrap; gap:6px}
+  .layer .lo{font-family:var(--mono); font-size:10.5px; color:var(--ink2); white-space:nowrap; text-align:right; line-height:1.5}
+  @media(max-width:640px){.layer{grid-template-columns:1fr; gap:10px} .layer .lo{text-align:left}}
+
+  /* prose + reference */
+  .prose{max-width:76ch}
+  .prose p{margin:0 0 14px; font-size:15px; color:var(--ink)}
+  .prose p.muted{color:var(--ink2)}
+  .callout{border:1px solid var(--line); border-left:3px solid var(--accent); border-radius:0 12px 12px 0; background:var(--surface); padding:14px 18px; margin:18px 0; font-size:14.5px; color:var(--ink); max-width:80ch}
+  .callout.warn{border-left-color:var(--warn)} .callout.caveat{border-left-color:var(--down)}
+  .callout b{color:var(--ink)}
+  .callout .cl{display:block; font-family:var(--mono); font-size:10px; letter-spacing:.16em; text-transform:uppercase; margin-bottom:6px; color:var(--accent)}
+  .callout.warn .cl{color:var(--warn)} .callout.caveat .cl{color:var(--down)}
+  .steps{list-style:none; counter-reset:s; padding:0; margin:0; display:flex; flex-direction:column; gap:12px; max-width:80ch}
+  .steps li{counter-increment:s; display:grid; grid-template-columns:28px minmax(0,1fr); column-gap:14px; row-gap:2px; align-items:start}
+  .steps li::before{content:counter(s); grid-column:1; grid-row:1; height:26px; width:26px; border-radius:7px; background:var(--surface2); border:1px solid var(--line); color:var(--accent); font-family:var(--mono); font-weight:700; font-size:12px; display:flex; align-items:center; justify-content:center}
+  .steps li b{grid-column:2; grid-row:1; color:var(--ink)} .steps li p{grid-column:2; grid-row:2; margin:3px 0 0; color:var(--ink2); font-size:14px}
+  .steps li code{font-size:.85em}
+  .code{background:var(--surface2); border:1px solid var(--line); border-radius:10px; padding:13px 15px; overflow-x:auto; font-family:var(--mono); font-size:12px; color:var(--ink); line-height:1.65; margin:14px 0; white-space:pre; max-width:100%}
+  .code .c{color:var(--ink2)} .code .k{color:var(--accent)}
+  .defs{display:grid; gap:0; max-width:80ch}
+  .defs .row{display:grid; grid-template-columns:170px 1fr; gap:16px; font-size:14px; padding:11px 0; border-bottom:1px solid var(--line)}
+  .defs b{font-family:var(--mono); font-size:12.5px; color:var(--ink)}
+  .defs .d{color:var(--ink2)}
+  .gauntlet{display:flex; flex-direction:column; gap:3px; font-family:var(--mono); font-size:12.5px; max-width:660px}
+  .gauntlet .g{display:flex; align-items:center; gap:12px; padding:10px 13px; border:1px solid var(--line); border-radius:8px; background:var(--surface)}
+  .gauntlet .g .ck{color:var(--up); font-weight:700; flex:0 0 auto}
+  .gauntlet .g .cond{color:var(--ink)} .gauntlet .g .res{margin-left:auto; color:var(--ink2); white-space:nowrap}
+  .reading{display:grid; grid-template-columns:1fr 1fr; gap:14px; margin:20px 0 6px; max-width:80ch}
+  .rp{border:1px solid var(--line); border-radius:12px; background:var(--surface); padding:14px 16px}
+  .rp .rt{font-family:var(--mono); font-size:11px; letter-spacing:.12em; text-transform:uppercase; color:var(--accent); margin-bottom:6px}
+  .rp p{margin:0; font-size:13.5px; color:var(--ink2)}
+  .rp b{color:var(--ink)}
+  @media(max-width:640px){ .reading{grid-template-columns:1fr} .defs .row{grid-template-columns:1fr; gap:2px} }
+
+  /* screenshot placeholders */
+  .shots{display:grid; grid-template-columns:repeat(auto-fit,minmax(238px,1fr)); gap:14px; margin:6px 0}
+  .shot{border:1.5px dashed color-mix(in srgb,var(--line) 78%,var(--ink)); border-radius:12px; background:var(--surface2); min-height:160px; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:18px 16px; gap:7px; margin:0}
+  .shot svg{color:var(--ink2); opacity:.55; margin-bottom:2px}
+  .shot .sid{font-family:var(--mono); font-size:10px; letter-spacing:.18em; font-weight:700; color:var(--accent)}
+  .shot .stt{font-family:var(--mono); font-size:13px; font-weight:700; color:var(--ink)}
+  .shot .scap{font-size:12px; color:var(--ink2); line-height:1.45; max-width:30ch}
+  .shot .sfile{font-family:var(--mono); font-size:9.5px; color:var(--ink2); opacity:.72; margin-top:3px}
+
+  footer{margin-top:72px; padding-top:22px; border-top:1px solid var(--line); font-family:var(--mono); font-size:11.5px; color:var(--ink2); display:flex; flex-wrap:wrap; gap:6px 18px; justify-content:space-between}
+  footer b{color:var(--ink); font-weight:600}
+
+  @media (prefers-reduced-motion:reduce){ .live .arrow{animation:none} .livedot{animation:none} }
+  @media (max-width:760px){ .two{grid-template-columns:1fr} }
+  @media (max-width:640px){ .wrap{padding:40px 14px 72px} .panel{padding:24px 16px} }
+</style>
+<style>
+  .wrap{max-width:900px}
+  .kicker .navsep{opacity:.45;margin:0 3px}
+  .kicker a.navhome{color:var(--ink2);border-bottom:0;text-decoration:none}
+  .kicker a.navhome:hover{color:var(--accent)}
+  .doc h2{font-family:var(--mono);font-weight:700;font-size:15px;letter-spacing:.2em;text-transform:uppercase;
+    color:var(--ink);margin:64px 0 4px;padding-bottom:12px;border-bottom:1px solid var(--line)}
+  .doc h2 .hn{color:var(--accent);margin-right:12px}
+  .doc h3{margin:34px 0 8px}
+  .doc p{font-size:15.5px;color:var(--ink);margin:0 0 15px;max-width:78ch}
+  .doc a{color:var(--accent);text-decoration:none;border-bottom:1px solid color-mix(in srgb,var(--accent) 40%,transparent)}
+  .doc a:hover{border-bottom-color:var(--accent)}
+  .doc strong{color:var(--ink);font-weight:670}
+  .doc em{color:var(--ink2);font-style:italic}
+  .doc ul,.doc ol{max-width:78ch;padding-left:1.3em;margin:0 0 15px}
+  .doc li{margin:.42em 0;font-size:15px;color:var(--ink)}
+  .doc li::marker{color:var(--accent)}
+  .doc hr{border:0;border-top:1px solid var(--line);margin:8px 0}
+  .doc blockquote{margin:18px 0;padding:14px 18px;border:1px solid var(--line);border-left:3px solid var(--accent);
+    border-radius:0 12px 12px 0;background:var(--surface);color:var(--ink2);max-width:80ch}
+  .doc blockquote p{color:var(--ink2);margin:0}
+  .doc blockquote strong{color:var(--ink)}
+  .doc pre{background:var(--surface2);border:1px solid var(--line);border-radius:10px;padding:14px 16px;
+    overflow-x:auto;font-family:var(--mono);font-size:12px;color:var(--ink);line-height:1.6;margin:16px 0;white-space:pre}
+  .doc pre code{background:none;border:0;padding:0;font-size:1em;color:inherit}
+</style>
+</head><body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><symbol id="helm" viewBox="0 0 512 512"><path fill-rule="nonzero" d="M255.406 17.75C189.313 39.42 124.536 85.124 79.03 150.344c21.238 57.44 32.72 94.314 32.72 131.375 0 36.493-11.52 73.723-32.125 129.655 49.72 36.73 100.08 58.95 150.313 64.938-5.052-60.378-9.83-120.748 1.593-181.125-30.644-3.28-61.384-13.286-92.03-30.72v-71.312c80.67 42.255 158.908 41.547 242.063 0v71.313c-30.06 14.376-60.192 24.722-90.25 29.28 8.684 60.46 7.723 120.915 2.03 181.375 46.386-7.335 92.89-28.824 139.032-64.312-33.966-112.954-34.03-145.933.594-260.47C391.162 84.844 317.924 39.89 255.405 17.75zm-75.125 212c-11.16-.13-19.646 3.174-21.25 9.156-2.33 8.7 10.778 19.76 29.282 24.72 18.505 4.957 35.388 1.92 37.72-6.782 2.33-8.7-10.775-19.76-29.282-24.72-5.783-1.55-11.396-2.315-16.47-2.374zm160.69 0c-5.074.06-10.687.825-16.47 2.375-18.507 4.96-31.613 16.018-29.28 24.72 2.33 8.7 19.213 11.738 37.717 6.78 18.505-4.958 31.613-16.018 29.282-24.72-1.604-5.98-10.09-9.286-21.25-9.155z"/></symbol></svg>
+<svg class="watermark" viewBox="0 0 512 512" aria-hidden="true"><use href="#helm"/></svg>
+<div class="wrap doc">
+<header>
+<p class="kicker"><svg class="brandmark" viewBox="0 0 512 512" aria-hidden="true"><use href="#helm"/></svg><span class="livedot"></span> Sentinel Suite · NinjaTrader 8 · living document<span class="navsep">·</span><a class="navhome" href="SENTINEL_DOCS.html">Docs home →</a></p>
+<h1>God Reversal — Doctrine &amp; Sensor Spec</h1>
+<p class="lede"><strong>Source:</strong> "god trade masterclass" — YouTube video (id <code>Saa2YTtIV7E</code>), channel <em>Trading for Rent Money</em> (the creator of the "God Trades" method this suite's <code>GodTrades21</code> / <code>Eye</code> lineage descends from). Transcribed + formalized 2026-07-08.</p>
+</header>
+<p>This doc is the <strong>durable reference</strong> for the reversal grammar taught in that masterclass, and the spec for the Sentinel sensor that encodes it: <strong><code>SentinelGodReversal_v1_0_0</code></strong> (display <em>"Sentinel God Reversal"</em>).</p>
+<blockquote><p><strong>One-sentence thesis (his words):</strong> <em>"A god trade is a reversal at a predictable place."</em> Two conditions must co-occur — a <strong>predictable place</strong> (a line/zone or a Bollinger-band edge, ideally with a volume imbalance there) <strong>and</strong> a <strong>reversal signal</strong> printing <em>at</em> that place. Everything else is filtering.</p></blockquote>
+<hr>
+<h2><span class="hn">1.</span>Why this sensor exists (the gap it fills)</h2>
+<p>The existing <code>GodTrades21</code> indicator (which <code>Eye</code> runs across ~24 bar-types and scores) already encodes the <strong>structural / Bollinger</strong> half of the method:</p>
+<div class="tblwrap"><table><thead><tr><th>GodTrades21 already has</th><th>Plot</th></tr></thead><tbody><tr><td>Bollinger-band gap ("BB gap")</td><td><code>BollingerGapLong/Short</code></td></tr><tr><td>Fill-&amp;-continue</td><td><code>ContinuationLong/Short</code></td></tr><tr><td>Outside-bar reversal</td><td><code>OutsideBarReversalSignal</code></td></tr><tr><td>Volume-imbalance ("gap") tracking + spiderweb clutter veto</td><td><code>ActiveGapCount</code>, <code>SpiderwebWarning</code>, …</td></tr></tbody></table></div>
+<p>What <code>GodTrades21</code> does <strong>not</strong> encode — and what the masterclass spends most of its time on — is the <strong>candle-grammar reversal vocabulary</strong>:</p>
+<ul>
+<li><strong>shaved close / shaved open</strong> (no wick on the close = that side dominated, "price in a hurry")</li>
+<li><strong>engulfing at the level</strong> (reversal body &gt; prior opposite body)</li>
+<li><strong>equal high / equal low</strong> (prior close == reversal open at the <em>exact</em> level, jammed against the band)</li>
+<li><strong>doji-cluster exhaustion</strong> ("shitty green / shitty red", a green doji in a red push = trend death)</li>
+<li><strong>no-snapback</strong> (a forming candle that doesn't retrace = domination) — <em>intrabar, approximated on closes</em></li>
+<li><strong>attack angle</strong> (steep approach into the level = tradeable; sideways grind into it = skip)</li>
+<li><strong>volume-imbalance fill count</strong> into the level (filling 1–3 stacked VIs = the "late bloomer")</li>
+</ul>
+<p><code>SentinelGodReversal</code> is that missing recognizer. It is a <strong>read-only chart indicator (no orders)</strong> that marks where the grammar triggers, scores the confluence, and publishes a <code>GodReversalState</code> seam so the <strong>Council</strong> (and later the <strong>Bridge</strong> strategy) can consult the same reversal read.</p>
+<hr>
+<h2><span class="hn">2.</span>The hard rules (the doctrine spine)</h2>
+<p>These are management rules for the <em>strategy</em> that trades the signal — they live in the Bridge / GTrader21 exit logic, <strong>not</strong> in the sensor. Recorded here so they aren't lost.</p>
+<div class="tblwrap"><table><thead><tr><th>Rule</th><th>Detail</th></tr></thead><tbody><tr><td><strong>Stop</strong></td><td>Single candle — the <strong>back of the entry (reversal) candle</strong> (its Low for a long, High for a short). Never widen. The sensor exposes this as <code>SuggestedStop</code> + draws it.</td></tr><tr><td><strong>Break-even is the enemy</strong></td><td>Moving to BE early gets you swiped out. He claims ~<strong>20% of profit</strong> is lost to premature BE. Let it ride to the target (the next predictable place / opposite band).</td></tr><tr><td><strong>Expectancy</strong></td><td>Expect <strong>3–4 full single-candle stops per 6.5 h session</strong> — fine, because the average winner should clear <strong>&gt; 3 candles</strong>. If you can't net 3 candles across 5–10 setups/ticker, something's wrong.</td></tr><tr><td><strong>Leverage</strong></td><td>If a <em>single-candle</em> stop can blow the account, you're over-levered. Size so 3 stops is a non-event.</td></tr><tr><td><strong>Attention</strong></td><td>Ignore price entirely unless it's approaching a band edge or a line. Mid-band + no VI = no trade.</td></tr><tr><td><strong>Exit</strong></td><td>At the next predictable place (opposite line/zone, session low) — or hold to the <strong>opposite side of the Bollinger band.</strong></td></tr><tr><td><strong>Don't clutter</strong></td><td>Only stack <strong>bounce / prediction lines</strong> as confirmation. Volume profile etc. = "more shit to think about."</td></tr></tbody></table></div>
+<hr>
+<h2><span class="hn">3.</span>The reversal-signal vocabulary (what the sensor detects)</h2>
+<p>All measured on <strong>closed</strong> candles. <code>body = |Close−Open|</code>, <code>range = High−Low</code>, <code>upperWick = High−max(O,C)</code>, <code>lowerWick = min(O,C)−Low</code>. Ticks via <code>TickSize</code>.</p>
+<div class="tblwrap"><table><thead><tr><th>Signal</th><th>Long (bullish reversal)</th><th>Short (bearish reversal)</th></tr></thead><tbody><tr><td><strong>Shaved close</strong></td><td><code>upperWick ≤ shaveTicks</code> (closed on the high)</td><td><code>lowerWick ≤ shaveTicks</code> (closed on the low)</td></tr><tr><td><strong>Engulfing</strong></td><td>bull body &gt; prior red body, <code>Close&gt;priorOpen &amp;&amp; Open&lt;priorClose</code></td><td>mirror</td></tr><tr><td><strong>Equal level</strong></td><td>prior red <code>Close ≈ Open[0]</code> within <code>equalTol</code> ticks (equal low)</td><td>prior green <code>Close ≈ Open[0]</code> (equal high)</td></tr><tr><td><strong>Doji</strong></td><td><code>body ≤ dojiTicks</code> (or <code>body/range ≤ dojiRatio</code>)</td><td>same</td></tr><tr><td><strong>Exhaustion</strong></td><td>≥1 doji <strong>or</strong> shrinking counter-bodies ("shitty red") in the last <code>ClutterLookback</code> bars</td><td>mirror</td></tr><tr><td><strong>VI fill</strong></td><td>a bearish→bullish 2-bar gap (<code>Low[k] &gt; High[k+1]</code>) was filled into the level</td><td>mirror</td></tr><tr><td><strong>Attack angle</strong></td><td>`</td><td>Close[0]−Close[K]</td><td>/ Σ range[0..K] ≥ attackMin` (clean approach, not a grind)</td><td>same</td></tr></tbody></table></div>
+<h3>Location gate ("predictable place")</h3>
+<ul>
+<li><strong>Built-in:</strong> Bollinger band edge — price within <code>bandProximityTicks</code> of the lower band (long) / upper band (short). Self-contained (<code>Bollinger(stdDev, period)</code>).</li>
+<li><strong>Optional booster:</strong> <code>SentinelCore.GetLevelState</code> (the <strong>Location</strong> indicator) — a structural level (VWAP / PDH-PDL / OR / IB / session H-L) within reach adds to the score. Soft-dependency; absent ⇒ ignored.</li>
+</ul>
+<h3>No-trade guards</h3>
+<ul>
+<li><strong>Endless-doji chop</strong> — if ≥ <code>⌈0.6 × ClutterLookback⌉</code> of the last bars are dojis, suppress (his "terrible place to trade, endless dojis").</li>
+<li><strong>Sideways grind into the level</strong> — <code>attack angle &lt; attackMin</code> and no hard signal (engulf/equal) ⇒ suppress ("price hanging out for three years in the same seven points" → skip).</li>
+</ul>
+<hr>
+<h2><span class="hn">4.</span>Setup taxonomy (his six named setups → how the sensor labels them)</h2>
+<div class="tblwrap"><table><thead><tr><th>Masterclass setup</th><th>Sensor <code>Setup</code> label</th><th>Recognized by</th></tr></thead><tbody><tr><td>BB gap (momentum continuation)</td><td><em>(owned by GodTrades21 <code>BollingerGap</code>)</em></td><td>—</td></tr><tr><td>Equal high / equal low</td><td><code>equalLevel</code></td><td>equal-level + at band</td></tr><tr><td>Late bloomer</td><td><code>lateBloomer</code></td><td>VI-fill(s) → chop → engulfing shaved-close at a level</td></tr><tr><td>Line bounce / trampoline</td><td><code>lineBounce</code></td><td>repeated equal-highs tagging a level, then reversal candle</td></tr><tr><td>Fill &amp; continue</td><td><em>(owned by GodTrades21 <code>Continuation</code>)</em></td><td>—</td></tr><tr><td>No trade</td><td><em>(suppressed — no marker)</em></td><td>fails a no-trade guard</td></tr></tbody></table></div>
+<p>The sensor fires on the <strong>close of the reversal candle</strong> (non-repainting; entry is the next bar, matching the suite's Deck-SIGNAL-ARM convention). It emits a <strong>quality score 0..1</strong> = normalized sum of stacked confirmations, and only marks when <code>score ≥ MinQuality</code>.</p>
+<hr>
+<h2><span class="hn">5.</span>Sentinel plumbing (per the standing protocols)</h2>
+<ul>
+<li><strong>Naming:</strong> class <code>SentinelGodReversal_v1_0_0</code>, display <code>Name = "Sentinel God Reversal"</code>, namespace <code>NinjaTrader.NinjaScript.Indicators.Sentinel</code> (clusters under the "Sentinel" picker folder). No custom enum params (dodges the bare-enum codegen saga) — all <code>[NinjaScriptProperty]</code>s are bool/int/double.</li>
+<li><strong>State seam:</strong> publishes <code>SentinelCore.GodReversalState</code> (Signal pulse ±1, HELD Dir for <code>HoldBars</code>, Quality, Setup, AtBand, Exhausted) — <code>SentinelCore</code> v1.14.0. <strong>PublishState default ON.</strong></li>
+<li><strong>Council voter:</strong> wired as <code>GREV</code> (Weight — God Reversal, default 0.9). ⚠ <strong>Load-bearing caveat:</strong> the Council is <strong>trend-heavy</strong> (Trend/CCI/ADX/Env/Brick/MTF all trend-follow). A reversal-at-a-band vote is often <em>counter</em> to those, so it will frequently be out-voted / damped. That's arguably correct (don't catch a knife the panel hates) — but it means the reversal is best used as an <strong>entry trigger</strong> consulted <em>alongside</em> the Council bias (the Bridge's job), not as a lone Council swing vote. Watch this interaction live; let <strong>Lens</strong> grade the weight.</li>
+<li><strong>Hidden <code>Signal</code> plot</strong> (±1 on the trigger bar, transparent, <code>IsAutoScale=false</code>) so the Deck SIGNAL ARM and any generic consumer can read it without drawing-scrape.</li>
+<li><strong>Glass card + label remover</strong> per <code>SENTINEL_DESIGN_SYSTEM.md</code> (§4b Painter, §7 naming).</li>
+</ul>
+<hr>
+<h2><span class="hn">6.</span>On-chart rendering (visual verification — the point of building it as an indicator)</h2>
+<ul>
+<li><strong>Reversal marker</strong> at the trigger bar: <code>Draw.TriangleUp</code>/<code>TriangleDown</code> (green/red), anchored past the wick.</li>
+<li><strong>Score + setup label</strong> next to the marker (e.g. <code>GR▲ .82 shv+eng</code>).</li>
+<li><strong>Suggested stop line</strong> = the back of the reversal candle (the single-candle stop).</li>
+<li><strong>VI boxes</strong> (optional) = faint rectangles on detected volume imbalances so you can see what it keyed on.</li>
+<li><strong>Glass card</strong> = last signal (dir/type/score), fired counts, and the <em>current</em> location read ("AT LOWER BAND" / "mid-band idle") so you can confirm the location gate live.</li>
+</ul>
+<p>Verification workflow: load it on a GC / NQ chart against the masterclass examples and confirm the markers land on the shaved-close / equal-high / late-bloomer bars he points at — and that mid-band chop stays unmarked.</p>
+<hr>
+<h2><span class="hn">7.</span>Status &amp; open items</h2>
+<ul>
+<li><strong>Built:</strong> <code>SentinelGodReversal_v1_0_0.cs</code> + <code>SentinelCore</code> v1.14.0 <code>GodReversalState</code> seam + Council <code>GREV</code> voter. <strong>Needs an F5</strong> (authoritative compile).</li>
+<li><strong>Not encoded (by design — management, not signal):</strong> the stop / break-even / expectancy rules → Bridge / GTrader21.</li>
+<li><strong>Honest caveat:</strong> thresholds (<code>shaveTicks</code>, <code>equalTol</code>, <code>dojiTicks</code>, <code>attackMin</code>, <code>bandProximityTicks</code>, <code>MinQuality</code>) are <strong>first-guess defaults</strong>. Tune against the video's examples + a forward sample; grade with Lens.</li>
+<li><strong>Next:</strong> the <strong>Bridge</strong> strategy consuming <code>CouncilState</code> bias × <code>GodReversalState</code> trigger, recording each fire to the <code>SentinelCore.Ledger</code> so the weights become learnable.</li>
+</ul>
+<footer><span>Sentinel Suite · <b>God Reversal — Doctrine &amp; Sensor Spec</b></span><span>living document · rendered from Markdown</span></footer>
+</div></body></html>

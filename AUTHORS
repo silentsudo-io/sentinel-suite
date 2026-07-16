@@ -1,0 +1,23 @@
+# Sentinel Suite — Authors & Contributors
+
+The people whose work is in the Sentinel Suite. If you contributed and released
+your work for open-source use under this project, you belong here.
+
+## Maintainer / primary author
+- silentsudo-io  — Sentinel runtime, sensors, Council, Deck/Bridge, safety
+  substrate, dashboard/cockpit, and the overall suite design.
+
+## Contributors (released for open-source use, with permission)
+Contributors are credited **in the source file(s) they authored or worked on** —
+in that file's header comment and/or changelog — so each grant stays attached to
+the exact code it covers. Look there for per-file attribution.
+
+<!--
+  When someone contributes, add their credit to the header/changelog of the
+  file(s) they touched, and (optionally) mirror a one-line summary here, e.g.:
+
+  - <name / handle> — <what they contributed>. Released for open-source use
+    under this project with full permission (YYYY-MM-DD).
+-->
+- _(as of the initial release: sole work of the maintainer; no external
+  contributor grants on record yet)_

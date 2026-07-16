@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sentinel · Sentinel Naming Federation</title>
+<style>
+  :root{
+    --void:#e7edf1; --panel:#f3f7f9; --surface:#ffffff; --surface2:#eaf0f3;
+    --ink:#16222c; --ink2:#586873; --line:#cdd8de; --grid:#dde5ea;
+    --accent:#0b8ea1; --flow:#0d8fa2;
+    --up:#12a56f; --down:#e0424f; --warn:#c9861a;
+    --mono:ui-monospace,"Cascadia Code","SF Mono",Consolas,Menlo,monospace;
+    --sans:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  }
+  @media (prefers-color-scheme:dark){
+    :root{
+      --void:#0a0e13; --panel:#0d131a; --surface:#141c25; --surface2:#0f161e;
+      --ink:#e2e9ee; --ink2:#8a9ba8; --line:#26333f; --grid:#131c25;
+      --accent:#4ad6e8; --flow:#3fb6c9; --up:#25d08b; --down:#ff5c6a; --warn:#f2b23c;
+    }
+  }
+  :root[data-theme="light"]{
+    --void:#e7edf1; --panel:#f3f7f9; --surface:#ffffff; --surface2:#eaf0f3;
+    --ink:#16222c; --ink2:#586873; --line:#cdd8de; --grid:#dde5ea;
+    --accent:#0b8ea1; --flow:#0d8fa2; --up:#12a56f; --down:#e0424f; --warn:#c9861a;
+  }
+  :root[data-theme="dark"]{
+    --void:#0a0e13; --panel:#0d131a; --surface:#141c25; --surface2:#0f161e;
+    --ink:#e2e9ee; --ink2:#8a9ba8; --line:#26333f; --grid:#131c25;
+    --accent:#4ad6e8; --flow:#3fb6c9; --up:#25d08b; --down:#ff5c6a; --warn:#f2b23c;
+  }
+
+  *{box-sizing:border-box}
+  body{margin:0; background:var(--void); color:var(--ink); font-family:var(--sans); line-height:1.55; -webkit-font-smoothing:antialiased; overflow-x:hidden}
+  .wrap{max-width:1120px; margin:0 auto; padding:56px 24px 100px; position:relative; z-index:1}
+
+  /* the Sentinel brand mark (Spartan barbute helmet) — faint fixed watermark + crisp header mark */
+  .watermark{position:fixed; z-index:0; pointer-events:none; top:50%; right:-2vw; transform:translateY(-50%); width:clamp(300px,40vw,560px); height:auto; fill:var(--accent); opacity:.18; filter:drop-shadow(0 0 55px color-mix(in srgb,var(--accent) 60%,transparent))}
+  .brandmark{width:16px; height:16px; flex:0 0 auto; fill:var(--accent); filter:drop-shadow(0 0 5px color-mix(in srgb,var(--accent) 50%,transparent))}
+
+  .kicker{font-family:var(--mono); font-size:11px; letter-spacing:.34em; text-transform:uppercase; color:var(--accent); display:flex; align-items:center; gap:9px; margin:0 0 14px}
+  .livedot{width:8px; height:8px; border-radius:50%; background:var(--accent); animation:pulse 2.4s ease-out infinite}
+  @keyframes pulse{0%{box-shadow:0 0 0 0 color-mix(in srgb,var(--accent) 55%,transparent)}70%{box-shadow:0 0 0 7px transparent}100%{box-shadow:0 0 0 0 transparent}}
+  h1{font-family:var(--mono); font-weight:700; font-size:clamp(30px,5.4vw,50px); letter-spacing:-.015em; margin:0 0 14px; text-wrap:balance}
+  .lede{font-size:18px; color:var(--ink2); max-width:66ch; margin:0 0 4px}
+  .lede b{color:var(--ink); font-weight:600}
+
+  .oneline{display:flex; flex-wrap:wrap; gap:7px; align-items:center; margin:28px 0 6px}
+  .oneline .s{font-family:var(--mono); font-size:12px; color:var(--ink); background:var(--surface); border:1px solid var(--line); border-radius:999px; padding:6px 13px}
+  .oneline .s b{color:var(--accent); font-weight:700}
+  .oneline .sep{color:var(--ink2); font-family:var(--mono)}
+
+  .toc{display:flex; flex-wrap:wrap; gap:6px 20px; margin:22px 0 6px; padding:16px 18px; border:1px solid var(--line); border-radius:12px; background:var(--panel)}
+  .toc a{font-family:var(--mono); font-size:12.5px; color:var(--ink2); text-decoration:none; white-space:nowrap}
+  .toc a:hover{color:var(--accent)}
+  .toc a b{color:var(--accent); font-weight:700; margin-right:6px}
+
+  .legend{display:flex; flex-wrap:wrap; gap:8px 18px; margin:18px 0 6px; padding:13px 16px; border:1px solid var(--line); border-radius:12px; background:var(--panel)}
+  .legend .k{display:flex; align-items:center; gap:8px; font-family:var(--mono); font-size:12px; color:var(--ink2)}
+  .swatch{width:22px; height:4px; border-radius:2px}
+  .swatch.a{background:var(--flow)} .swatch.u{background:var(--up)} .swatch.d{background:var(--down)} .swatch.w{background:var(--warn)}
+  .legend .k b{color:var(--ink); font-weight:600}
+
+  .part{display:flex; align-items:baseline; gap:16px; margin:80px 0 8px; padding-bottom:14px; border-bottom:1px solid var(--line)}
+  .part .pn{font-family:var(--mono); font-size:13px; font-weight:700; color:var(--accent); letter-spacing:.2em; white-space:nowrap}
+  .part h2{font-family:var(--mono); font-weight:700; font-size:15px; letter-spacing:.22em; text-transform:uppercase; color:var(--ink); margin:0}
+  .part .pd{margin-left:auto; font-size:13px; color:var(--ink2); font-family:var(--mono); text-align:right}
+
+  section{margin-top:44px}
+  .eyebrow{font-family:var(--mono); font-size:11px; letter-spacing:.24em; text-transform:uppercase; color:var(--accent); margin:0 0 8px; display:flex; gap:10px; align-items:baseline}
+  .eyebrow .num{color:var(--ink2); opacity:.7}
+  h3{font-family:var(--mono); font-weight:700; font-size:22px; margin:0 0 6px; letter-spacing:-.01em; text-wrap:balance}
+  .desc{color:var(--ink2); font-size:15px; margin:0 0 20px; max-width:74ch}
+  .desc b{color:var(--ink); font-weight:600}
+  code{font-family:var(--mono); font-size:.9em; background:var(--surface2); border:1px solid var(--line); border-radius:5px; padding:1px 5px; color:var(--ink)}
+
+  .panel{border:1px solid var(--line); border-radius:14px; background:var(--panel);
+    background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);
+    background-size:26px 26px; background-position:-1px -1px; padding:34px 30px; overflow-x:auto}
+
+  .node{background:var(--surface); border:1px solid var(--line); border-radius:11px; padding:11px 14px; min-width:120px; text-align:center; position:relative; box-shadow:0 1px 0 color-mix(in srgb,var(--ink) 6%,transparent)}
+  .node .t{font-family:var(--mono); font-weight:700; font-size:13px; color:var(--ink); white-space:nowrap}
+  .node .s{font-family:var(--mono); font-size:10.5px; color:var(--ink2); margin-top:3px; white-space:nowrap}
+  .node.accent{border-color:color-mix(in srgb,var(--accent) 55%,var(--line))}
+  .node.accent::before,.node.up::before,.node.down::before,.node.warn::before{content:""; position:absolute; left:0; top:9px; bottom:9px; width:3px; border-radius:3px}
+  .node.accent::before{background:var(--accent)}
+  .node.up::before{background:var(--up)} .node.up .t{color:color-mix(in srgb,var(--up) 78%,var(--ink))}
+  .node.down::before{background:var(--down)} .node.down .t{color:color-mix(in srgb,var(--down) 82%,var(--ink))}
+  .node.warn::before{background:var(--warn)}
+  .node.big{min-width:150px; padding:14px 16px}
+
+  .chip{font-family:var(--mono); font-size:11px; color:var(--ink); background:var(--surface2); border:1px solid var(--line); border-radius:7px; padding:5px 8px; white-space:nowrap; display:flex; justify-content:space-between; gap:10px; align-items:center}
+  .chip .w{color:var(--ink2); font-size:10px}
+  .chip.mute{color:var(--ink2)}
+
+  .flow{display:flex; align-items:center; justify-content:center; min-width:min-content}
+  .arrow{position:relative; flex:0 0 var(--aw,50px); height:2px; align-self:center; background:linear-gradient(90deg,color-mix(in srgb,var(--flow) 25%,transparent),var(--flow)); --c:var(--flow)}
+  .arrow::after{content:""; position:absolute; right:-1px; top:50%; transform:translateY(-50%); border-left:8px solid var(--c); border-top:5px solid transparent; border-bottom:5px solid transparent}
+  .arrow[data-l]::before{content:attr(data-l); position:absolute; left:50%; top:-15px; transform:translateX(-50%); font-family:var(--mono); font-size:9px; letter-spacing:.06em; text-transform:uppercase; color:var(--ink2); white-space:nowrap}
+  .arrow.up{--c:var(--up); background:linear-gradient(90deg,color-mix(in srgb,var(--up) 25%,transparent),var(--up))}
+  .arrow.down{--c:var(--down); background:linear-gradient(90deg,color-mix(in srgb,var(--down) 25%,transparent),var(--down))}
+  .arrow.warn{--c:var(--warn); background:linear-gradient(90deg,color-mix(in srgb,var(--warn) 25%,transparent),var(--warn))}
+  .arrow.v{width:2px; height:var(--ah,38px); flex:none; margin:0 auto; background:linear-gradient(180deg,color-mix(in srgb,var(--flow) 25%,transparent),var(--flow))}
+  .arrow.v::after{right:50%; top:auto; bottom:-1px; left:auto; transform:translateX(50%); border-left:5px solid transparent; border-right:5px solid transparent; border-top:8px solid var(--c); border-bottom:0}
+  .arrow.v.up-dir{background:linear-gradient(0deg,color-mix(in srgb,var(--flow) 25%,transparent),var(--flow))}
+  .arrow.v.up-dir::after{bottom:auto; top:-1px; border-top:0; border-bottom:8px solid var(--c)}
+  .arrow.v[data-l]::before{left:12px; top:50%; transform:translateY(-50%)}
+  .live .arrow{background-size:220% 100%; animation:travel 2.6s linear infinite}
+  @keyframes travel{0%{background-position:120% 0}100%{background-position:-40% 0}}
+
+  .group{border:1px dashed color-mix(in srgb,var(--line) 92%,var(--ink)); border-radius:11px; padding:12px; background:color-mix(in srgb,var(--surface) 55%,transparent)}
+  .group .gl{font-family:var(--mono); font-size:10px; letter-spacing:.14em; text-transform:uppercase; color:var(--ink2); margin:0 0 10px; text-align:center}
+  .grid2{display:grid; grid-template-columns:repeat(2,minmax(96px,1fr)); gap:6px}
+  .grid1{display:grid; gap:6px}
+  .rowflow{display:flex; align-items:center; justify-content:center; gap:0; min-width:min-content}
+  .stack{display:flex; flex-direction:column; align-items:center}
+  .band{display:flex; gap:8px; justify-content:center; flex-wrap:wrap; max-width:520px}
+
+  .verdict{background:var(--surface); border:1px solid color-mix(in srgb,var(--accent) 45%,var(--line)); border-radius:11px; padding:14px 16px; min-width:180px}
+  .verdict .vt{font-family:var(--mono); font-weight:700; font-size:12px; color:var(--accent); letter-spacing:.14em; margin-bottom:10px}
+  .vrow{display:flex; justify-content:space-between; gap:16px; font-family:var(--mono); font-size:12px; padding:4px 0; border-top:1px solid var(--line)}
+  .vrow span:first-child{color:var(--ink2)} .vrow span:last-child{color:var(--ink); font-weight:600}
+
+  .drow{display:flex; align-items:center; gap:14px; justify-content:center}
+  .branch{display:flex; align-items:center; gap:10px}
+  .blabel{font-family:var(--mono); font-size:9px; letter-spacing:.08em; text-transform:uppercase; color:var(--ink2)}
+  .qnode{background:var(--surface); border:1px solid var(--line); border-radius:11px; padding:12px 16px; text-align:center; position:relative}
+  .qnode.dec{border-color:color-mix(in srgb,var(--accent) 40%,var(--line))}
+  .qnode .t{font-family:var(--mono); font-weight:700; font-size:12.5px; color:var(--ink)}
+  .qnode .s{font-family:var(--mono); font-size:10px; color:var(--ink2); margin-top:4px}
+  .spine{display:flex; flex-direction:column; align-items:center}
+
+  .cast{display:grid; grid-template-columns:repeat(auto-fill,minmax(232px,1fr)); gap:12px}
+  .castcard{border:1px solid var(--line); border-radius:12px; background:var(--surface); padding:14px 15px; display:flex; flex-direction:column; gap:6px}
+  .castcard .role{font-family:var(--mono); font-size:9.5px; letter-spacing:.16em; text-transform:uppercase; color:var(--accent)}
+  .castcard .nm{font-family:var(--mono); font-weight:700; font-size:15px; color:var(--ink)}
+  .castcard p{margin:0; font-size:13px; color:var(--ink2)}
+  .castcard .seam{margin-top:auto; font-family:var(--mono); font-size:10.5px; color:var(--ink2); border-top:1px dashed var(--line); padding-top:7px}
+  .castcard .seam b{color:var(--ink); font-weight:600}
+
+  .two{display:grid; grid-template-columns:1.1fr .9fr; gap:26px; align-items:start}
+  .two .panel{margin:0}
+  .anno{display:flex; flex-direction:column; gap:12px}
+  .anno .a{display:flex; gap:12px; align-items:flex-start}
+  .anno .n{flex:0 0 22px; height:22px; border-radius:6px; background:var(--surface2); border:1px solid var(--line); color:var(--accent); font-family:var(--mono); font-weight:700; font-size:11px; display:flex; align-items:center; justify-content:center; margin-top:1px}
+  .anno .a div b{font-family:var(--mono); font-size:12.5px; color:var(--ink)}
+  .anno .a div p{margin:2px 0 0; font-size:13px; color:var(--ink2)}
+
+  .tblwrap{overflow-x:auto; border:1px solid var(--line); border-radius:12px; margin:8px 0}
+  table{width:100%; border-collapse:collapse; font-family:var(--mono); font-size:12.5px; min-width:640px}
+  thead th{text-align:left; font-size:10px; letter-spacing:.12em; text-transform:uppercase; color:var(--ink2); font-weight:600; padding:12px 14px; background:var(--panel); border-bottom:1px solid var(--line); white-space:nowrap}
+  tbody td{padding:10px 14px; border-bottom:1px solid var(--line); color:var(--ink); vertical-align:top}
+  tbody tr:last-child td{border-bottom:0}
+  td .vt{color:var(--ink2); font-size:11.5px}
+  td b{color:var(--ink)}
+  .wt{font-variant-numeric:tabular-nums; color:var(--accent); font-weight:700}
+  .ax-orth{color:var(--accent)} .ax-price{color:var(--ink2)}
+  .st{font-size:11px; color:var(--ink2)}
+
+  .principles{display:grid; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); gap:16px}
+  .pr{border:1px solid var(--line); border-left:3px solid var(--accent); border-radius:0 12px 12px 0; background:var(--surface); padding:16px 18px}
+  .pr h4{font-family:var(--mono); font-size:14px; margin:0 0 6px; color:var(--ink)}
+  .pr p{margin:0; font-size:13.5px; color:var(--ink2)}
+  .pr p b{color:var(--ink); font-weight:600}
+
+  .layers{display:flex; flex-direction:column; gap:12px}
+  .layer{display:grid; grid-template-columns:138px 1fr auto; align-items:center; gap:16px; border:1px solid var(--line); border-radius:12px; background:var(--surface); padding:14px 16px}
+  .layer .lb{font-family:var(--mono); font-size:10px; letter-spacing:.14em; text-transform:uppercase; color:var(--accent)}
+  .layer .lb b{display:block; color:var(--ink); font-size:14px; letter-spacing:0; margin-top:3px; text-transform:none}
+  .layer .lc{display:flex; flex-wrap:wrap; gap:6px}
+  .layer .lo{font-family:var(--mono); font-size:10.5px; color:var(--ink2); white-space:nowrap; text-align:right; line-height:1.5}
+  @media(max-width:640px){.layer{grid-template-columns:1fr; gap:10px} .layer .lo{text-align:left}}
+
+  /* prose + reference */
+  .prose{max-width:76ch}
+  .prose p{margin:0 0 14px; font-size:15px; color:var(--ink)}
+  .prose p.muted{color:var(--ink2)}
+  .callout{border:1px solid var(--line); border-left:3px solid var(--accent); border-radius:0 12px 12px 0; background:var(--surface); padding:14px 18px; margin:18px 0; font-size:14.5px; color:var(--ink); max-width:80ch}
+  .callout.warn{border-left-color:var(--warn)} .callout.caveat{border-left-color:var(--down)}
+  .callout b{color:var(--ink)}
+  .callout .cl{display:block; font-family:var(--mono); font-size:10px; letter-spacing:.16em; text-transform:uppercase; margin-bottom:6px; color:var(--accent)}
+  .callout.warn .cl{color:var(--warn)} .callout.caveat .cl{color:var(--down)}
+  .steps{list-style:none; counter-reset:s; padding:0; margin:0; display:flex; flex-direction:column; gap:12px; max-width:80ch}
+  .steps li{counter-increment:s; display:grid; grid-template-columns:28px minmax(0,1fr); column-gap:14px; row-gap:2px; align-items:start}
+  .steps li::before{content:counter(s); grid-column:1; grid-row:1; height:26px; width:26px; border-radius:7px; background:var(--surface2); border:1px solid var(--line); color:var(--accent); font-family:var(--mono); font-weight:700; font-size:12px; display:flex; align-items:center; justify-content:center}
+  .steps li b{grid-column:2; grid-row:1; color:var(--ink)} .steps li p{grid-column:2; grid-row:2; margin:3px 0 0; color:var(--ink2); font-size:14px}
+  .steps li code{font-size:.85em}
+  .code{background:var(--surface2); border:1px solid var(--line); border-radius:10px; padding:13px 15px; overflow-x:auto; font-family:var(--mono); font-size:12px; color:var(--ink); line-height:1.65; margin:14px 0; white-space:pre; max-width:100%}
+  .code .c{color:var(--ink2)} .code .k{color:var(--accent)}
+  .defs{display:grid; gap:0; max-width:80ch}
+  .defs .row{display:grid; grid-template-columns:170px 1fr; gap:16px; font-size:14px; padding:11px 0; border-bottom:1px solid var(--line)}
+  .defs b{font-family:var(--mono); font-size:12.5px; color:var(--ink)}
+  .defs .d{color:var(--ink2)}
+  .gauntlet{display:flex; flex-direction:column; gap:3px; font-family:var(--mono); font-size:12.5px; max-width:660px}
+  .gauntlet .g{display:flex; align-items:center; gap:12px; padding:10px 13px; border:1px solid var(--line); border-radius:8px; background:var(--surface)}
+  .gauntlet .g .ck{color:var(--up); font-weight:700; flex:0 0 auto}
+  .gauntlet .g .cond{color:var(--ink)} .gauntlet .g .res{margin-left:auto; color:var(--ink2); white-space:nowrap}
+  .reading{display:grid; grid-template-columns:1fr 1fr; gap:14px; margin:20px 0 6px; max-width:80ch}
+  .rp{border:1px solid var(--line); border-radius:12px; background:var(--surface); padding:14px 16px}
+  .rp .rt{font-family:var(--mono); font-size:11px; letter-spacing:.12em; text-transform:uppercase; color:var(--accent); margin-bottom:6px}
+  .rp p{margin:0; font-size:13.5px; color:var(--ink2)}
+  .rp b{color:var(--ink)}
+  @media(max-width:640px){ .reading{grid-template-columns:1fr} .defs .row{grid-template-columns:1fr; gap:2px} }
+
+  /* screenshot placeholders */
+  .shots{display:grid; grid-template-columns:repeat(auto-fit,minmax(238px,1fr)); gap:14px; margin:6px 0}
+  .shot{border:1.5px dashed color-mix(in srgb,var(--line) 78%,var(--ink)); border-radius:12px; background:var(--surface2); min-height:160px; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:18px 16px; gap:7px; margin:0}
+  .shot svg{color:var(--ink2); opacity:.55; margin-bottom:2px}
+  .shot .sid{font-family:var(--mono); font-size:10px; letter-spacing:.18em; font-weight:700; color:var(--accent)}
+  .shot .stt{font-family:var(--mono); font-size:13px; font-weight:700; color:var(--ink)}
+  .shot .scap{font-size:12px; color:var(--ink2); line-height:1.45; max-width:30ch}
+  .shot .sfile{font-family:var(--mono); font-size:9.5px; color:var(--ink2); opacity:.72; margin-top:3px}
+
+  footer{margin-top:72px; padding-top:22px; border-top:1px solid var(--line); font-family:var(--mono); font-size:11.5px; color:var(--ink2); display:flex; flex-wrap:wrap; gap:6px 18px; justify-content:space-between}
+  footer b{color:var(--ink); font-weight:600}
+
+  @media (prefers-reduced-motion:reduce){ .live .arrow{animation:none} .livedot{animation:none} }
+  @media (max-width:760px){ .two{grid-template-columns:1fr} }
+  @media (max-width:640px){ .wrap{padding:40px 14px 72px} .panel{padding:24px 16px} }
+</style>
+<style>
+  .wrap{max-width:900px}
+  .kicker .navsep{opacity:.45;margin:0 3px}
+  .kicker a.navhome{color:var(--ink2);border-bottom:0;text-decoration:none}
+  .kicker a.navhome:hover{color:var(--accent)}
+  .doc h2{font-family:var(--mono);font-weight:700;font-size:15px;letter-spacing:.2em;text-transform:uppercase;
+    color:var(--ink);margin:64px 0 4px;padding-bottom:12px;border-bottom:1px solid var(--line)}
+  .doc h2 .hn{color:var(--accent);margin-right:12px}
+  .doc h3{margin:34px 0 8px}
+  .doc p{font-size:15.5px;color:var(--ink);margin:0 0 15px;max-width:78ch}
+  .doc a{color:var(--accent);text-decoration:none;border-bottom:1px solid color-mix(in srgb,var(--accent) 40%,transparent)}
+  .doc a:hover{border-bottom-color:var(--accent)}
+  .doc strong{color:var(--ink);font-weight:670}
+  .doc em{color:var(--ink2);font-style:italic}
+  .doc ul,.doc ol{max-width:78ch;padding-left:1.3em;margin:0 0 15px}
+  .doc li{margin:.42em 0;font-size:15px;color:var(--ink)}
+  .doc li::marker{color:var(--accent)}
+  .doc hr{border:0;border-top:1px solid var(--line);margin:8px 0}
+  .doc blockquote{margin:18px 0;padding:14px 18px;border:1px solid var(--line);border-left:3px solid var(--accent);
+    border-radius:0 12px 12px 0;background:var(--surface);color:var(--ink2);max-width:80ch}
+  .doc blockquote p{color:var(--ink2);margin:0}
+  .doc blockquote strong{color:var(--ink)}
+  .doc pre{background:var(--surface2);border:1px solid var(--line);border-radius:10px;padding:14px 16px;
+    overflow-x:auto;font-family:var(--mono);font-size:12px;color:var(--ink);line-height:1.6;margin:16px 0;white-space:pre}
+  .doc pre code{background:none;border:0;padding:0;font-size:1em;color:inherit}
+</style>
+</head><body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><symbol id="helm" viewBox="0 0 512 512"><path fill-rule="nonzero" d="M255.406 17.75C189.313 39.42 124.536 85.124 79.03 150.344c21.238 57.44 32.72 94.314 32.72 131.375 0 36.493-11.52 73.723-32.125 129.655 49.72 36.73 100.08 58.95 150.313 64.938-5.052-60.378-9.83-120.748 1.593-181.125-30.644-3.28-61.384-13.286-92.03-30.72v-71.312c80.67 42.255 158.908 41.547 242.063 0v71.313c-30.06 14.376-60.192 24.722-90.25 29.28 8.684 60.46 7.723 120.915 2.03 181.375 46.386-7.335 92.89-28.824 139.032-64.312-33.966-112.954-34.03-145.933.594-260.47C391.162 84.844 317.924 39.89 255.405 17.75zm-75.125 212c-11.16-.13-19.646 3.174-21.25 9.156-2.33 8.7 10.778 19.76 29.282 24.72 18.505 4.957 35.388 1.92 37.72-6.782 2.33-8.7-10.775-19.76-29.282-24.72-5.783-1.55-11.396-2.315-16.47-2.374zm160.69 0c-5.074.06-10.687.825-16.47 2.375-18.507 4.96-31.613 16.018-29.28 24.72 2.33 8.7 19.213 11.738 37.717 6.78 18.505-4.958 31.613-16.018 29.282-24.72-1.604-5.98-10.09-9.286-21.25-9.155z"/></symbol></svg>
+<svg class="watermark" viewBox="0 0 512 512" aria-hidden="true"><use href="#helm"/></svg>
+<div class="wrap doc">
+<header>
+<p class="kicker"><svg class="brandmark" viewBox="0 0 512 512" aria-hidden="true"><use href="#helm"/></svg><span class="livedot"></span> Sentinel Suite · NinjaTrader 8 · living document<span class="navsep">·</span><a class="navhome" href="SENTINEL_DOCS.html">Docs home →</a></p>
+<h1>Sentinel Naming Federation</h1>
+</header>
+<blockquote><p><strong>STATUS: RATIFIED LAW + migration ledger — DRAFT dictionary pending your sign-off (2026-07-07).</strong> This is the operational companion to the <strong>FEDERATED NAMING LAW</strong> (design system §7). The law says <em>what</em> the rule is; this doc is <em>the audit of where every part stands today and exactly what it becomes.</em> Goal: <strong>every Sentinel part ships correct from today on, and the migration of existing parts is a checklist, not a guess.</strong></p></blockquote>
+<hr>
+<h2><span class="hn">1.</span>The law (one-line recap)</h2>
+<p>A Sentinel tool carries the tell on <strong>4 layers</strong>: ① display <code>Name = "Sentinel &lt;Thing&gt;"</code> · ② namespace <code>…{Indicators|Strategies}.Sentinel</code> · ③ class/file <code>Sentinel&lt;Thing&gt;_vX_Y_Z</code> · ④ cyan card + label remover (+ a <code>…State</code> seam wired to the Council, for sensors). Full detail + rationale: design system §7.</p>
+<p><strong>The migration split (why this is painless):</strong></p>
+<ul>
+<li><strong>① display <code>Name</code> is display-only → retrofit NOW, safely, on everything</strong> (no chart/workspace loss).</li>
+<li><strong>②③ namespace + class are serialization identity → change only at each tool's NEXT version bump</strong> (changing them drops the tool off saved charts). Frozen old versions keep their old identity.</li>
+</ul>
+<hr>
+<h2><span class="hn">2.</span>Audit snapshot (2026-07-07, 42 files)</h2>
+<div class="tblwrap"><table><thead><tr><th>Layer</th><th>Compliant today</th><th>Gap</th></tr></thead><tbody><tr><td>② namespace <code>.Sentinel</code></td><td>31/42</td><td>Strategies 0/7 · <code>SentinelCopierService</code> (<code>.SentinelCopier</code>) · <code>GTrader_v1_0_0</code> (flat) · BarsTypes 0/2</td></tr><tr><td>③ class <code>Sentinel&lt;Thing&gt;</code></td><td>18/42</td><td>most <strong>chart indicators</strong> are bare (<code>Council_v1_0_0</code>, <code>Eye_v1_1_0</code>, the axes, CompressionBase…)</td></tr><tr><td>① display <code>Name = "Sentinel &lt;Thing&gt;"</code></td><td><strong>0/42</strong></td><td>every indicator's Name is the raw class-token (<code>"Council_v1_0_0"</code>); services use one-word <code>"SentinelRiskService"</code></td></tr><tr><td>④ label remover</td><td>19/19 indicators</td><td>(only indicators; the sole miss is <code>GTrader_v1_0_0</code>)</td></tr></tbody></table></div>
+<p><strong>Headline:</strong> the AddOns are basically compliant (class+namespace already <code>Sentinel*</code>), the <strong>chart indicators</strong> are the real gap (bare class + class-token display Name). <strong>⚠ STRATEGIES STAY in the BASE <code>…Strategies</code> namespace — NOT <code>.Strategies.Sentinel</code></strong> (verified 2026-07-07: SentinelBridge in a strategy sub-namespace compiled clean but NEVER appeared in NT's Strategy selector → moved back to base). Strategies carry the "Sentinel" tell via the class prefix + display Name only; only INDICATORS fold into picker sub-folders.</p>
+<hr>
+<h2><span class="hn">3.</span>The naming dictionary — the canonical <code>&lt;Thing&gt;</code> for every part</h2>
+<blockquote><p><strong>⚠ NEEDS YOUR SIGN-OFF.</strong> The <code>&lt;Thing&gt;</code> fixes BOTH the display Name (<code>"Sentinel &lt;Thing&gt;"</code>) and the class (<code>Sentinel&lt;Thing&gt;_v…</code>), so agreeing it here settles layers ① and ③ at once. Rows marked <strong>⚑</strong> are genuine brand calls I need you to confirm or redline; the rest I consider obvious.</p></blockquote>
+<h3>Chart indicators (the priority — this is what reads generic on a chart today)</h3>
+<div class="tblwrap"><table><thead><tr><th>Current class</th><th>Current display Name</th><th>→ Display <code>Name</code></th><th>→ Target class (at next bump)</th></tr></thead><tbody><tr><td>Council_v1_0_0</td><td>"Council_v1_0_0"</td><td><strong>Sentinel Council</strong></td><td>SentinelCouncil_vX_Y_Z</td></tr><tr><td>Clock_v1_0_0</td><td>"Clock_v1_0_0"</td><td><strong>Sentinel Clock</strong></td><td>SentinelClock_vX_Y_Z</td></tr><tr><td>Participation_v1_0_0</td><td>"Participation_v1_0_0"</td><td><strong>Sentinel Participation</strong></td><td>SentinelParticipation_vX_Y_Z</td></tr><tr><td>Location_v1_0_0</td><td>"Location_v1_0_0"</td><td><strong>Sentinel Location</strong></td><td>SentinelLocation_vX_Y_Z</td></tr><tr><td>Mtf_v1_0_0</td><td>"Mtf_v1_0_0"</td><td><strong>Sentinel MTF</strong></td><td>SentinelMtf_vX_Y_Z</td></tr><tr><td>Intermarket_v1_0_0</td><td>"Intermarket_v1_0_0"</td><td><strong>Sentinel Intermarket</strong></td><td>SentinelIntermarket_vX_Y_Z</td></tr><tr><td>Eye_v1_1_0</td><td>"Eye_v1_1_0"</td><td><strong>Sentinel Eye</strong></td><td>SentinelEye_vX_Y_Z</td></tr><tr><td>SentinelTrend_v1_0_0</td><td>"SentinelTrend_v1_0_0"</td><td><strong>Sentinel Trend</strong></td><td><em>(class already compliant)</em></td></tr><tr><td>WoodiesCCIPro_v1_0_0</td><td>"WoodiesCCIPro_v1_0_0"</td><td><strong>Sentinel CCI</strong> ✅</td><td>SentinelCci_vX_Y_Z</td></tr><tr><td>ADXPro_v1_2_0</td><td>"ADXPro_v1_2_0"</td><td><strong>Sentinel ADX</strong> ✅</td><td>SentinelAdx_vX_Y_Z</td></tr><tr><td>VolEnvelope_v0_2_0</td><td>"VolEnvelope_v0_2_0"</td><td><strong>Sentinel Envelope</strong> ✅</td><td>SentinelEnvelope_vX_Y_Z</td></tr><tr><td>CompressionBase_v1_3_0</td><td>"CompressionBase_v1_3_0"</td><td><strong>Sentinel Compression</strong> ✅</td><td>SentinelCompression_vX_Y_Z</td></tr><tr><td>LiquidityWalls_v1_0_0</td><td>"LiquidityWalls_v1_0_0"</td><td><strong>Sentinel Liquidity Walls</strong></td><td>SentinelLiquidityWalls_vX_Y_Z</td></tr><tr><td>SignalExcursionRecorder_v1_3</td><td>"SignalExcursionRecorder_v1_3"</td><td><strong>Sentinel Excursion Recorder</strong></td><td>SentinelExcursionRecorder_vX_Y_Z</td></tr><tr><td>Deck_v0_2_2</td><td>"Deck_v0_2_2"</td><td><strong>Sentinel Deck</strong></td><td>SentinelDeck_vX_Y_Z</td></tr><tr><td>SentinelBrickCounter_v1_0_0</td><td>"SentinelBrickCounter v1.0.0"</td><td><strong>Sentinel Brick Counter</strong></td><td><em>(class already compliant)</em></td></tr><tr><td>BuySellVolumePressureMountain_v1_0_0</td><td>"BuySellVolumePressureMountain_v1_0_0"</td><td><strong>Sentinel BSVPMountain</strong> ✅</td><td>SentinelBSVPMountain_vX_Y_Z</td></tr><tr><td>SentinelWAE_v1_0_0</td><td>"Sentinel WAE" ✅</td><td><em>(already compliant — born under the law)</em></td><td><em>(class already compliant)</em></td></tr><tr><td>GTrader_v1_0_0 (flat ns)</td><td>—</td><td><strong>retire</strong> ✅</td><td>archive the pair (w/ GTraderStrategy_v1_0_0)</td></tr></tbody></table></div>
+<h3>Strategies (executors — layers ①②③, no seam-publish clause)</h3>
+<div class="tblwrap"><table><thead><tr><th>Current</th><th>→ Display <code>Name</code></th><th>→ Target class + namespace (at bump)</th></tr></thead><tbody><tr><td><strong>SentinelBridge_v0_2_0</strong> (NEW today)</td><td><strong>Sentinel Bridge</strong></td><td>born compliant: class <code>SentinelBridge</code>, <strong>BASE <code>…Strategies</code></strong> (v0_1_0 tried <code>.Strategies.Sentinel</code> → didn't list → moved to base; archived)</td></tr><tr><td>SentinelTrendStrategy_v1_0_0 (<code>.Strategies</code>)</td><td><strong>Sentinel Trend Strategy</strong></td><td>class → <code>SentinelTrendStrategy</code>; <strong>STAYS in base <code>…Strategies</code></strong> (no sub-ns for strategies)</td></tr><tr><td>GTrader21v_0_1_6 (<code>.Strategies</code>)</td><td><strong>Sentinel GTrader</strong> ✅</td><td>class <code>SentinelGTrader_vX_Y_Z</code>, <strong>STAYS in base <code>…Strategies</code></strong>; big move — its own thread (sheds the "21")</td></tr><tr><td>ADXProStrategy / CompressionBaseStrategy_*</td><td><em>(do NOT consume SentinelCore — not suite members unless we wire them)</em></td><td>—</td></tr></tbody></table></div>
+<h3>AddOns / BarsTypes (already mostly compliant)</h3>
+<ul>
+<li><strong>AddOns</strong> — class + namespace already <code>Sentinel*</code> / <code>AddOns.Sentinel</code>. Two nits to fix at next bump: <code>SentinelCopierService</code> namespace is <code>.AddOns.SentinelCopier</code> (→ <code>.AddOns.Sentinel</code>), and display strings vary (<code>"SentinelDashboard"</code> one-word). Services have no chart label, so display normalization ("Sentinel Dashboard", "Sentinel Risk", …) is cosmetic/low-priority.</li>
+<li><strong>BarsTypes</strong> — <code>SentinelTBars</code>, <code>SentinelTbarsCount</code>: class already prefixed; they live in <code>NinjaTrader.NinjaScript.BarsTypes</code> (bar types don't take a <code>.Sentinel</code> sub-namespace — <strong>documented exception</strong>, they group differently in NT's bar-type picker).</li>
+</ul>
+<hr>
+<h2><span class="hn">4.</span>Migration ledger — what happens, and WHEN</h2>
+<h3>NOW (safe, display-only — layer ①) — ✅ EXECUTED 2026-07-07</h3>
+<p>Retrofitted all <strong>16 suite indicator heads</strong> in one batch: <code>Name</code> → <code>"Sentinel &lt;Thing&gt;"</code> per §3 (backup in scratchpad <code>naming-backup\</code>). Each file's <code>Name</code> value swapped (anchored regex — one hit each, nothing else touched); generated regions stripped, then <strong>NT re-appended and settled to exactly one clean region per file</strong> (NT's live watcher regenerated them — confirmed 1/1 across all 16, braces balanced). <strong>⏳ Pending: ONE NT F5 to confirm the compile + verify the picker now reads "Sentinel X".</strong></p>
+<p>Files done: Council · Clock · Participation · Location · Mtf · Intermarket · Eye · SentinelTrend · WoodiesCCIPro · ADXPro(v1_2_0) · VolEnvelope · CompressionBase · LiquidityWalls · SignalExcursionRecorder · Deck(v0_2_2) · SentinelBrickCounter.</p>
+<p><strong>⚠ Deck caveat (order-path):</strong> <code>Deck_v0_2_2</code> couples its order tag to <code>Name</code> (<code>_tag = Name</code> in DataLoaded), so its live order tag changed <code>Deck_v0_2_2</code> → <code>"Sentinel Deck"</code> (now contains a space). <strong>Decision pending</strong> — recommend a stable space-free <code>_tag = "SentinelDeck"</code> (a true tag/Name decouple); one-time continuity note: flatten/re-arm any live Deck position across the change. Services/AddOns + BarsTypes were NOT part of this pass (no chart <code>Name</code>; cosmetic display strings only).</p>
+<h3>AT EACH TOOL'S NEXT VERSION BUMP (layers ②③ — identity)</h3>
+<p>Rename class+file to <code>Sentinel&lt;Thing&gt;_vX_Y_Z</code>, confirm namespace <code>.Sentinel</code>, <strong>archive the superseded version</strong> out of the tree (chart-swap first, per the archive-on-rehome sequence), update the csproj. Do <strong>not</strong> retro-rename a placed tool outside a bump.</p>
+<h3>Anomalies to resolve (each its own small task)</h3>
+<ol>
+<li><strong>Strategies STAY in base <code>…Strategies</code></strong> (do NOT sub-namespace them — NT's Strategy selector hides sub-namespaced strategies; verified on SentinelBridge). At their next bump, <code>SentinelTrendStrategy</code> / GTrader21 only adopt the <strong>class prefix + display Name</strong> (<code>SentinelGTrader</code>, "Sentinel GTrader"), namespace unchanged. <code>SentinelBridge</code> (base ns, class prefix) sets the precedent.</li>
+<li><strong><code>SentinelCopierService</code></strong> namespace <code>.AddOns.SentinelCopier</code> → <code>.AddOns.Sentinel</code> at next bump.</li>
+<li><strong><code>GTrader_v1_0_0</code></strong> sits in the flat <code>.Indicators</code> namespace <em>on purpose</em> (a header note says the auto-generated <code>[NinjaScriptProperty]</code> wrapper referenced the class unqualified). ⚑ <strong>Decision:</strong> is it a suite member? If yes, resolve the wrapper issue (bare-enum pattern) and rehome; if no, drop it from the suite list.</li>
+<li><strong>Duplicate versions on disk</strong> (both compile-live): <code>ADXPro v1_1_0</code>+<code>v1_2_0</code>, <code>Deck v0_2_1</code>+<code>v0_2_2</code>, <code>SentinelLens v1_0_0</code>+<code>v1_1_0</code>, <code>CompressionBaseStrategy v1_3_0</code>+<code>v1_4_0</code>. <strong>Archive the older of each</strong> (chart-swap first) so only one head lives in the tree — the ship-manifest one-version rule.</li>
+<li><strong>GTrader21 version sprawl</strong> — <code>v0_0_1</code>…<code>v0_1_6</code> + paired <code>Panel.cs</code> all on disk. Archive everything below the shipped <code>v0_1_6</code>.</li>
+</ol>
+<hr>
+<h2><span class="hn">5.</span>Go-forward rule (the point of all this)</h2>
+<p>From today, <strong>every new Sentinel part is born compliant</strong> — the port skill + design system §9 checklist enforce all 4 layers, and no PR/hand-off ships a bare-named suite tool. <code>SentinelBridge_v0_1_0</code> and the <code>SentinelExcursionRecorder</code> bump (the D3 recorder enhancement — the first existing tool to fully adopt the law at its bump) are the two reference cases.</p>
+<h2><span class="hn">6.</span>Decisions — RESOLVED (user, 2026-07-07)</h2>
+<ol>
+<li><strong>Sensor brand <code>&lt;Thing&gt;</code> calls → ✅ SHORT names:</strong> <code>Sentinel ADX</code> · <code>Sentinel CCI</code> · <code>Sentinel Envelope</code> · <code>Sentinel Compression</code> (classes <code>SentinelAdx</code>/<code>SentinelCci</code>/<code>SentinelEnvelope</code>/ <code>SentinelCompression</code> at next bump).</li>
+<li><strong>GTrader21 → ✅ <code>Sentinel GTrader</code></strong> (class <code>SentinelGTrader_vX_Y_Z</code>, sheds the "21", at its next bump — its own thread).</li>
+<li><strong>Layer-① display-Name retrofit → ✅ NOW</strong> (one batch + one F5, this session).</li>
+</ol>
+<h3>Resolved (user, 2026-07-07)</h3>
+<ul>
+<li><strong><code>BuySellVolumePressureMountain_v1_0_0</code></strong> → ✅ suite member. Display Name retrofitted to <strong>"Sentinel BSVPMountain"</strong> (user pick — keeps the recognizable BSVP/Mountain identity; already <code>.Sentinel</code> + label remover); class → <code>SentinelBSVPMountain_vX_Y_Z</code> at next bump. <em>(Follow-up: verify it publishes a <code>…State</code> seam wired to the Council — Council Protocol; if not, it needs plumbing via the port skill.)</em></li>
+<li><strong><code>GTrader_v1_0_0</code></strong> → ✅ <strong>RETIRED (archived 2026-07-07).</strong> It was the indicator form of GodTrades signals, hosted only by <code>GTraderStrategy_v1_0_0</code>. Both moved to <code>_archive\Indicators\</code> + <code>_archive\Strategies\</code> (reversible; zero remaining <code>.cs</code> references; csproj entries self-drop on the next F5).</li>
+</ul>
+<h3>Newly born-compliant (no action)</h3>
+<ul>
+<li><strong><code>SentinelWAE_v1_0_0</code></strong> — the FIRST tool built under the law: Name "Sentinel WAE", class <code>SentinelWAE</code>, <code>.Sentinel</code>, label remover, publishes <code>SentinelCore.WaeState</code> (<strong>Core → v1.13.0</strong>) wired to the Council as a momentum-breakout voter. The reference for "born compliant."</li>
+</ul>
+<hr>
+<h2><span class="hn">7.</span>ACCOUNT NAMING — the runtime axis (RATIFIED 2026-07-09)</h2>
+<blockquote><p>The law's four layers are all <strong>build-time</strong> names. An <strong>account name</strong> is a <em>runtime</em> name, and it is load-bearing in a way the others aren't: it is embedded in <code>instanceKey</code>, keyed in <code>Profiles.conf</code>, written into every Ledger row, and it is the <strong>only</strong> string standing between a SIM test and a funded account. It gets its own law.</p></blockquote>
+<h3>7.1 The one idea</h3>
+<p><strong>An account is a RISK CONTAINER and a CONCURRENCY SLOT. It is not a label for what runs on it.</strong></p>
+<p>Today's sim accounts — <code>SimJGT3 NQ 1000</code>, <code>SimKGT21TEST ES 50</code> — encode <strong>strategy + instrument + bartype</strong>. That is <code>instanceKey</code> in disguise, invented before <code>instanceKey</code> existed. It forces account sprawl (a new account per chart), it duplicates information the Ledger will now carry properly, and it puts <strong>spaces</strong> in a string that flows into config keys and composite identifiers.</p>
+<p><strong>Corollary — you need a second account only when two actors share a <em>scope</em>.</strong> A GC Bridge and an NQ Bridge have different <code>instanceKey</code>s and may safely share one account. They <em>should</em>: the governor is per-account, so a shared daily-loss cap across GC + NQ <strong>is portfolio risk</strong>, which is exactly what a funded account enforces. Only champion-vs-challenger on the <em>same</em> scope needs a second account.</p>
+<h3>7.2 The structure</h3>
+<blockquote><p><strong>⚠ CORRECTED 2026-07-09 by the platform.</strong> <strong>NinjaTrader auto-prefixes <code>Sim</code> to every simulation account name.</strong> Typing <code>SIM-LAB-A</code> into NT's dialog produces <strong><code>SimSIM-LAB-A</code></strong>. Evidence, from <code>log\log.20260709.*.txt</code>: <code>Simulation account 'SimSIM-LAB-A' reset</code>. It also explains the legacy names — <code>SimJGT3 NQ 1000</code> is <code>Sim</code> + <code>JGT3 NQ 1000</code>, not "Sim J".  So <strong>drop our <code>SIM-</code> prefix</strong>: type only <code>&lt;LANE&gt;-&lt;SLOT&gt;</code>. This is strictly better. The <code>Sim</code> prefix is now <strong>guaranteed by the platform rather than asserted by convention</strong> — a name cannot lie about being a simulation account, because NT wrote it.</p></blockquote>
+<pre><code>type into NT:   &lt;LANE&gt;-&lt;SLOT&gt;        uppercase · [A-Z0-9-] only · ≤ 12 chars
+NT stores:      Sim&lt;LANE&gt;-&lt;SLOT&gt;     e.g. SimLAB-A · SimBURN-1 · SimCOPY-LEAD</code></pre>
+<div class="tblwrap"><table><thead><tr><th>Lane</th><th>Purpose</th><th>Slots</th></tr></thead><tbody><tr><td><strong><code>LAB</code></strong></td><td>automated Sentinel experiments (Council → Bridge)</td><td><code>A</code> <code>B</code> <code>C</code> — the A/B arms</td></tr><tr><td><strong><code>COPY</code></strong></td><td>the copier fleet</td><td><code>LEAD</code> <code>F1</code> <code>F2</code> …</td></tr><tr><td><strong><code>PROP</code></strong></td><td>rehearsal against a prop firm's exact rules</td><td><code>TPT50K</code> <code>LCD25K</code> <code>BLX100K</code></td></tr><tr><td><strong><code>HAND</code></strong></td><td>manual Deck / discretionary practice</td><td><code>1</code> <code>2</code></td></tr><tr><td><strong><code>BURN</code></strong></td><td>destructive safety proofs — kill switch, auto-flatten, governor trip</td><td><code>1</code></td></tr></tbody></table></div>
+<p><code>BURN</code> earns its own lane. You must prove the kill switch and auto-flatten <strong>live</strong>, and doing that on <code>SIM-LAB-A</code> poisons its P&amp;L series and its persisted governor baseline. <strong>Give destruction its own account.</strong></p>
+<h3>7.3 Forbidden characters — and why</h3>
+<p>An account name is embedded in four formats at once. These are hard exclusions, not style:</p>
+<div class="tblwrap"><table><thead><tr><th>Char</th><th>Breaks</th></tr></thead><tbody><tr><td>`\</td><td>`</td><td><code>Profiles.conf</code> field separator (`account=X\</td><td>firm=…`)</td></tr><tr><td><code>=</code></td><td>every <code>.conf</code> key/value split</td></tr><tr><td><code>#</code> <code>@</code></td><td>the <code>instanceKey</code> delimiters (<code>SentinelBridge#&lt;scope&gt;@&lt;account&gt;</code>)</td></tr><tr><td>space</td><td>CLI/grep pain; card + Cockpit column rendering</td></tr><tr><td><code>"</code> <code>\</code></td><td>Ledger JSONL escaping</td></tr><tr><td><code>, : / * ? &lt; &gt;</code></td><td>filenames (excursion + ledger paths)</td></tr></tbody></table></div>
+<p>Uppercase is deliberate: it distinguishes our accounts at a glance from NT's built-in <code>Sim101</code> and from broker-assigned live names. (The seam dictionaries are <code>OrdinalIgnoreCase</code>, so this is convention, not collision-avoidance.)</p>
+<blockquote><p><strong>⚠ AMENDS THE SCOPE DELIMITER.</strong> <code>SENTINEL_ML_SPEC.md</code> originally wrote scope as <code>GC|TBC6-24-69697</code>. <strong><code>|</code> is <code>Profiles.conf</code>'s field separator</strong> — it cannot appear in a composite key. Scope is now <strong><code>GC.TBC6-24-69697</code></strong>, and <code>instanceKey</code> is <strong><code>SentinelBridge#GC.TBC6-24-69697@SIM-LAB-A</code></strong>.</p></blockquote>
+<h3>7.4 The rules the Gate enforces</h3>
+<p>A convention nobody checks is decoration. These are <strong>assertions the name makes, which <code>GateEntry</code> verifies before any order:</strong></p>
+<ol>
+<li><strong>Name/venue mismatch → REFUSE.</strong> The <code>Sim</code> prefix is NT-guaranteed, so the <em>real</em> check is the converse: assert <code>Account.Connection</code> against the name, both ways. A <code>Sim…</code> account on a funded connection, or a non-<code>Sim</code> account where the actor expected SIM, is the single worst mistake available in this domain — and it becomes unreachable. <em>(Verify at implementation time: the trace shows sim accounts emitting <code>OnConnectionStatus</code> under a <code>(Lucid)</code> context, so confirm which <code>Connection</code> object a simulation account actually reports before keying a guard on it.)</em></li>
+<li><strong>An account with no <code>Profiles.conf</code> entry → REFUSE.</strong> Fail-closed on unprofiled accounts. No profile means no daily cap, no trailing drawdown, no flatten buffer — trading it is trading ungoverned. <strong>⚠ Today this is fail-OPEN</strong> (<code>SentinelCore</code>: <em>"Fail-open (unprofiled → unchanged)"</em>). Until it flips, an unprofiled account is <em>ungoverned</em>, which is why every account gets a line even in the interim.</li>
+<li><strong><code>Sim101</code> → REFUSE, always.</strong> NT's built-in default is <strong>quarantine</strong>: it is where an accidental strategy-enable lands, so nothing Sentinel may ever arm on it. This turns the platform's default into a <em>safe</em> default at zero cost. <strong>Interim mitigation (already in <code>Profiles.conf</code>):</strong> 1 contract, a $100 loss stop, <code>hardEnforce=true</code> — an accident trips almost instantly and auto-flattens.</li>
+</ol>
+<h3>7.5 Live and prop accounts</h3>
+<p>Broker-assigned names cannot be renamed and are <strong>exempt</strong>: <code>TAKEPROFIT935519372</code>, <code>LTD15081874790001</code>. They are identified by their <code>Profiles.conf</code> <code>firm=</code> field, never by a prefix. The <code>PROP</code> lane is for <strong>SIM rehearsal of a firm's rules</strong>, not for the firm's real account.</p>
+<h3>7.6 Migration</h3>
+<div class="tblwrap"><table><thead><tr><th>Today</th><th>Becomes</th><th>Note</th></tr></thead><tbody><tr><td><code>Sim101</code></td><td><em>(unchanged)</em></td><td>reclassified as <strong>quarantine</strong> — never armed</td></tr><tr><td><code>SimJGT3 NQ 1000</code></td><td><code>SIM-LAB-A</code></td><td>drop the scope; it lives in <code>instanceKey</code> now</td></tr><tr><td><code>SimKGT21TEST ES 50</code></td><td><code>SIM-LAB-B</code></td><td>the challenger arm</td></tr><tr><td>—</td><td><code>SIM-BURN-1</code></td><td>new: destructive proofs</td></tr><tr><td>—</td><td><code>SIM-HAND-1</code></td><td>new: Deck / discretionary</td></tr><tr><td>—</td><td><code>SIM-COPY-LEAD</code> · <code>SIM-COPY-F1</code></td><td>new: copier fleet</td></tr><tr><td><code>TAKEPROFIT935519372</code> · <code>LTD15081874790001</code></td><td><em>(unchanged)</em></td><td>broker-assigned, exempt</td></tr></tbody></table></div>
+<p><strong>A rename is not a rewrite.</strong> Historical Ledger rows keep their literal <code>acct</code> string and stay joinable. Nothing breaks retroactively.</p>
+<p>Every SIM account gets a <code>Profiles.conf</code> line <strong>mirroring its purpose</strong> — <code>LAB</code> arms mirror the funded account you are actually targeting, so recorded P&amp;L reflects the constraints you will really trade under; <code>BURN</code> gets a tiny cap so it trips fast; <code>PROP</code> mirrors the firm's exact rules.</p>
+<h3>7.7 A defect this surfaced</h3>
+<p><strong>164 <code>ALERT-CRIT</code> Ledger rows carry an empty <code>acct</code></strong> — every one of them a <code>NAKED POSITION</code> alert. The most urgent alert the system can raise does not say <em>which account</em> it concerns. <code>Ledger.Action(kind, account, detail)</code> is being called with <code>""</code> from the alert path. Fix alongside the Ledger context block (execution plan step 2.3).</p>
+<hr>
+<h2><span class="hn">8.</span>Amendment — GTrader21's destination changed (2026-07-09)</h2>
+<p>§6 decision 2 resolved <em>"GTrader21 → <strong>Sentinel GTrader</strong>."</em> <strong>That is superseded.</strong> Per the user (2026-07-09), GTrader21 was always a prototype: <em>"the point was to create a managed chart trader and test it."</em> The product it stands in for is <strong>Helm</strong>.</p>
+<ul>
+<li>The <strong>interdiction surface owns no orders</strong> and commands the running actor that does, via a <code>HelmIntent</code> seam. See <code>Docs/SENTINEL_EXECUTION_PLAN.html</code> Phase 5 and the <code>helm-interdiction-layer</code> memory. <strong>✅ SHIPPED 2026-07-15</strong> — as-built, Helm is <em>not</em> a standalone <code>SentinelHelm</code> indicator: the <strong>seam</strong> lives in <code>SentinelCore</code> (v1.34.0, <code>HelmVerb</code>/<code>HelmIntent</code>/<code>HelmState</code>), the <strong>consumer</strong> is <strong><code>SentinelBridge</code></strong> (v0.3.0 — base <code>…Strategies</code> namespace per the strategy exception in §7, obeys all 10 verbs), and the <strong>surface</strong> is a new ⑤ <strong>Helm · interdict</strong> rail in the <strong>Cockpit</strong> (v0.5.0). The reserved name still names the capability (the trio), not a new file.</li>
+<li>The <strong>GTrader21 strategy engine</strong> is frozen as the prototype it was and retired as a product name. Its TrendArchitect-derived panel is the reference implementation Helm supersedes.</li>
+<li><code>Sentinel GTrader</code> is therefore <strong>withdrawn</strong> from the naming dictionary. <strong><code>Helm</code></strong> was reserved for exactly this in <code>naming-council-bridge</code>; it is now claimed.</li>
+</ul>
+<p>The trio is complete: <strong>Deck</strong> = you drive · <strong>Bridge</strong> = it drives · <strong>Helm</strong> = you grab the wheel without stopping the car.</p>
+<hr>
+<h2><span class="hn">9.</span>Amendment — the display Name CARRIES THE VERSION (RATIFIED 2026-07-10)</h2>
+<blockquote><p><strong>Layer ① is amended.</strong> Old rule: <code>Name = "Sentinel &lt;Thing&gt;"</code>. <strong>New rule:</strong> <code>Name = "Sentinel &lt;Thing&gt; v&lt;Major&gt;.&lt;Minor&gt;.&lt;Patch&gt;"</code>, with a trailing <code> (DEV)</code> while the build is in development.</p></blockquote>
+<h3>9.1 Why (the motivating bug)</h3>
+<p>NT's <strong>Indicators picker "Available" pane lists tools by their display <code>Name</code></strong> — not the class name. The class name (with its <code>_vX_Y_Z</code> suffix) only appears in the <strong>"Configured"</strong> pane, <em>after</em> a tool is added. So with two in-development versions of the same tool in the tree, the picker shows <strong>two identical <code>Sentinel Trend</code> rows</strong> and the operator cannot tell which version they're about to place on a chart. The version lived in the one place you can't see at selection time. (User screenshot, 2026-07-10.)</p>
+<p>The <code>_vX_Y_Z</code> class suffix is still correct and stays — it is the on-disk / Configured-pane identity. This amendment adds the version to the <strong>one surface the operator reads when picking</strong>: the display Name.</p>
+<h3>9.2 The rule</h3>
+<pre><code>frozen build:   Name = "Sentinel &lt;Thing&gt; v&lt;M&gt;.&lt;m&gt;.&lt;p&gt;"          e.g.  "Sentinel Trend v1.0.0"
+in-dev build:   Name = "Sentinel &lt;Thing&gt; v&lt;M&gt;.&lt;m&gt;.&lt;p&gt; (DEV)"    e.g.  "Sentinel Trend v1.1.0 (DEV)"</code></pre>
+<ul>
+<li><strong>Format:</strong> space + <code>v</code> + <strong>dot-separated</strong> version (mirrors how the version reads verbally and in the class suffix <code>_v1_0_0</code>). Not <code>(v1.0.0)</code>, not <code>· v1.0.0</code>.</li>
+<li><strong><code>(DEV)</code></strong> marks a work-in-progress head so it can never be mistaken for the frozen fallback on a live chart. <strong>Drop <code>(DEV)</code> as the freeze step</strong> when the build is promoted — the only display-Name edit a freeze requires.</li>
+<li>Still <strong>display-only</strong> → safe to set/change freely; it is NOT serialization identity (namespace + class are). Bumping the version string does not drop the tool off saved charts.</li>
+<li>The version in the display Name must <strong>match</strong> the <code>_vX_Y_Z</code> class suffix and the header CHANGELOG. All three move together on a bump (design-system versioning policy).</li>
+</ul>
+<h3>9.3 Migration</h3>
+<p>Retrofit the display-Name version <strong>NOW</strong> on every indicator head (display-only, safe), same as the §4 layer-① batch. <code>SentinelBrickCounter</code> already read <code>"Sentinel Brick Counter v1.0.0"</code> — it was the inadvertent precedent; the law now matches it. Newly-built tools are born with the versioned Name. <code>(DEV)</code> is applied to any head actively under development; removed at freeze.</p>
+<hr>
+<h2><span class="hn">10.</span>Amendment — the <code>&lt;Thing&gt;</code> is the SOURCE INDICATOR'S FULL NAME (RATIFIED 2026-07-10)</h2>
+<blockquote><p><strong>This REVERSES §6 decision 1 (the "SHORT names" call).</strong> The <code>&lt;Thing&gt;</code> is no longer a curated brand word — it is the <strong>full name of the standard indicator the Sentinel port was derived from</strong>, preserved verbatim.</p></blockquote>
+<h3>10.1 Why (the motivating bug)</h3>
+<p>The short-name policy silently <strong>severed the derivation trail</strong>. The perfect example: the standard port is <code>StochasticTripleFilter</code> and the first Sentinel port was named "Sentinel Stoch Filter" — <strong>"Triple" was dropped</strong>, and over time the operator loses track of which raw indicator the Sentinel version came from. A Sentinel port is a <em>derivative work</em>; its name must let you trace it back to its source at a glance.</p>
+<h3>10.2 The rule</h3>
+<p><strong>The Sentinel port keeps the source indicator's full name.</strong> File / class / display all carry it verbatim (only spacing differs — the class strips spaces, the display keeps them):</p>
+<pre><code>standard indicator:   StochasticTripleFilter            display "Stochastic Triple Filter [ATP]"
+Sentinel port class:   SentinelStochasticTripleFilter_vX_Y_Z
+Sentinel port display: "Sentinel Stochastic Triple Filter vX.Y.Z"   (+ " (DEV)" while in dev)</code></pre>
+<p>There must be <strong>name fidelity between the standard and the Sentinel version every time.</strong> Do not abbreviate, re-brand, or curate — if the source is <code>WoodiesCCIPro</code>, the port is <code>SentinelWoodiesCCIPro</code> / "Sentinel Woodies CCI Pro", not "Sentinel CCI".</p>
+<h3>10.3 What this reverses — the short-name dictionary is WITHDRAWN</h3>
+<p>§6 decision 1 mapped the sensors to short brand words (<code>Sentinel ADX / CCI / Envelope / Compression</code>). <strong>Those are withdrawn.</strong> The fidelity targets:</p>
+<div class="tblwrap"><table><thead><tr><th>Current class</th><th>short (WITHDRAWN)</th><th>→ fidelity display <code>Name</code></th><th>→ target class (at next bump)</th></tr></thead><tbody><tr><td>WoodiesCCIPro_v1_0_0</td><td>~~Sentinel CCI~~</td><td><strong>Sentinel Woodies CCI Pro vX.Y.Z</strong></td><td>SentinelWoodiesCCIPro_vX_Y_Z</td></tr><tr><td>ADXPro_v1_2_0</td><td>~~Sentinel ADX~~</td><td><strong>Sentinel ADX Pro vX.Y.Z</strong></td><td>SentinelADXPro_vX_Y_Z</td></tr><tr><td>VolEnvelope_v0_2_0</td><td>~~Sentinel Envelope~~</td><td><strong>Sentinel Vol Envelope vX.Y.Z</strong></td><td>SentinelVolEnvelope_vX_Y_Z</td></tr><tr><td>CompressionBase_v1_3_0</td><td>~~Sentinel Compression~~</td><td><strong>Sentinel Compression Base vX.Y.Z</strong></td><td>SentinelCompressionBase_vX_Y_Z</td></tr><tr><td>BuySellVolumePressureMountain_v1_0_0</td><td>~~Sentinel BSVPMountain~~</td><td><strong>Sentinel Buy Sell Volume Pressure Mountain vX.Y.Z</strong></td><td>SentinelBuySellVolumePressureMountain_vX_Y_Z</td></tr></tbody></table></div>
+<p>(The tools that were already born from a Sentinel-original concept — Council, Clock, Eye, Trend, Deck, Bridge, Location, MTF, Participation, Intermarket, WAE, God Reversal, Liquidity Walls — have <strong>no external source name to preserve</strong>; their <code>&lt;Thing&gt;</code> is their own name and is unaffected.)</p>
+<h3>10.4 Migration timing (same split as always)</h3>
+<ul>
+<li><strong>Display <code>Name</code> → NOW</strong> (display-only, safe): retrofit every port's Name to the fidelity string + version.</li>
+<li><strong>Class + namespace → at each tool's NEXT version bump</strong> (serialization identity; archive the superseded version). A short-named class that is live on charts is not renamed outside a bump.</li>
+</ul>
+<p><strong>⚠ NEEDS SIGN-OFF on spacing/casing</strong> for the display strings above (e.g. "Woodies CCI Pro" vs "WoodiesCCIPro", "Vol Envelope" vs "VolEnvelope") before the retrofit batch runs.</p>
+<h3>10.5 Migration ledger — display-Name retrofit ✅ EXECUTED 2026-07-10</h3>
+<p>Both amendments (§9 version-in-Name + §10 fidelity) applied to <strong>20 indicator heads</strong> in one batch (display-only, byte-safe <code>sed</code> anchored on <code>";</code>, backup in scratchpad <code>naming-batch-backup\</code>; generated regions stripped, NT settles to one per file on F5). User sign-off: acronyms <strong>expand fully</strong> (WAE → "Sentinel Waddah Attar Explosion"); Recorder version <strong>v1.5.0</strong> (matches changelog, not the <code>_v1_4</code> class suffix — class catches up at its next bump).</p>
+<p>Fidelity renames: WoodiesCCIPro→<strong>Sentinel Woodies CCI Pro v1.0.0</strong> · ADXPro→<strong>Sentinel ADX Pro v1.2.0</strong> · VolEnvelope→<strong>Sentinel Vol Envelope v0.2.0</strong> · CompressionBase→<strong>Sentinel Compression Base v1.3.0</strong> · BuySellVolumePressureMountain→<strong>Sentinel Buy Sell Volume Pressure Mountain v1.0.0</strong> · SentinelWAE→<strong>Sentinel Waddah Attar Explosion v1.0.0</strong>. Version-only: Council/Clock/Eye/Trend/MTF/Location/Participation/Intermarket/ LiquidityWalls/GodReversal/BrickCounter/Wallpaper/ExcursionRecorder. Deck→<strong>Sentinel Deck v0.2.2</strong> (its <code>_tag</code> was already the stable literal <code>"SentinelDeck"</code> — the §4 decouple caveat is RESOLVED; rename is order-path-safe).</p>
+<p><strong>Class/file/namespace renames remain deferred to each tool's next version bump</strong> (identity). <strong>EXCLUDED:</strong> <code>SentinelV1_0.cs</code> — an early floating trade panel (order-entry, Deck's predecessor, non-compliant name); it is an executor, likely superseded → handle in its own review (archival?), not this display-only batch. <strong>Pending: ONE NT F5</strong> (close the edited tabs WITHOUT saving first) to confirm the compile + the picker now reads the versioned fidelity names.</p>
+<footer><span>Sentinel Suite · <b>Sentinel Naming Federation</b></span><span>living document · rendered from Markdown</span></footer>
+</div></body></html>

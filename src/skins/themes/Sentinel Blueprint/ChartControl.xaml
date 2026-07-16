@@ -1,0 +1,62 @@
+<!-- Midnight -->
+<ResourceDictionary	xmlns		="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+					xmlns:x		="http://schemas.microsoft.com/winfx/2006/xaml"
+					xmlns:po	="http://schemas.microsoft.com/winfx/2006/xaml/presentation/options">
+
+	<LinearGradientBrush	po:Freeze="true"	x:Key="ChartTrader.ButtonBackground" StartPoint="0.5,-0.05"	EndPoint="0.5,0.66">
+		<LinearGradientBrush.GradientStops>
+			<GradientStop Color="#0D2447" Offset="0"/>
+			<GradientStop Color="#0D2447" Offset="1"/>
+		</LinearGradientBrush.GradientStops>
+	</LinearGradientBrush>
+	<LinearGradientBrush	po:Freeze="true"	x:Key="ChartTrader.ActionButtonsBackground" StartPoint="0.5,-0.05"	EndPoint="0.5,0.66">
+		<LinearGradientBrush.GradientStops>
+			<GradientStop Color="#0D2447" Offset="0"/>
+			<GradientStop Color="#0D2447" Offset="1"/>
+		</LinearGradientBrush.GradientStops>
+	</LinearGradientBrush>
+	<LinearGradientBrush	po:Freeze="true"	x:Key="ChartTrader.BuyButtonsBackground" StartPoint="0.5,-0.05"	EndPoint="0.5,0.66"><!-- Sentinel up (deep) -->
+		<LinearGradientBrush.GradientStops>
+			<GradientStop Color="#1C8F63" Offset="0"/>
+			<GradientStop Color="#125C41" Offset="1"/>
+		</LinearGradientBrush.GradientStops>
+	</LinearGradientBrush>
+	<LinearGradientBrush	po:Freeze="true"	x:Key="ChartTrader.SellButtonsBackground" StartPoint="0.5,-0.05"	EndPoint="0.5,0.66"><!-- Sentinel down (deep) -->
+		<LinearGradientBrush.GradientStops>
+			<GradientStop Color="#B84550" Offset="0"/>
+			<GradientStop Color="#7E2C34" Offset="1"/>
+		</LinearGradientBrush.GradientStops>
+	</LinearGradientBrush>
+	<SolidColorBrush	x:Key="ChartControl.ChartBackground"				Color="#FF0A1E3C"			po:Freeze="true" /><!-- Sentinel Blueprint: cyanotype drafting-paper blue. This exact hex #0A1E3C is the KEY the SentinelSkin skin-follow glue matches on — do NOT retune it without updating SkinBgTheme in AddOns\SentinelSkin.cs -->
+
+	<SolidColorBrush	x:Key="ChartControl.ChartText"						Color="#FFEAF2FF"		po:Freeze="true" /><!-- Sentinel Blueprint: drafting white -->
+	<SolidColorBrush	x:Key="ChartControl.InactivePriceMarkersBackground"	Color="#FF17386A"			po:Freeze="true" />
+	<SolidColorBrush	x:Key="ChartControl.CrosshairLabelBackground"		Color="#FF17386A"			po:Freeze="true" />
+
+	<Pen				x:Key="ChartControl.AxisPen"						Brush="#FF4A72B0"		po:Freeze="true"	Thickness="1"/>
+	<Pen				x:Key="ChartControl.CrosshairPen"					Brush="#FF4A72B0"		po:Freeze="true"	Thickness="1"/>
+	<Pen				x:Key="ChartControl.GridLineHPen"											po:Freeze="true"	Thickness="1">
+		<Pen.Brush>
+			<SolidColorBrush Color="#1B3E75" Opacity="1" po:Freeze="true"></SolidColorBrush><!-- Sentinel Blueprint: the drafting GRID is the theme's signature — lifted well above the paper (the recolor's #0D2447 was nearly invisible) -->
+		</Pen.Brush>
+	</Pen>
+	<Pen				x:Key="ChartControl.GridLineVPen"					po:Freeze="true"	Thickness="1">
+		<Pen.Brush>
+			<SolidColorBrush Color="#1B3E75" Opacity="1" po:Freeze="true"></SolidColorBrush><!-- Sentinel Blueprint: the drafting GRID is the theme's signature — lifted well above the paper (the recolor's #0D2447 was nearly invisible) -->
+		</Pen.Brush>
+	</Pen>
+	<Pen				x:Key="ChartControl.PanelSplitterPen"				Brush="#FF4A72B0"		po:Freeze="true"		Thickness="1"/>
+
+	<SolidColorBrush	x:Key="ChartControl.DataBoxPanelLabelBackground"	Color="#FF1E4076"		po:Freeze="true" />
+	<SolidColorBrush	x:Key="ChartControl.DataBoxItemLabelBackground"		Color="#FF606878"		po:Freeze="true" />
+	<SolidColorBrush	x:Key="ChartControl.DataBoxBackground"				Color="#FF0A1E3C"			po:Freeze="true"		Opacity="0.75"/>
+	<SolidColorBrush	x:Key="ChartControl.DataBoxForeground"				Color="#FFCBDDF4"		po:Freeze="true" />
+	<SolidColorBrush	x:Key="ChartControl.TimeHighBrush"					Color="#FF5FE3F2"			po:Freeze="true"		Opacity="0.25"/>
+	<SolidColorBrush	x:Key="ChartControl.DropHighlight"					Color="#4488CC"			po:Freeze="true"		Opacity="0.5"/>
+	<SolidColorBrush	x:Key="ChartControl.SelectedMarkerBrush"			Color="#FF5FE3F2"	po:Freeze="true" />
+	<SolidColorBrush	x:Key="ChartControl.UpBrush"						Color="#FF009999"		po:Freeze="true" /><!-- Sentinel: teal up bars (user pick) -->
+	<SolidColorBrush	x:Key="ChartControl.DownBrush"						Color="#FF8E8E8E"				po:Freeze="true" /><!-- Sentinel: grey down bars (user pick) -->
+	<SolidColorBrush	x:Key="ChartControl.VolumetricText"					Color="#FFEAF2FF"			po:Freeze="true" />
+	<Pen				x:Key="ChartControl.Stroke"							Brush="#FF009999"		po:Freeze="true"		Thickness="1"/><!-- outline matches up body -->
+	<Pen				x:Key="ChartControl.Stroke2"						Brush="#FF8E8E8E"		po:Freeze="true"		Thickness="1"/><!-- outline matches down body -->
+</ResourceDictionary>

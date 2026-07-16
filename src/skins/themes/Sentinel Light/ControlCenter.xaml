@@ -1,0 +1,9 @@
+<ResourceDictionary	xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+					xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+					xmlns:po="http://schemas.microsoft.com/winfx/2006/xaml/presentation/options">
+
+	<SolidColorBrush	x:Key="LogGrid.InformationBackground"	Color="#F1F4F9"			po:Freeze="true" />
+	<SolidColorBrush	x:Key="LogGrid.WarningBackground"		Color="DarkGoldenrod"	po:Freeze="true" />
+	<SolidColorBrush	x:Key="LogGrid.ErrorBackground"			Color="Chocolate"		po:Freeze="true" />
+	<SolidColorBrush	x:Key="LogGrid.AlertBackground"			Color="Firebrick"		po:Freeze="true" />
+</ResourceDictionary>

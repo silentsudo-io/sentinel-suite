@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sentinel · SentinelFlux — Order-Flow Imbalance Bars (spec)</title>
+<style>
+  :root{
+    --void:#e7edf1; --panel:#f3f7f9; --surface:#ffffff; --surface2:#eaf0f3;
+    --ink:#16222c; --ink2:#586873; --line:#cdd8de; --grid:#dde5ea;
+    --accent:#0b8ea1; --flow:#0d8fa2;
+    --up:#12a56f; --down:#e0424f; --warn:#c9861a;
+    --mono:ui-monospace,"Cascadia Code","SF Mono",Consolas,Menlo,monospace;
+    --sans:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  }
+  @media (prefers-color-scheme:dark){
+    :root{
+      --void:#0a0e13; --panel:#0d131a; --surface:#141c25; --surface2:#0f161e;
+      --ink:#e2e9ee; --ink2:#8a9ba8; --line:#26333f; --grid:#131c25;
+      --accent:#4ad6e8; --flow:#3fb6c9; --up:#25d08b; --down:#ff5c6a; --warn:#f2b23c;
+    }
+  }
+  :root[data-theme="light"]{
+    --void:#e7edf1; --panel:#f3f7f9; --surface:#ffffff; --surface2:#eaf0f3;
+    --ink:#16222c; --ink2:#586873; --line:#cdd8de; --grid:#dde5ea;
+    --accent:#0b8ea1; --flow:#0d8fa2; --up:#12a56f; --down:#e0424f; --warn:#c9861a;
+  }
+  :root[data-theme="dark"]{
+    --void:#0a0e13; --panel:#0d131a; --surface:#141c25; --surface2:#0f161e;
+    --ink:#e2e9ee; --ink2:#8a9ba8; --line:#26333f; --grid:#131c25;
+    --accent:#4ad6e8; --flow:#3fb6c9; --up:#25d08b; --down:#ff5c6a; --warn:#f2b23c;
+  }
+
+  *{box-sizing:border-box}
+  body{margin:0; background:var(--void); color:var(--ink); font-family:var(--sans); line-height:1.55; -webkit-font-smoothing:antialiased; overflow-x:hidden}
+  .wrap{max-width:1120px; margin:0 auto; padding:56px 24px 100px; position:relative; z-index:1}
+
+  /* the Sentinel brand mark (Spartan barbute helmet) — faint fixed watermark + crisp header mark */
+  .watermark{position:fixed; z-index:0; pointer-events:none; top:50%; right:-2vw; transform:translateY(-50%); width:clamp(300px,40vw,560px); height:auto; fill:var(--accent); opacity:.18; filter:drop-shadow(0 0 55px color-mix(in srgb,var(--accent) 60%,transparent))}
+  .brandmark{width:16px; height:16px; flex:0 0 auto; fill:var(--accent); filter:drop-shadow(0 0 5px color-mix(in srgb,var(--accent) 50%,transparent))}
+
+  .kicker{font-family:var(--mono); font-size:11px; letter-spacing:.34em; text-transform:uppercase; color:var(--accent); display:flex; align-items:center; gap:9px; margin:0 0 14px}
+  .livedot{width:8px; height:8px; border-radius:50%; background:var(--accent); animation:pulse 2.4s ease-out infinite}
+  @keyframes pulse{0%{box-shadow:0 0 0 0 color-mix(in srgb,var(--accent) 55%,transparent)}70%{box-shadow:0 0 0 7px transparent}100%{box-shadow:0 0 0 0 transparent}}
+  h1{font-family:var(--mono); font-weight:700; font-size:clamp(30px,5.4vw,50px); letter-spacing:-.015em; margin:0 0 14px; text-wrap:balance}
+  .lede{font-size:18px; color:var(--ink2); max-width:66ch; margin:0 0 4px}
+  .lede b{color:var(--ink); font-weight:600}
+
+  .oneline{display:flex; flex-wrap:wrap; gap:7px; align-items:center; margin:28px 0 6px}
+  .oneline .s{font-family:var(--mono); font-size:12px; color:var(--ink); background:var(--surface); border:1px solid var(--line); border-radius:999px; padding:6px 13px}
+  .oneline .s b{color:var(--accent); font-weight:700}
+  .oneline .sep{color:var(--ink2); font-family:var(--mono)}
+
+  .toc{display:flex; flex-wrap:wrap; gap:6px 20px; margin:22px 0 6px; padding:16px 18px; border:1px solid var(--line); border-radius:12px; background:var(--panel)}
+  .toc a{font-family:var(--mono); font-size:12.5px; color:var(--ink2); text-decoration:none; white-space:nowrap}
+  .toc a:hover{color:var(--accent)}
+  .toc a b{color:var(--accent); font-weight:700; margin-right:6px}
+
+  .legend{display:flex; flex-wrap:wrap; gap:8px 18px; margin:18px 0 6px; padding:13px 16px; border:1px solid var(--line); border-radius:12px; background:var(--panel)}
+  .legend .k{display:flex; align-items:center; gap:8px; font-family:var(--mono); font-size:12px; color:var(--ink2)}
+  .swatch{width:22px; height:4px; border-radius:2px}
+  .swatch.a{background:var(--flow)} .swatch.u{background:var(--up)} .swatch.d{background:var(--down)} .swatch.w{background:var(--warn)}
+  .legend .k b{color:var(--ink); font-weight:600}
+
+  .part{display:flex; align-items:baseline; gap:16px; margin:80px 0 8px; padding-bottom:14px; border-bottom:1px solid var(--line)}
+  .part .pn{font-family:var(--mono); font-size:13px; font-weight:700; color:var(--accent); letter-spacing:.2em; white-space:nowrap}
+  .part h2{font-family:var(--mono); font-weight:700; font-size:15px; letter-spacing:.22em; text-transform:uppercase; color:var(--ink); margin:0}
+  .part .pd{margin-left:auto; font-size:13px; color:var(--ink2); font-family:var(--mono); text-align:right}
+
+  section{margin-top:44px}
+  .eyebrow{font-family:var(--mono); font-size:11px; letter-spacing:.24em; text-transform:uppercase; color:var(--accent); margin:0 0 8px; display:flex; gap:10px; align-items:baseline}
+  .eyebrow .num{color:var(--ink2); opacity:.7}
+  h3{font-family:var(--mono); font-weight:700; font-size:22px; margin:0 0 6px; letter-spacing:-.01em; text-wrap:balance}
+  .desc{color:var(--ink2); font-size:15px; margin:0 0 20px; max-width:74ch}
+  .desc b{color:var(--ink); font-weight:600}
+  code{font-family:var(--mono); font-size:.9em; background:var(--surface2); border:1px solid var(--line); border-radius:5px; padding:1px 5px; color:var(--ink)}
+
+  .panel{border:1px solid var(--line); border-radius:14px; background:var(--panel);
+    background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);
+    background-size:26px 26px; background-position:-1px -1px; padding:34px 30px; overflow-x:auto}
+
+  .node{background:var(--surface); border:1px solid var(--line); border-radius:11px; padding:11px 14px; min-width:120px; text-align:center; position:relative; box-shadow:0 1px 0 color-mix(in srgb,var(--ink) 6%,transparent)}
+  .node .t{font-family:var(--mono); font-weight:700; font-size:13px; color:var(--ink); white-space:nowrap}
+  .node .s{font-family:var(--mono); font-size:10.5px; color:var(--ink2); margin-top:3px; white-space:nowrap}
+  .node.accent{border-color:color-mix(in srgb,var(--accent) 55%,var(--line))}
+  .node.accent::before,.node.up::before,.node.down::before,.node.warn::before{content:""; position:absolute; left:0; top:9px; bottom:9px; width:3px; border-radius:3px}
+  .node.accent::before{background:var(--accent)}
+  .node.up::before{background:var(--up)} .node.up .t{color:color-mix(in srgb,var(--up) 78%,var(--ink))}
+  .node.down::before{background:var(--down)} .node.down .t{color:color-mix(in srgb,var(--down) 82%,var(--ink))}
+  .node.warn::before{background:var(--warn)}
+  .node.big{min-width:150px; padding:14px 16px}
+
+  .chip{font-family:var(--mono); font-size:11px; color:var(--ink); background:var(--surface2); border:1px solid var(--line); border-radius:7px; padding:5px 8px; white-space:nowrap; display:flex; justify-content:space-between; gap:10px; align-items:center}
+  .chip .w{color:var(--ink2); font-size:10px}
+  .chip.mute{color:var(--ink2)}
+
+  .flow{display:flex; align-items:center; justify-content:center; min-width:min-content}
+  .arrow{position:relative; flex:0 0 var(--aw,50px); height:2px; align-self:center; background:linear-gradient(90deg,color-mix(in srgb,var(--flow) 25%,transparent),var(--flow)); --c:var(--flow)}
+  .arrow::after{content:""; position:absolute; right:-1px; top:50%; transform:translateY(-50%); border-left:8px solid var(--c); border-top:5px solid transparent; border-bottom:5px solid transparent}
+  .arrow[data-l]::before{content:attr(data-l); position:absolute; left:50%; top:-15px; transform:translateX(-50%); font-family:var(--mono); font-size:9px; letter-spacing:.06em; text-transform:uppercase; color:var(--ink2); white-space:nowrap}
+  .arrow.up{--c:var(--up); background:linear-gradient(90deg,color-mix(in srgb,var(--up) 25%,transparent),var(--up))}
+  .arrow.down{--c:var(--down); background:linear-gradient(90deg,color-mix(in srgb,var(--down) 25%,transparent),var(--down))}
+  .arrow.warn{--c:var(--warn); background:linear-gradient(90deg,color-mix(in srgb,var(--warn) 25%,transparent),var(--warn))}
+  .arrow.v{width:2px; height:var(--ah,38px); flex:none; margin:0 auto; background:linear-gradient(180deg,color-mix(in srgb,var(--flow) 25%,transparent),var(--flow))}
+  .arrow.v::after{right:50%; top:auto; bottom:-1px; left:auto; transform:translateX(50%); border-left:5px solid transparent; border-right:5px solid transparent; border-top:8px solid var(--c); border-bottom:0}
+  .arrow.v.up-dir{background:linear-gradient(0deg,color-mix(in srgb,var(--flow) 25%,transparent),var(--flow))}
+  .arrow.v.up-dir::after{bottom:auto; top:-1px; border-top:0; border-bottom:8px solid var(--c)}
+  .arrow.v[data-l]::before{left:12px; top:50%; transform:translateY(-50%)}
+  .live .arrow{background-size:220% 100%; animation:travel 2.6s linear infinite}
+  @keyframes travel{0%{background-position:120% 0}100%{background-position:-40% 0}}
+
+  .group{border:1px dashed color-mix(in srgb,var(--line) 92%,var(--ink)); border-radius:11px; padding:12px; background:color-mix(in srgb,var(--surface) 55%,transparent)}
+  .group .gl{font-family:var(--mono); font-size:10px; letter-spacing:.14em; text-transform:uppercase; color:var(--ink2); margin:0 0 10px; text-align:center}
+  .grid2{display:grid; grid-template-columns:repeat(2,minmax(96px,1fr)); gap:6px}
+  .grid1{display:grid; gap:6px}
+  .rowflow{display:flex; align-items:center; justify-content:center; gap:0; min-width:min-content}
+  .stack{display:flex; flex-direction:column; align-items:center}
+  .band{display:flex; gap:8px; justify-content:center; flex-wrap:wrap; max-width:520px}
+
+  .verdict{background:var(--surface); border:1px solid color-mix(in srgb,var(--accent) 45%,var(--line)); border-radius:11px; padding:14px 16px; min-width:180px}
+  .verdict .vt{font-family:var(--mono); font-weight:700; font-size:12px; color:var(--accent); letter-spacing:.14em; margin-bottom:10px}
+  .vrow{display:flex; justify-content:space-between; gap:16px; font-family:var(--mono); font-size:12px; padding:4px 0; border-top:1px solid var(--line)}
+  .vrow span:first-child{color:var(--ink2)} .vrow span:last-child{color:var(--ink); font-weight:600}
+
+  .drow{display:flex; align-items:center; gap:14px; justify-content:center}
+  .branch{display:flex; align-items:center; gap:10px}
+  .blabel{font-family:var(--mono); font-size:9px; letter-spacing:.08em; text-transform:uppercase; color:var(--ink2)}
+  .qnode{background:var(--surface); border:1px solid var(--line); border-radius:11px; padding:12px 16px; text-align:center; position:relative}
+  .qnode.dec{border-color:color-mix(in srgb,var(--accent) 40%,var(--line))}
+  .qnode .t{font-family:var(--mono); font-weight:700; font-size:12.5px; color:var(--ink)}
+  .qnode .s{font-family:var(--mono); font-size:10px; color:var(--ink2); margin-top:4px}
+  .spine{display:flex; flex-direction:column; align-items:center}
+
+  .cast{display:grid; grid-template-columns:repeat(auto-fill,minmax(232px,1fr)); gap:12px}
+  .castcard{border:1px solid var(--line); border-radius:12px; background:var(--surface); padding:14px 15px; display:flex; flex-direction:column; gap:6px}
+  .castcard .role{font-family:var(--mono); font-size:9.5px; letter-spacing:.16em; text-transform:uppercase; color:var(--accent)}
+  .castcard .nm{font-family:var(--mono); font-weight:700; font-size:15px; color:var(--ink)}
+  .castcard p{margin:0; font-size:13px; color:var(--ink2)}
+  .castcard .seam{margin-top:auto; font-family:var(--mono); font-size:10.5px; color:var(--ink2); border-top:1px dashed var(--line); padding-top:7px}
+  .castcard .seam b{color:var(--ink); font-weight:600}
+
+  .two{display:grid; grid-template-columns:1.1fr .9fr; gap:26px; align-items:start}
+  .two .panel{margin:0}
+  .anno{display:flex; flex-direction:column; gap:12px}
+  .anno .a{display:flex; gap:12px; align-items:flex-start}
+  .anno .n{flex:0 0 22px; height:22px; border-radius:6px; background:var(--surface2); border:1px solid var(--line); color:var(--accent); font-family:var(--mono); font-weight:700; font-size:11px; display:flex; align-items:center; justify-content:center; margin-top:1px}
+  .anno .a div b{font-family:var(--mono); font-size:12.5px; color:var(--ink)}
+  .anno .a div p{margin:2px 0 0; font-size:13px; color:var(--ink2)}
+
+  .tblwrap{overflow-x:auto; border:1px solid var(--line); border-radius:12px; margin:8px 0}
+  table{width:100%; border-collapse:collapse; font-family:var(--mono); font-size:12.5px; min-width:640px}
+  thead th{text-align:left; font-size:10px; letter-spacing:.12em; text-transform:uppercase; color:var(--ink2); font-weight:600; padding:12px 14px; background:var(--panel); border-bottom:1px solid var(--line); white-space:nowrap}
+  tbody td{padding:10px 14px; border-bottom:1px solid var(--line); color:var(--ink); vertical-align:top}
+  tbody tr:last-child td{border-bottom:0}
+  td .vt{color:var(--ink2); font-size:11.5px}
+  td b{color:var(--ink)}
+  .wt{font-variant-numeric:tabular-nums; color:var(--accent); font-weight:700}
+  .ax-orth{color:var(--accent)} .ax-price{color:var(--ink2)}
+  .st{font-size:11px; color:var(--ink2)}
+
+  .principles{display:grid; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); gap:16px}
+  .pr{border:1px solid var(--line); border-left:3px solid var(--accent); border-radius:0 12px 12px 0; background:var(--surface); padding:16px 18px}
+  .pr h4{font-family:var(--mono); font-size:14px; margin:0 0 6px; color:var(--ink)}
+  .pr p{margin:0; font-size:13.5px; color:var(--ink2)}
+  .pr p b{color:var(--ink); font-weight:600}
+
+  .layers{display:flex; flex-direction:column; gap:12px}
+  .layer{display:grid; grid-template-columns:138px 1fr auto; align-items:center; gap:16px; border:1px solid var(--line); border-radius:12px; background:var(--surface); padding:14px 16px}
+  .layer .lb{font-family:var(--mono); font-size:10px; letter-spacing:.14em; text-transform:uppercase; color:var(--accent)}
+  .layer .lb b{display:block; color:var(--ink); font-size:14px; letter-spacing:0; margin-top:3px; text-transform:none}
+  .layer .lc{display:flex; flex-wrap:wrap; gap:6px}
+  .layer .lo{font-family:var(--mono); font-size:10.5px; color:var(--ink2); white-space:nowrap; text-align:right; line-height:1.5}
+  @media(max-width:640px){.layer{grid-template-columns:1fr; gap:10px} .layer .lo{text-align:left}}
+
+  /* prose + reference */
+  .prose{max-width:76ch}
+  .prose p{margin:0 0 14px; font-size:15px; color:var(--ink)}
+  .prose p.muted{color:var(--ink2)}
+  .callout{border:1px solid var(--line); border-left:3px solid var(--accent); border-radius:0 12px 12px 0; background:var(--surface); padding:14px 18px; margin:18px 0; font-size:14.5px; color:var(--ink); max-width:80ch}
+  .callout.warn{border-left-color:var(--warn)} .callout.caveat{border-left-color:var(--down)}
+  .callout b{color:var(--ink)}
+  .callout .cl{display:block; font-family:var(--mono); font-size:10px; letter-spacing:.16em; text-transform:uppercase; margin-bottom:6px; color:var(--accent)}
+  .callout.warn .cl{color:var(--warn)} .callout.caveat .cl{color:var(--down)}
+  .steps{list-style:none; counter-reset:s; padding:0; margin:0; display:flex; flex-direction:column; gap:12px; max-width:80ch}
+  .steps li{counter-increment:s; display:grid; grid-template-columns:28px minmax(0,1fr); column-gap:14px; row-gap:2px; align-items:start}
+  .steps li::before{content:counter(s); grid-column:1; grid-row:1; height:26px; width:26px; border-radius:7px; background:var(--surface2); border:1px solid var(--line); color:var(--accent); font-family:var(--mono); font-weight:700; font-size:12px; display:flex; align-items:center; justify-content:center}
+  .steps li b{grid-column:2; grid-row:1; color:var(--ink)} .steps li p{grid-column:2; grid-row:2; margin:3px 0 0; color:var(--ink2); font-size:14px}
+  .steps li code{font-size:.85em}
+  .code{background:var(--surface2); border:1px solid var(--line); border-radius:10px; padding:13px 15px; overflow-x:auto; font-family:var(--mono); font-size:12px; color:var(--ink); line-height:1.65; margin:14px 0; white-space:pre; max-width:100%}
+  .code .c{color:var(--ink2)} .code .k{color:var(--accent)}
+  .defs{display:grid; gap:0; max-width:80ch}
+  .defs .row{display:grid; grid-template-columns:170px 1fr; gap:16px; font-size:14px; padding:11px 0; border-bottom:1px solid var(--line)}
+  .defs b{font-family:var(--mono); font-size:12.5px; color:var(--ink)}
+  .defs .d{color:var(--ink2)}
+  .gauntlet{display:flex; flex-direction:column; gap:3px; font-family:var(--mono); font-size:12.5px; max-width:660px}
+  .gauntlet .g{display:flex; align-items:center; gap:12px; padding:10px 13px; border:1px solid var(--line); border-radius:8px; background:var(--surface)}
+  .gauntlet .g .ck{color:var(--up); font-weight:700; flex:0 0 auto}
+  .gauntlet .g .cond{color:var(--ink)} .gauntlet .g .res{margin-left:auto; color:var(--ink2); white-space:nowrap}
+  .reading{display:grid; grid-template-columns:1fr 1fr; gap:14px; margin:20px 0 6px; max-width:80ch}
+  .rp{border:1px solid var(--line); border-radius:12px; background:var(--surface); padding:14px 16px}
+  .rp .rt{font-family:var(--mono); font-size:11px; letter-spacing:.12em; text-transform:uppercase; color:var(--accent); margin-bottom:6px}
+  .rp p{margin:0; font-size:13.5px; color:var(--ink2)}
+  .rp b{color:var(--ink)}
+  @media(max-width:640px){ .reading{grid-template-columns:1fr} .defs .row{grid-template-columns:1fr; gap:2px} }
+
+  /* screenshot placeholders */
+  .shots{display:grid; grid-template-columns:repeat(auto-fit,minmax(238px,1fr)); gap:14px; margin:6px 0}
+  .shot{border:1.5px dashed color-mix(in srgb,var(--line) 78%,var(--ink)); border-radius:12px; background:var(--surface2); min-height:160px; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:18px 16px; gap:7px; margin:0}
+  .shot svg{color:var(--ink2); opacity:.55; margin-bottom:2px}
+  .shot .sid{font-family:var(--mono); font-size:10px; letter-spacing:.18em; font-weight:700; color:var(--accent)}
+  .shot .stt{font-family:var(--mono); font-size:13px; font-weight:700; color:var(--ink)}
+  .shot .scap{font-size:12px; color:var(--ink2); line-height:1.45; max-width:30ch}
+  .shot .sfile{font-family:var(--mono); font-size:9.5px; color:var(--ink2); opacity:.72; margin-top:3px}
+
+  footer{margin-top:72px; padding-top:22px; border-top:1px solid var(--line); font-family:var(--mono); font-size:11.5px; color:var(--ink2); display:flex; flex-wrap:wrap; gap:6px 18px; justify-content:space-between}
+  footer b{color:var(--ink); font-weight:600}
+
+  @media (prefers-reduced-motion:reduce){ .live .arrow{animation:none} .livedot{animation:none} }
+  @media (max-width:760px){ .two{grid-template-columns:1fr} }
+  @media (max-width:640px){ .wrap{padding:40px 14px 72px} .panel{padding:24px 16px} }
+</style>
+<style>
+  .wrap{max-width:900px}
+  .kicker .navsep{opacity:.45;margin:0 3px}
+  .kicker a.navhome{color:var(--ink2);border-bottom:0;text-decoration:none}
+  .kicker a.navhome:hover{color:var(--accent)}
+  .doc h2{font-family:var(--mono);font-weight:700;font-size:15px;letter-spacing:.2em;text-transform:uppercase;
+    color:var(--ink);margin:64px 0 4px;padding-bottom:12px;border-bottom:1px solid var(--line)}
+  .doc h2 .hn{color:var(--accent);margin-right:12px}
+  .doc h3{margin:34px 0 8px}
+  .doc p{font-size:15.5px;color:var(--ink);margin:0 0 15px;max-width:78ch}
+  .doc a{color:var(--accent);text-decoration:none;border-bottom:1px solid color-mix(in srgb,var(--accent) 40%,transparent)}
+  .doc a:hover{border-bottom-color:var(--accent)}
+  .doc strong{color:var(--ink);font-weight:670}
+  .doc em{color:var(--ink2);font-style:italic}
+  .doc ul,.doc ol{max-width:78ch;padding-left:1.3em;margin:0 0 15px}
+  .doc li{margin:.42em 0;font-size:15px;color:var(--ink)}
+  .doc li::marker{color:var(--accent)}
+  .doc hr{border:0;border-top:1px solid var(--line);margin:8px 0}
+  .doc blockquote{margin:18px 0;padding:14px 18px;border:1px solid var(--line);border-left:3px solid var(--accent);
+    border-radius:0 12px 12px 0;background:var(--surface);color:var(--ink2);max-width:80ch}
+  .doc blockquote p{color:var(--ink2);margin:0}
+  .doc blockquote strong{color:var(--ink)}
+  .doc pre{background:var(--surface2);border:1px solid var(--line);border-radius:10px;padding:14px 16px;
+    overflow-x:auto;font-family:var(--mono);font-size:12px;color:var(--ink);line-height:1.6;margin:16px 0;white-space:pre}
+  .doc pre code{background:none;border:0;padding:0;font-size:1em;color:inherit}
+</style>
+</head><body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><symbol id="helm" viewBox="0 0 512 512"><path fill-rule="nonzero" d="M255.406 17.75C189.313 39.42 124.536 85.124 79.03 150.344c21.238 57.44 32.72 94.314 32.72 131.375 0 36.493-11.52 73.723-32.125 129.655 49.72 36.73 100.08 58.95 150.313 64.938-5.052-60.378-9.83-120.748 1.593-181.125-30.644-3.28-61.384-13.286-92.03-30.72v-71.312c80.67 42.255 158.908 41.547 242.063 0v71.313c-30.06 14.376-60.192 24.722-90.25 29.28 8.684 60.46 7.723 120.915 2.03 181.375 46.386-7.335 92.89-28.824 139.032-64.312-33.966-112.954-34.03-145.933.594-260.47C391.162 84.844 317.924 39.89 255.405 17.75zm-75.125 212c-11.16-.13-19.646 3.174-21.25 9.156-2.33 8.7 10.778 19.76 29.282 24.72 18.505 4.957 35.388 1.92 37.72-6.782 2.33-8.7-10.775-19.76-29.282-24.72-5.783-1.55-11.396-2.315-16.47-2.374zm160.69 0c-5.074.06-10.687.825-16.47 2.375-18.507 4.96-31.613 16.018-29.28 24.72 2.33 8.7 19.213 11.738 37.717 6.78 18.505-4.958 31.613-16.018 29.282-24.72-1.604-5.98-10.09-9.286-21.25-9.155z"/></symbol></svg>
+<svg class="watermark" viewBox="0 0 512 512" aria-hidden="true"><use href="#helm"/></svg>
+<div class="wrap doc">
+<header>
+<p class="kicker"><svg class="brandmark" viewBox="0 0 512 512" aria-hidden="true"><use href="#helm"/></svg><span class="livedot"></span> Sentinel Suite · NinjaTrader 8 · living document<span class="navsep">·</span><a class="navhome" href="SENTINEL_DOCS.html">Docs home →</a></p>
+<h1>SentinelFlux — Order-Flow Imbalance Bars (spec)</h1>
+<p class="lede"><strong>Status:</strong> ✅ <strong>BUILT &amp; LIVE-VALIDATED (2026-07-14)</strong> · <strong>Author:</strong> Sentinel Suite · <strong>Date:</strong> 2026-07-14 <strong>Artifact:</strong> <code>BarsTypes\SentinelFlux_v1_0_0.cs</code> · class <code>SentinelFlux_v1_0_0</code> · display <code>"SentinelFlux v1.0.0"</code> <strong>BarsPeriodType id:</strong> <code>212203</code> (reserved Sentinel bars block 212200–212299) <strong>Seam:</strong> <code>SentinelCore.FluxState</code> (v1.31.0) → the <strong>FLUX voter</strong> in the Council (v1.6.3, now 22 voters) + a <code>FluxAbsorbDamp</code> absorption modulator.</p>
+</header>
+<blockquote><p><strong>Built from scratch</strong> as an order-flow imbalance bar type (NOT a fork of TBars) — it borrows only the TBars <em>discipline</em> (quote-rule signing, ATR/price/time/tick backstops, HA render, deterministic latch). Live-validated on a full 10/10 Council roster on <code>GC.212203v8</code>; two threshold fixes shipped same-day (canonical <code>θ* = fluxScale × E[|θ|]</code> + winsorization). Grading vs TBars is pre-registered as <strong>EXP-0004</strong>.</p></blockquote>
+<blockquote><p>One line: a bar closes when <strong>accumulated signed order-flow imbalance</strong> crosses an adaptive threshold — López de Prado's <em>information-driven bars</em> — stabilized by the <strong>TBars</strong> discipline (ATR-clamped threshold + price/time backstops + HA bodies + deterministic per-session latch) so it can never hit the runaway failure mode that makes naïve imbalance bars unusable.</p></blockquote>
+<hr>
+<h2><span class="hn">1.</span>Why this bar type, for THIS system</h2>
+<p>This is not a novelty bar. It is aimed directly at two documented, load-bearing weaknesses of the Sentinel learning loop.</p>
+<p><strong>1a. The orthogonality gap.</strong> The Council's own caveat, repeated across the notes: <em>"today's voters are nearly all PRICE-DERIVED (ADX/CCI/Trend/Envelope/Brick echo the same OHLC), so conviction = agreement, NOT confirmation."</em> Every renko family in the tree (Renko, TBars, BetterRenko, WickedRenko, RenkoATR) reduces the market to <strong>price geometry</strong> — <em>where</em> price went. None encode <strong>how much it cost to get there</strong>. A bar whose <em>clock</em> is signed order flow does two things nothing else in the suite does:</p>
+<ul>
+<li><strong>It orthogonalizes the whole chart.</strong> Any price-derived sensor (ADX/CCI/Trend…) running on a flow-synchronized substrate is now implicitly reading order flow. The substrate itself becomes an orthogonal axis — not just one new voter.</li>
+<li><strong>It publishes a native order-flow seam</strong> (<code>FluxState</code>) → a genuinely orthogonal Council voter sourced from the <em>aggregated tape</em>, complementary to <code>LiquidityState</code> (sourced from the <em>book/absorption</em>).</li>
+</ul>
+<p><strong>1b. The label-fidelity gap.</strong> The Council trains on <strong>first-touch triple-barrier labels measured in bars</strong> ([[sentinel-ml-lab]], schema 1.3). Time/tick/range bars carry wildly unequal information per bar, so a horizon of "N bars" is a fuzzy blend of dead-market bars and event bars — the label's clock drifts. Information-driven bars are <em>constructed</em> so each bar carries ≈ constant information; "N bars ahead" ≈ "constant information ahead." This sharpens the exact label the ConvictionFloor and per-bar-type weight fit consume. This is López de Prado's founding argument for these bars (AFML ch. 2), and it lands 1:1 on the Sentinel rig.</p>
+<p><strong>1c. It costs nothing to test.</strong> A bar type is just a scope tag (<code>GC.212203v…</code>). The recorder, ingester, <code>Lab\compare_bartypes.py</code>, <code>train.py</code>, and <code>council_paths.py</code> already separate and grade any scope. SentinelFlux slots into the measurement loop with <strong>zero new plumbing</strong> (see §9).</p>
+<hr>
+<h2><span class="hn">2.</span>Prior art &amp; the failure mode we must beat</h2>
+<p><strong>López de Prado, <em>Advances in Financial Machine Learning</em>, ch. 2 — information-driven bars.</strong> Sign each trade with the <strong>tick rule</strong> <code>b_t = b_{t-1} if Δp=0 else sign(Δp) ∈ {−1,+1}</code>, accumulate a signed imbalance, and close a bar when the imbalance exceeds its <em>expectation</em>. Three flavours by what is accumulated:</p>
+<div class="tblwrap"><table><thead><tr><th>Flavour</th><th>Accumulator θ_T</th><th>Samples</th></tr></thead><tbody><tr><td><strong>Tick Imbalance Bars (TIB)</strong></td><td><code>Σ b_t</code></td><td>net trade-direction pressure</td></tr><tr><td><strong>Volume Imbalance Bars (VIB)</strong></td><td><code>Σ b_t·v_t</code></td><td>net <em>contract</em> pressure (default here)</td></tr><tr><td><strong>Dollar Imbalance Bars (DIB)</strong></td><td><code>Σ b_t·v_t·p_t</code></td><td>net <em>notional</em> pressure (cross-contract stable)</td></tr></tbody></table></div>
+<p>Bar closes when <code>|θ_T| ≥ E₀[T]·|E[b·v]|</code> (VIB form), where <code>E₀[T]</code> is the expected bar length and <code>E[b·v]</code> the expected signed volume per tick — both estimated online by EWMA.</p>
+<p><strong>The known failure mode (why a naïve port is a bad bar type).</strong> Both EWMAs are fed back from realized bars. In a strong trend, <code>P[buy]→1</code> so <code>|E[b·v]|</code> inflates <em>and</em> bars lengthen, so the threshold <strong>explodes</strong> → one gigantic bar swallows the move. In a balanced chop, <code>E[b·v]→0</code> so the threshold <strong>collapses</strong> → bars fire every tick. LdP flags this instability explicitly; it is the reason imbalance bars are famous in theory and rare in production.</p>
+<p><strong>The Sentinel move:</strong> we already <em>own</em> the cure. TBars solved the analogous renko instability with an <strong>ATR floor</strong>, a <strong>density controller with Min/Max rails</strong>, and <strong>forced time-bricks</strong>. We transplant that exact stabilization layer onto the imbalance clock (§5). That transplant — a theoretically-superior sampling clock hardened by a proven adaptive-brick discipline — is the hybrid.</p>
+<hr>
+<h2><span class="hn">3.</span>The hybrid — three axes fused</h2>
+<p>SentinelFlux is a hybrid on three independent axes:</p>
+<ol>
+<li><strong>Sampling axis</strong> — bars close on <strong>order-flow imbalance</strong> (information-driven), not time / tick / volume / range / price.</li>
+<li><strong>Stabilization axis</strong> — the imbalance threshold is <strong>ATR-clamped + backstopped</strong> (TBars density rails + force-close), so it is bounded above and below and always terminates.</li>
+<li><strong>Rendering axis</strong> — bodies are <strong>Heikin-Ashi smoothed</strong> with <strong>real price wicks</strong> (TBars aesthetic), so the suite's cards, skins, and eye read it as family.</li>
+</ol>
+<p>Plus a microstructure upgrade the tick rule can't do (§4).</p>
+<hr>
+<h2><span class="hn">4.</span>Trade signing — quote rule, tick-rule fallback</h2>
+<p><code>OnDataPoint(... bid, ask ...)</code> gives us the prevailing quotes per trade, so we sign better than the tick rule:</p>
+<p><strong>Lee–Ready / quote rule (primary):</strong></p>
+<pre><code>if close &gt;= ask  → b = +1   (buyer-initiated / lifted the offer)
+if close &lt;= bid  → b = −1   (seller-initiated / hit the bid)
+else             → b = tick-rule fallback   (sign of Δp; carry prior sign on Δp==0)</code></pre>
+<p>Fallback to the pure tick rule whenever <code>bid&lt;=0 || ask&lt;=0</code> (historical tick data without quotes) — keeps it <strong>deterministic</strong> and reproducible on reload (critical for the corpus; the as-of / lookahead lesson [[seam-scope-migration]]).</p>
+<p>Signed contribution per trade: <code>Δθ = b · w</code>, where <code>w = 1</code> (TIB), <code>w = volume</code> (VIB, default), <code>w = volume·price</code> (DIB).</p>
+<hr>
+<h2><span class="hn">5.</span>Bar-close rule &amp; the stabilization layer (the core)</h2>
+<p><strong>State per forming bar:</strong> <code>θ</code> (signed imbalance), <code>buyVol</code>, <code>sellVol</code>, <code>nTicks</code>, <code>barOpen</code>, running H/L, <code>birthTime</code>.</p>
+<p><strong>The threshold (as SHIPPED, updated once per CLOSED bar — never per tick, for determinism):</strong></p>
+<pre><code>imbEwma = EWMA(IntensityLen) of realized |θ| at each close      // E[|θ|] — the expected imbalance per bar
+θ*      = max(1, fluxScale · imbEwma)                           // fluxScale = FluxSize / 8 (the one knob)</code></pre>
+<p>This is the <strong>canonical López de Prado imbalance-bar rule</strong>: a bar closes when accumulated imbalance reaches its <em>expectation</em>. It is <strong>self-consistent</strong> — bars close <em>at</em> θ\<em>, so <code>imbEwma</code> EWMAs toward θ\</em> and the target is stable; bars that close early on a backstop carry <code>|θ| &lt; θ*</code> and pull it <strong>down</strong>, which makes imbalance the primary close reason (self-correcting). There is <strong>no ATR term in θ\</strong>* — ATR drives only the price backstop (below).</p>
+<blockquote><p>⚠ <strong>Hotfix (2026-07-14, first live GC load).</strong> The initial build used <code>θ* = fluxScale · atrTicks · (|θ| / net-displacement)</code>. ATR is a <em>true-range</em> measure (includes wicks) while the intensity divided by <em>net displacement</em> (close−open); in chop both factors inflate together, so θ\<em> ballooned to ~2.5× realized |θ| and <strong>every realtime bar closed on the 90 s TIME backstop</strong> (θ ≈ 38 vs θ\</em> ≈ 90 — the imbalance clock was dormant). Replaced with the self-consistent <code>E[|θ|]</code> form above. Found by reading the per-bar close-reason log, not by reasoning — the pattern to repeat.</p></blockquote>
+<p><strong>Close condition (per tick):</strong></p>
+<pre><code>CLOSE the bar when ANY of:
+  (a) |θ| ≥ θ*                                   // imbalance target hit  (the information event)
+  (b) price displacement ≥ PriceBackstopMult · atr   // hard price backstop (prevents the "one giant bar")
+  (c) (now − birthTime) ≥ ForceStagnationSeconds     // time backstop      (prevents "never closes in a dead tape")
+  (d) nTicks ≥ MaxTicksPerBar                         // tick backstop      (belt-and-suspenders)</code></pre>
+<p>On close: brick <strong>flow-direction</strong> = <code>sign(θ)</code>; <strong>price-direction</strong> = <code>sign(close − barOpen)</code>. These can DIVERGE — that divergence is <em>absorption</em> and is surfaced natively (§7). Then update <code>expT</code>/<code>expImb</code>/<code>atr</code>, roll HA bodies, seed the next bar.</p>
+<p><strong>Micro-split &amp; quiet hours</strong> are inherited from TBars unchanged (optional).</p>
+<p><strong>Why this is stable:</strong> the EWMA gives the <em>information-adaptive</em> behaviour (bars sync to surprise); the ATR band gives a <em>physically-bounded</em> size so it can neither explode nor collapse; the three backstops guarantee termination. The bar always closes for a legible reason, logged in <code>BrickLog</code> (<code>reason ∈ {imb, price, time, tick}</code>) so the corpus can audit <em>why</em> each bar formed — itself a feature.</p>
+<hr>
+<h2><span class="hn">6.</span>Determinism (non-negotiable for the corpus)</h2>
+<p>Same discipline as SentinelTBars ([[sentinel-tbars-tool]]):</p>
+<ul>
+<li><code>BuiltFrom = Tick</code> (need true tick timestamps + quotes).</li>
+<li>Config <strong>latched once per session</strong>, frozen within a session; reload to apply new params.</li>
+<li>EWMAs seeded deterministically on the first bar; expectations updated <strong>once per closed bar</strong>.</li>
+<li><strong>Realtime-only publish</strong> (<code>Core.Globals.Now − time &gt; 5 min → skip</code>) so a historical rebuild never stamps a stale <code>FluxState</code> as fresh (the as-of guard — [[state-vs-trigger-voters]], [[seam-scope-migration]]).</li>
+<li>Scope-keyed publish: <code>SentinelCore.ScopeOf(bars.Instrument, bars.BarsPeriod)</code> → two GC charts on different Flux params never clobber each other (the scope lesson).</li>
+</ul>
+<hr>
+<h2><span class="hn">7.</span>New seam: <code>SentinelCore.FluxState</code> (the orthogonal voter)</h2>
+<p>Publish per closed bar (+ live countdown per tick, like BrickState). Proposed <code>FluxState</code> fields:</p>
+<div class="tblwrap"><table><thead><tr><th>Field</th><th>Meaning</th></tr></thead><tbody><tr><td><code>FlowDir</code> (int −1/0/+1)</td><td><code>sign(θ)</code> of the just-closed bar (net order-flow direction)</td></tr><tr><td><code>PriceDir</code> (int)</td><td><code>sign(close−open)</code> — for divergence detection</td></tr><tr><td><code>Pressure</code> (double 0..1)</td><td><code>buyVol / (buyVol+sellVol)</code> — the buy/sell balance</td></tr><tr><td><code>Theta</code>, <code>Threshold</code> (double)</td><td>live accumulator vs current <code>θ*</code> (→ <code>PercentToClose</code>)</td></tr><tr><td><code>Cvd</code> (double)</td><td>running cumulative volume delta (session) — a bonus tape read</td></tr><tr><td><code>Divergence</code> (int)</td><td><code>1</code> when <code>FlowDir</code> opposes <code>PriceDir</code> with meaningful <code>θ</code> (absorption)</td></tr><tr><td><code>+ scope / instr / atrTicks / UpdatedUtc</code></td><td>standard seam envelope</td></tr></tbody></table></div>
+<p><strong>Council wiring</strong> ([[council]], [[state-vs-trigger-voters]]):</p>
+<ul>
+<li><strong>FLUX voter — KIND = STATE</strong> (flow direction persists across bars), weight ≈ <strong>0.7</strong>, tagged <strong>orthogonal</strong> (order flow). Vote = <code>FlowDir</code>. Its whole value is that it <em>does not</em> echo the OHLC bloc.</li>
+<li><strong>Divergence modulator</strong> — when <code>Divergence==1</code> against the intended side (flow absorbing the move you'd take), <strong>damp <code>SizeMult</code></strong> (a soft veto), mirroring the LiquidityWalls wall veto but from aggregated tape rather than the book. Add to the Council <code>Reasons</code> audit (<code>flux:absorb</code>).</li>
+<li>Register in the declared <strong>Roster</strong> ([[declared-roster]]) as <code>FLUX</code>; <code>w=0</code> remains the exploration primitive.</li>
+</ul>
+<p>This satisfies the standing protocol (design-system §9): every new signal indicator/bar must publish a <code>…State</code> seam, default publish ON, and be wired into the Council with a Reasons line.</p>
+<hr>
+<h2><span class="hn">8.</span>Parameters (F6 grid; latched per session)</h2>
+<div class="tblwrap"><table><thead><tr><th>Param</th><th>Default</th><th>Role</th></tr></thead><tbody><tr><td><code>ImbalanceMode</code></td><td><code>Volume</code> (VIB)</td><td>Tick / Volume / Dollar accumulator</td></tr><tr><td><code>SignMode</code></td><td><code>QuoteThenTick</code></td><td>quote rule primary, tick-rule fallback</td></tr><tr><td><strong><code>Flux Size</code></strong> (= <code>BaseBarsPeriodValue</code>)</td><td><code>8</code></td><td><strong>the one knob</strong> — <code>fluxScale = FluxSize / 8</code> sets the INFORMATION per bar (raise to coarsen)</td></tr><tr><td><code>IntensityLen</code></td><td><code>50</code></td><td>EWMA length for `E[\</td><td>θ\</td><td>]<code> (the self-consistent close threshold </code>θ* = fluxScale × E[\</td><td>θ\</td><td>]`)</td></tr><tr><td><code>WinsorMult</code></td><td><code>4.0</code></td><td>block-trade guard: cap a bar's `E[\</td><td>θ\</td><td>]<code> contribution at </code>×` the running estimate</td></tr><tr><td><code>AtrLength</code></td><td><code>14</code></td><td>per-brick ATR EMA (shared with TBars logic)</td></tr><tr><td><code>PriceBackstopMult</code></td><td><code>2.5</code></td><td>force-close at <code>×ATR</code> price displacement</td></tr><tr><td><code>ForceStagnationSeconds</code></td><td><code>90</code></td><td>time backstop</td></tr><tr><td><code>MaxTicksPerBar</code></td><td><code>5000</code></td><td>tick backstop</td></tr><tr><td><code>EnableMicroSplit</code> / <code>EnableQuietHours</code></td><td><code>true</code></td><td>inherited TBars behaviour</td></tr><tr><td><code>PublishFluxState</code></td><td><code>true</code></td><td>publish the seam + wire the Council</td></tr><tr><td><code>ShowIndicatorLabel</code></td><td><code>false</code></td><td>Sentinel label-remover standard</td></tr></tbody></table></div>
+<p>There is intentionally <strong>one primary "size" feel</strong> exposed the way TBars exposes <em>Speed Settings</em>: <strong><code>Flux Size</code></strong> sets how much information a bar represents (θ\* self-tunes to the tape via <code>E[|θ|]</code>). The size-sweep axis for EXP-0004 (§9) is <code>Flux Size</code> (the scope tag encodes it — <code>GC.212203v8</code> vs <code>v12</code> — so a sweep is graded separately).</p>
+<hr>
+<h2><span class="hn">9.</span>Testability — falsifiable hypotheses + the exact experiment</h2>
+<p>Pre-registered as <strong>EXP-0004</strong> (EXP-0002/0003 established TBars 6/24 as the edge-bearing bar via the same rig [[continue-here-2026-07-12b]]). Run SentinelFlux <strong>side-by-side</strong> with SentinelTBars on GC; scope tags separate them automatically; bake clean schema-1.3 Council rows on a <strong>multi-voter</strong> chart; then grade.</p>
+<p><strong>H1 — sharper labels.</strong> Conviction becomes more predictive of first-touch on Flux bars than on TBars. → <code>AUC(conviction → firstTouch)</code> on <code>GC.212203v…</code> <strong>&gt;</strong> on <code>GC.212201v6x24</code>, and materially above the ~0.48 baseline. Tool: <code>train.py --inst GC --bartype 212203vXxY --barrier 20 --cost 1.5 --spend-holdout</code>.</p>
+<p><strong>H2 — orthogonality is real.</strong> The FLUX voter does not echo the price bloc. → From the recorded schema-1.3 <strong>vote vector</strong> (§2.1), <code>|corr(FLUX, {TRND,CCI,ADX,ENV})| &lt; 0.5</code>. Tool: <code>council_paths.py --scope GC.212203v…</code> (vote-vector join already implemented).</p>
+<p><strong>H3 — fill fidelity holds.</strong> Flux bars are finer during fast moves (imbalance fires quickly when one side dominates), so stop/target first-touch fill fidelity ≥ TBars' proven ~99.5% ([[corpus-hygiene-and-fill-fidelity]]). Tool: the tick-true recorder sidecars (<code>council\ticks\</code>) already measure first-touch at tick resolution.</p>
+<p><strong>H4 — path quality.</strong> Per-fire MFE/MAE ratio and favorable-dwell (from <code>council_paths.py</code>) are ≥ TBars at matched conviction.</p>
+<p><strong>KILL LINE (honest, pre-registered):</strong> if after ≥ 8 baked multi-voter sessions <strong>H1 fails (AUC ≤ TBars) AND H2 fails (corr ≥ 0.5)</strong>, the orthogonality thesis is falsified for this instrument → archive SentinelFlux to <code>_archive\</code>, keep the finding. No nudging the params to rescue it — <em>fit it, don't nudge it</em> is the standing rule.</p>
+<p><strong>Confounds to control:</strong> (1) match the barrier in <em>ticks</em> not bars across the two types; (2) same sessions / same clock window; (3) require the same voter roster on both charts (else H2's correlation is measured over different voters); (4) beware the STF-only single-voter chart — conviction pins at 1.00 there (the current corpus limitation), so EXP-0004 needs the full stack.</p>
+<hr>
+<h2><span class="hn">10.</span>Risks &amp; open questions</h2>
+<ul>
+<li><strong>Historical tick quotes.</strong> If replayed tick data lacks bid/ask, signing silently degrades to the tick rule — fine and deterministic, but the live-vs-replay <code>FlowDir</code> may differ. Gate: log the signing mode per session; compare replay==live ([[council-historical-replay]]).</li>
+<li><strong>EWMA seeding transient.</strong> First <code>ExpEwmaBars</code> bars of a fresh load are pre-convergence. Mitigation: seed <code>expT</code>/<code>expImb</code> from the ATR band on bar 0 (already the clamp floor), and mark the first N bars <code>warmup=1</code> in <code>BrickLog</code> so the corpus can drop them.</li>
+<li><strong>Direction semantics.</strong> Flow-dir ≠ price-dir bars are informative but visually unusual. Decision: color the HA body by <strong>price-dir</strong> (familiar), expose flow-dir only via the seam + an optional flow-tint outline. Confirm the visual on first F5.</li>
+<li><strong>Dollar mode cross-contract.</strong> DIB is the stable choice for GC↔MGC or roll continuity; default stays VIB, but expose DIB for the Intermarket use case.</li>
+<li><strong>Is imbalance or <em>runs</em> the better primitive?</strong> Runs bars (max buy-run / sell-run length) sample persistence rather than net pressure. Imbalance is the cleaner first cut and maps onto directional semantics; a <code>SignMode</code>/<code>Mode</code> switch can add a runs variant later if EXP-0004 motivates it.</li>
+</ul>
+<hr>
+<h2><span class="hn">11.</span>Build plan (when approved)</h2>
+<ol>
+<li><em>(As built — historical build plan.)</em> Written <strong>from scratch</strong> as <code>BarsTypes\SentinelFlux_v1_0_0.cs</code> (id <code>212203</code>), borrowing only the TBars <em>discipline</em> (ATR/price/time/tick backstops, HA render, deterministic per-session latch, publish seam) — not the fixed-brick geometry. Class/Name/<code>BarsPeriod</code> in sync (naming law [[naming-federation]]).</li>
+<li>Add the quote-rule signing + θ accumulator + the §5 close rule.</li>
+<li>Add <code>SentinelCore.FluxState</code> seam (Core version bump) + Council FLUX voter + divergence modulator + Roster <code>FLUX</code> entry.</li>
+<li><code>nt8bridge compile --type Indicator</code> (strip generated region first) → F5 authoritative ([[nt8-bridge-compile-loop]]).</li>
+<li>Load beside TBars on a full-stack GC chart; verify signing (Output log), bar cadence, seam publish, Council <code>FLUX</code> in the Roster; bake ≥ 8 sessions; run the EXP-0004 grade.</li>
+<li>Version + changelog in-file; add to csproj; <code>.html</code> sibling of this spec ([[docs-need-html-copies]]).</li>
+</ol>
+<hr>
+<p><em>Cross-refs: [[sentinel-tbars-tool]] (the discipline we transplant) · [[council]] + [[state-vs-trigger-voters]] (fusion) · [[sentinel-ml-lab]] (why the label sharpens) · [[declared-roster]] · [[corpus-hygiene-and-fill-fidelity]] · [[council-historical-replay]] (the grading rig).</em></p>
+<footer><span>Sentinel Suite · <b>SentinelFlux — Order-Flow Imbalance Bars (spec)</b></span><span>living document · rendered from Markdown</span></footer>
+</div></body></html>

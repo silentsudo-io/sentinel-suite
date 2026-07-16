@@ -1,0 +1,98 @@
+Sentinel Suite
+Copyright (c) 2026 silentsudo-io and the Sentinel Suite contributors.
+
+This product includes software developed for the Sentinel Suite, a family of
+open-source tools for NinjaTrader 8.
+
+------------------------------------------------------------------------------
+ORIGINAL WORK
+------------------------------------------------------------------------------
+The Sentinel runtime (SentinelCore, SentinelSkin), the sensors, the Council,
+the Deck/Bridge, the safety substrate, and the supporting services are original
+work authored for this project.
+
+------------------------------------------------------------------------------
+INDICATORS IMPLEMENTING PUBLIC METHODS (original code)
+------------------------------------------------------------------------------
+These implement publicly-published trading methods/formulas (methods and formulas
+are not copyrightable); the *code* is original to this project:
+  - Average Directional Index (ADX/DMI, Wilder)   -> Sentinel ADXPro
+  - Woodies CCI (Ken Wood's method)               -> Sentinel WoodiesCCIPro
+  - TrendMagic-style ATR/CCI trailing line        -> Sentinel Trend
+  - Candle-grammar reversal method                -> Sentinel God Reversal
+  - Buy/sell volume pressure                      -> Sentinel BSVPMountain
+  - Ground-up volatility envelope                 -> Sentinel VolEnvelope
+  - Waddah Attar Explosion method (public)        -> Sentinel WAE (v2, clean-room)
+  - SuperTrend / VIDYA (Chande) / Parabolic SAR (Wilder) / ADXVMA / regime &
+    structure statistics / Leledc exhaustion / harmonic Fib ratios -> the extra
+    Sentinel sensors (clean-room from public formulae; any installed reference
+    indicator was surveyed for concept only, no code copied)
+  - Public moving-average & filter formulae (SMA/EMA/WMA/VWMA/DEMA/TEMA/HMA and the
+    zero-lag family; Ehlers Super Smoother/Gaussian/Butterworth) -> Sentinel Smoothers
+
+------------------------------------------------------------------------------
+MPL-2.0 LICENSED COMPONENTS (ports of MPL-2.0 sources; attribution required)
+------------------------------------------------------------------------------
+These are ports of third-party Pine scripts released under the Mozilla Public
+License 2.0 (https://mozilla.org/MPL/2.0/). Each REMAINS under MPL-2.0 -- its
+file carries the MPL header, attribution is preserved, and source stays available:
+  - Sentinel LiquidityWalls -- port of "Liquidity Walls" (Pine v6), (c) TradingIQ,
+                               MPL-2.0.
+  - Sentinel Stochastic Triple Filter -- port of "Stochastic Triple Filter [ATP]",
+                               (c) AlgoTrade_Pro, MPL-2.0; Gaussian Channel math
+                               (c) DonovanWall (public).
+
+------------------------------------------------------------------------------
+PROVENANCE NOTES
+------------------------------------------------------------------------------
+  - Sentinel WAE was formerly a port of unlicensed NT-community / TradingView code
+    (LazyBear -> shayankm -> donto -> karmic913). That version (SentinelWAE_v1_0_0)
+    was RETIRED and replaced (2026-07-11) with a CLEAN-ROOM implementation
+    (SentinelWAE_v2_0_0) written from the public Waddah Attar formula using
+    NinjaTrader's own EMA/StdDev/ATR (listed under "public methods" above). No
+    third-party code remains in the shipped WAE.
+  - Provenance was audited per sensor on 2026-07-11 (headers read + sources checked);
+    every shipped sensor is either original work, an original implementation of a
+    public method, or an MPL-2.0 component with attribution.
+
+------------------------------------------------------------------------------
+CONTRIBUTED WORK (released for open-source use with permission)
+------------------------------------------------------------------------------
+Portions of the Sentinel Suite may incorporate contributions from others that
+were released, with full permission, for open-source distribution under this
+project.
+
+Contributors are credited IN THE SOURCE FILE(S) they authored or worked on --
+in that file's header comment and/or changelog. This keeps each grant attached
+to the exact code it covers. See the file headers for per-file attribution.
+
+As of the initial release, the suite is the sole work of the maintainer
+(silentsudo-io); no external-contributor grants are on record yet.
+
+------------------------------------------------------------------------------
+NOT INCLUDED (third-party / provenance-restricted)
+------------------------------------------------------------------------------
+This open-source distribution deliberately EXCLUDES components derived from
+third-party engines that are not ours to relicense, notably anything derived
+from the "GodTrades"/JET adaptive-performance engine (e.g. GTrader21, the
+GodTrades* indicators, ConfluenceArchitect, and the Eye's backtester core).
+Those are not part of this release.
+
+------------------------------------------------------------------------------
+ARTWORK / BRAND MARK
+------------------------------------------------------------------------------
+The Sentinel helmet brand mark (a Spartan "barbute") is "barbute" by Lorc,
+game-icons.net (https://game-icons.net), licensed CC BY 3.0
+(https://creativecommons.org/licenses/by/3.0/). Used with attribution.
+
+------------------------------------------------------------------------------
+PLATFORM
+------------------------------------------------------------------------------
+NinjaTrader(R) and NinjaScript(R) are trademarks of NinjaTrader Group, LLC.
+This project is an independent set of NinjaScript sources; it is NOT affiliated
+with or endorsed by NinjaTrader. It requires a NinjaTrader 8 installation to
+build and run. NinjaTrader's own assemblies (NinjaTrader.Core, etc.) are NOT
+redistributed here -- install NinjaTrader 8 to obtain them.
+
+"Sentinel" and "Sentinel Suite" are trademarks of the project maintainer. The
+source is open; the name is not. See the eventual LICENSE for the code terms.

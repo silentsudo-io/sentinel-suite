@@ -1,0 +1,22 @@
+<ResourceDictionary	xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+					xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+					xmlns:po="http://schemas.microsoft.com/winfx/2006/xaml/presentation/options">
+
+	<SolidColorBrush	x:Key="OptionChain.StrikeBackground"		Color="#FF2D2D2F"						po:Freeze="true" />
+	<SolidColorBrush	x:Key="OptionChain.StrikeForeground"		Color="#FFCCCCCC"						po:Freeze="true" />
+	<SolidColorBrush	x:Key="OptionChain.HoverBrush"				Color="LimeGreen"		Opacity="0.5"	po:Freeze="true"/>
+	<SolidColorBrush	x:Key="OptionChain.SelectionBrush"			Color="DarkRed"			Opacity="0.8"	po:Freeze="true" />
+	<SolidColorBrush	x:Key="OptionChain.ItmBackground"			Color="#FF403F45"		Opacity="0.3"	po:Freeze="true" />
+	<SolidColorBrush	x:Key="OptionChain.ItmForeground"			Color="#FFCCCCCC"		Opacity="1"		po:Freeze="true" />
+	<SolidColorBrush	x:Key="OptionChain.OtmBackground"			Color="Transparent"		Opacity="0.3"	po:Freeze="true" />
+	<SolidColorBrush	x:Key="OptionChain.OtmForeground"			Color="#FFCCCCCC"		Opacity="1"		po:Freeze="true" />
+	
+	<SolidColorBrush	x:Key="OptionChain.ItmLineBrush"			Color="#FF0B76C4"		Opacity="0.8"	po:Freeze="true" />
+	<SolidColorBrush	x:Key="OptionChain.PriceMarkerBrush"		Color="Red"				Opacity="1"		po:Freeze="true" />
+
+	<SolidColorBrush	x:Key="OptionChain.MinVolumeBrush"			Color="Transparent"						po:Freeze="true" />
+	<SolidColorBrush	x:Key="OptionChain.MaxVolumeBrush"			Color="DarkGreen"		Opacity="1"		po:Freeze="true" />
+
+	<Pen				x:Key="OptionChain.StrikeLadderPen"			Brush="#FFCCCCCC"									Thickness="1"			po:Freeze="true" />
+	<Pen				x:Key="OptionChain.ItmLinePen"				Brush="{StaticResource OptionChain.ItmLineBrush}"	Thickness="2"			po:Freeze="true" />
+</ResourceDictionary>

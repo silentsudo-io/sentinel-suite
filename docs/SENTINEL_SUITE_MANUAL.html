@@ -1,0 +1,915 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sentinel · The Sentinel Suite — Field Manual</title>
+<style>
+  :root{
+    --void:#e7edf1; --panel:#f3f7f9; --surface:#ffffff; --surface2:#eaf0f3;
+    --ink:#16222c; --ink2:#586873; --line:#cdd8de; --grid:#dde5ea;
+    --accent:#0b8ea1; --flow:#0d8fa2;
+    --up:#12a56f; --down:#e0424f; --warn:#c9861a;
+    --mono:ui-monospace,"Cascadia Code","SF Mono",Consolas,Menlo,monospace;
+    --sans:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  }
+  @media (prefers-color-scheme:dark){
+    :root{
+      --void:#0a0e13; --panel:#0d131a; --surface:#141c25; --surface2:#0f161e;
+      --ink:#e2e9ee; --ink2:#8a9ba8; --line:#26333f; --grid:#131c25;
+      --accent:#4ad6e8; --flow:#3fb6c9; --up:#25d08b; --down:#ff5c6a; --warn:#f2b23c;
+    }
+  }
+  :root[data-theme="light"]{
+    --void:#e7edf1; --panel:#f3f7f9; --surface:#ffffff; --surface2:#eaf0f3;
+    --ink:#16222c; --ink2:#586873; --line:#cdd8de; --grid:#dde5ea;
+    --accent:#0b8ea1; --flow:#0d8fa2; --up:#12a56f; --down:#e0424f; --warn:#c9861a;
+  }
+  :root[data-theme="dark"]{
+    --void:#0a0e13; --panel:#0d131a; --surface:#141c25; --surface2:#0f161e;
+    --ink:#e2e9ee; --ink2:#8a9ba8; --line:#26333f; --grid:#131c25;
+    --accent:#4ad6e8; --flow:#3fb6c9; --up:#25d08b; --down:#ff5c6a; --warn:#f2b23c;
+  }
+
+  *{box-sizing:border-box}
+  body{margin:0; background:var(--void); color:var(--ink); font-family:var(--sans); line-height:1.55; -webkit-font-smoothing:antialiased; overflow-x:hidden}
+  .wrap{max-width:1120px; margin:0 auto; padding:56px 24px 100px; position:relative; z-index:1}
+
+  /* the Sentinel brand mark (Spartan barbute helmet) — faint fixed watermark + crisp header mark */
+  .watermark{position:fixed; z-index:0; pointer-events:none; top:50%; right:-2vw; transform:translateY(-50%); width:clamp(300px,40vw,560px); height:auto; fill:var(--accent); opacity:.18; filter:drop-shadow(0 0 55px color-mix(in srgb,var(--accent) 60%,transparent))}
+  .brandmark{width:16px; height:16px; flex:0 0 auto; fill:var(--accent); filter:drop-shadow(0 0 5px color-mix(in srgb,var(--accent) 50%,transparent))}
+
+  .kicker{font-family:var(--mono); font-size:11px; letter-spacing:.34em; text-transform:uppercase; color:var(--accent); display:flex; align-items:center; gap:9px; margin:0 0 14px}
+  .livedot{width:8px; height:8px; border-radius:50%; background:var(--accent); animation:pulse 2.4s ease-out infinite}
+  @keyframes pulse{0%{box-shadow:0 0 0 0 color-mix(in srgb,var(--accent) 55%,transparent)}70%{box-shadow:0 0 0 7px transparent}100%{box-shadow:0 0 0 0 transparent}}
+  h1{font-family:var(--mono); font-weight:700; font-size:clamp(30px,5.4vw,50px); letter-spacing:-.015em; margin:0 0 14px; text-wrap:balance}
+  .lede{font-size:18px; color:var(--ink2); max-width:66ch; margin:0 0 4px}
+  .lede b{color:var(--ink); font-weight:600}
+
+  .oneline{display:flex; flex-wrap:wrap; gap:7px; align-items:center; margin:28px 0 6px}
+  .oneline .s{font-family:var(--mono); font-size:12px; color:var(--ink); background:var(--surface); border:1px solid var(--line); border-radius:999px; padding:6px 13px}
+  .oneline .s b{color:var(--accent); font-weight:700}
+  .oneline .sep{color:var(--ink2); font-family:var(--mono)}
+
+  .toc{display:flex; flex-wrap:wrap; gap:6px 20px; margin:22px 0 6px; padding:16px 18px; border:1px solid var(--line); border-radius:12px; background:var(--panel)}
+  .toc a{font-family:var(--mono); font-size:12.5px; color:var(--ink2); text-decoration:none; white-space:nowrap}
+  .toc a:hover{color:var(--accent)}
+  .toc a b{color:var(--accent); font-weight:700; margin-right:6px}
+
+  .legend{display:flex; flex-wrap:wrap; gap:8px 18px; margin:18px 0 6px; padding:13px 16px; border:1px solid var(--line); border-radius:12px; background:var(--panel)}
+  .legend .k{display:flex; align-items:center; gap:8px; font-family:var(--mono); font-size:12px; color:var(--ink2)}
+  .swatch{width:22px; height:4px; border-radius:2px}
+  .swatch.a{background:var(--flow)} .swatch.u{background:var(--up)} .swatch.d{background:var(--down)} .swatch.w{background:var(--warn)}
+  .legend .k b{color:var(--ink); font-weight:600}
+
+  .part{display:flex; align-items:baseline; gap:16px; margin:80px 0 8px; padding-bottom:14px; border-bottom:1px solid var(--line)}
+  .part .pn{font-family:var(--mono); font-size:13px; font-weight:700; color:var(--accent); letter-spacing:.2em; white-space:nowrap}
+  .part h2{font-family:var(--mono); font-weight:700; font-size:15px; letter-spacing:.22em; text-transform:uppercase; color:var(--ink); margin:0}
+  .part .pd{margin-left:auto; font-size:13px; color:var(--ink2); font-family:var(--mono); text-align:right}
+
+  section{margin-top:44px}
+  .eyebrow{font-family:var(--mono); font-size:11px; letter-spacing:.24em; text-transform:uppercase; color:var(--accent); margin:0 0 8px; display:flex; gap:10px; align-items:baseline}
+  .eyebrow .num{color:var(--ink2); opacity:.7}
+  h3{font-family:var(--mono); font-weight:700; font-size:22px; margin:0 0 6px; letter-spacing:-.01em; text-wrap:balance}
+  .desc{color:var(--ink2); font-size:15px; margin:0 0 20px; max-width:74ch}
+  .desc b{color:var(--ink); font-weight:600}
+  code{font-family:var(--mono); font-size:.9em; background:var(--surface2); border:1px solid var(--line); border-radius:5px; padding:1px 5px; color:var(--ink)}
+
+  .panel{border:1px solid var(--line); border-radius:14px; background:var(--panel);
+    background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);
+    background-size:26px 26px; background-position:-1px -1px; padding:34px 30px; overflow-x:auto}
+
+  .node{background:var(--surface); border:1px solid var(--line); border-radius:11px; padding:11px 14px; min-width:120px; text-align:center; position:relative; box-shadow:0 1px 0 color-mix(in srgb,var(--ink) 6%,transparent)}
+  .node .t{font-family:var(--mono); font-weight:700; font-size:13px; color:var(--ink); white-space:nowrap}
+  .node .s{font-family:var(--mono); font-size:10.5px; color:var(--ink2); margin-top:3px; white-space:nowrap}
+  .node.accent{border-color:color-mix(in srgb,var(--accent) 55%,var(--line))}
+  .node.accent::before,.node.up::before,.node.down::before,.node.warn::before{content:""; position:absolute; left:0; top:9px; bottom:9px; width:3px; border-radius:3px}
+  .node.accent::before{background:var(--accent)}
+  .node.up::before{background:var(--up)} .node.up .t{color:color-mix(in srgb,var(--up) 78%,var(--ink))}
+  .node.down::before{background:var(--down)} .node.down .t{color:color-mix(in srgb,var(--down) 82%,var(--ink))}
+  .node.warn::before{background:var(--warn)}
+  .node.big{min-width:150px; padding:14px 16px}
+
+  .chip{font-family:var(--mono); font-size:11px; color:var(--ink); background:var(--surface2); border:1px solid var(--line); border-radius:7px; padding:5px 8px; white-space:nowrap; display:flex; justify-content:space-between; gap:10px; align-items:center}
+  .chip .w{color:var(--ink2); font-size:10px}
+  .chip.mute{color:var(--ink2)}
+
+  .flow{display:flex; align-items:center; justify-content:center; min-width:min-content}
+  .arrow{position:relative; flex:0 0 var(--aw,50px); height:2px; align-self:center; background:linear-gradient(90deg,color-mix(in srgb,var(--flow) 25%,transparent),var(--flow)); --c:var(--flow)}
+  .arrow::after{content:""; position:absolute; right:-1px; top:50%; transform:translateY(-50%); border-left:8px solid var(--c); border-top:5px solid transparent; border-bottom:5px solid transparent}
+  .arrow[data-l]::before{content:attr(data-l); position:absolute; left:50%; top:-15px; transform:translateX(-50%); font-family:var(--mono); font-size:9px; letter-spacing:.06em; text-transform:uppercase; color:var(--ink2); white-space:nowrap}
+  .arrow.up{--c:var(--up); background:linear-gradient(90deg,color-mix(in srgb,var(--up) 25%,transparent),var(--up))}
+  .arrow.down{--c:var(--down); background:linear-gradient(90deg,color-mix(in srgb,var(--down) 25%,transparent),var(--down))}
+  .arrow.warn{--c:var(--warn); background:linear-gradient(90deg,color-mix(in srgb,var(--warn) 25%,transparent),var(--warn))}
+  .arrow.v{width:2px; height:var(--ah,38px); flex:none; margin:0 auto; background:linear-gradient(180deg,color-mix(in srgb,var(--flow) 25%,transparent),var(--flow))}
+  .arrow.v::after{right:50%; top:auto; bottom:-1px; left:auto; transform:translateX(50%); border-left:5px solid transparent; border-right:5px solid transparent; border-top:8px solid var(--c); border-bottom:0}
+  .arrow.v.up-dir{background:linear-gradient(0deg,color-mix(in srgb,var(--flow) 25%,transparent),var(--flow))}
+  .arrow.v.up-dir::after{bottom:auto; top:-1px; border-top:0; border-bottom:8px solid var(--c)}
+  .arrow.v[data-l]::before{left:12px; top:50%; transform:translateY(-50%)}
+  .live .arrow{background-size:220% 100%; animation:travel 2.6s linear infinite}
+  @keyframes travel{0%{background-position:120% 0}100%{background-position:-40% 0}}
+
+  .group{border:1px dashed color-mix(in srgb,var(--line) 92%,var(--ink)); border-radius:11px; padding:12px; background:color-mix(in srgb,var(--surface) 55%,transparent)}
+  .group .gl{font-family:var(--mono); font-size:10px; letter-spacing:.14em; text-transform:uppercase; color:var(--ink2); margin:0 0 10px; text-align:center}
+  .grid2{display:grid; grid-template-columns:repeat(2,minmax(96px,1fr)); gap:6px}
+  .grid1{display:grid; gap:6px}
+  .rowflow{display:flex; align-items:center; justify-content:center; gap:0; min-width:min-content}
+  .stack{display:flex; flex-direction:column; align-items:center}
+  .band{display:flex; gap:8px; justify-content:center; flex-wrap:wrap; max-width:520px}
+
+  .verdict{background:var(--surface); border:1px solid color-mix(in srgb,var(--accent) 45%,var(--line)); border-radius:11px; padding:14px 16px; min-width:180px}
+  .verdict .vt{font-family:var(--mono); font-weight:700; font-size:12px; color:var(--accent); letter-spacing:.14em; margin-bottom:10px}
+  .vrow{display:flex; justify-content:space-between; gap:16px; font-family:var(--mono); font-size:12px; padding:4px 0; border-top:1px solid var(--line)}
+  .vrow span:first-child{color:var(--ink2)} .vrow span:last-child{color:var(--ink); font-weight:600}
+
+  .drow{display:flex; align-items:center; gap:14px; justify-content:center}
+  .branch{display:flex; align-items:center; gap:10px}
+  .blabel{font-family:var(--mono); font-size:9px; letter-spacing:.08em; text-transform:uppercase; color:var(--ink2)}
+  .qnode{background:var(--surface); border:1px solid var(--line); border-radius:11px; padding:12px 16px; text-align:center; position:relative}
+  .qnode.dec{border-color:color-mix(in srgb,var(--accent) 40%,var(--line))}
+  .qnode .t{font-family:var(--mono); font-weight:700; font-size:12.5px; color:var(--ink)}
+  .qnode .s{font-family:var(--mono); font-size:10px; color:var(--ink2); margin-top:4px}
+  .spine{display:flex; flex-direction:column; align-items:center}
+
+  .cast{display:grid; grid-template-columns:repeat(auto-fill,minmax(232px,1fr)); gap:12px}
+  .castcard{border:1px solid var(--line); border-radius:12px; background:var(--surface); padding:14px 15px; display:flex; flex-direction:column; gap:6px}
+  .castcard .role{font-family:var(--mono); font-size:9.5px; letter-spacing:.16em; text-transform:uppercase; color:var(--accent)}
+  .castcard .nm{font-family:var(--mono); font-weight:700; font-size:15px; color:var(--ink)}
+  .castcard p{margin:0; font-size:13px; color:var(--ink2)}
+  .castcard .seam{margin-top:auto; font-family:var(--mono); font-size:10.5px; color:var(--ink2); border-top:1px dashed var(--line); padding-top:7px}
+  .castcard .seam b{color:var(--ink); font-weight:600}
+
+  .two{display:grid; grid-template-columns:1.1fr .9fr; gap:26px; align-items:start}
+  .two .panel{margin:0}
+  .anno{display:flex; flex-direction:column; gap:12px}
+  .anno .a{display:flex; gap:12px; align-items:flex-start}
+  .anno .n{flex:0 0 22px; height:22px; border-radius:6px; background:var(--surface2); border:1px solid var(--line); color:var(--accent); font-family:var(--mono); font-weight:700; font-size:11px; display:flex; align-items:center; justify-content:center; margin-top:1px}
+  .anno .a div b{font-family:var(--mono); font-size:12.5px; color:var(--ink)}
+  .anno .a div p{margin:2px 0 0; font-size:13px; color:var(--ink2)}
+
+  .tblwrap{overflow-x:auto; border:1px solid var(--line); border-radius:12px; margin:8px 0}
+  table{width:100%; border-collapse:collapse; font-family:var(--mono); font-size:12.5px; min-width:640px}
+  thead th{text-align:left; font-size:10px; letter-spacing:.12em; text-transform:uppercase; color:var(--ink2); font-weight:600; padding:12px 14px; background:var(--panel); border-bottom:1px solid var(--line); white-space:nowrap}
+  tbody td{padding:10px 14px; border-bottom:1px solid var(--line); color:var(--ink); vertical-align:top}
+  tbody tr:last-child td{border-bottom:0}
+  td .vt{color:var(--ink2); font-size:11.5px}
+  td b{color:var(--ink)}
+  .wt{font-variant-numeric:tabular-nums; color:var(--accent); font-weight:700}
+  .ax-orth{color:var(--accent)} .ax-price{color:var(--ink2)}
+  .st{font-size:11px; color:var(--ink2)}
+
+  .principles{display:grid; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); gap:16px}
+  .pr{border:1px solid var(--line); border-left:3px solid var(--accent); border-radius:0 12px 12px 0; background:var(--surface); padding:16px 18px}
+  .pr h4{font-family:var(--mono); font-size:14px; margin:0 0 6px; color:var(--ink)}
+  .pr p{margin:0; font-size:13.5px; color:var(--ink2)}
+  .pr p b{color:var(--ink); font-weight:600}
+
+  .layers{display:flex; flex-direction:column; gap:12px}
+  .layer{display:grid; grid-template-columns:138px 1fr auto; align-items:center; gap:16px; border:1px solid var(--line); border-radius:12px; background:var(--surface); padding:14px 16px}
+  .layer .lb{font-family:var(--mono); font-size:10px; letter-spacing:.14em; text-transform:uppercase; color:var(--accent)}
+  .layer .lb b{display:block; color:var(--ink); font-size:14px; letter-spacing:0; margin-top:3px; text-transform:none}
+  .layer .lc{display:flex; flex-wrap:wrap; gap:6px}
+  .layer .lo{font-family:var(--mono); font-size:10.5px; color:var(--ink2); white-space:nowrap; text-align:right; line-height:1.5}
+  @media(max-width:640px){.layer{grid-template-columns:1fr; gap:10px} .layer .lo{text-align:left}}
+
+  /* prose + reference */
+  .prose{max-width:76ch}
+  .prose p{margin:0 0 14px; font-size:15px; color:var(--ink)}
+  .prose p.muted{color:var(--ink2)}
+  .callout{border:1px solid var(--line); border-left:3px solid var(--accent); border-radius:0 12px 12px 0; background:var(--surface); padding:14px 18px; margin:18px 0; font-size:14.5px; color:var(--ink); max-width:80ch}
+  .callout.warn{border-left-color:var(--warn)} .callout.caveat{border-left-color:var(--down)}
+  .callout b{color:var(--ink)}
+  .callout .cl{display:block; font-family:var(--mono); font-size:10px; letter-spacing:.16em; text-transform:uppercase; margin-bottom:6px; color:var(--accent)}
+  .callout.warn .cl{color:var(--warn)} .callout.caveat .cl{color:var(--down)}
+  .steps{list-style:none; counter-reset:s; padding:0; margin:0; display:flex; flex-direction:column; gap:12px; max-width:80ch}
+  .steps li{counter-increment:s; display:grid; grid-template-columns:28px minmax(0,1fr); column-gap:14px; row-gap:2px; align-items:start}
+  .steps li::before{content:counter(s); grid-column:1; grid-row:1; height:26px; width:26px; border-radius:7px; background:var(--surface2); border:1px solid var(--line); color:var(--accent); font-family:var(--mono); font-weight:700; font-size:12px; display:flex; align-items:center; justify-content:center}
+  .steps li b{grid-column:2; grid-row:1; color:var(--ink)} .steps li p{grid-column:2; grid-row:2; margin:3px 0 0; color:var(--ink2); font-size:14px}
+  .steps li code{font-size:.85em}
+  .code{background:var(--surface2); border:1px solid var(--line); border-radius:10px; padding:13px 15px; overflow-x:auto; font-family:var(--mono); font-size:12px; color:var(--ink); line-height:1.65; margin:14px 0; white-space:pre; max-width:100%}
+  .code .c{color:var(--ink2)} .code .k{color:var(--accent)}
+  .defs{display:grid; gap:0; max-width:80ch}
+  .defs .row{display:grid; grid-template-columns:170px 1fr; gap:16px; font-size:14px; padding:11px 0; border-bottom:1px solid var(--line)}
+  .defs b{font-family:var(--mono); font-size:12.5px; color:var(--ink)}
+  .defs .d{color:var(--ink2)}
+  .gauntlet{display:flex; flex-direction:column; gap:3px; font-family:var(--mono); font-size:12.5px; max-width:660px}
+  .gauntlet .g{display:flex; align-items:center; gap:12px; padding:10px 13px; border:1px solid var(--line); border-radius:8px; background:var(--surface)}
+  .gauntlet .g .ck{color:var(--up); font-weight:700; flex:0 0 auto}
+  .gauntlet .g .cond{color:var(--ink)} .gauntlet .g .res{margin-left:auto; color:var(--ink2); white-space:nowrap}
+  .reading{display:grid; grid-template-columns:1fr 1fr; gap:14px; margin:20px 0 6px; max-width:80ch}
+  .rp{border:1px solid var(--line); border-radius:12px; background:var(--surface); padding:14px 16px}
+  .rp .rt{font-family:var(--mono); font-size:11px; letter-spacing:.12em; text-transform:uppercase; color:var(--accent); margin-bottom:6px}
+  .rp p{margin:0; font-size:13.5px; color:var(--ink2)}
+  .rp b{color:var(--ink)}
+  @media(max-width:640px){ .reading{grid-template-columns:1fr} .defs .row{grid-template-columns:1fr; gap:2px} }
+
+  /* screenshot placeholders */
+  .shots{display:grid; grid-template-columns:repeat(auto-fit,minmax(238px,1fr)); gap:14px; margin:6px 0}
+  .shot{border:1.5px dashed color-mix(in srgb,var(--line) 78%,var(--ink)); border-radius:12px; background:var(--surface2); min-height:160px; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:18px 16px; gap:7px; margin:0}
+  .shot svg{color:var(--ink2); opacity:.55; margin-bottom:2px}
+  .shot .sid{font-family:var(--mono); font-size:10px; letter-spacing:.18em; font-weight:700; color:var(--accent)}
+  .shot .stt{font-family:var(--mono); font-size:13px; font-weight:700; color:var(--ink)}
+  .shot .scap{font-size:12px; color:var(--ink2); line-height:1.45; max-width:30ch}
+  .shot .sfile{font-family:var(--mono); font-size:9.5px; color:var(--ink2); opacity:.72; margin-top:3px}
+
+  footer{margin-top:72px; padding-top:22px; border-top:1px solid var(--line); font-family:var(--mono); font-size:11.5px; color:var(--ink2); display:flex; flex-wrap:wrap; gap:6px 18px; justify-content:space-between}
+  footer b{color:var(--ink); font-weight:600}
+
+  @media (prefers-reduced-motion:reduce){ .live .arrow{animation:none} .livedot{animation:none} }
+  @media (max-width:760px){ .two{grid-template-columns:1fr} }
+  @media (max-width:640px){ .wrap{padding:40px 14px 72px} .panel{padding:24px 16px} }
+</style>
+<style>
+  .wrap{max-width:900px}
+  .kicker .navsep{opacity:.45;margin:0 3px}
+  .kicker a.navhome{color:var(--ink2);border-bottom:0;text-decoration:none}
+  .kicker a.navhome:hover{color:var(--accent)}
+  .doc h2{font-family:var(--mono);font-weight:700;font-size:15px;letter-spacing:.2em;text-transform:uppercase;
+    color:var(--ink);margin:64px 0 4px;padding-bottom:12px;border-bottom:1px solid var(--line)}
+  .doc h2 .hn{color:var(--accent);margin-right:12px}
+  .doc h3{margin:34px 0 8px}
+  .doc p{font-size:15.5px;color:var(--ink);margin:0 0 15px;max-width:78ch}
+  .doc a{color:var(--accent);text-decoration:none;border-bottom:1px solid color-mix(in srgb,var(--accent) 40%,transparent)}
+  .doc a:hover{border-bottom-color:var(--accent)}
+  .doc strong{color:var(--ink);font-weight:670}
+  .doc em{color:var(--ink2);font-style:italic}
+  .doc ul,.doc ol{max-width:78ch;padding-left:1.3em;margin:0 0 15px}
+  .doc li{margin:.42em 0;font-size:15px;color:var(--ink)}
+  .doc li::marker{color:var(--accent)}
+  .doc hr{border:0;border-top:1px solid var(--line);margin:8px 0}
+  .doc blockquote{margin:18px 0;padding:14px 18px;border:1px solid var(--line);border-left:3px solid var(--accent);
+    border-radius:0 12px 12px 0;background:var(--surface);color:var(--ink2);max-width:80ch}
+  .doc blockquote p{color:var(--ink2);margin:0}
+  .doc blockquote strong{color:var(--ink)}
+  .doc pre{background:var(--surface2);border:1px solid var(--line);border-radius:10px;padding:14px 16px;
+    overflow-x:auto;font-family:var(--mono);font-size:12px;color:var(--ink);line-height:1.6;margin:16px 0;white-space:pre}
+  .doc pre code{background:none;border:0;padding:0;font-size:1em;color:inherit}
+</style>
+</head><body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><symbol id="helm" viewBox="0 0 512 512"><path fill-rule="nonzero" d="M255.406 17.75C189.313 39.42 124.536 85.124 79.03 150.344c21.238 57.44 32.72 94.314 32.72 131.375 0 36.493-11.52 73.723-32.125 129.655 49.72 36.73 100.08 58.95 150.313 64.938-5.052-60.378-9.83-120.748 1.593-181.125-30.644-3.28-61.384-13.286-92.03-30.72v-71.312c80.67 42.255 158.908 41.547 242.063 0v71.313c-30.06 14.376-60.192 24.722-90.25 29.28 8.684 60.46 7.723 120.915 2.03 181.375 46.386-7.335 92.89-28.824 139.032-64.312-33.966-112.954-34.03-145.933.594-260.47C391.162 84.844 317.924 39.89 255.405 17.75zm-75.125 212c-11.16-.13-19.646 3.174-21.25 9.156-2.33 8.7 10.778 19.76 29.282 24.72 18.505 4.957 35.388 1.92 37.72-6.782 2.33-8.7-10.775-19.76-29.282-24.72-5.783-1.55-11.396-2.315-16.47-2.374zm160.69 0c-5.074.06-10.687.825-16.47 2.375-18.507 4.96-31.613 16.018-29.28 24.72 2.33 8.7 19.213 11.738 37.717 6.78 18.505-4.958 31.613-16.018 29.282-24.72-1.604-5.98-10.09-9.286-21.25-9.155z"/></symbol></svg>
+<svg class="watermark" viewBox="0 0 512 512" aria-hidden="true"><use href="#helm"/></svg>
+<div class="wrap doc">
+<header>
+<p class="kicker"><svg class="brandmark" viewBox="0 0 512 512" aria-hidden="true"><use href="#helm"/></svg><span class="livedot"></span> Sentinel Suite · NinjaTrader 8 · living document<span class="navsep">·</span><a class="navhome" href="SENTINEL_DOCS.html">Docs home →</a></p>
+<h1>The Sentinel Suite — Field Manual</h1>
+</header>
+<blockquote><p><strong>⚠ SUPERSEDED — merged into <code>Docs/SENTINEL_PROCESS_ATLAS.html</code>; facts here are stale.</strong> Current state (2026-07-14): <strong>SentinelCore v1.31.0 · Council v1.6.3 / 22 voters · SentinelFlux is now the first genuinely orthogonal axis — NOT Intermarket.</strong> This prose was folded into the canonical, illustrated field manual (the flight-instrument HTML with the diagrams <em>and</em> this prose in one document). <strong>Edit the HTML from now on; this <code>.md</code> is kept as the prose source of record only</strong> — do not trust its version/voter/axis details. Anything not yet carried across (the full per-tool catalog prose, the exhaustive open-questions log) still lives here for reference.</p></blockquote>
+<blockquote><p><strong>STATUS: DRAFT v0.1 — for us to read and argue with.</strong> This is the seed of the official Sentinel Suite manual. It is written to take a reader from <em>"I have no idea what any of this is"</em> all the way to <em>"I can run it, extend it, and trust it."</em> Everything technical here was pulled straight from the source on 2026-07-07 (SentinelCore internal <strong>v1.13.0</strong> as of the 2026-07-08 update — the <strong>Bridge</strong> shipped and the WAE voter landed since the first draft), so signatures are real, not remembered. Where something is <strong>planned but not built</strong>, it is labelled 📝. Where it needs live validation, it is labelled ⚠. Mark it up freely — the open questions are collected at the very end.</p></blockquote>
+<hr>
+<h3>Table of contents</h3>
+<ol>
+<li><a href="#part-0--5-minute-quickstart">Part 0 — 5-minute quickstart (see it work before any theory)</a></li>
+<li><a href="#part-i--the-vision-from-zero">Part I — The Vision (from zero)</a></li>
+<li><a href="#part-ii--the-mental-model-how-it-all-fits">Part II — The mental model: how it all fits</a></li>
+<li><a href="#part-iii--the-component-catalog">Part III — The component catalog (every file, what it does, how it connects)</a></li>
+<li><a href="#part-iv--the-seam-bus-reference">Part IV — The seam bus reference (the <code>…State</code> contracts)</a></li>
+<li><a href="#part-v--extending-sentinel">Part V — Extending Sentinel: hook in a new voter + get logging working</a></li>
+<li><a href="#part-vi--rapid-maemfe-testing-with-the-excursion-lab">Part VI — Rapid MAE/MFE testing with the Excursion lab</a></li>
+<li><a href="#part-vii--the-safety-model">Part VII — The safety model (Gate · Ledger · Alerts)</a></li>
+<li><a href="#part-viii--a-worked-example">Part VIII — A worked example: GC FC-Short, raw signal → graded edge</a></li>
+<li><a href="#part-ix--glossary-file-index-and-open-questions">Part IX — Glossary, file index, and open questions</a></li>
+</ol>
+<hr>
+<h2>How to read this manual</h2>
+<p>This is <strong>one manual with two reading paths</strong> — we deliberately did <em>not</em> split it into separate Trader and Coder books, because the best trader-users eventually want to peek under the hood and the coders need the trader's mental model first. Follow the path that fits you today; cross over whenever you're curious.</p>
+<pre><code>        ╔═══════════════════════════════════════════════════════════════╗
+        ║  EVERYONE starts here:  Part 0 (quickstart) → Part I → Part II ║
+        ╚═══════════════════════════════════════════════════════════════╝
+                          │                                │
+              ┌───────────┘                                └───────────┐
+              ▼                                                        ▼
+   ┌───────────────────────────┐                      ┌───────────────────────────────┐
+   │  TRADER PATH              │                      │  CODER PATH                    │
+   │  III  component catalog   │                      │  IV   the seam bus reference   │
+   │  VI   MAE/MFE lab         │                      │  V    extending Sentinel       │
+   │  VIII worked example      │                      │  VII  the safety model         │
+   │  VII  safety (operate it) │                      │  VIII worked example (the loop)│
+   └───────────────────────────┘                      └───────────────────────────────┘
+              └────────────────────┬───────────────────────────┘
+                                   ▼
+                        IX  glossary · file index · open questions</code></pre>
+<ul>
+<li><strong>"I just want to run it."</strong> → Part 0, then I–III, then VI (find your edge) and VIII (see the whole loop), then the <em>operate-it</em> half of VII. Skip IV–V.</li>
+<li><strong>"I'm going to write code for it."</strong> → Part 0 and I–II for the model, then IV (the contracts), V (the recipes), VII (fail-open/closed policy), and VIII to see a real end-to-end trace.</li>
+</ul>
+<hr>
+<h2>Part 0 — 5-minute quickstart</h2>
+<blockquote><p><strong>Goal:</strong> see the suite <em>breathe</em> before you read a word of theory. In five minutes you'll have sensors publishing, the Council fusing them into one verdict, and a glass card on your chart updating live. No orders, no risk — this is read-only.</p></blockquote>
+<p><strong>You need:</strong> NinjaTrader 8 with the Custom tree compiled clean (F5 in the NinjaScript Editor — green, no errors). A GC (gold) chart is the reference instrument used throughout this manual.</p>
+<h4>The steps</h4>
+<ol>
+<li><strong>Open a chart.</strong> New → Chart → <strong>GC</strong> (front month), any bar type. A 100-tick or 1-minute chart is fine to start.</li>
+<li><strong>Add four sensors.</strong> Right-click the chart → Indicators. In the picker, open the <strong><code>Sentinel</code> folder</strong> (suite tools cluster there) and add:</li>
+<li><strong>Eye</strong> — publishes <code>EyeVerdict</code> (the adaptive GodTrades scanner's directional qualification; the Council's <strong>heaviest voter</strong>, weight 1.4).</li>
+<li><strong>SentinelTrend</strong> — publishes <code>TrendState</code> (direction).</li>
+<li><strong>ADXPro</strong> — publishes <code>AdxState</code> (is there a trend, and which way).</li>
+<li><strong>WoodiesCCIPro</strong> — publishes <code>CciState</code> (momentum bias).</li>
+</ol>
+<p>   &gt; All four publish by default (<code>PublishState</code> / <code>PublishRegime</code> is ON out of the box). You've just    &gt; put four voters on the bus without configuring anything — the Eye leading, three price-lenses    &gt; behind it.    &gt;    &gt; <strong>Why the Eye is here:</strong> the other three are all price-derived, so they tend to nod along with    &gt; each other. The Eye is your qualifier — it's what makes the opening card more than three echoes    &gt; of the same candle. (See the independence caveat in Part II.)</p>
+<ol>
+<li><strong>Add the brain.</strong> Add <strong>Council</strong> from the same <code>Sentinel</code> folder. It immediately starts reading whatever sensors are publishing for GC and draws a <strong>glass card</strong> in the top-right corner.</li>
+<li><strong>Read the card.</strong> The Council card shows, live:</li>
+<li>a <strong>LONG / SHORT / FLAT</strong> pill (the fused <code>Bias</code>),</li>
+<li>a big <strong>conviction %</strong> and a <strong>size ×</strong> multiplier,</li>
+<li>a row of <strong>voter chips</strong> (green = agrees with the bias, red = disagrees, grey = neutral),</li>
+<li>a footer tally <code>▲agree ▼disagree · N voters</code>,</li>
+<li>and, when something blocks it, a red <strong><code>VETO: …</code></strong> line.</li>
+<li><strong>Watch it change.</strong> As price moves, sensors republish, chips flip color, and conviction breathes up and down. When the sensors line up, conviction climbs; when they fight, it drops toward the floor and <code>Bias</code> goes FLAT. <strong>That's the whole idea in one card:</strong> many signals → one honest verdict.</li>
+<li><strong>(Optional) open the dashboard.</strong> Control Center → New → <strong>SentinelDashboard</strong>. Twelve tabs; for now just note the <strong>Excursion</strong> and <strong>Test</strong> tabs — you'll use them in Parts VI and VII.</li>
+</ol>
+<h4>What you just proved</h4>
+<ul>
+<li>Sensors don't know the Council exists — they just <strong>publish</strong> (<code>Set…State</code>).</li>
+<li>The Council doesn't know your sensors — it just <strong>reads what's on the bus</strong> (<code>Get…State</code>) and <strong>fuses</strong> it.</li>
+<li>Add or remove a sensor and the Council's voter count changes automatically. <strong>Nothing is wired by hand.</strong> That decoupling is the entire architecture, and you're now looking at it.</li>
+</ul>
+<p>Everything past this point explains <em>why</em> it's built this way, <em>what</em> every piece does, and <em>how</em> to extend it. If you only ever use the suite as a trader, Parts I–III and VI are your world. If you'll write code for it, add Parts IV–V and VII.</p>
+<hr>
+<h2>Part I — The Vision (from zero)</h2>
+<h3>What problem is this solving?</h3>
+<p>A serious NinjaTrader chart ends up with a dozen indicators screaming at once — a trend line, a CCI, an ADX, a volatility band, a volume-profile, a session clock — plus a strategy trying to trade, plus (if you're funded) a prop firm's rules hanging over your head like a guillotine. Nothing on that chart <em>talks to anything else.</em> The trend indicator doesn't know the CCI disagrees. The strategy doesn't know a news blackout starts in four minutes. The copier mirroring your fills doesn't know the kill-switch just tripped. Every tool is an island.</p>
+<p><strong>The Sentinel Suite is the plumbing that turns that pile of islands into one nervous system.</strong></p>
+<p>It is not one indicator. It is a <em>design</em> — a shared spine that every tool plugs into so they share a vocabulary, a safety layer, a memory, and (as of 2026-07-07) a single fused opinion about what to do next. The name captures the intent: a <strong>sentinel</strong> watches, guards, and warns.</p>
+<h3>The four roles every trading system needs</h3>
+<p>The whole suite is organized around four jobs. Every file belongs to one of them:</p>
+<div class="tblwrap"><table><thead><tr><th>#</th><th>Role</th><th>Plain-English job</th><th>Suite tools</th></tr></thead><tbody><tr><td>1</td><td><strong>Signal sources</strong></td><td>"Is there an edge, and which way?"</td><td>SentinelTrend, WoodiesCCIPro, ADXPro, VolEnvelope, CompressionBase, Sentinel WAE, the Eye, the orthogonal axes (Clock/Participation/Location/MTF/Intermarket)</td></tr><tr><td>2</td><td><strong>Decision</strong></td><td>"Given <em>all</em> the signals, what's the verdict?"</td><td><strong>The Council</strong> (the brain)</td></tr><tr><td>3</td><td><strong>Execution</strong></td><td>"Put the trade on and manage its life."</td><td>Deck (manual), GTrader21 (auto), Bridge (auto ✅)</td></tr><tr><td>4</td><td><strong>Observation &amp; safety</strong></td><td>"Keep us alive, remember everything, prove it later."</td><td>SentinelCore (Gate/Ledger/Alerts), Risk, Dashboard, State/Alert services, Copier, Log, Lens, Arc</td></tr></tbody></table></div>
+<h3>The one big idea: a decoupled seam bus</h3>
+<p>Here is the single architectural decision the whole suite hangs on:</p>
+<blockquote><p><strong>Tools never call each other directly. They publish small typed facts to a shared bus (<code>SentinelCore</code>), and read facts back off it.</strong> A sensor doesn't know the Council exists; it just publishes <code>TrendState</code>. The Council doesn't know GTrader21 exists; it just publishes <code>CouncilState</code>. GTrader21 doesn't re-derive confluence; it just reads <code>CouncilState</code>.</p></blockquote>
+<p>This is the "leader/execution decoupling" principle that emerged from the copier work, generalized to the entire suite. It buys three things:</p>
+<ul>
+<li><strong>Fault isolation</strong> — one tool crashing can't take another down; a missing publisher just means its fact is absent, and every reader treats <em>absent = abstain</em>.</li>
+<li><strong>Independent evolution</strong> — you can rewrite the Eye's internals completely; as long as it still publishes an <code>EyeVerdict</code>, nothing downstream cares.</li>
+<li><strong>One decision, many consumers</strong> — the Council fuses once; the strategy, the Deck, and any future Bridge all read the <em>same</em> verdict instead of each re-inventing it (and disagreeing).</li>
+</ul>
+<h3>The nautical naming (so you're not lost later)</h3>
+<p>The team names execution surfaces after a ship:</p>
+<ul>
+<li><strong>Deck</strong> — where you trade <em>by hand</em> (the manual order deck).</li>
+<li><strong>Bridge</strong> ✅ — where you command the <em>autopilot</em> (the automated chart trader; <strong>built</strong> — consumes <code>CouncilState</code>, live-validated on SIM).</li>
+<li><strong>Council</strong> — the advisors who vote on what to do (the confluence brain).</li>
+<li><strong>Helm</strong> ✅ — where you <em>grab the wheel</em> of a running autopilot without stopping the car (the interdiction layer; <strong>built</strong> — commands a live actor via published intents, plumbing-validated 2026-07-15).</li>
+</ul>
+<p>And the safety/sensor layer is the <strong>Sentinel</strong> — the watch that never sleeps.</p>
+<hr>
+<h2>Part II — The mental model: how it all fits</h2>
+<h3>The layer cake</h3>
+<p>Read this bottom-up. Each layer only knows about the one below it via the bus.</p>
+<pre><code>┌──────────────────────────────────────────────────────────────────────────┐
+│  EXECUTION      Deck (manual)      GTrader21 (auto)      Bridge ✅         │
+│                    │  reads CouncilState / consults Gate at submit         │
+├──────────────────────────────────────────────────────────────────────────┤
+│  DECISION         The Council   ── fuses 9 voters + 6 modulators/vetoes    │
+│                    │  publishes ONE CouncilState (bias·conviction·size)     │
+├──────────────────────────────────────────────────────────────────────────┤
+│  SENSING     9 voters  +  5 orthogonal axes   (each publishes its …State)  │
+│              Eye·Trend·CCI·ADX·VolEnv·Brick·Compression·Intermarket·WAE     │
+│              + Clock·Participation·Location·MTF (modulators/veto)          │
+├──────────────────────────────────────────────────────────────────────────┤
+│  BUS + SAFETY   ★ SentinelCore ★   seams · Gate · Ledger · State · Alerts  │
+│                 kill-switch · feed-health · governor · news · rollover     │
+├──────────────────────────────────────────────────────────────────────────┤
+│  PRESENTATION   SentinelSkin (glass cards) · SentinelDashboard (12 tabs)   │
+│                 SentinelSkin platform theme (candles/chrome)               │
+└──────────────────────────────────────────────────────────────────────────┘</code></pre>
+<h3>The core data flow (follow one signal from birth to graded outcome)</h3>
+<pre><code>   ┌── SENSORS ──┐        Set…State()          ┌──────────────────────┐
+   │ SentinelTrend│ ───────────────────────▶   │                      │
+   │ WoodiesCCI   │ ───────────────────────▶   │    SentinelCore      │
+   │ ADXPro       │ ───────────────────────▶   │    (the seam bus)    │
+   │ VolEnvelope  │ ───────────────────────▶   │                      │
+   │ Compression  │ ───────────────────────▶   │  keyed by root sym,  │
+   │ Intermarket  │ ───────────────────────▶   │  staleness-gated     │
+   │ Clock/Part/  │ ───────────────────────▶   │                      │
+   │ Location/MTF │                            └───────┬──────────────┘
+   └──────────────┘                                    │ Get…State(inst, maxAgeSec)
+                                                        ▼
+                                              ┌──────────────────────┐
+                                              │     THE COUNCIL      │
+                                              │  weighted vote →     │
+                                              │  Bias / Conviction / │
+                                              │  SizeMult + Reasons  │
+                                              └───────┬──────────────┘
+                                                      │ SetCouncilState()
+                                                      ▼
+                              ┌───────────────────────────────────────┐
+                              │            SentinelCore                │
+                              └───────┬───────────────────────────────┘
+             GetCouncilState()        │
+                    ┌─────────────────┘
+                    ▼
+        ┌────────────────────────┐   gate on HasEdge + Aligned(dir)
+        │  EXECUTOR (GTrader21 / │   size = baseQty × SizeMult
+        │  Bridge / Deck ARM)    │──────────────┐
+        └───────────┬────────────┘              ▼
+                    │                   SentinelCore.GateEntry()  ← final choke point
+                    │                   (fail-CLOSED for autos)
+                    ▼ FIRE                        │ IsClear?
+        ┌────────────────────────┐               ▼
+        │ order submitted; on     │        submit to broker
+        │ fill → Ledger.Fill()    │
+        │ + record verdict to     │───────▶  SentinelCore.Ledger (daily JSONL)
+        │ Ledger/Log on FIRE      │                 │
+        └─────────────────────────┘                 ▼
+                                            Lens / Dashboard grade it later
+                                            (did agreement actually pay?)</code></pre>
+<p>Three ideas to lock in from that diagram:</p>
+<ol>
+<li><strong>Publish → fuse → consume → record.</strong> That loop is the whole suite. Everything else is detail.</li>
+<li><strong>The seam is advisory; the Gate is authoritative.</strong> Reading <code>CouncilState</code> tells you <em>whether there's an edge</em>. It does <strong>not</strong> put the trade on safely — you still call <code>GateEntry</code> at submit time. (See <a href="#part-vii--the-safety-model">Part VII</a>.)</li>
+<li><strong>Every fire is recorded so it can be graded.</strong> The point of writing the verdict into the Ledger on each fire is that <strong>Lens</strong> can later answer <em>"does the Council's confidence actually make money?"</em> — the weights are a hypothesis until the data says otherwise.</li>
+</ol>
+<h3>The honest caveat you must keep repeating</h3>
+<p>Today, most of the Council's voters are <strong>price-derived</strong> — ADX, CCI, Trend, VolEnvelope, and Brick all ultimately echo the same OHLC stream. When they "agree," that is not five witnesses confirming a fact; it's one witness saying the same thing five ways.</p>
+<blockquote><p><strong>Conviction measures AGREEMENT, not CONFIRMATION.</strong></p></blockquote>
+<p>The suite only gets genuinely smarter as <strong>orthogonal</strong> axes (independent information) are added. That is exactly why the five orthogonal axes — <strong>Clock, Participation, Location, MTF, Intermarket</strong> — were built. Intermarket in particular (correlated instruments like ZN/ZB for gold) is real outside information, not another lens on the same candles. Keep this caveat loud in every design conversation.</p>
+<hr>
+<h2>Part III — The component catalog</h2>
+<p>Every entry: <strong>what it is</strong>, its <strong>file + status</strong>, what it <strong>publishes/consumes</strong>, and how it <strong>connects</strong>. Status legend: ✅ shipped · 🔨 building · 📝 designed/planned · 💡 idea · ⚠ needs live validation · ❄️ frozen checkpoint.</p>
+<h3>3.0 The two files everything depends on</h3>
+<p>Every subscribed Sentinel indicator hard-references <strong>exactly two</strong> AddOn files. That's the entire compile dependency — no service stack required.</p>
+<h4>★ SentinelCore — the bus + the safety substrates</h4>
+<ul>
+<li><strong>File:</strong> <code>AddOns/SentinelCore_v1_0_0.cs</code> · <strong>Status:</strong> ✅ internal <strong>v1.13.0</strong> (added the <code>WaeState</code> voter seam)</li>
+<li><strong>Namespace/symbol:</strong> <code>NinjaTrader.NinjaScript.AddOns.Sentinel.SentinelCore</code> — a <code>static class</code> with a <strong>deliberately unversioned name</strong> (other tools bind to the stable symbol; two copies = CS0101). Edited <strong>in place</strong>; the version lives in a <code>const string Version</code>.</li>
+<li><strong>What it holds:</strong> the <code>…State</code> seam registry (§IV), the <strong>kill-switch</strong> (global + per-instrument scoped), <strong>feed-health</strong> gate, the combined entry gates (<code>CanEnter</code>/<code>CanAct</code>/<code>CanActInstrument</code>), the <strong>Order Gate</strong> (<code>GateEntry</code>/<code>SizeForRisk</code>/<code>TickValue</code>), the <strong>Ledger</strong> (daily JSONL event stream), the <strong>State</strong> store (restart-surviving blobs), <strong>Alerts</strong> (2-tier), and the account-level registries: <strong>governor</strong>, <strong>trailing drawdown</strong>, <strong>account profiles</strong>, <strong>news lockout</strong>, <strong>rollover</strong>, <strong>config-use</strong>, <strong>fleet slots</strong> (Arc), <strong>manual-assist tickets</strong>, <strong>watch list</strong>.</li>
+<li><strong>Connects to:</strong> <em>everything.</em> It is the one cross-tool dependency by design.</li>
+</ul>
+<h4>★ SentinelSkin — the look</h4>
+<ul>
+<li><strong>File:</strong> <code>AddOns/SentinelSkin.cs</code> · <strong>Status:</strong> ✅ (internal v1.1, CardLayout)</li>
+<li><strong>What it holds:</strong> the <code>SentinelSkin.Painter</code> (SharpDX glass-card primitives: <code>Card</code>, <code>Dot</code>, <code>Text</code>, <code>Pill</code>, <code>Money</code>, <code>Track</code>, <code>Gauge</code>, <code>Sparkline</code>, <code>Divider</code>), the color palette tokens (<code>CVoid/CPanel/CCard/CLine/CInk/CAccent/CUp/CDown/CWarn/…</code>), and <strong><code>CardLayout</code></strong> — a shared anti-overlap registry so cards from different tools docked to the same corner auto-stack instead of covering each other. Also defines <code>enum SentinelCardCorner</code>.</li>
+<li><strong>The one design rule:</strong> <strong>cyan = live/watching (the only accent); green/red = money + direction.</strong> Palette: <code>void #0A0E17</code>, <code>panel #111726</code>, <code>ink #E9EEF7</code>, <strong><code>accent</code> cyan <code>#3FD1E0</code></strong>, <strong><code>up</code> green <code>#25D08B</code></strong>, <strong><code>down</code> red <code>#FF5C6A</code></strong>, <code>warn</code> amber <code>#F2B34C</code>.</li>
+<li><strong>Separately:</strong> a platform <strong>skin</strong> at <code>templates/Skins/Sentinel/</code> themes the whole NT chrome (candles, caption bar, selection wash). That's a theme, not a code dependency.</li>
+</ul>
+<blockquote><p><strong>Minimal shippable unit:</strong> any single Sentinel indicator = <strong>3 files</strong> (itself + these two). With the services absent, every <code>Get…State</code> returns no-data and the tool degrades to <strong>neutral, throwing nothing.</strong> That "standalone-safe" property is a hard rule.</p></blockquote>
+<h3>3.1 The Decision layer</h3>
+<h4>The Council — the brain</h4>
+<ul>
+<li><strong>File:</strong> <code>Indicators/Council_v1_0_0.cs</code> (<code>Indicators.Sentinel</code>) · <strong>Status:</strong> ✅ v1.0.0, live on GC</li>
+<li><strong>What it is:</strong> a <strong>read-only chart indicator that places NO ORDERS.</strong> It is the fusion point the suite was missing — every sensor already published a state, but nothing <em>combined</em> them.</li>
+<li><strong>What it does:</strong> reads every published sensor seam for its instrument, runs a <strong>weighted vote</strong>, and produces one verdict — <strong>Bias</strong> (−1/0/+1), <strong>Conviction</strong> (0..1 = how aligned the fresh voters are), <strong>SizeMult</strong> (0..1, 0 when vetoed), agree/disagree/voter tallies, and a human-readable <strong>Reasons</strong> audit string (e.g. <code>EYE▲ TRND▲ CCI▼ ADX~ ENV▲ · clk:Midday · vol×0.8 · into VWAP</code>).</li>
+<li><strong>Publishes:</strong> <code>SentinelCore.CouncilState</code> (so any executor consults the <em>same</em> decision) + hidden transparent <code>Bias</code>/<code>Conviction</code> plots (so the Deck's generic plot-reader can arm off it). Draws a glass card; logs verdict <strong>changes</strong> (not per-tick) to <code>sentinel.log</code>.</li>
+<li><strong>The 9 voters + 6 modulators/vetoes</strong> are detailed in §V (that's also where you learn to add one).</li>
+<li><strong>Connects to:</strong> <em>upward</em> every sensor seam; <em>downward</em> to GTrader21/Bridge/Deck via <code>CouncilState</code>.</li>
+</ul>
+<h3>3.2 The Sensing layer — the 9 voters</h3>
+<p>Each is a <code>NinjaTrader</code> indicator in <code>Indicators.Sentinel</code>, publishes a <code>…State</code> seam (default ON), and is wired into the Council. The parenthesized number is its <strong>default Council weight.</strong></p>
+<div class="tblwrap"><table><thead><tr><th>Sensor</th><th>File</th><th>Publishes</th><th>Weight</th><th>The read it contributes</th></tr></thead><tbody><tr><td><strong>Eye</strong></td><td><code>Eye_v1_1_0.cs</code></td><td><code>EyeVerdict</code></td><td>1.4</td><td>Adaptive GodTrades scanner's directional qualification (+1/−1/0)</td></tr><tr><td><strong>SentinelTrend</strong></td><td><code>SentinelTrend_v1_0_0.cs</code></td><td><code>TrendState</code></td><td>1.0</td><td>ATR trailing-line direction (supersedes the whole TrendMagic family)</td></tr><tr><td><strong>WoodiesCCIPro</strong></td><td><code>WoodiesCCIPro_v1_0_0.cs</code></td><td><code>CciState</code></td><td>0.8 (×1.5 if strong)</td><td>Woodies CCI trend state −2..+2</td></tr><tr><td><strong>ADXPro</strong></td><td><code>ADXPro_v1_2_0.cs</code></td><td><code>AdxState</code></td><td>0.6 (×1.25 if strong)</td><td>ADX trend on/off + DI bias</td></tr><tr><td><strong>VolEnvelope</strong></td><td><code>VolEnvelope_v0_2_0.cs</code></td><td><code>EnvelopeState</code></td><td>0.6</td><td>"Honest Bollinger" regime (squeeze/trend/expansion)</td></tr><tr><td><strong>Brick</strong> (bar type)</td><td><code>BarsTypes/SentinelTBars_v1_0_0.cs</code></td><td><code>BrickState</code></td><td>0.5</td><td>Adaptive HA/Renko brick direction</td></tr><tr><td><strong>CompressionBase</strong></td><td><code>CompressionBase_v1_3_0.cs</code></td><td><code>CompressionState</code></td><td>0.7</td><td>Coil-base breakout direction ±1</td></tr><tr><td><strong>Intermarket</strong></td><td><code>Intermarket_v1_0_0.cs</code></td><td><code>IntermarketState</code></td><td>0.6</td><td>Correlated-instrument lean (ZN/ZB for gold) — <strong>the one truly orthogonal voter</strong></td></tr><tr><td><strong>Sentinel WAE</strong></td><td><code>SentinelWAE_v1_0_0.cs</code></td><td><code>WaeState</code></td><td>0.7</td><td>Waddah Attar Explosion — confirmed momentum-explosion breakout ±1 (fires only when power &gt; explosion line &gt; dead zone)</td></tr></tbody></table></div>
+<h3>3.3 The Sensing layer — the 5 orthogonal axes</h3>
+<p>These are the independence engine. Four <strong>modulate</strong> the Council's conviction rather than vote; Intermarket (above) is the fifth and it <em>does</em> vote.</p>
+<div class="tblwrap"><table><thead><tr><th>Axis</th><th>File</th><th>Publishes</th><th>Council role</th></tr></thead><tbody><tr><td><strong>Clock</strong></td><td><code>Clock_v1_0_0.cs</code></td><td><code>ClockState</code> (session phase / mins-to-close / kill window)</td><td>midday &amp; off-session <strong>damp</strong> + kill-window <strong>veto</strong></td></tr><tr><td><strong>Participation</strong></td><td><code>Participation_v1_0_0.cs</code></td><td><code>ParticipationState</code> (time-normalized RVOL + climax/dry-up)</td><td>RVOL <strong>damp</strong> (thin tape → cut conviction)</td></tr><tr><td><strong>Location</strong></td><td><code>Location_v1_0_0.cs</code></td><td><code>LevelState</code> (VWAP/PDH-PDL/OR/IB/session H-L + nearest level)</td><td>into-a-level <strong>damp</strong> (don't trade into the wall)</td></tr><tr><td><strong>MTF</strong></td><td><code>Mtf_v1_0_0.cs</code></td><td><code>MtfState</code> (1/5/15/60/240 ladder; per-TF = hosted SentinelTrend)</td><td>counter-higher-TF <strong>damp</strong></td></tr><tr><td><strong>Intermarket</strong></td><td><code>Intermarket_v1_0_0.cs</code></td><td><code>IntermarketState</code></td><td><strong>8th VOTER</strong> (0.6)</td></tr></tbody></table></div>
+<p><strong>Parked orthogonal axes</strong> (kept on the list, not built): breadth internals ($TICK/$ADD — feed is delayed and it's an ES/NQ tool), book/spread microstructure, VIX/vol-term-structure regime, and a dedicated <code>EventState</code> news seam beyond the existing News.conf → news-lockout path.</p>
+<h4>The veto sensor — LiquidityWalls</h4>
+<ul>
+<li><strong>File:</strong> <code>Indicators/LiquidityWalls_v1_0_0.cs</code> · <strong>Status:</strong> ✅ built (⚠ needs live order-flow test)</li>
+<li><strong>What it is:</strong> an order-flow <strong>absorption</strong> detector (tick-rule delta + OLS regression + z-score) that maps ATR-sized <strong>wall zones</strong> — prices where large resting liquidity is absorbing aggression.</li>
+<li><strong>Publishes:</strong> <code>LiquidityState</code> (z-score, <code>AbsorbSide</code>, nearest wall above/below + distances). It isn't a voter — it's a <strong>hard veto</strong>: the Council calls <code>LiquidityState.BlocksEntry(bias, ticks)</code> and zeroes conviction if a wall sits on the intended side ("don't buy straight into resistance").</li>
+<li><strong>Connects to:</strong> the Council's veto chain; any executor that wants to check for a wall before firing.</li>
+</ul>
+<h3>3.4 The Execution layer</h3>
+<h4>GTrader21 — the automated GodTrades strategy</h4>
+<ul>
+<li><strong>File:</strong> <code>Strategies/GTrader21v_0_1_7.cs</code> · <strong>Status:</strong> 🔨 v0.1.7 active (v0.1.6/earlier ❄️)</li>
+<li><strong>What it is:</strong> a GodTrades-signal strategy (BG/FC/OBR) with a ported TrendArchitect WPF trade panel, on-chart risk card, and data-lag safety. <strong>Unmanaged</strong> order engine (owns its own exits).</li>
+<li><strong>Sentinel wiring:</strong> consults <code>CanEnter</code> (fail-CLOSED), registers for feed-watch, gates on Arc/ Eye/Trend, <strong>auto-reads lab <code>.conf</code> files</strong> (§VI) and reports back, does profile-aware sizing + session gating. Fill capture → <code>Ledger.Fill</code>; position-state persist/restore across restart.</li>
+<li><strong>Eye→Council decouple ✅ (v0.1.7):</strong> GTrader21 now has the opt-in <strong><code>UseCouncilGate</code></strong> — it consults the Council's <em>fused</em> verdict instead of the Eye directly, so it's "one strategy among many." (Off by default; the Eye-gate path still works for a frozen fallback.)</li>
+<li><strong>⚠ Read the <code>gtrader21-panel-integration</code> memory before touching its order path</strong> — long, hard-won history of managed-vs-unmanaged order-ownership.</li>
+</ul>
+<h4>Deck — the manual order deck</h4>
+<ul>
+<li><strong>File:</strong> <code>Indicators/Deck_v0_2_2.cs</code> (<code>Indicators.Sentinel</code>) · <strong>Status:</strong> ⚠ SIM-validate</li>
+<li><strong>What it is:</strong> a discretionary manual order deck + account risk card: all order types, all price-entry methods, full trade management (bracket/OCO, breakeven, 7 trail modes, scale), chart-scoped flatten, pop-out/dock, a $-risk sizer, and <strong>on-chart order visuals</strong> with drag-to-adjust + hover-attach.</li>
+<li><strong>The SIGNAL ARM section:</strong> the Deck can <strong>arm or auto-fire off ANY loaded indicator's plot</strong>, discovered at runtime from <code>ChartControl.Indicators</code> (no hardcoded signals). ARM highlights BUY/SELL for a human to confirm; AUTO-FIRE goes fail-CLOSED through the Gate, one-shot per bar, flat-only + opposite-reverse, forces MARKET. Because the Council exposes <code>Bias</code>/<code>Conviction</code> plots, <strong>the Deck can arm directly off the Council.</strong></li>
+<li><strong>Gate policy:</strong> manual actions fail <strong>OPEN</strong> (the human is in the loop); auto-fire fails CLOSED.</li>
+</ul>
+<h4>Bridge — the autopilot ✅</h4>
+<ul>
+<li><strong>File:</strong> <code>Strategies/SentinelBridge_v0_2_0.cs</code> · <strong>Status:</strong> ✅ v0.2.0 (v0.1.0 was headless), <strong>live-validated on SIM</strong> (fired a GC short off the Council, captured in the Ledger/Slippage tab).</li>
+<li><strong>⚠ Namespace exception:</strong> the Bridge lives in the <strong>BASE <code>NinjaTrader.NinjaScript.Strategies</code> namespace — NOT <code>.Strategies.Sentinel</code>.</strong> NT's Strategy selector <em>hides</em> sub-namespaced strategies (verified this session), so the FEDERATED NAMING LAW's namespace layer is deliberately waived for strategies (see §V). Display name <strong>"Sentinel Bridge"</strong>.</li>
+<li><strong>What it is:</strong> the automated counterpart to the Deck — a Council-consuming chart trader. It reads <code>GetCouncilState</code> (<strong>Council-as-signal</strong>: edge-detected, flat-only, one-shot), <strong>sizes ×<code>SizeMult</code></strong>, routes through <code>GateEntry</code> (<strong>fail-CLOSED</strong>), places a <strong>managed bracket</strong>, and <strong>records the verdict on every fire</strong> to the Ledger so Lens can grade the weights.</li>
+<li><strong>v0.2.0 adds:</strong> an on-chart Sentinel <strong>glass card</strong> with a clickable <strong>ARM BRIDGE</strong> button (arming gates firing — nothing fires until you arm it), and <strong><code>UseSentinelConfig</code></strong> which auto-reads the lab's <code>&lt;inst&gt;_COUNCIL_&lt;dir&gt;.conf</code> (written by the Excursion tab's Apply ◆) for its TP/SL.</li>
+<li><strong>Connects to:</strong> <em>upward</em> <code>CouncilState</code>; <em>downward</em> the Gate + Ledger. See [bridge-plan memory].</li>
+</ul>
+<h4>Helm — the interdiction layer ✅</h4>
+<ul>
+<li><strong>Seam:</strong> <code>SentinelCore</code> v1.34.0 · <strong>Reference consumer:</strong> <code>SentinelBridge</code> v0.3.0 · <strong>Surface:</strong> the Cockpit's <strong>⑤ Helm · interdict</strong> rail (<code>SentinelCockpit</code> v0.5.0) · <strong>Status:</strong> ✅ plumbing tier live-validated 2026-07-15 (Pause + Resume round-tripped Cockpit → Bridge → <code>HelmState</code> → Ledger in ~350 ms). <strong>Position tier</strong> (Flatten / BE / MoveStop on a real trade) pending — see the Helm test punchlist.</li>
+<li><strong>What it is (trader):</strong> Helm lets you <strong>grab the wheel of a running Bridge without stopping it</strong> — move a stop, take breakeven, cut size, flatten now, skip the next entry, pause/resume — while the strategy keeps running and stays the sole owner of its orders. That completes the trio: <strong>Deck</strong> (you drive) · <strong>Bridge</strong> (it drives) · <strong>Helm</strong> (you grab the wheel <em>without stopping the car</em>). It supersedes the frozen <strong>GTrader21</strong> prototype.</li>
+<li><strong>How you use it:</strong> open the <strong>Cockpit</strong> (Control Center ▸ New ▸ Sentinel Cockpit), go to the <strong>⑤ Helm · interdict</strong> section, <strong>pick the instrument</strong> — type it in (e.g. <code>NQ</code>) if there's no Council on that chart — then hit a button: <strong>Pause / Resume / Skip / Flatten / BE</strong>, type a price for <strong>Stop→ / Tgt→</strong>, <strong>reduce N</strong> contracts, or <strong>TakeOver / HandBack</strong>. Each button publishes an intent to the running actor, which executes it with its own order handles.</li>
+<li><strong>The asymmetric idea (why it's safe):</strong> <strong>cutting risk is instant</strong> — Flatten, Pause, Skip, tightening a stop all fail <strong>OPEN</strong>, so a panic click is never blocked by a stale seam or an offline service. <strong>Adding risk back must clear the Gate</strong> — Resume, widening a stop, scaling up, and HandBack fail <strong>CLOSED</strong> through <code>GateEntry</code>, exactly like an automated entry. The Gate doesn't care whose finger it was.</li>
+<li><strong>Why Helm never touches an order (the constraint):</strong> a managed position closed by a panel desyncs <code>Position</code> from the account; the managed framework re-asserts <code>SetStopLoss</code>; and <code>Account.Change</code>/<code>Cancel</code> on a strategy order throws and can <em>terminate</em> the strategy. So <strong>Helm owns nothing</strong> — it publishes an intent addressed to a running actor's <code>instanceKey</code>, and the actor stays the sole owner.</li>
+<li><strong>For coders:</strong> the seam is one-shot and idempotent. Helm publishes with <code>SentinelCore.SetHelmIntent(instanceKey, new HelmIntent { Verb = HelmVerb.MoveStop, Price = …, Id, ExpiryUtc })</code>; a consumer <strong>drains it in its loop</strong> with <code>var i = SentinelCore.TakeHelmIntent(_instanceKey)</code> (consumes it, expiry-guarded so a stale intent never fires twice) and <strong>publishes <code>HelmState</code> back</strong> so the Cockpit can read live truth (<code>Set/Get/AllHelmStates</code>, <code>ClearHelm</code>; all keyed by <code>instanceKey</code>). The 10 verbs are <code>Pause · Resume · SkipNext · FlattenNow · MoveStop · MoveTarget · BreakevenNow · Scale · TakeOver · HandBack</code>; <code>MoveStop</code> is context-classified (tighten = risk-reducing, widen = risk-adding).</li>
+<li><strong>Reference consumer caveats (Bridge v0.3.0):</strong> it obeys all 10 verbs, drains every tick (<code>OnMarketData</code>) with an <code>OnBarUpdate</code> backstop, publishes <code>HelmState</code>, Ledgers every intent (<code>"helm-intent"</code> Action + <code>EpisodeId</code> + <code>instanceKey</code>) and marks the episode <code>HumanOverride</code> so the ML Lab excludes/separately-models interdicted trades. <strong>Managed-mode honesty:</strong> a single-entry managed Bridge <strong>refuses Scale-up</strong> (it can't scale-in), and <strong>TakeOver/HandBack collapse to stand-down/resume</strong> (managed mode can't transfer order ownership). "Obey Helm intents" defaults <strong>ON</strong>. The unmanaged-Bridge path is deferred.</li>
+<li><strong>Connects to:</strong> <em>upward</em> the Cockpit surface publishing intents; <em>downward</em> the running actor + the Ledger. See [helm-interdiction-layer memory].</li>
+</ul>
+<h3>3.5 The Observation &amp; Safety layer</h3>
+<div class="tblwrap"><table><thead><tr><th>Tool</th><th>File</th><th>Status</th><th>Role</th></tr></thead><tbody><tr><td><strong>SentinelDashboard</strong></td><td><code>AddOns/SentinelDashboard_v1_0_0.cs</code></td><td>✅ v1.1.4</td><td>Control-center window; <strong>12 tabs</strong>: Copy · Log · Risk · Journal · Slippage · Lens · Eye · Arc · Assist · <strong>Excursion</strong> · Accounts · <strong>Test</strong>. Each tab attaches to a service's <code>.Instance</code>. Reusable WPF chart primitives.</td></tr><tr><td><strong>SentinelRiskService</strong></td><td><code>AddOns/SentinelRiskService_v1_0_0.cs</code></td><td>✅ v1.0</td><td>Feed lag/stall + connection watchdog with hysteresis + auto-recovery; auto-engages the kill-switch (scoped); rollover countdown; hosts the news-lockout + consistency-governor feeds. Fills <code>SentinelCore.FeedHealthProbe</code>.</td></tr><tr><td><strong>SentinelAlertService</strong></td><td><code>AddOns/SentinelAlertService_v1_0_0.cs</code></td><td>✅ v1.0.1</td><td>Subscribes <code>SentinelCore.Alerts.Raised</code> → sound (wav/SystemSounds) + optional push shell command. Config <code>Sentinel\Alerts.conf</code>; the Test tab edits it live.</td></tr><tr><td><strong>SentinelStateService</strong></td><td><code>AddOns/SentinelStateService_v1_0_0.cs</code></td><td>✅ v1.0.7</td><td>2-second snapshot of accounts/positions/orders/P&amp;L/governor → <code>Sentinel\state.json</code> (readable <em>outside</em> NT). Observability, <strong>not</strong> restore.</td></tr><tr><td><strong>Sentinel Copy (Copier)</strong></td><td><code>AddOns/SentinelCopierService_v0_1_0.cs</code></td><td>✅ core validated live (v0.1.0h)</td><td>Headless fill-mirror: Primary→Followers, same-provider prop rule, GC↔MGC cross-trading, kill/governor/session/Eye gates, manual-assist tickets, copy-slippage capture.</td></tr><tr><td><strong>Sentinel Log</strong></td><td><code>AddOns/SentinelLogEngine_v1_0_0.cs</code> + <code>SentinelLogService_v1_0_0.cs</code></td><td>✅</td><td>Zero-touch per-<strong>trade</strong> MAE/MFE + analytics logging → <code>Sentinel\Log\*.jsonl</code>; the Log tab is the live monitor. (Distinct from the per-<strong>signal</strong> Excursion lab.)</td></tr><tr><td><strong>Sentinel Lens</strong></td><td><code>AddOns/SentinelLens_v1_1_0.cs</code></td><td>🔨 v1.1</td><td>On-demand analytics over the Log JSONL (winrate/PF/MAE/MFE, per strategy+instrument). The tool that will <strong>grade the Council's weights.</strong> Static, no service.</td></tr><tr><td><strong>Sentinel Arc</strong></td><td><code>AddOns/SentinelArcService_v0_1_0.cs</code></td><td>✅ (gate validated live)</td><td>Fleet orchestration via publish/consult: <code>FleetSlot</code> + the <code>SlotLive</code> entry gate + leader supervision.</td></tr><tr><td><strong>Sentinel Eye</strong></td><td><code>Indicators/Eye_v1_1_0.cs</code></td><td>✅</td><td>(Also a voter, §3.2.) Adaptive GodTrades scanner that <em>qualifies</em> setups; the Copier mirrors only Eye-qualified fills. Being decoupled from GTrader21.</td></tr></tbody></table></div>
+<h4>Bar types (Brick source)</h4>
+<ul>
+<li><code>BarsTypes/SentinelTBars_v1_0_0.cs</code> — Sentinel-graded adaptive HA/Renko bar type (publishes <code>BrickState</code>; supersedes the TbarsSudo family).</li>
+<li><code>BarsTypes/SentinelTbarsCount_v1_0_0.cs</code> — plain brick counter variant.</li>
+<li><code>Indicators/SentinelBrickCounter_v1_0_0.cs</code> — "ticks to next brick" HUD off <code>BrickState</code>.</li>
+</ul>
+<hr>
+<h2>Part IV — The seam bus reference</h2>
+<p>Every <code>…State</code> seam on <code>SentinelCore</code> follows <strong>one identical shape</strong>:</p>
+<pre><code>void        Set&lt;X&gt;State(…);                    // publisher (sensor calls this)
+&lt;X&gt;State    Get&lt;X&gt;State(string instrument, double maxAgeSec);   // consult; null if absent OR stale
+List&lt;X&gt;     All&lt;X&gt;States();                     // snapshot of every instrument</code></pre>
+<ul>
+<li><strong>Keyed by root symbol</strong> (<code>Instrument.MasterInstrument.Name</code>, e.g. <code>"GC"</code>), case-insensitive, lock-guarded.</li>
+<li><strong>Staleness-gated:</strong> <code>Get…</code> returns <code>null</code> if nothing was published <em>or</em> the entry is older than <code>maxAgeSec</code> seconds. Pass <code>0</code> to disable expiry. <strong>Absent/stale = the consumer abstains</strong> — this is the fail-open backbone.</li>
+<li><strong>The read always travels as <code>int</code> / <code>double</code> / <code>bool</code></strong> — the bus never couples to any indicator's private enum. A sensor publishes <code>(int)</code>; the reader interprets it.</li>
+<li>Two setter styles coexist: older seams take flat scalar args; the newer axes take a payload object (<code>Set…State(new SentinelCore.XState { … })</code>).</li>
+</ul>
+<h3>The seam table (payload highlights + <code>.Aligned(dir)</code> convention)</h3>
+<div class="tblwrap"><table><thead><tr><th>Seam</th><th>Publisher</th><th>Key payload fields (type)</th><th>Convenience props</th></tr></thead><tbody><tr><td><code>EyeVerdict</code></td><td>Eye</td><td><code>Direction</code>(int ±1/0), <code>Score</code>(double), <code>Source</code></td><td>—</td></tr><tr><td><code>TrendState</code></td><td>SentinelTrend</td><td><code>Direction</code>(int), <code>TrendPrice</code>, <code>DistanceTicks</code>, <code>BarsInTrend</code>, <code>Flipped</code>(bool), <code>Cci</code>, <code>AdxAligned</code>(bool)</td><td><code>IsUp/IsDown/Aligned</code></td></tr><tr><td><code>CciState</code></td><td>WoodiesCCIPro</td><td><code>TrendState</code>(int −2..+2), <code>MainCci</code>, <code>TurboCci</code>, <code>MainSlope</code>, <code>Signal</code>(int), <code>Weakening</code>(bool)</td><td><code>Bias</code>, <code>Strong</code>, <code>TrendOn</code>, <code>Aligned</code></td></tr><tr><td><code>AdxState</code></td><td>ADXPro</td><td><code>Adx</code>, <code>DiPlus</code>, <code>DiMinus</code>, <code>Bias</code>(int), <code>Slope5</code>, <code>Strong</code>(bool)</td><td><code>TrendOn</code>, <code>Building</code>, <code>Aligned</code></td></tr><tr><td><code>EnvelopeState</code></td><td>VolEnvelope</td><td><code>Regime</code>(int 0-4), <code>Stretch</code>, <code>BandwidthPctile</code>, <code>MultUp/MultDown</code></td><td><code>IsSqueeze</code>, <code>IsTrend</code></td></tr><tr><td><code>BrickState</code></td><td>SentinelTBars</td><td><code>Direction</code>(int), <code>Atr</code>, <code>DensityScale</code>, <code>SameDirCount</code>, <code>PendingBreakout</code>(bool), <code>TicksToUpper/Lower</code>, <code>NearestTicksRemaining</code></td><td><code>IsUp/IsDown</code>, <code>AtrTicks()</code>, <code>Aligned</code></td></tr><tr><td><code>CompressionState</code></td><td>CompressionBase</td><td><code>Signal</code>(int pulse), <code>BreakDir</code>(int held), <code>Coil</code>, <code>Compressed</code>(bool), <code>Armed</code>(bool)</td><td><code>JustBroke</code>, <code>Aligned</code></td></tr><tr><td><code>IntermarketState</code></td><td>Intermarket</td><td><code>Lean</code>(int), <code>Score</code>(−1..1), <code>RefCount</code>, <code>Refs</code>(string)</td><td><code>Aligned</code></td></tr><tr><td><code>WaeState</code></td><td>Sentinel WAE</td><td><code>Signal</code>(int ±1 confirmed), <code>Power</code>, <code>Explosion</code>, <code>DeadZone</code>, <code>IsExploding</code>(bool)</td><td><code>Aligned</code></td></tr><tr><td><code>ClockState</code></td><td>Clock</td><td><code>Phase</code>(int 0-3), <code>MinsSinceOpen</code>, <code>MinsToClose</code>, <code>DayOfWeek</code>, <code>InSession</code>(bool), <code>InKillWindow</code>(bool)</td><td><code>IsOpenDrive/IsMidday/IsClose</code></td></tr><tr><td><code>ParticipationState</code></td><td>Participation</td><td><code>Rvol</code>, <code>VolZ</code>, <code>Climax</code>(bool), <code>DryUp</code>(bool), <code>TypicalVol</code></td><td><code>Backed</code></td></tr><tr><td><code>LevelState</code></td><td>Location</td><td><code>Vwap±bands</code>, <code>Pdh/Pdl</code>, <code>Orh/Orl</code>, <code>Ibh/Ibl</code>, <code>SessHigh/Low</code>, <code>NearestName</code>, <code>NearestDistTicks</code>, <code>NearestDistAtr</code></td><td><code>Near()</code>, <code>InPath()</code></td></tr><tr><td><code>MtfState</code></td><td>MTF</td><td><code>Bias</code>(int), <code>AlignmentScore</code>(−1..1), <code>AlignedCount</code>, <code>TfCount</code>, <code>AllAgree</code>(bool), <code>Dirs</code>(string)</td><td><code>Aligned</code></td></tr><tr><td><code>CouncilState</code></td><td>Council</td><td><code>Bias</code>(int), <code>Conviction</code>(0..1), <code>SizeMult</code>(0..1), <code>Agree/Disagree/Voters</code>(int), <code>Vetoed</code>(bool), <code>VetoReason</code>, <code>Reasons</code></td><td><code>IsLong/IsShort</code>, <strong><code>HasEdge</code></strong>, <code>Aligned</code></td></tr><tr><td><code>LiquidityState</code></td><td>LiquidityWalls</td><td><code>Zscore</code>, <code>AbsorbSide</code>(int), <code>WallAbove/Below</code>, <code>DistAbove/BelowTicks</code>, <code>ActiveWalls</code></td><td><code>NearWall()</code>, <strong><code>BlocksEntry(dir,ticks)</code></strong></td></tr></tbody></table></div>
+<p><strong><code>Aligned(int dir)</code> convention:</strong> <code>+1</code>=long, <code>−1</code>=short, <code>0</code>=flat. Most seams treat <code>0</code> as "require neutral"; <code>BrickState.Aligned(0)</code> returns true ("don't care").</p>
+<h3>Account-level registries (not per-instrument seams)</h3>
+<p>Also on <code>SentinelCore</code>, keyed by account (or global): <strong>kill-switch</strong> (<code>KillSwitchEngaged</code>, <code>SetKillSwitch</code>), <strong>scoped kill</strong> (<code>SetInstrumentKill</code>/<code>InstrumentKillEngaged</code>), <strong>governor</strong> (<code>GetGovernorState</code>, <code>TradingAllowedToday</code>, <code>RecommendedSize</code>), <strong>trailing drawdown</strong> (<code>DrawdownAllowsEntry</code>), <strong>account profiles</strong> (<code>GetAccountProfile</code>, <code>InAccountSession</code>, <code>SizedQuantity</code>), <strong>news lockout</strong> (<code>SetNewsLockouts</code>/<code>NewsLockoutActive</code>), <strong>rollover</strong> (<code>RolloverBlocked</code>), <strong>config-use</strong>, <strong>fleet slots</strong> (<code>SlotLive</code>), <strong>assist tickets</strong>, <strong>watch list</strong>. The combined entry gate <code>CanEnter</code> = kill + scoped-kill + feed + governor + drawdown + session + rollover + news.</p>
+<hr>
+<h2>Part V — Extending Sentinel</h2>
+<p>This is the chapter you'll come back to. It answers: <em>"I built a custom indicator — how do I make it a Council voter, and how do I get logging?"</em></p>
+<h3>The Council Protocol (mandatory — memorize this)</h3>
+<blockquote><p><strong>Any new signal / regime / bias / context indicator MUST:</strong> <strong>(a)</strong> publish a <code>…State</code> seam to <code>SentinelCore</code> carrying its read as <strong>int/double/bool</strong> (never couple to an enum — publish <code>(int)</code>); <strong>(b)</strong> gate publishing behind a <code>PublishState</code> property that <strong>DEFAULTS ON</strong> — do <strong>not</strong> ship it dark (three voters shipped off-by-default once and silently contributed nothing); <strong>(c)</strong> be <strong>wired into the Council</strong> as a <strong>voter</strong> (directional → <code>AddVote</code>), a <strong>modulator</strong> (context that scales conviction), or a <strong>veto</strong> (hard gate), and appear in the Council's Reasons audit.  <strong>A hidden plot alone is NOT enough — the Council reads seams, not plots.</strong></p></blockquote>
+<h3>Step 1 — publish your <code>…State</code> seam</h3>
+<h4>1a. The default-ON property (in <code>SetDefaults</code>)</h4>
+<pre><code>[Display(Name = "Publish to Sentinel",
+    Description = "Publish my read as SentinelCore.MyState so the Council gains a voter.",
+    Order = 20, GroupName = "Sentinel")]
+public bool PublishState { get; set; }
+
+// in OnStateChange → State.SetDefaults:
+PublishState = true;   // ON out of the box — never ship dark</code></pre>
+<h4>1b. The publish call (end of the compute path in <code>OnBarUpdate</code>)</h4>
+<p>Object-passing style (the newer convention — Compression/Location/MTF/Intermarket use it):</p>
+<pre><code>if (PublishState &amp;&amp; Instrument != null &amp;&amp; Instrument.MasterInstrument != null)
+{
+    try
+    {
+        SentinelCore.SetMyState(new SentinelCore.MyState
+        {
+            Instrument = Instrument.MasterInstrument.Name,   // ROOT symbol, not FullName
+            Direction  = (int)myDir,                          // publish int, never an enum
+            Source     = "MySensor"
+        });
+    }
+    catch { }   // publishing must NEVER throw into OnBarUpdate
+}</code></pre>
+<p>Scalar-arg style (older seams like ADX/Trend) is identical in spirit — <code>SentinelCore.SetAdxState(name, adx, diPlus, diMinus, bias, slope5, strong, "ADXPro");</code>.</p>
+<p><strong>Rules that bite if you ignore them:</strong></p>
+<ul>
+<li>Key on <code>Instrument.MasterInstrument.Name</code> (root), because every consumer reads by root.</li>
+<li>Publish <strong>every processed bar</strong> so the seam stays fresh — consumers staleness-gate, so a seam you stop refreshing goes stale and your voter silently abstains.</li>
+<li>Warmup-guard reads that need history (<code>if (PublishState &amp;&amp; warm &gt; 0)</code>).</li>
+<li>If your <code>…State</code> type doesn't exist yet, you add it to <code>SentinelCore</code> following the existing pattern (a <code>sealed class</code> payload + <code>Set/Get/All</code> trio) — that's a Core version bump.</li>
+</ul>
+<h3>Step 2 — wire it into the Council</h3>
+<p>Adding a <strong>voter</strong> touches essentially one line of logic (the plumbing — tallies, chips, reasons, publish — is generic and iterates the internal <code>_votes</code> list, so it picks up your voter for free).</p>
+<p><strong>2a. Add a weight property</strong> (Weights group) and its <code>SetDefaults</code> default:</p>
+<pre><code>WeightMyNew = 0.6;   // in SetDefaults
+
+[Range(0.0, double.MaxValue)]
+[NinjaScriptProperty]
+[Display(Name = "Weight — MyNew", Order = 9, GroupName = "Weights")]
+public double WeightMyNew { get; set; }</code></pre>
+<p><strong>2b. Read the seam and cast the vote</strong> — inside the gather <code>try{}</code> in <code>OnBarUpdate</code>, alongside the existing voters:</p>
+<pre><code>var mine = SentinelCore.GetMyState(inst, StaleSec);
+if (mine != null)
+    AddVote("MINE", mine.Direction, WeightMyNew, ref netScore, ref activeW, ref voters);</code></pre>
+<p>That's it. <code>AddVote</code> collapses the value to <code>Math.Sign(dir)</code>, adds <code>sign×weight</code> to <code>netScore</code>, adds <code>weight</code> to <code>activeW</code>, increments the fresh-voter count, and appends to <code>_votes</code> (which drives the agree/disagree tally, the card chip, and the <code>MINE▲/▼/~</code> token in the Reasons string).</p>
+<p><strong>Contract for a voter:</strong></p>
+<ul>
+<li>Pass a <strong>raw signed value</strong> as <code>dir</code> (AddVote takes the sign; magnitude is discarded).</li>
+<li>Pass <strong><code>0</code></strong> when your sensor is present-but-neutral, so it still counts toward breadth (<code>MinVoters</code>) without moving the score.</li>
+<li>Fold "strength" into the <strong>weight</strong>, like CCI/ADX do: <code>WeightMyNew * (mine.Strong ? 1.5 : 1.0)</code>.</li>
+<li>Keep it in the shared <code>try/catch</code> so an absent seam abstains fail-open.</li>
+</ul>
+<p><strong>If your sensor is context, not direction</strong> → make it a <strong>modulator</strong> instead: after the base conviction is computed, multiply it (<code>conviction *= myDamp;</code>) and add a suffix to <code>BuildReasons()</code>. <strong>If it's a hard gate</strong> → add a branch to the veto <code>if/else if</code> chain that sets <code>vetoed=true</code>.</p>
+<h3>How the vote actually fuses (so weights make sense)</h3>
+<pre><code>per voter:   vote = sign(dir) × weight        (neutral/absent → no score contribution)
+
+netScore = Σ vote                              activeW = Σ weight (directional voters only)
+
+Bias        = +1 if netScore &gt;  deadband·activeW
+              −1 if netScore &lt; −deadband·activeW      (else 0 = FLAT)   deadband default 0.15
+
+Conviction  = |netScore| / activeW             ∈ [0,1]   (1 = unanimous)
+              × breadth-damp × squeeze × clock × rvol × mtf × location   → clamp [0,1]
+
+SizeMult    = (Vetoed OR Conviction &lt; floor) ? 0 : Conviction            floor default 0.35</code></pre>
+<p>The <strong>modulators</strong> (all multiply conviction, all fail-open): breadth (<code>voters/MinVoters</code> if short), VolEnvelope squeeze (<code>×0.6</code>), Clock (<code>×OffSessionDamp 0.50</code> off-session / <code>×MiddayDamp 0.85</code> midday), Participation (<code>×min(1, max(RvolDampFloor, rvol))</code> — thin tape damps, never inflates), MTF (<code>×MtfCounterDamp 0.60</code> when higher TF disagrees), Location (<code>×LevelDamp 0.70</code> when price is heading into a level).</p>
+<p>The <strong>hard vetoes</strong> (first match wins, each zeroes conviction): global kill → scoped kill → rollover → news lockout → clock kill-window → <strong>liquidity wall on the intended side</strong> (<code>LiquidityState.BlocksEntry(bias, ticks)</code>).</p>
+<blockquote><p><strong>The weights ARE the edge.</strong> Tune them, ship them ON, then let <strong>Lens</strong> grade whether agreement actually paid. That grading loop is why every executor must record the verdict on each fire.</p></blockquote>
+<h3>Step 3 — consume a seam (executor side)</h3>
+<p>The whole point of the Council is that a strategy reads <em>one</em> seam instead of re-deriving confluence:</p>
+<pre><code>var v = SentinelCore.GetCouncilState(instrument, maxAgeSec);
+if (v != null &amp;&amp; v.HasEdge &amp;&amp; v.Aligned(myDir))          // HasEdge = !Vetoed &amp;&amp; Bias≠0 &amp;&amp; Conviction&gt;0
+{
+    int qty = (int)Math.Round(baseQty * v.SizeMult);      // SizeMult ∈ 0..1; 0 when vetoed
+    // ...then STILL gate at submit (next line) — the seam is advisory, not the safety gate
+}</code></pre>
+<p>Sizing helpers: <code>SizeForRisk(Account, Instrument, stopTicks, riskDollars)</code> (contracts for a $-risk) and <code>SizedQuantity(Account, baseQty)</code> (profile-scaled).</p>
+<h3>Step 4 — logging: two facilities, don't conflate them</h3>
+<h4>4a. <code>sentinel.log</code> — human/audit text (use this, never <code>Print</code>)</h4>
+<pre><code>SentinelCore.Log("MyTool", "GC LONG conv=0.72 size=0.72 | EYE▲ TRND▲ …");</code></pre>
+<p>Writes <code>[Sentinel:MyTool] …</code> to the Output window <strong>and</strong> appends (timestamped) to <code>…\Sentinel\sentinel.log</code> (rotates ~5 MB). <strong>Convention: log CHANGES only, never per-tick.</strong> The Council logs only on a bias flip or veto toggle; rate-limit anything chatty.</p>
+<h4>4b. <code>SentinelCore.Ledger</code> — the daily JSONL event stream (the single source of truth)</h4>
+<p>This is the one event stream the Dashboard Journal/Slippage/audit views read. <strong>Never build a second journal.</strong></p>
+<pre><code>SentinelCore.Ledger.Order(acct, instr, action, type, qty, price, tag);        // a submission
+SentinelCore.Ledger.Action(kind, acct, detail);                               // a state change
+SentinelCore.Ledger.Fill(acct, instr, action, qty, intended, fill, tickSize, tag);  // → slip ticks
+SentinelCore.NoteOrderSubmitted(account);                                     // + rate guard
+
+// read back as typed rows:
+List&lt;SentinelCore.Ledger.Entry&gt; rows = SentinelCore.Ledger.ReadRecent(days);</code></pre>
+<p>Call <code>Fill</code> from <code>OnExecutionUpdate</code> (it computes intended-vs-actual <strong>slip ticks</strong>, feeding the Slippage view). <strong>On every FIRE, record the Council verdict</strong> (bias/conviction/reasons) into the Ledger/Log context — that's what lets Lens answer <em>"did the confluence pay?"</em></p>
+<h3>Step 5 — draw the glass card (SentinelSkin)</h3>
+<p>Hold one <code>Painter</code>, <code>Begin()</code> per frame, dock via <code>CardLayout</code>, <code>Dispose()</code> in <code>Terminated</code>:</p>
+<pre><code>private readonly SentinelSkin.Painter _sp = new SentinelSkin.Painter();
+
+protected override void OnRender(ChartControl cc, ChartScale cs)
+{
+    base.OnRender(cc, cs);
+    if (RenderTarget == null) return;
+    _sp.Begin(RenderTarget);
+    var slot = SentinelSkin.CardLayout.Place(this, ChartPanel,
+        ChartPanel.X, ChartPanel.Y, ChartPanel.W, ChartPanel.H, CardCorner, 244f, 148f);
+    var r = _sp.Card(slot.X, slot.Y, 244f, 148f, active ? SentinelSkin.CAccent : SentinelSkin.CWarn);
+    _sp.Dot(r.Left + 4f, r.Top + 8f, SentinelSkin.CAccent);
+    _sp.Text("MY TOOL", r.Left + 15f, r.Top - 1f, 160f, 18f, SentinelSkin.CInk, 12f, semibold:true);
+    _sp.Pill(state, r.Right, r.Top - 2f, dotColor);
+    _sp.Track(r.Left, r.Top + 96f, r.Width, frac, SentinelSkin.CAccent);
+    _sp.End();
+}
+protected override void OnStateChange()
+{
+    // ...
+    if (State == State.Terminated) { _sp.Dispose(); SentinelSkin.CardLayout.Release(this); }
+}</code></pre>
+<ul>
+<li>Expose <code>[NinjaScriptProperty] SentinelCardCorner CardCorner</code> (default <code>TopRight</code>) so cards spread across corners; same-corner cards <strong>auto-stack</strong> so they never cover each other.</li>
+<li><strong>⚠ Position from <code>ChartPanel.X/Y/W/H</code>, NOT <code>chartControl.ActualHeight</code></strong> — ActualHeight includes subpanels + time axis, so a bottom-anchored card lands off the price panel and clips invisibly.</li>
+</ul>
+<h3>Step 6 — the label remover (mandatory) + naming</h3>
+<pre><code>[NinjaScriptProperty]
+[Display(Name = "Show indicator label", GroupName = "Sentinel", Order = 100)]
+public bool ShowIndicatorLabel { get; set; }
+// SetDefaults:  Name = "MyTool_v1_0_0"; ShowIndicatorLabel = false;
+// DataLoaded (FIRST line):  if (!ShowIndicatorLabel) Name = string.Empty;</code></pre>
+<p>The chart's top-left label reads the runtime <code>Name</code> (not <code>ToString()</code> — that override is inert). Blank it at <code>DataLoaded</code> for a clean chart; identity/serialization still use the <code>SetDefaults</code> value. <strong>⚠ Order-submitting tools must first capture <code>Name</code> into a stable <code>_tag</code> field</strong> before blanking it, or order-tag identity breaks.</p>
+<p><strong>Naming/namespace rules — the FEDERATED NAMING LAW (ratified 2026-07-07; 4 layers):</strong></p>
+<ul>
+<li><strong>① Display <code>Name</code> = <code>"Sentinel &lt;Thing&gt;"</code></strong> (mandatory prefix; display-only, so safe to set/retrofit any time). <strong>② Namespace</strong> → <code>…{Indicators|Strategies}.Sentinel</code> (picker "Sentinel" folder). <strong>③ Class + file</strong> → <code>Sentinel&lt;Thing&gt;_vX_Y_Z</code> (lowercase <code>v</code>, three parts — e.g. <code>SentinelTrend_v1_0_0</code>). <strong>④ Runtime</strong> → cyan glass card + label remover (+ publish a <code>…State</code> seam for sensors).</li>
+<li>Layers ②③ are <strong>serialization identity</strong> — adopt at a tool's <strong>next version bump only</strong> (changing namespace/class drops it off saved charts). Layer ① is display-only and can be retrofitted now. See the design system §7 (canonical) — this supersedes the earlier "drop the prefix" convention.</li>
+<li><strong>⚠ AMENDMENT (2026-07-08) — STRATEGIES STAY IN THE BASE NAMESPACE.</strong> Layer ② applies to indicators only. A <strong>strategy</strong> must remain in <strong><code>NinjaTrader.NinjaScript.Strategies</code></strong> (NOT <code>.Strategies.Sentinel</code>) — NT's <strong>Strategy selector hides sub-namespaced strategies</strong> (verified building the Bridge). Keep the display-<code>Name</code> prefix (<code>"Sentinel Bridge"</code>) and the <code>Sentinel&lt;Thing&gt;</code> class name; just leave the namespace at base. (Indicators still cluster under the <code>.Sentinel</code> picker folder as before.)</li>
+<li><strong>Namespace + class name = serialization identity.</strong> Changing either drops the tool off saved charts. Adopt <code>.Sentinel</code> only at a <strong>version bump</strong>; old versions stay frozen in their old namespace and get archived out of the tree.</li>
+<li><strong>Custom <code>[NinjaScriptProperty]</code> enum gotcha:</strong> declare the enum in the class's own <code>.Sentinel</code> namespace <strong>and</strong> add <code>using …Indicators.Sentinel;</code> at the file top — NT's generated host-wrapper references the class <em>qualified</em> but leaves the enum param <em>bare</em>, and it shares this file's <code>using</code> directives.</li>
+<li><strong>Fork gotcha:</strong> after <code>cp</code>-ing a versioned tool, strip <strong>all</strong> NT generated <code>#region</code>s to EOF, or a running NT re-appends them and you get CS0111/CS0102.</li>
+</ul>
+<hr>
+<h2>Part VI — Rapid MAE/MFE testing with the Excursion lab</h2>
+<p>This is the workflow that turns "I think FC signals are good" into "FC-Short on GC has a +6t/trade edge at a 40t TP / 30t stop, firing 1.8×/day" — and one click writes that into the strategy.</p>
+<h3>The concept: measure the price path, don't trade it</h3>
+<p><strong>MAE</strong> = Max Adverse Excursion (how far a signal went against you before working out). <strong>MFE</strong> = Max Favorable Excursion (how far it went in your favor).</p>
+<p>If you know the <em>distribution</em> of MFE and MAE for a signal, you can pick a take-profit and stop that actually match how that signal behaves — instead of guessing. The trick is to record the <strong>full, untruncated</strong> price path after every signal, so you can <em>simulate</em> any TP/SL afterward against real excursions.</p>
+<h3>The three pieces</h3>
+<pre><code>   SentinelExcursionRecorder_v1_4 →   *.jsonl in \Sentinel\Excursions\
+   (indicator; records every signal's         │   (now incl. the COUNCIL verdict
+    full MFE/MAE path, tagged)                 ▼    as a "COUNCIL" signal, schema 1.2)
+                                    SentinelExcursions_v1_0  (analytics engine)
+                                    expectancy grid · best TP/SL · Eye + Conviction referees
+                                                 │
+                                                 ▼
+                                    Dashboard → Excursion tab (charts + ◆ + Apply)
+                                                 │  writes
+                                                 ▼
+                                    \Sentinel\GTraderConfigs\&lt;inst&gt;_&lt;sig&gt;_&lt;dir&gt;.conf
+                                       (Council fires → &lt;inst&gt;_COUNCIL_&lt;dir&gt;.conf)
+                                                 │  auto-read (UseSentinelConfig)
+                                                 ▼
+                                    GTrader21 v0.1.7   ·   Sentinel Bridge (reads COUNCIL.conf)</code></pre>
+<h3>Piece 1 — <code>SentinelExcursionRecorder_v1_4</code> (the recorder)</h3>
+<ul>
+<li><strong>File:</strong> <code>Indicators/SentinelExcursionRecorder_v1_4.cs</code> (<code>Indicators.Sentinel</code>) — <strong>renamed from <code>SignalExcursionRecorder_v1_3</code></strong> when it gained Council-fire recording.</li>
+<li><strong>What it does:</strong> hosts its own <strong>GodTrades21</strong> (fixed GTrader21-v0.1.4 params → identical signals) + an <code>ADX(14)</code>. Edge-detects six signals — <strong>BG</strong> (Bollinger gap), <strong>FC</strong> (continuation), <strong>OBR</strong> (outside-bar reversal), each Long/Short. It places <strong>no orders and never truncates the path.</strong></li>
+<li><strong>✅ Also records the COUNCIL verdict</strong> as its own <strong>"COUNCIL"</strong> signal (schema <strong>1.2</strong>): every time the Council's bias edges, it logs that fire's full MFE/MAE path tagged with the <strong>conviction bucket</strong> (LOW / MID / HIGH). This is what lets the lab characterize the Council itself and write a <code>&lt;inst&gt;_COUNCIL_&lt;dir&gt;.conf</code> that the <strong>Sentinel Bridge</strong> auto-reads for its real TP/SL.</li>
+<li><strong>Per signal it records</strong> (in ticks, relative to the fire price): ratcheted <code>MaxMFE</code>/<code>MaxMAE</code>, bars/ms to each, and <strong>milestone snapshots at 1/5/15/60 minutes</strong> (<code>mfe15</code>, <code>mae15</code>, …). Milestones not reached = <code>null</code>.</li>
+<li><strong>Window:</strong> fire → <strong>EOD</strong> (deliberately the superset, so any shorter horizon can be sliced later).</li>
+<li><strong>Tags each record with:</strong> <code>regime</code> (from ADX — trend ≥25 / chop ≤18 / mid), raw <code>adx</code>, <strong>Eye verdict</strong> (realtime fires: <code>eyeHad/eyeScore/eyeDir/eyeAligned</code>), <code>inst</code>, and <code>bartype</code>.</li>
+<li><strong>Writes:</strong> JSONL to <code>…\Sentinel\Excursions\{timestamp}__{inst}__{bartype}.jsonl</code> (a <strong>new file each load/F5</strong> — the analytics dedupes). Schema <code>"1.2"</code> (was <code>"1.1"</code>; 1.2 adds the COUNCIL signal + conviction bucket).</li>
+<li><strong>Config:</strong> there are <strong>no TP/SL/horizon inputs</strong> — it records everything and you slice in analysis. Properties are just presentation (<code>ShowInfo</code> card, <code>CardCorner</code>, <code>ShowUnderlyingIndicator</code>, <code>ShowIndicatorLabel</code>). <em>Which</em> signal you analyze is chosen later in the dashboard.</li>
+</ul>
+<h3>Piece 2 — <code>SentinelExcursions_v1_0</code> (the analytics)</h3>
+<p>Reads every <code>*.jsonl</code>, <strong>dedupes</strong> by <code>inst|bartype|signal|dir|fireTime</code>, drops legacy schema, and groups by <code>inst|signal|dir</code>. Per group it computes (all in ticks):</p>
+<ul>
+<li>Median MFE/MAE at 5/15/60 min; 75th-pct at 15m; <code>MaxMaeP90</code> (the tail — "why a stop is essential"); <code>HasEdge = MfeMed15 &gt; MaeMed15</code>.</li>
+<li><strong>Fire-rate:</strong> <code>FiresPerDay</code> over distinct fire-dates ("a +EV signal firing twice a month isn't a business").</li>
+<li><strong>Partitions</strong> by regime (trend/mid/chop) and by Eye (endorsed / not).</li>
+<li><strong>Eye referee:</strong> does Eye-endorsed out-earn the rest at 15m by ≥3 ticks? → +1 / −1 / 0.</li>
+<li><strong>The TP/SL simulator (<code>TpStopGrid</code>):</strong> <strong>12 configs</strong> — TP ∈ {33rd, 50th, 67th pct of MFE15}; Stop = TP × {0.5, 0.75, 1.0, 1.5}. Stop is a <strong>fraction of TP</strong> so R:R can't be gamed with wide stops. Per record over the 15-min window it decides win(+tp)/loss(−sl)/scratch and reports <code>HitRate</code> + <code>Exp</code> (est ticks/trade). <strong>It's an estimate, not a path-level backtest</strong> — the real number comes from applying it in execution.</li>
+</ul>
+<h3>Piece 3 — the Excursion dashboard tab (read → decide → apply)</h3>
+<ul>
+<li><strong><code>★</code> = best raw EV</strong> (often a wide-stop mirage). <strong><code>◆</code> = best RESPONSIBLE</strong> — highest-Exp config with <strong>Stop ≤ TP</strong> (R:R ≥ 1). <strong>The ◆ is what you apply.</strong></li>
+<li><strong>Confidence:</strong> <code>n ≥ 30</code> = confident; the edge chart dims small-sample rows.</li>
+<li>Panels per signal: <strong>growth line</strong> (median MFE vs MAE at 5/15/60), <strong>outcome scatter</strong> (each fire's MAE15 vs MFE15, colored by regime, hollow ring = Eye-endorsed, dashed TP/SL lines), the <strong>12-config expectancy grid</strong>, and the <strong>Eye referee</strong> verdict.</li>
+<li><strong>✅ ⑤ the Conviction referee</strong> — for the <strong>COUNCIL</strong> signal group, the tab now grades whether the HIGH-conviction bucket out-earns MID/LOW (does the Council's confidence actually pay?), the same way the Eye referee grades Eye-endorsement.</li>
+<li><strong>Apply ◆ for a Council group</strong> writes <strong><code>&lt;inst&gt;_COUNCIL_&lt;dir&gt;.conf</code></strong> — which the <strong>Sentinel Bridge</strong> auto-reads (<code>UseSentinelConfig</code>) as its live TP/SL. This closes the recorder → ◆ → <code>.conf</code> → Bridge loop.</li>
+</ul>
+<h3>The end-to-end workflow (step by step)</h3>
+<ol>
+<li><strong>Record.</strong> Add <code>SentinelExcursionRecorder_v1_4</code> to each chart/instrument/bar-type you want to characterize (e.g. GC 100T, NQ 1000T, ES 500T). Leave GTrader21 off — or run it on a <code>GTrader21_Measurement</code> template with <strong>all</strong> TP/SL/reverse/BE/trailing/cutoffs <strong>OFF</strong> so nothing truncates the path. Let it run; it flushes each signal at EOD to <code>…\Sentinel\Excursions\</code>.</li>
+<li><strong>Load.</strong> Dashboard → <strong>Excursion</strong> tab → <strong>"Load / Refresh excursions."</strong> Status shows unique records / files / groups (and dupes/legacy skipped). Optionally tick <strong>"Confident only (n≥30)."</strong></li>
+<li><strong>Scan the edge chart.</strong> One diverging bar per signal group (trend regime): green MFE vs red MAE at 15m, ranked by edge, "✓" when <code>HasEdge</code>.</li>
+<li><strong>Drill in.</strong> Pick a group in <strong>"Detail signal"</strong> → read the growth line, the outcome scatter, the expectancy grid, and the Eye referee.</li>
+<li><strong>Find the ◆ and apply.</strong> Click <strong>"Apply ◆ to GTrader21 config"</strong> → writes <code>…\Sentinel\GTraderConfigs\&lt;inst&gt;_&lt;signal&gt;_&lt;dir&gt;.conf</code> (e.g. <code>GC_FC_Short.conf</code>) with the ◆ TP/SL (+ <code>useEyeGate</code> if the referee is conclusive). Or <strong>"Sync all ◆ configs"</strong> to write one for every confident group with positive Exp.</li>
+<li><strong>Strategy auto-reads it.</strong> On the target chart's <strong>GTrader21 v0.1.7</strong> (group "14. Sentinel Integration"): set <strong><code>UseSentinelConfig = true</code></strong> and <strong><code>SentinelConfigName = "GC_FC_Short"</code></strong>. On <code>DataLoaded</code> it overrides the dialog's TP/SL/trend-filter/Eye-gate with the lab values <em>before any trade</em>, and republishes what it loaded so it appears in the dashboard's "Active lab configs" list.</li>
+</ol>
+<h4>The <code>.conf</code> format (what Apply writes / the strategy reads)</h4>
+<p><code>key = value</code>, one per line, <code>#</code> comments. Only five keys are <em>applied</em> by the strategy (the rest are informational):</p>
+<pre><code>instrument = GC
+signal = FC
+direction = Short
+useTrendFilter = true        # → UseTrendFilter
+trendAdxThreshold = 25       # → TrendAdxThreshold
+useEyeGate = false           # → UseEyeGate  (only emitted when the Eye referee is conclusive)
+takeProfitTicks = 40         # → ProfitTargetTicks + UseProfitTarget = true
+stopLossTicks = 30           # → StopLossTicks + UseStopLoss = true</code></pre>
+<blockquote><p><strong>First real finding from this lab:</strong> signal quality is <strong>FC &gt; BG &gt; OBR</strong>, and <strong>FC-in-trend (ADX ≥ 25) is the first cross-instrument edge; OBR ≈ noise</strong> — which is why every generated <code>.conf</code> hard-codes <code>useTrendFilter = true</code> / <code>trendAdxThreshold = 25</code>.</p></blockquote>
+<blockquote><p><strong>⚠ Fill-resolution caveat (hard-won):</strong> validate the chosen TP/SL at <strong>High/Tick fill resolution</strong>, not bar-level. Bar-level excursion analysis is optimistic — one strategy's apparent 81% win rate collapsed to 37.5% at tick fills. The Excursion grid is a <em>screen</em>, not a verdict.</p></blockquote>
+<hr>
+<h2>Part VII — The safety model</h2>
+<p>The suite is being hardened to be safe for a <strong>funded/prop</strong> account. Three substrates live in <code>SentinelCore</code>, plus one policy that governs how everything uses them.</p>
+<h3>The policy: fail-OPEN vs fail-CLOSED (know which you are)</h3>
+<div class="tblwrap"><table><thead><tr><th>Actor</th><th>On an ambiguous/absent signal</th><th>Why</th></tr></thead><tbody><tr><td><strong>Manual tools</strong> (Deck manual actions)</td><td>fail <strong>OPEN</strong> (allow)</td><td>a human is in the loop</td></tr><tr><td><strong>Automated tools</strong> (GTrader21, Copier, Deck auto-fire, Bridge)</td><td>fail <strong>CLOSED</strong> (block)</td><td>no human to catch a mistake</td></tr><tr><td><strong>Exits</strong></td><td>never gate</td><td>you must always be able to get out</td></tr><tr><td><strong>A thrown exception</strong></td><td>fail <strong>OPEN</strong></td><td>resilience ≠ gate bypass; a bug must not freeze exits</td></tr></tbody></table></div>
+<h3>Substrate 1 — the Order Gate (the one pre-submit choke point)</h3>
+<pre><code>var gate = SentinelCore.GateEntry(Account, Instrument, requestedQty, stopTicks, riskDollars, Instrument);
+// gate.Level ∈ { Clear, Advisory, Hard };  gate.Size = risk-clamped qty
+// automated tool: submit only if gate.IsClear
+// manual tool:    surface gate.IsHard loudly, but submit anyway (fail-open)</code></pre>
+<p><strong>HARD</strong> = kill / scoped-kill / loss-stop / rate-cap / qty-cap / contract-limit. <strong>ADVISORY</strong> = feed / target-done / session / rollover / news / undersized. There's an opt-in <strong>hard auto-flatten</strong> (<code>hardEnforce=true</code>) and a <strong>fat-finger rate guard</strong> (<code>SetOrderGuards</code>, <code>NoteOrderSubmitted</code>). Risk-sizing: <code>SizeForRisk(acct, instr, stopTicks, riskDollars)</code>, <code>TickValue(instr)</code>.</p>
+<h3>Substrate 2 — the Ledger + State store (memory)</h3>
+<ul>
+<li><strong>Ledger</strong> — append-only <strong>daily JSONL</strong> at <code>…\Sentinel\Ledger\ledger-YYYY-MM-DD.jsonl</code>, recording <code>Order</code> / <code>Action</code> / <code>Fill</code> events (Fill computes slip ticks). Read API: <code>ReadRecent(days)</code>, <code>ReadDay(date)</code>, <code>Parse(line)</code> → typed <code>Entry</code>. Wired into <strong>all three</strong> order sources (GTrader21/Deck/Copier). This is the audit trail and the Dashboard Journal/Slippage source.</li>
+<li><strong>State</strong> — keyed <strong>atomic blob store</strong> at <code>…\Sentinel\State\&lt;key&gt;.json</code>, survives restart. Used for GTrader21 <strong>position-state persist/restore</strong> (restore is opt-in, safe 3-case, never dup-stops) and reconnect reconciliation (naked-position detect + alert).</li>
+</ul>
+<h3>Substrate 3 — Alerts (health)</h3>
+<p><code>SentinelCore.Alerts.Critical/Info/Raise</code> (2-tier) → the <code>Raised</code> event → <strong>SentinelAlertService</strong> turns it into sound + optional push shell command (<code>Sentinel\Alerts.conf</code>). Plus the clock/TZ reset (<code>resetHour</code>), the pre-trade <strong>readiness</strong> view, and a config-git repo under <code>Documents\NinjaTrader 8\Sentinel\</code>.</p>
+<h3>The account-level gates (what <code>CanEnter</code> actually checks)</h3>
+<pre><code>CanEnter(instrument, account) =
+    NOT global kill
+  · NOT scoped instrument kill
+  · feed healthy (FeedHealthProbe)
+  · governor: TradingAllowedToday (daily cap / loss-stop)
+  · trailing drawdown: DrawdownAllowsEntry (cushion not thin/breached)
+  · inside the account-profile session window
+  · NOT in rollover blackout
+  · NOT in a news lockout</code></pre>
+<p>Feed health is filled by <strong>Sentinel Risk</strong>; news lockouts come from <code>News.conf</code> (fed by the user's <code>EconomicCalendar.py</code>); the governor + drawdown + profiles come from <code>Profiles.conf</code>/<code>Governor.conf</code>.</p>
+<h3>Current safety status</h3>
+<p><strong>The entire offline hardening build is COMPLETE and compiles clean.</strong> What remains is <strong>live, market-open validation</strong> via the Dashboard <strong>Test</strong> tab and the test tracker: kill-switch proof, alert sound, GTrader21 restore (no dup stop), stop-fill slippage, auto-flatten, and reconnect naked-position alert. Until those pass live, treat the safety layer as <em>built but unproven.</em></p>
+<h3>Operate it: proving the safety system</h3>
+<p>Building a safety net is worthless until you've watched it catch something. The dashboard <strong>Test tab</strong> is the "prove it" surface, and most of it works <strong>with the market closed</strong> — do these before you ever risk a funded dollar. (Full checklist: <code>SENTINEL_TEST_TRACKER.md</code>; this is the operator's short form.)</p>
+<h4>Do these now (market closed / SIM)</h4>
+<ol>
+<li><strong>Alert channel.</strong> Test tab → <strong>Test Critical</strong> → you hear a sound (needs <code>SentinelAlertService</code> loaded via F5) + a row appears in Risk ▸ Recent alerts + a line in the ledger audit. Set a <code>pushCommand</code> (ntfy/Pushover/Slack) → <strong>Test Critical</strong> → confirm the phone push. <strong>Save &amp; apply</strong> and re-fire — it should take effect with <strong>no NT restart.</strong></li>
+<li><strong>Dry-run gate probe.</strong> Pick an account, type an instrument (<code>MES 03-25</code>), qty/stop/risk → <strong>Evaluate</strong> → expect <strong>GATE = CLEAR</strong> (green) + a sized qty + TickValue + SizeForRisk. Now engage the top-bar <strong>KILL</strong> → Evaluate again → <strong>GATE = HARD</strong> (red, "kill-switch engaged"). Release kill. <strong>No order is ever sent</strong> — this is classification, safely.</li>
+<li><strong>Self-checks.</strong> Set a valid account+instrument, <strong>Run checks</strong> → expect <strong>3/3 PASS</strong> (scoped-kill isolation · sizer unaffordable→0 / generous→≥1 · TickValue &gt; 0).</li>
+<li><strong>Ledger is flowing.</strong> Fire a Deck order on SIM, toggle the kill-switch → open <code>…\Sentinel\Ledger\ledger-YYYY-MM-DD.jsonl</code> → one JSON line per order + per kill toggle. Then the <strong>Journal</strong> tab ▸ <strong>Today</strong> should show the order row and a <code>KILL-ENGAGED</code>/<code>KILL-RELEASED</code> action row; toggle <strong>▶ Live</strong> and fire a test alert → it appears within ~2s.</li>
+<li><strong>Risk sizer (Deck).</strong> Drop the Deck, toggle <strong>$ RISK</strong> (cyan), set Stop tk + Risk $ → the <code>= N @ $X/c ($Y risk)</code> line computes; a tiny Risk $ with a wide stop shows the amber <strong>"&lt;1 lot"</strong> warning (it will <strong>not</strong> silently over-size).</li>
+<li><strong>Clock/TZ.</strong> Risk tab → governor section shows <code>⏱ resets HH:00 local</code>. Set <code>resetHour=17</code> in <code>Profiles.conf</code> → confirm it matches your prop firm's reset. <strong>A wrong reset silently breaks the daily rule</strong> — this is a five-second check that saves an account.</li>
+</ol>
+<h4>Do these live / on SIM with the market open (the tracker's bucket B)</h4>
+<ul>
+<li><strong>① Kill-switch — the #1 proof.</strong> In a SIM position with working orders, engage the kill-switch → new entries blocked <strong>everywhere</strong>; confirm what it does to existing orders (with auto-flatten armed vs not).</li>
+<li><strong>② The fail-open/closed split, for real.</strong> Kill ON → <strong>GTrader21 and the Copier refuse new entries</strong> (fail-closed) while the <strong>Deck still lets a human click</strong> (fail-open). This is the core policy, observed live.</li>
+<li><strong>③ Hard daily-loss auto-flatten.</strong> SIM account with <strong>HardEnforce armed</strong> + a small <code>dailyLoss</code> → trade into the stop → the account <strong>auto-flattens and locks out</strong> (governor DayHalted); exits still allowed. With HardEnforce <strong>off</strong> → advisory only (the safe default).</li>
+<li><strong>④ GTrader21 restore, no duplicate stop.</strong> Turn on <strong>"Restore Position State On Restart"</strong> (group 14). Take a SIM trade headless, let BE arm / trail advance, then <strong>F5 or disable→re-enable</strong> mid-position → confirm one of the three logged outcomes (restored / partial / unowned) and — the key check — <strong>NO second stop is ever created.</strong></li>
+<li><strong>⑤ Stop-fill slippage.</strong> Run GTrader21 on SIM with a stop/target, let a protective order <strong>fill</strong> → the <strong>Slippage</strong> tab shows <code>evt:"fill"</code> with intended/fill/slip; a stop that filled worse shows <strong>red (positive) slip</strong>, a target with improvement shows <strong>green (negative).</strong></li>
+<li><strong>⑥ Reconnect / naked position.</strong> On a governed account, open a SIM position with no stop → a critical <strong>⛔ NAKED POSITION</strong> alert (it's an alert, not a block — you can still exit). Add a stop → it clears. The real test: pull the ethernet mid-position to drop the stop, then reconnect.</li>
+</ul>
+<blockquote><p><strong>The funded-account gate:</strong> don't trade real prop money until ①–⑥ have each shown ☑. A safety system you haven't watched fire is a story you're telling yourself.</p></blockquote>
+<h3>Appendix — the Consistency Governor &amp; prop-firm rules</h3>
+<p>If you trade a funded/prop account, two rules can end it that have nothing to do with your strategy: the <strong>trailing drawdown</strong> and the <strong>consistency rule</strong>. The suite handles them as a division of labor:</p>
+<ul>
+<li><strong>Sentinel Risk</strong> owns the <strong>trailing-drawdown</strong> breach (the real-time floor vs. the firm's −$4,500-type limit) + feed health. It drives the kill-switch.</li>
+<li><strong>The Consistency Governor</strong> (hosted in Risk, published on <code>SentinelCore</code>) owns the <strong>daily distribution</strong> — it stops you from <em>overtrading a green day</em> into a rule violation, and from bleeding out past a daily loss stop.</li>
+</ul>
+<p>They compose; neither duplicates the other.</p>
+<h4>The reframe that makes it painless</h4>
+<p>The consistency rule (Lucid 20% / Bulenox 40% / TPT 50%) says <em>"no single day may exceed R × your total cycle profit."</em> Rather than track a ratio intraday, the Governor enforces the equivalent, simpler invariant: <strong>cap each day at <code>DailyCap = R × ProfitTarget</code>.</strong> If no day ever exceeds that, then when your total hits target, no day can exceed R × total — <strong>compliance falls out by construction.</strong></p>
+<div class="tblwrap"><table><thead><tr><th>Firm</th><th>R (ratio)</th><th>Target</th><th><strong>DailyCap</strong></th><th>Firm preset</th></tr></thead><tbody><tr><td>Lucid</td><td>0.20</td><td>$9,000</td><td><strong>$1,800/day</strong></td><td><code>lucid</code></td></tr><tr><td>Apex</td><td>0.30</td><td>—</td><td>—</td><td><code>apex</code></td></tr><tr><td>Bulenox</td><td>0.40</td><td>$9,000</td><td><strong>$3,600/day</strong></td><td><code>bulenox</code></td></tr><tr><td>TPT</td><td>0.50</td><td>$9,000</td><td><strong>$4,500/day</strong></td><td><code>tpt</code></td></tr></tbody></table></div>
+<h4>How it gates (two daily triggers, both reset at session rollover)</h4>
+<ol>
+<li><strong>Profit cap</strong> — today's realized ≥ <code>DailyCap</code> → <strong>DayComplete</strong> → entries stop for the session (bank the base hit, don't give it back).</li>
+<li><strong>Loss stop</strong> — today's realized ≤ −<code>DailyLossStop</code> → <strong>DayHalted</strong> → entries stop (set <em>inside</em> the firm's trailing DD).</li>
+</ol>
+<p>Exits are always allowed. An entry fires only if <code>SlotLive(Arc) &amp;&amp; EyeQualified(if gated) &amp;&amp; TradingAllowedToday(Governor) &amp;&amp; CanEnter(kill/feed/…)</code>.</p>
+<h4>Where you configure it</h4>
+<p>Per-account <strong>profiles</strong> live in <code>Sentinel\Profiles.conf</code>, edited via the dashboard <strong>Accounts tab</strong>. A profile carries the firm preset (or custom) <code>ratio/target/dailyLoss/session/contracts/size/ddType</code>, and drives <strong>sizing</strong> (<code>SizedQuantity</code> = baseQty × SizeScale × RecommendedSize, clamped to <code>ContractLimit</code>) and <strong>per-account session gating</strong>. Set the <strong><code>resetHour</code></strong> to your firm's daily rollover (TPT 5 PM ET, etc.) — a wrong reset silently breaks the daily rule (see the Test-tab §6 check).</p>
+<blockquote><p><strong>⚠ Prop rules drift constantly.</strong> The numbers above are a snapshot; the raw per-firm research (TPT, Bulenox, Lucid — drawdown mechanics, buffers, payout rules, news lockouts) lives in <strong><code>Docs/PropFirmRules.md</code></strong>, and the governor's design in <strong><code>Docs/CONSISTENCY_GOVERNOR_SPEC.md</code></strong>. <strong>Always verify against the firm's live knowledge base before trading.</strong> The single most common way a funded account dies isn't strategy — it's the <strong>EOD→intraday drawdown switch</strong> (TPT PRO) or the <strong>real-time trailing floor ratcheting on an unrealized peak</strong> (Bulenox Option 1). Mark your open positions against the trailing floor on every tick; that's exactly what Risk is for.  <strong>Not yet built (be honest with yourself):</strong> the phase-5 SizeScale/dilution after an over-cap day (<code>RecommendedSize</code> is 1.0 for now), and <strong>live validation</strong> of caps/loss-stop/session on a Sim account (Test tracker bucket B). Validate the P&amp;L-reset semantics against how <em>your</em> firm reports.</p></blockquote>
+<hr>
+<h2>Part VIII — A worked example</h2>
+<blockquote><p>One trade signal, followed from the moment it's born to the moment Lens tells you whether it was worth taking. This is the whole suite in a single story. Numbers below are illustrative (to make the mechanics concrete); the <em>process</em> is exact.</p></blockquote>
+<p><strong>The setup:</strong> you trade <strong>GC</strong> (gold). You suspect the GodTrades <strong>FC</strong> (continuation) signal is your edge, but only in a trend. Here's how the suite turns that hunch into a graded, live, risk-gated strategy.</p>
+<h4>Act 1 — Measure the signal (no trading yet)</h4>
+<p>You put <strong><code>SentinelExcursionRecorder_v1_4</code></strong> on a GC 100-tick chart and leave it for a couple of weeks (or run it over history). It never places an order — it just watches its internal GodTrades engine fire FC/BG/OBR signals and records the <strong>full price path</strong> after each one: how far it ran your way (<strong>MFE</strong>) and against you (<strong>MAE</strong>), in ticks, at the 1/5/15/60-minute marks, tagged with the <strong>regime</strong> (from ADX) and the <strong>Eye</strong> verdict.</p>
+<p>Every signal becomes one JSONL line in <code>…\Sentinel\Excursions\</code>. After two weeks you have a few hundred FC-Short fires with their real excursions.</p>
+<pre><code>FC-Short fire  →  firePx 2043.6  →  path recorded  →  mfe15=52t  mae15=18t  regime=trend  eye=aligned
+                                                       (…hundreds of these…)</code></pre>
+<h4>Act 2 — Find the responsible edge (Excursion tab)</h4>
+<p>Open the dashboard → <strong>Excursion</strong> → <strong>Load / Refresh</strong>. The edge chart ranks your signal groups. <strong>GC · FC · Short (trend)</strong> shows green MFE ≫ red MAE at 15 minutes — a real edge. You pick it in "Detail signal" and read the <strong>12-config TP/SL grid</strong>:</p>
+<ul>
+<li>The <strong>★</strong> (best raw EV) sits at a wide stop — a mirage; big EV bought with catastrophic risk.</li>
+<li>The <strong>◆</strong> (best <em>responsible</em>, stop ≤ TP) lands at, say, <strong>TP 40t / Stop 30t</strong>, ~<strong>+6t/trade</strong> expectancy at a <strong>58% hit rate</strong>, firing <strong>1.8×/day</strong>, <code>n = 140</code> (confident).</li>
+<li>The <strong>Eye referee</strong> says endorsed fires out-earn the rest → recommends the <strong>Eye-gate ON</strong>.</li>
+</ul>
+<p>You click <strong>"Apply ◆ to GTrader21 config."</strong> It writes:</p>
+<pre><code># …\Sentinel\GTraderConfigs\GC_FC_Short.conf
+instrument = GC
+signal = FC
+direction = Short
+useTrendFilter = true
+trendAdxThreshold = 25
+useEyeGate = true
+takeProfitTicks = 40
+stopLossTicks = 30</code></pre>
+<blockquote><p><strong>Reality check (don't skip):</strong> the grid is a <em>screen</em>, not a verdict. Before trusting that 58%, re-validate it at <strong>High/Tick fill resolution</strong> — bar-level excursion is optimistic (§VI caveat).</p></blockquote>
+<h4>Act 3 — Hand it to the strategy</h4>
+<blockquote><p><strong>The executor is pluggable — it doesn't have to be GTrader21.</strong> GTrader21 is used here because it's the strategy that <strong>auto-reads lab <code>.conf</code> files today</strong> (<code>UseSentinelConfig</code>). The suite is deliberately built so a <strong>purpose-built strategy</strong> (or the now-built <strong>Sentinel Bridge</strong>) can wear the same two hooks — read the <code>.conf</code>, gate on the seam — and slot straight into this loop. When you swap in that other strategy, only this Act changes; Acts 1–2 and 4–6 are identical. <strong>Treat "GTrader21" below as "your Sentinel-consuming strategy."</strong> The <strong>Bridge</strong> already does exactly this — it consumes <code>CouncilState</code> and reads <code>&lt;inst&gt;_COUNCIL_&lt;dir&gt;.conf</code> — so the loop below is now real, not hypothetical (it fired a SIM GC short off the Council this session).</p></blockquote>
+<p>On your live GC chart, add <strong>GTrader21 v0.1.7</strong> (or your chosen executor). Under group <strong>"14. Sentinel Integration"</strong> set <strong><code>UseSentinelConfig = true</code></strong> and <strong><code>SentinelConfigName = "GC_FC_Short"</code></strong>. On load it reads the <code>.conf</code> and <strong>overrides its own dialog</strong> — TP 40 / Stop 30 / trend filter on / Eye-gate on — <em>before it can place a single trade.</em> It republishes what it loaded, so the dashboard's <strong>"Active lab configs"</strong> list now shows this instance running <code>GC_FC_Short</code>. The lab result is now the live rule.</p>
+<blockquote><p><strong>The two hooks a new executor needs</strong> to join this loop: (1) an opt-in <strong>config reader</strong> — <code>UseSentinelConfig</code>/<code>SentinelConfigName</code> that applies the five <code>.conf</code> keys (§VI) before trading; (2) a <strong>seam consult + record</strong> — gate on <code>GetCouncilState</code> (or a specific sensor), size via <code>SizeMult</code> → <code>GateEntry</code>, and write the verdict to the Ledger on each fire. That's the whole contract. See §V (consume a seam) and the <strong>Bridge</strong> thread.</p></blockquote>
+<h4>Act 4 — A signal fires (the gauntlet)</h4>
+<p>Price is trending down on GC. GodTrades fires <strong>FC-Short</strong>. Watch every gate the trade must clear:</p>
+<pre><code>FC-Short fires
+   │
+   ├─ Trend filter?  ADX 27 ≥ 25 ................................ ✔ (trend confirmed)
+   ├─ Eye gate?      GetEyeVerdict("GC").Direction == -1 ........ ✔ (short-qualified)
+   ├─ Council?  ✅    GetCouncilState("GC"): Bias -1, HasEdge,
+   │                  Conviction 0.71 → size × 0.71 ............. ✔ (fused agreement)
+   │                  (GTrader21 v0.1.7 UseCouncilGate consults the
+   │                   Council, not the Eye directly — the decouple;
+   │                   the Bridge gates on this seam by default)
+   │
+   ▼ intends to sell
+   ├─ CanEnter("GC", acct)?  kill / feed / governor / drawdown /
+   │                          session / rollover / news ......... ✔ all clear
+   │
+   ▼ at submit
+   └─ GateEntry(acct, GC, qty=1, stopTicks=30, risk=$300)
+        Level = Clear,  Size = 1 (risk-sized) ................... ✔  → SUBMIT to broker</code></pre>
+<p>If <em>any</em> HARD condition were true — kill-switch, a news blackout, a liquidity wall on the sell side, the daily loss-stop — the trade is blocked and the reason is logged. Because GTrader21 is <strong>automated, it fails CLOSED</strong>: ambiguity blocks. (If this were you clicking the <strong>Deck</strong>, it would fail OPEN — you're the safety.)</p>
+<h4>Act 5 — Fill, record, and manage</h4>
+<p>The sell fills at 2041.2 (intended 2041.4 → <strong>0.2t adverse slip</strong>). GTrader21:</p>
+<ul>
+<li>writes the fill to <strong><code>SentinelCore.Ledger.Fill(…)</code></strong> — captured with slip, visible in the dashboard <strong>Slippage</strong> tab;</li>
+<li><strong>records the Council verdict on this fire</strong> (Bias −1, Conviction 0.71, Reasons <code>EYE▼ TRND▼ CCI▼ ADX▼ · trend</code>) into the Ledger context — this is the seed Lens will grade;</li>
+<li>sets its <strong>40t target / 30t stop</strong> (unmanaged — it owns its own exits);</li>
+<li>persists position-state to <strong><code>SentinelCore.State</code></strong> so a mid-trade recompile/restart re-adopts the stop instead of duplicating it.</li>
+</ul>
+<p>The target hits. +40t, minus the slip. One clean, fully-audited round trip.</p>
+<h4>Act 6 — Grade it (Lens closes the loop)</h4>
+<p>Days later you've got 30+ of these. Open the dashboard → <strong>Lens</strong>. It reads the trade log and answers the only question that matters:</p>
+<blockquote><p><strong>When the Council was confident (0.7+) on FC-Short, did those trades actually pay more than the low-conviction ones?</strong></p></blockquote>
+<ul>
+<li><strong>If yes</strong> → conviction is real edge. Lean into it; maybe raise the Eye or Trend weight.</li>
+<li><strong>If no</strong> → "agreement" was just correlated price-lenses nodding along (the independence caveat, made concrete). The fix isn't more of the same voters — it's an <strong>orthogonal</strong> axis (Intermarket, Participation) carrying information the others don't have.</li>
+</ul>
+<p><strong>That is the full Sentinel loop:</strong> <em>measure → find the responsible edge → hand it to the strategy → run it through the safety gauntlet → record every verdict → grade whether the confidence paid → tune the weights → repeat.</em> Every part of this manual is one station on that loop.</p>
+<blockquote><p><strong>Where this is today:</strong> Acts 1–5 are <strong>built and running</strong> — and the loop is now closed both ways: the <strong>Sentinel Bridge</strong> consumes <code>CouncilState</code> and fired a SIM GC short off the Council this session (captured in the Ledger/Slippage tab), and <strong>GTrader21 v0.1.7</strong> gained the opt-in <code>UseCouncilGate</code> decouple (consults the Council, not the Eye directly). Act 6's grading loop is what <strong>Lens</strong> finishes now that every Bridge fire records the verdict. The gauntlet's live proofs (kill, auto-flatten, restore, reconnect) are still ⚠ pending market-open validation (§VII), and the illustrative numbers await an overnight recorder run (see below).</p></blockquote>
+<hr>
+<h2>Part IX — Glossary, file index, and open questions</h2>
+<h3>Glossary</h3>
+<ul>
+<li><strong>Seam / bus</strong> — a small typed fact published to <code>SentinelCore</code> (<code>…State</code>) that any tool can read.</li>
+<li><strong>Voter / modulator / veto</strong> — a Council input that adds a directional vote / scales conviction / hard-blocks.</li>
+<li><strong>Bias / Conviction / SizeMult</strong> — the Council's fused direction (−1/0/+1) / alignment strength (0..1) / position-size multiplier (0..1, 0 when vetoed).</li>
+<li><strong>MFE / MAE</strong> — max favorable / adverse excursion; the raw material of TP/SL selection.</li>
+<li><strong>★ vs ◆</strong> — best raw-EV config vs best <em>responsible</em> config (R:R ≥ 1). Apply the ◆.</li>
+<li><strong>Fail-open / fail-closed</strong> — allow vs block when a signal is ambiguous/absent.</li>
+<li><strong>Root symbol</strong> — <code>Instrument.MasterInstrument.Name</code> (e.g. <code>GC</code>); the seam registry key.</li>
+</ul>
+<h3>File index (the load-bearing files)</h3>
+<div class="tblwrap"><table><thead><tr><th>File</th><th>Role</th></tr></thead><tbody><tr><td><code>AddOns/SentinelCore_v1_0_0.cs</code></td><td>The bus + Gate/Ledger/State/Alerts + all registries</td></tr><tr><td><code>AddOns/SentinelSkin.cs</code></td><td>Glass-card Painter + palette + CardLayout</td></tr><tr><td><code>Indicators/Council_v1_0_0.cs</code></td><td>The fusion brain</td></tr><tr><td><code>Indicators/{Eye,SentinelTrend,WoodiesCCIPro,ADXPro,VolEnvelope,CompressionBase,Intermarket,SentinelWAE}_*.cs</code> + <code>BarsTypes/SentinelTBars_*</code></td><td>The 9 voters (Brick = the bar type below)</td></tr><tr><td><code>Indicators/{Clock,Participation,Location,Mtf}_v1_0_0.cs</code></td><td>The orthogonal modulator axes</td></tr><tr><td><code>BarsTypes/SentinelTBars_v1_0_0.cs</code></td><td>Brick bar type → <code>BrickState</code></td></tr><tr><td><code>Indicators/SentinelExcursionRecorder_v1_4.cs</code> + <code>AddOns/SentinelExcursions_v1_0.cs</code></td><td>The MAE/MFE lab (records the Council too)</td></tr><tr><td><code>Strategies/GTrader21v_0_1_7.cs</code></td><td>The automated executor (auto-reads lab configs; <code>UseCouncilGate</code> decouple)</td></tr><tr><td><code>Strategies/SentinelBridge_v0_2_0.cs</code></td><td>The autopilot — consumes <code>CouncilState</code>, records every fire</td></tr><tr><td><code>Indicators/Deck_v0_2_2.cs</code></td><td>The manual order deck + SIGNAL ARM</td></tr><tr><td><code>AddOns/SentinelDashboard_v1_0_0.cs</code></td><td>The 12-tab control center</td></tr><tr><td><code>AddOns/Sentinel{Risk,Alert,State,Copier,LogEngine,LogService,Lens,Arc}Service*.cs</code></td><td>The service layer</td></tr><tr><td><code>Docs/SENTINEL_DESIGN_SYSTEM.md</code> · <code>SENTINEL-CONTRACTS.md</code> · <code>ROADMAP.md</code></td><td>The specs this manual condenses</td></tr></tbody></table></div>
+<h3>Screenshots to capture (placeholders for the polished manual)</h3>
+<p>A real manual needs pictures. These are the shots to grab (SIM/replay is fine); each slots into the section noted. Drop them in a <code>Docs/img/</code> folder and we'll wire the <code>![]()</code> links.</p>
+<div class="tblwrap"><table><thead><tr><th>#</th><th>Shot</th><th>Goes in</th><th>What it must show</th></tr></thead><tbody><tr><td>S1</td><td><strong>The Council card, live</strong></td><td>Part 0, Part II</td><td>Bias pill, conviction %, size×, colored voter chips, tally footer</td></tr><tr><td>S2</td><td><strong>A Council VETO</strong></td><td>Part V, Part VII</td><td>the red <code>VETO: …</code> line (e.g. news or a liquidity wall)</td></tr><tr><td>S3</td><td><strong>The <code>Sentinel</code> picker folder</strong></td><td>Part 0, Part V</td><td>the indicator picker expanded, suite tools clustered</td></tr><tr><td>S4</td><td><strong>Stacked glass cards (CardLayout)</strong></td><td>Part III, §3.0</td><td>two+ Sentinel cards in one corner, auto-stacked, not overlapping</td></tr><tr><td>S5</td><td><strong>Excursion tab — edge chart</strong></td><td>Part VI</td><td>diverging MFE/MAE bars ranked, ✓ on the edges</td></tr><tr><td>S6</td><td><strong>Excursion tab — TP/SL grid</strong></td><td>Part VI, Part VIII</td><td>the 12 configs with ★ and ◆ marked</td></tr><tr><td>S7</td><td><strong>Excursion tab — outcome scatter</strong></td><td>Part VI</td><td>MAE15 vs MFE15 dots, regime-colored, Eye rings, dashed TP/SL</td></tr><tr><td>S8</td><td><strong>Dashboard — Test tab</strong></td><td>Part VII</td><td>the dry-run gate probe showing CLEAR then HARD</td></tr><tr><td>S9</td><td><strong>Dashboard — Journal + Slippage</strong></td><td>Part VII</td><td>a fill row with intended/fill/slip, red vs green slip</td></tr><tr><td>S10</td><td><strong>Deck with on-chart order visuals</strong></td><td>Part III</td><td>entry(cyan)/stop(red)/target(green) lines + R/$/tick chips</td></tr><tr><td>S11</td><td><strong>The <code>.conf</code> handoff</strong></td><td>Part VI, Part VIII</td><td>GTrader21 group 14 <code>UseSentinelConfig</code> + the Active-lab-configs list</td></tr></tbody></table></div>
+<h3>Open questions for us to resolve (before this becomes "the" manual)</h3>
+<ol>
+<li><strong>Audience split.</strong> ✅ <strong>CONFIRMED (user-approved 2026-07-07):</strong> <strong>ONE manual with two reading paths</strong> (see "How to read this manual" up top) — no physical fork.</li>
+<li><strong>The independence caveat.</strong> ✅ ADDRESSED: framed in Part II, reinforced in the Part 0 "why the Eye is here" note and made concrete in Act 6 of the worked example. <em>Review:</em> prominent enough for a trader, or do we want a standing callout box on the Council card's own §3.1 entry?</li>
+<li><strong>Bridge.</strong> ✅ <strong>BUILT (2026-07-08):</strong> <code>SentinelBridge.cs</code> (base <code>…Strategies</code> namespace, display "Sentinel Bridge") v0.2.0 — consumes <code>CouncilState</code>, sizes ×<code>SizeMult</code> → <code>GateEntry</code>, records every fire, reads <code>&lt;inst&gt;_COUNCIL_&lt;dir&gt;.conf</code>. Live-validated on SIM (fired a GC short off the Council). Now a full §3.4 catalog entry, in the layer diagrams, and the real spine of the Part VIII loop.</li>
+<li><strong>Screenshots.</strong> ✅ STRUCTURED: the <strong>"Screenshots to capture"</strong> table above (S1–S11) lists every shot and where it lands. <em>Action on you:</em> capture them (SIM/replay fine) → drop in <code>Docs/img/</code>.</li>
+<li><strong>A 5-minute quickstart.</strong> ✅ DONE: Part 0 now leads with <strong>4 sensors including the Eye</strong> (per your call) + a note on <em>why</em> the Eye anchors the starter set, and points at the Excursion/Test tabs.</li>
+<li><strong>Worked example.</strong> ✅ DONE + made <strong>executor-agnostic</strong> (may not be GTrader21). <em>Still open (needs you):</em> the illustrative numbers (TP40/Stop30, +6t, 58%, 1.8×/day) are placeholders — but the <strong>path to real numbers is now fully wired</strong> (recorder records the Council → ◆ writes <code>&lt;inst&gt;_COUNCIL_&lt;dir&gt;.conf</code> → the Bridge auto-reads it). All that's left is an <strong>overnight recorder run</strong> on GC to swap the placeholders for measured output.</li>
+<li><strong>Missing tools.</strong> ✅ DONE: LiquidityWalls has a catalog entry (§3.3) and the <strong>Consistency Governor + prop-firm rules</strong> are folded into the Part VII appendix (grounded in the two specs, with the "verify against live docs" caveat). <em>Nothing open unless we want more firms.</em></li>
+<li><strong>Depth of the safety chapter.</strong> ✅ DONE: Part VII has the "Operate it" section + the Governor/prop appendix. <em>Review:</em> enough for a prop trader, or split into a standalone runbook later?</li>
+</ol>
+<h4>Still genuinely needing YOU (not things I can finish alone)</h4>
+<ul>
+<li><strong>Real worked-example numbers</strong> (Q6) — the pipe is wired (recorder → ◆ → <code>.conf</code> → Bridge); just needs an <strong>overnight recorder run</strong> on GC to produce measured TP/SL/expectancy.</li>
+<li><strong>The screenshots</strong> (Q4) — S1–S11 (add S12: the Bridge card + ARM BRIDGE button when captured).</li>
+<li>~~Confirm the structural calls~~ ✅ <strong>user-approved 2026-07-07</strong> (one-manual-two-paths, Eye-in-quickstart, executor-agnostic framing — all locked; manual reviewed).</li>
+<li><strong>Direction:</strong> the <strong>Bridge is built and SIM-validated</strong> — next is <strong>live/market-open validation</strong> of the safety gauntlet (§VII) + the overnight recorder run to grade the Council's weights via Lens.</li>
+</ul>
+<pre><code></code></pre>
+<footer><span>Sentinel Suite · <b>The Sentinel Suite — Field Manual</b></span><span>living document · rendered from Markdown</span></footer>
+</div></body></html>

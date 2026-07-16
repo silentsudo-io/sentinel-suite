@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sentinel · The Sentinel Cockpit — Spec (v0, design)</title>
+<style>
+  :root{
+    --void:#e7edf1; --panel:#f3f7f9; --surface:#ffffff; --surface2:#eaf0f3;
+    --ink:#16222c; --ink2:#586873; --line:#cdd8de; --grid:#dde5ea;
+    --accent:#0b8ea1; --flow:#0d8fa2;
+    --up:#12a56f; --down:#e0424f; --warn:#c9861a;
+    --mono:ui-monospace,"Cascadia Code","SF Mono",Consolas,Menlo,monospace;
+    --sans:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  }
+  @media (prefers-color-scheme:dark){
+    :root{
+      --void:#0a0e13; --panel:#0d131a; --surface:#141c25; --surface2:#0f161e;
+      --ink:#e2e9ee; --ink2:#8a9ba8; --line:#26333f; --grid:#131c25;
+      --accent:#4ad6e8; --flow:#3fb6c9; --up:#25d08b; --down:#ff5c6a; --warn:#f2b23c;
+    }
+  }
+  :root[data-theme="light"]{
+    --void:#e7edf1; --panel:#f3f7f9; --surface:#ffffff; --surface2:#eaf0f3;
+    --ink:#16222c; --ink2:#586873; --line:#cdd8de; --grid:#dde5ea;
+    --accent:#0b8ea1; --flow:#0d8fa2; --up:#12a56f; --down:#e0424f; --warn:#c9861a;
+  }
+  :root[data-theme="dark"]{
+    --void:#0a0e13; --panel:#0d131a; --surface:#141c25; --surface2:#0f161e;
+    --ink:#e2e9ee; --ink2:#8a9ba8; --line:#26333f; --grid:#131c25;
+    --accent:#4ad6e8; --flow:#3fb6c9; --up:#25d08b; --down:#ff5c6a; --warn:#f2b23c;
+  }
+
+  *{box-sizing:border-box}
+  body{margin:0; background:var(--void); color:var(--ink); font-family:var(--sans); line-height:1.55; -webkit-font-smoothing:antialiased; overflow-x:hidden}
+  .wrap{max-width:1120px; margin:0 auto; padding:56px 24px 100px; position:relative; z-index:1}
+
+  /* the Sentinel brand mark (Spartan barbute helmet) — faint fixed watermark + crisp header mark */
+  .watermark{position:fixed; z-index:0; pointer-events:none; top:50%; right:-2vw; transform:translateY(-50%); width:clamp(300px,40vw,560px); height:auto; fill:var(--accent); opacity:.18; filter:drop-shadow(0 0 55px color-mix(in srgb,var(--accent) 60%,transparent))}
+  .brandmark{width:16px; height:16px; flex:0 0 auto; fill:var(--accent); filter:drop-shadow(0 0 5px color-mix(in srgb,var(--accent) 50%,transparent))}
+
+  .kicker{font-family:var(--mono); font-size:11px; letter-spacing:.34em; text-transform:uppercase; color:var(--accent); display:flex; align-items:center; gap:9px; margin:0 0 14px}
+  .livedot{width:8px; height:8px; border-radius:50%; background:var(--accent); animation:pulse 2.4s ease-out infinite}
+  @keyframes pulse{0%{box-shadow:0 0 0 0 color-mix(in srgb,var(--accent) 55%,transparent)}70%{box-shadow:0 0 0 7px transparent}100%{box-shadow:0 0 0 0 transparent}}
+  h1{font-family:var(--mono); font-weight:700; font-size:clamp(30px,5.4vw,50px); letter-spacing:-.015em; margin:0 0 14px; text-wrap:balance}
+  .lede{font-size:18px; color:var(--ink2); max-width:66ch; margin:0 0 4px}
+  .lede b{color:var(--ink); font-weight:600}
+
+  .oneline{display:flex; flex-wrap:wrap; gap:7px; align-items:center; margin:28px 0 6px}
+  .oneline .s{font-family:var(--mono); font-size:12px; color:var(--ink); background:var(--surface); border:1px solid var(--line); border-radius:999px; padding:6px 13px}
+  .oneline .s b{color:var(--accent); font-weight:700}
+  .oneline .sep{color:var(--ink2); font-family:var(--mono)}
+
+  .toc{display:flex; flex-wrap:wrap; gap:6px 20px; margin:22px 0 6px; padding:16px 18px; border:1px solid var(--line); border-radius:12px; background:var(--panel)}
+  .toc a{font-family:var(--mono); font-size:12.5px; color:var(--ink2); text-decoration:none; white-space:nowrap}
+  .toc a:hover{color:var(--accent)}
+  .toc a b{color:var(--accent); font-weight:700; margin-right:6px}
+
+  .legend{display:flex; flex-wrap:wrap; gap:8px 18px; margin:18px 0 6px; padding:13px 16px; border:1px solid var(--line); border-radius:12px; background:var(--panel)}
+  .legend .k{display:flex; align-items:center; gap:8px; font-family:var(--mono); font-size:12px; color:var(--ink2)}
+  .swatch{width:22px; height:4px; border-radius:2px}
+  .swatch.a{background:var(--flow)} .swatch.u{background:var(--up)} .swatch.d{background:var(--down)} .swatch.w{background:var(--warn)}
+  .legend .k b{color:var(--ink); font-weight:600}
+
+  .part{display:flex; align-items:baseline; gap:16px; margin:80px 0 8px; padding-bottom:14px; border-bottom:1px solid var(--line)}
+  .part .pn{font-family:var(--mono); font-size:13px; font-weight:700; color:var(--accent); letter-spacing:.2em; white-space:nowrap}
+  .part h2{font-family:var(--mono); font-weight:700; font-size:15px; letter-spacing:.22em; text-transform:uppercase; color:var(--ink); margin:0}
+  .part .pd{margin-left:auto; font-size:13px; color:var(--ink2); font-family:var(--mono); text-align:right}
+
+  section{margin-top:44px}
+  .eyebrow{font-family:var(--mono); font-size:11px; letter-spacing:.24em; text-transform:uppercase; color:var(--accent); margin:0 0 8px; display:flex; gap:10px; align-items:baseline}
+  .eyebrow .num{color:var(--ink2); opacity:.7}
+  h3{font-family:var(--mono); font-weight:700; font-size:22px; margin:0 0 6px; letter-spacing:-.01em; text-wrap:balance}
+  .desc{color:var(--ink2); font-size:15px; margin:0 0 20px; max-width:74ch}
+  .desc b{color:var(--ink); font-weight:600}
+  code{font-family:var(--mono); font-size:.9em; background:var(--surface2); border:1px solid var(--line); border-radius:5px; padding:1px 5px; color:var(--ink)}
+
+  .panel{border:1px solid var(--line); border-radius:14px; background:var(--panel);
+    background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);
+    background-size:26px 26px; background-position:-1px -1px; padding:34px 30px; overflow-x:auto}
+
+  .node{background:var(--surface); border:1px solid var(--line); border-radius:11px; padding:11px 14px; min-width:120px; text-align:center; position:relative; box-shadow:0 1px 0 color-mix(in srgb,var(--ink) 6%,transparent)}
+  .node .t{font-family:var(--mono); font-weight:700; font-size:13px; color:var(--ink); white-space:nowrap}
+  .node .s{font-family:var(--mono); font-size:10.5px; color:var(--ink2); margin-top:3px; white-space:nowrap}
+  .node.accent{border-color:color-mix(in srgb,var(--accent) 55%,var(--line))}
+  .node.accent::before,.node.up::before,.node.down::before,.node.warn::before{content:""; position:absolute; left:0; top:9px; bottom:9px; width:3px; border-radius:3px}
+  .node.accent::before{background:var(--accent)}
+  .node.up::before{background:var(--up)} .node.up .t{color:color-mix(in srgb,var(--up) 78%,var(--ink))}
+  .node.down::before{background:var(--down)} .node.down .t{color:color-mix(in srgb,var(--down) 82%,var(--ink))}
+  .node.warn::before{background:var(--warn)}
+  .node.big{min-width:150px; padding:14px 16px}
+
+  .chip{font-family:var(--mono); font-size:11px; color:var(--ink); background:var(--surface2); border:1px solid var(--line); border-radius:7px; padding:5px 8px; white-space:nowrap; display:flex; justify-content:space-between; gap:10px; align-items:center}
+  .chip .w{color:var(--ink2); font-size:10px}
+  .chip.mute{color:var(--ink2)}
+
+  .flow{display:flex; align-items:center; justify-content:center; min-width:min-content}
+  .arrow{position:relative; flex:0 0 var(--aw,50px); height:2px; align-self:center; background:linear-gradient(90deg,color-mix(in srgb,var(--flow) 25%,transparent),var(--flow)); --c:var(--flow)}
+  .arrow::after{content:""; position:absolute; right:-1px; top:50%; transform:translateY(-50%); border-left:8px solid var(--c); border-top:5px solid transparent; border-bottom:5px solid transparent}
+  .arrow[data-l]::before{content:attr(data-l); position:absolute; left:50%; top:-15px; transform:translateX(-50%); font-family:var(--mono); font-size:9px; letter-spacing:.06em; text-transform:uppercase; color:var(--ink2); white-space:nowrap}
+  .arrow.up{--c:var(--up); background:linear-gradient(90deg,color-mix(in srgb,var(--up) 25%,transparent),var(--up))}
+  .arrow.down{--c:var(--down); background:linear-gradient(90deg,color-mix(in srgb,var(--down) 25%,transparent),var(--down))}
+  .arrow.warn{--c:var(--warn); background:linear-gradient(90deg,color-mix(in srgb,var(--warn) 25%,transparent),var(--warn))}
+  .arrow.v{width:2px; height:var(--ah,38px); flex:none; margin:0 auto; background:linear-gradient(180deg,color-mix(in srgb,var(--flow) 25%,transparent),var(--flow))}
+  .arrow.v::after{right:50%; top:auto; bottom:-1px; left:auto; transform:translateX(50%); border-left:5px solid transparent; border-right:5px solid transparent; border-top:8px solid var(--c); border-bottom:0}
+  .arrow.v.up-dir{background:linear-gradient(0deg,color-mix(in srgb,var(--flow) 25%,transparent),var(--flow))}
+  .arrow.v.up-dir::after{bottom:auto; top:-1px; border-top:0; border-bottom:8px solid var(--c)}
+  .arrow.v[data-l]::before{left:12px; top:50%; transform:translateY(-50%)}
+  .live .arrow{background-size:220% 100%; animation:travel 2.6s linear infinite}
+  @keyframes travel{0%{background-position:120% 0}100%{background-position:-40% 0}}
+
+  .group{border:1px dashed color-mix(in srgb,var(--line) 92%,var(--ink)); border-radius:11px; padding:12px; background:color-mix(in srgb,var(--surface) 55%,transparent)}
+  .group .gl{font-family:var(--mono); font-size:10px; letter-spacing:.14em; text-transform:uppercase; color:var(--ink2); margin:0 0 10px; text-align:center}
+  .grid2{display:grid; grid-template-columns:repeat(2,minmax(96px,1fr)); gap:6px}
+  .grid1{display:grid; gap:6px}
+  .rowflow{display:flex; align-items:center; justify-content:center; gap:0; min-width:min-content}
+  .stack{display:flex; flex-direction:column; align-items:center}
+  .band{display:flex; gap:8px; justify-content:center; flex-wrap:wrap; max-width:520px}
+
+  .verdict{background:var(--surface); border:1px solid color-mix(in srgb,var(--accent) 45%,var(--line)); border-radius:11px; padding:14px 16px; min-width:180px}
+  .verdict .vt{font-family:var(--mono); font-weight:700; font-size:12px; color:var(--accent); letter-spacing:.14em; margin-bottom:10px}
+  .vrow{display:flex; justify-content:space-between; gap:16px; font-family:var(--mono); font-size:12px; padding:4px 0; border-top:1px solid var(--line)}
+  .vrow span:first-child{color:var(--ink2)} .vrow span:last-child{color:var(--ink); font-weight:600}
+
+  .drow{display:flex; align-items:center; gap:14px; justify-content:center}
+  .branch{display:flex; align-items:center; gap:10px}
+  .blabel{font-family:var(--mono); font-size:9px; letter-spacing:.08em; text-transform:uppercase; color:var(--ink2)}
+  .qnode{background:var(--surface); border:1px solid var(--line); border-radius:11px; padding:12px 16px; text-align:center; position:relative}
+  .qnode.dec{border-color:color-mix(in srgb,var(--accent) 40%,var(--line))}
+  .qnode .t{font-family:var(--mono); font-weight:700; font-size:12.5px; color:var(--ink)}
+  .qnode .s{font-family:var(--mono); font-size:10px; color:var(--ink2); margin-top:4px}
+  .spine{display:flex; flex-direction:column; align-items:center}
+
+  .cast{display:grid; grid-template-columns:repeat(auto-fill,minmax(232px,1fr)); gap:12px}
+  .castcard{border:1px solid var(--line); border-radius:12px; background:var(--surface); padding:14px 15px; display:flex; flex-direction:column; gap:6px}
+  .castcard .role{font-family:var(--mono); font-size:9.5px; letter-spacing:.16em; text-transform:uppercase; color:var(--accent)}
+  .castcard .nm{font-family:var(--mono); font-weight:700; font-size:15px; color:var(--ink)}
+  .castcard p{margin:0; font-size:13px; color:var(--ink2)}
+  .castcard .seam{margin-top:auto; font-family:var(--mono); font-size:10.5px; color:var(--ink2); border-top:1px dashed var(--line); padding-top:7px}
+  .castcard .seam b{color:var(--ink); font-weight:600}
+
+  .two{display:grid; grid-template-columns:1.1fr .9fr; gap:26px; align-items:start}
+  .two .panel{margin:0}
+  .anno{display:flex; flex-direction:column; gap:12px}
+  .anno .a{display:flex; gap:12px; align-items:flex-start}
+  .anno .n{flex:0 0 22px; height:22px; border-radius:6px; background:var(--surface2); border:1px solid var(--line); color:var(--accent); font-family:var(--mono); font-weight:700; font-size:11px; display:flex; align-items:center; justify-content:center; margin-top:1px}
+  .anno .a div b{font-family:var(--mono); font-size:12.5px; color:var(--ink)}
+  .anno .a div p{margin:2px 0 0; font-size:13px; color:var(--ink2)}
+
+  .tblwrap{overflow-x:auto; border:1px solid var(--line); border-radius:12px; margin:8px 0}
+  table{width:100%; border-collapse:collapse; font-family:var(--mono); font-size:12.5px; min-width:640px}
+  thead th{text-align:left; font-size:10px; letter-spacing:.12em; text-transform:uppercase; color:var(--ink2); font-weight:600; padding:12px 14px; background:var(--panel); border-bottom:1px solid var(--line); white-space:nowrap}
+  tbody td{padding:10px 14px; border-bottom:1px solid var(--line); color:var(--ink); vertical-align:top}
+  tbody tr:last-child td{border-bottom:0}
+  td .vt{color:var(--ink2); font-size:11.5px}
+  td b{color:var(--ink)}
+  .wt{font-variant-numeric:tabular-nums; color:var(--accent); font-weight:700}
+  .ax-orth{color:var(--accent)} .ax-price{color:var(--ink2)}
+  .st{font-size:11px; color:var(--ink2)}
+
+  .principles{display:grid; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); gap:16px}
+  .pr{border:1px solid var(--line); border-left:3px solid var(--accent); border-radius:0 12px 12px 0; background:var(--surface); padding:16px 18px}
+  .pr h4{font-family:var(--mono); font-size:14px; margin:0 0 6px; color:var(--ink)}
+  .pr p{margin:0; font-size:13.5px; color:var(--ink2)}
+  .pr p b{color:var(--ink); font-weight:600}
+
+  .layers{display:flex; flex-direction:column; gap:12px}
+  .layer{display:grid; grid-template-columns:138px 1fr auto; align-items:center; gap:16px; border:1px solid var(--line); border-radius:12px; background:var(--surface); padding:14px 16px}
+  .layer .lb{font-family:var(--mono); font-size:10px; letter-spacing:.14em; text-transform:uppercase; color:var(--accent)}
+  .layer .lb b{display:block; color:var(--ink); font-size:14px; letter-spacing:0; margin-top:3px; text-transform:none}
+  .layer .lc{display:flex; flex-wrap:wrap; gap:6px}
+  .layer .lo{font-family:var(--mono); font-size:10.5px; color:var(--ink2); white-space:nowrap; text-align:right; line-height:1.5}
+  @media(max-width:640px){.layer{grid-template-columns:1fr; gap:10px} .layer .lo{text-align:left}}
+
+  /* prose + reference */
+  .prose{max-width:76ch}
+  .prose p{margin:0 0 14px; font-size:15px; color:var(--ink)}
+  .prose p.muted{color:var(--ink2)}
+  .callout{border:1px solid var(--line); border-left:3px solid var(--accent); border-radius:0 12px 12px 0; background:var(--surface); padding:14px 18px; margin:18px 0; font-size:14.5px; color:var(--ink); max-width:80ch}
+  .callout.warn{border-left-color:var(--warn)} .callout.caveat{border-left-color:var(--down)}
+  .callout b{color:var(--ink)}
+  .callout .cl{display:block; font-family:var(--mono); font-size:10px; letter-spacing:.16em; text-transform:uppercase; margin-bottom:6px; color:var(--accent)}
+  .callout.warn .cl{color:var(--warn)} .callout.caveat .cl{color:var(--down)}
+  .steps{list-style:none; counter-reset:s; padding:0; margin:0; display:flex; flex-direction:column; gap:12px; max-width:80ch}
+  .steps li{counter-increment:s; display:grid; grid-template-columns:28px minmax(0,1fr); column-gap:14px; row-gap:2px; align-items:start}
+  .steps li::before{content:counter(s); grid-column:1; grid-row:1; height:26px; width:26px; border-radius:7px; background:var(--surface2); border:1px solid var(--line); color:var(--accent); font-family:var(--mono); font-weight:700; font-size:12px; display:flex; align-items:center; justify-content:center}
+  .steps li b{grid-column:2; grid-row:1; color:var(--ink)} .steps li p{grid-column:2; grid-row:2; margin:3px 0 0; color:var(--ink2); font-size:14px}
+  .steps li code{font-size:.85em}
+  .code{background:var(--surface2); border:1px solid var(--line); border-radius:10px; padding:13px 15px; overflow-x:auto; font-family:var(--mono); font-size:12px; color:var(--ink); line-height:1.65; margin:14px 0; white-space:pre; max-width:100%}
+  .code .c{color:var(--ink2)} .code .k{color:var(--accent)}
+  .defs{display:grid; gap:0; max-width:80ch}
+  .defs .row{display:grid; grid-template-columns:170px 1fr; gap:16px; font-size:14px; padding:11px 0; border-bottom:1px solid var(--line)}
+  .defs b{font-family:var(--mono); font-size:12.5px; color:var(--ink)}
+  .defs .d{color:var(--ink2)}
+  .gauntlet{display:flex; flex-direction:column; gap:3px; font-family:var(--mono); font-size:12.5px; max-width:660px}
+  .gauntlet .g{display:flex; align-items:center; gap:12px; padding:10px 13px; border:1px solid var(--line); border-radius:8px; background:var(--surface)}
+  .gauntlet .g .ck{color:var(--up); font-weight:700; flex:0 0 auto}
+  .gauntlet .g .cond{color:var(--ink)} .gauntlet .g .res{margin-left:auto; color:var(--ink2); white-space:nowrap}
+  .reading{display:grid; grid-template-columns:1fr 1fr; gap:14px; margin:20px 0 6px; max-width:80ch}
+  .rp{border:1px solid var(--line); border-radius:12px; background:var(--surface); padding:14px 16px}
+  .rp .rt{font-family:var(--mono); font-size:11px; letter-spacing:.12em; text-transform:uppercase; color:var(--accent); margin-bottom:6px}
+  .rp p{margin:0; font-size:13.5px; color:var(--ink2)}
+  .rp b{color:var(--ink)}
+  @media(max-width:640px){ .reading{grid-template-columns:1fr} .defs .row{grid-template-columns:1fr; gap:2px} }
+
+  /* screenshot placeholders */
+  .shots{display:grid; grid-template-columns:repeat(auto-fit,minmax(238px,1fr)); gap:14px; margin:6px 0}
+  .shot{border:1.5px dashed color-mix(in srgb,var(--line) 78%,var(--ink)); border-radius:12px; background:var(--surface2); min-height:160px; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:18px 16px; gap:7px; margin:0}
+  .shot svg{color:var(--ink2); opacity:.55; margin-bottom:2px}
+  .shot .sid{font-family:var(--mono); font-size:10px; letter-spacing:.18em; font-weight:700; color:var(--accent)}
+  .shot .stt{font-family:var(--mono); font-size:13px; font-weight:700; color:var(--ink)}
+  .shot .scap{font-size:12px; color:var(--ink2); line-height:1.45; max-width:30ch}
+  .shot .sfile{font-family:var(--mono); font-size:9.5px; color:var(--ink2); opacity:.72; margin-top:3px}
+
+  footer{margin-top:72px; padding-top:22px; border-top:1px solid var(--line); font-family:var(--mono); font-size:11.5px; color:var(--ink2); display:flex; flex-wrap:wrap; gap:6px 18px; justify-content:space-between}
+  footer b{color:var(--ink); font-weight:600}
+
+  @media (prefers-reduced-motion:reduce){ .live .arrow{animation:none} .livedot{animation:none} }
+  @media (max-width:760px){ .two{grid-template-columns:1fr} }
+  @media (max-width:640px){ .wrap{padding:40px 14px 72px} .panel{padding:24px 16px} }
+</style>
+<style>
+  .wrap{max-width:900px}
+  .kicker .navsep{opacity:.45;margin:0 3px}
+  .kicker a.navhome{color:var(--ink2);border-bottom:0;text-decoration:none}
+  .kicker a.navhome:hover{color:var(--accent)}
+  .doc h2{font-family:var(--mono);font-weight:700;font-size:15px;letter-spacing:.2em;text-transform:uppercase;
+    color:var(--ink);margin:64px 0 4px;padding-bottom:12px;border-bottom:1px solid var(--line)}
+  .doc h2 .hn{color:var(--accent);margin-right:12px}
+  .doc h3{margin:34px 0 8px}
+  .doc p{font-size:15.5px;color:var(--ink);margin:0 0 15px;max-width:78ch}
+  .doc a{color:var(--accent);text-decoration:none;border-bottom:1px solid color-mix(in srgb,var(--accent) 40%,transparent)}
+  .doc a:hover{border-bottom-color:var(--accent)}
+  .doc strong{color:var(--ink);font-weight:670}
+  .doc em{color:var(--ink2);font-style:italic}
+  .doc ul,.doc ol{max-width:78ch;padding-left:1.3em;margin:0 0 15px}
+  .doc li{margin:.42em 0;font-size:15px;color:var(--ink)}
+  .doc li::marker{color:var(--accent)}
+  .doc hr{border:0;border-top:1px solid var(--line);margin:8px 0}
+  .doc blockquote{margin:18px 0;padding:14px 18px;border:1px solid var(--line);border-left:3px solid var(--accent);
+    border-radius:0 12px 12px 0;background:var(--surface);color:var(--ink2);max-width:80ch}
+  .doc blockquote p{color:var(--ink2);margin:0}
+  .doc blockquote strong{color:var(--ink)}
+  .doc pre{background:var(--surface2);border:1px solid var(--line);border-radius:10px;padding:14px 16px;
+    overflow-x:auto;font-family:var(--mono);font-size:12px;color:var(--ink);line-height:1.6;margin:16px 0;white-space:pre}
+  .doc pre code{background:none;border:0;padding:0;font-size:1em;color:inherit}
+</style>
+</head><body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><symbol id="helm" viewBox="0 0 512 512"><path fill-rule="nonzero" d="M255.406 17.75C189.313 39.42 124.536 85.124 79.03 150.344c21.238 57.44 32.72 94.314 32.72 131.375 0 36.493-11.52 73.723-32.125 129.655 49.72 36.73 100.08 58.95 150.313 64.938-5.052-60.378-9.83-120.748 1.593-181.125-30.644-3.28-61.384-13.286-92.03-30.72v-71.312c80.67 42.255 158.908 41.547 242.063 0v71.313c-30.06 14.376-60.192 24.722-90.25 29.28 8.684 60.46 7.723 120.915 2.03 181.375 46.386-7.335 92.89-28.824 139.032-64.312-33.966-112.954-34.03-145.933.594-260.47C391.162 84.844 317.924 39.89 255.405 17.75zm-75.125 212c-11.16-.13-19.646 3.174-21.25 9.156-2.33 8.7 10.778 19.76 29.282 24.72 18.505 4.957 35.388 1.92 37.72-6.782 2.33-8.7-10.775-19.76-29.282-24.72-5.783-1.55-11.396-2.315-16.47-2.374zm160.69 0c-5.074.06-10.687.825-16.47 2.375-18.507 4.96-31.613 16.018-29.28 24.72 2.33 8.7 19.213 11.738 37.717 6.78 18.505-4.958 31.613-16.018 29.282-24.72-1.604-5.98-10.09-9.286-21.25-9.155z"/></symbol></svg>
+<svg class="watermark" viewBox="0 0 512 512" aria-hidden="true"><use href="#helm"/></svg>
+<div class="wrap doc">
+<header>
+<p class="kicker"><svg class="brandmark" viewBox="0 0 512 512" aria-hidden="true"><use href="#helm"/></svg><span class="livedot"></span> Sentinel Suite · NinjaTrader 8 · living document<span class="navsep">·</span><a class="navhome" href="SENTINEL_DOCS.html">Docs home →</a></p>
+<h1>The Sentinel Cockpit — Spec (v0, design)</h1>
+<p class="lede"><strong>Status:</strong> ✅ BUILT — <code>SentinelCockpit_v0_1_0</code> (Control Center ▸ New ▸ Sentinel Cockpit). Spec retained as design record. <strong>v0.5.0</strong> adds the <strong>⑤ Helm · interdict</strong> section (the Cockpit's first <em>writer</em> role — see §4b). <strong>Named by the user (2026-07-08), TOP backlog priority.</strong> See memory <code>sentinel-backlog</code> (the Cockpit block) + <code>state-seam-freshness-heartbeat</code> (the flicker this must expose) + design system §4b (CardLayout/Painter).</p>
+</header>
+<hr>
+<h2><span class="hn">1.</span>The problem it kills</h2>
+<p>On a working chart there are now ~22 Sentinel voters, each drawing its own <strong>SharpDX glass card</strong> in <code>OnRender</code> via <code>SentinelSkin.CardLayout.Place</code>. Per-corner auto-stacking overflows → cards <strong>overlap → unreadable</strong>.</p>
+<p><strong>The motivating episode (2026-07-08):</strong> the Bridge "traded a lot then stopped." From the chart it looked like the Council was <em>gone</em> — its card even flashed <em>"no verdict — add the Council."</em> Reality: the Council was live the whole time (67 verdicts); its card was just <strong>buried in the stacked corner</strong>, and "no verdict" was a dry-up <strong>staleness flicker</strong>. The real cause was benign — conviction sat <strong>below the interim 0.20 floor</strong> so the Bridge correctly stood down.</p>
+<p>The operator had to open the Indicator dialog and I had to grep <code>sentinel.log</code> to answer a question the system should answer at a glance: <strong>"is my brain alive, and why isn't it trading?"</strong> That question is the Cockpit's whole job.</p>
+<hr>
+<h2><span class="hn">2.</span>The architecture decision (and why it's basically forced)</h2>
+<p><strong>The Cockpit is a WPF surface that RE-READS the published <code>…State</code> seams — not a SharpDX on-chart rail.</strong></p>
+<p>Every sensor already publishes its state to <code>SentinelCore</code> (the Council protocol, design system §9). So the Cockpit doesn't need the chart's render target at all — it just consults the same seams the Council does. That single fact resolves the fork the backlog raised:</p>
+<div class="tblwrap"><table><thead><tr><th></th><th>SharpDX on-chart rail</th><th><strong>WPF reads-the-seams (chosen)</strong></th></tr></thead><tbody><tr><td>Off-chart float</td><td>hard (chart-bound render target)</td><td><strong>free</strong> (WPF window — proven by the Deck)</td></tr><tr><td>Always-on-top pin</td><td>n/a</td><td><strong>free</strong> (<code>Window.Topmost</code>)</td></tr><tr><td>Dock / undock</td><td>n/a</td><td><strong>free</strong> (ChartTrader host + float, like the Deck)</td></tr><tr><td>Theme</td><td>reuse Painter tokens</td><td>reuse <strong>K\* brushes</strong> (like Deck/Dashboard)</td></tr><tr><td>Data source</td><td>—</td><td>the <strong>same</strong> <code>SentinelCore</code> seams the cards already read</td></tr><tr><td>Consumers fighting for corners</td><td>yes (the bug)</td><td><strong>no</strong> — ONE consumer</td></tr></tbody></table></div>
+<p>The on-chart SharpDX cards <strong>stay</strong> (nothing is removed); the Cockpit is a parallel, opt-in readout. A user who wants a clean chart turns off each indicator's <code>ShowCard</code> and reads everything in the Cockpit instead.</p>
+<p>This makes the Cockpit <strong>the ultimate dogfood of the publish/consult architecture</strong> — it is the one place that consumes <em>all</em> of it.</p>
+<hr>
+<h2><span class="hn">3.</span>Form factor</h2>
+<ul>
+<li><strong>Primary:</strong> a floating <strong>NTWindow</strong> ("Sentinel Cockpit" under Control Center ▸ New), like the Dashboard — but narrow and tall (a rail, ~300×720). <strong>Pinnable</strong> (always-on-top) so it never hides behind the chart.</li>
+<li><strong>Secondary (phase 3):</strong> an optional <strong>ChartTrader dock</strong> (right edge of a chart window, like the Deck) with a collapse handle — the "slide-out" feel, for users who want it attached to one chart.</li>
+<li><strong>Instrument scope:</strong> a header dropdown picks which instrument's seams to show (seams are keyed by instrument). Default = <strong>follow the active chart</strong>; manual override sticks.</li>
+</ul>
+<hr>
+<h2><span class="hn">4.</span>Layout — four sections, decision-first</h2>
+<p>A vertical scroll of <strong>collapsible sections</strong>. The hero decision card is always visible (never collapses). Order is deliberately "can I trust it → am I allowed → what's the context → who voted":</p>
+<h3>① DECISION (hero, always visible) — <code>CouncilState</code></h3>
+<p>The one verdict. Big <strong>BIAS</strong> pill (LONG/SHORT/FLAT, green/red/mute) · <strong>conviction %</strong> with a track vs the <strong>floor</strong> marker · <strong>size ×</strong> (accent if &gt;0, mute if 0) · <strong>▲agree ▼disagree · Nv</strong> · the <strong>Reasons</strong> audit (wrapped, dim).</p>
+<p><strong>The killer line — computed "why":</strong> one plain-language sentence, resolved in priority order:</p>
+<ol>
+<li><code>kill-switch</code> → <strong>BLOCKED — kill-switch engaged</strong></li>
+<li>governor not allowed → <strong>BLOCKED — {account} day {halted/complete}</strong></li>
+<li><code>Vetoed</code> → <strong>VETOED — {vetoReason}</strong> (news / rollover / liquidity wall / kill window)</li>
+<li>stale (no fresh seam within StaleSec) → <strong>STALE — no fresh verdict for {n}s</strong> <em>(the flicker, now named — not "gone")</em></li>
+<li><code>conviction &lt; floor</code> → <strong>STAND DOWN — conviction {c} &lt; floor {f}</strong></li>
+<li><code>size == 0</code> → <strong>STAND DOWN — size 0</strong></li>
+<li><code>!HasEdge</code> → <strong>NO EDGE — waiting</strong></li>
+<li>else → <strong>READY — {side} · size ×{size}</strong></li>
+</ol>
+<p>Line 4/5 are exactly the two things that confused the operator in the motivating episode. Surfacing them = the point.</p>
+<blockquote><p><strong>⑤ Helm · interdict was added in v0.5.0 — see §4b below.</strong> ① DECISION stays the hero; ⑤ Helm is a monitor-rail section, so the "four sections" framing above is unchanged for the read-only readout.</p></blockquote>
+<h3>② GATE — "am I cleared to trade"</h3>
+<ul>
+<li><strong>Governor</strong> (per governed account): status chip (Trading / DayComplete / DayHalted), <strong>day P&amp;L vs cap</strong> track, <strong>vs loss-stop</strong> track, reset-hour. Reads <code>AllGovernorStates</code> + account profiles.</li>
+<li><strong>Kill-switch</strong>: <code>KillSwitchEngaged</code> (global) + scoped kills.</li>
+<li><strong>Trailing DD</strong>: <code>DrawdownState</code> — equity vs the firm floor (how close to liquidation).</li>
+<li><strong>Feed / News</strong>: feed-lag health + active news lockout (from the Council veto / RiskService).</li>
+</ul>
+<h3>③ CONTEXT — the modulators (why conviction is damped)</h3>
+<p><code>ClockState</code> (session phase · mins-to-close · kill window) · <code>ParticipationState</code> (rvol · climax/dry-up) · <code>LevelState</code> (VWAP/PDH-PDL/OR location · level-in-path) · <code>MtfState</code> (higher-TF ladder · counter?) · <code>IntermarketState</code> (correlated lean, e.g. ZN for gold). Each shows its value + how it's nudging conviction.</p>
+<h3>④ VOTERS — the confluence, unburied</h3>
+<p>One compact row per voter, each showing <strong>dir arrow</strong> (▲/▼/~), a small <strong>conviction/quality</strong>, and whether it <strong>agrees</strong> with the Council bias (cyan tick) or dissents (dim): <code>TrendState</code> · <code>CciState</code> · <code>AdxState</code> · <code>EnvelopeState</code> · <code>BrickState</code> · <code>CompressionState</code> · <code>WaeState</code> · <code>GodReversalState</code> · <code>EyeVerdict</code> · <code>LiquidityState</code> (veto). This is the "5 up / 1 down" split at a glance — no Indicator dialog needed.</p>
+<hr>
+<h2><span class="hn">4b.</span>⑤ Helm · interdict — the Cockpit becomes a WRITER (v0.5.0)   <em>(SentinelCore ≥ v1.34.0)</em></h2>
+<p>Everything above is <strong>read-only</strong> — the Cockpit consults seams. The <strong>⑤ Helm · interdict</strong> monitor-rail section (added v0.5.0) makes the Cockpit a <strong>writer of INTENTS</strong> — the same way the ⑤ BUILD tab writes <code>Roster.conf</code>. <strong>It still never touches an order.</strong> It publishes an <code>HelmIntent</code> to a running actor's <code>instanceKey</code>; the actor (the Bridge — <code>Docs/BRIDGE_SPEC.md §10</code>) drains and executes it with its own handles. This is the Helm interdiction layer (design system §6e · memory <code>helm-interdiction-layer</code> · <code>Docs/HELM_TEST_PUNCHLIST.md</code>) — a human grabs the wheel of a running automated actor without stopping it.</p>
+<ul>
+<li><strong>What it reads:</strong> <code>AllHelmStates()</code> → picks the actor for the section's instrument and shows its <code>instanceKey</code> · <code>Status</code> · signed position · live stop / target · paused / <code>HumanOverride</code> flags · a <strong>freshness dot</strong> (green when the actor is publishing <code>HelmState</code>, like every other card).</li>
+<li><strong>How it picks the actor:</strong> by the section's instrument. The header instrument picker only auto-lists instruments that have a <strong>Council</strong>; to interdict a <strong>Bridge that has no Council on its chart</strong>, <strong>type a bare instrument</strong> (e.g. <code>NQ</code>) and the section resolves it against <code>AllHelmStates()</code>.</li>
+<li><strong>The button set (each publishes an <code>HelmIntent</code> via <code>SentinelCore.SetHelmIntent</code>):</strong> <code>Pause</code> · <code>Resume</code> · <code>Skip</code> · <code>Flatten</code> · <code>BE</code>; <strong>type-a-price</strong> boxes → <code>Stop→</code> / <code>Tgt→</code> (<code>MoveStop</code>/<code>MoveTarget</code> to the typed price); a <strong>reduce N</strong> box → scale-down; <code>TakeOver</code> / <code>HandBack</code>.</li>
+<li><strong>Persistent controls:</strong> the typed price / reduce-N boxes <strong>survive the 750 ms refresh</strong> (they are not rebuilt each tick) so a value you're typing isn't wiped mid-edit.</li>
+<li><strong>The asymmetric gate lives in the CONSUMER, not here</strong> — the Cockpit publishes intent freely; the Bridge fail-OPENs risk-reducing verbs and passes risk-adding ones through <code>GateEntry</code> (design system §6e). The Cockpit is a command surface; the owner decides whether the command is allowed.</li>
+</ul>
+<hr>
+<h2><span class="hn">5.</span>Interaction &amp; chrome</h2>
+<ul>
+<li><strong>Header:</strong> instrument picker · ⌂ follow-chart toggle · ◹ dock/float · 📌 pin (always-on-top) · ⤢ collapse-all · theme follows the active skin (K\* brushes, like Deck/Dashboard).</li>
+<li><strong>Sections:</strong> click header to collapse/expand (▸/▾). Hero never collapses.</li>
+<li><strong>Per-card show/hide:</strong> a small settings sheet to choose which seams appear (some users won't care about CCI/ADX).</li>
+<li><strong>Staleness:</strong> every card shows a faint <strong>age dot</strong> — green (fresh) → amber (stale past its StaleSec). This is the general fix for "is it live?" across the whole suite, not just the Council.</li>
+<li><strong>Empty/absent seam:</strong> a card whose seam was never seen reads <strong>"— not loaded"</strong> (distinct from stale), so a missing sensor is obvious and not confused with a quiet one.</li>
+</ul>
+<h2><span class="hn">6.</span>Persistence</h2>
+<p>A <code>Sentinel\Cockpit.conf</code> (NOT NinjaScriptProperties — this is an AddOn window, no codegen concern): collapsed sections, pin state, dock/float + float geometry, per-card visibility, selected instrument / follow-chart flag, theme-follow. Same pattern as the Deck's float geometry + the Dashboard.</p>
+<h2><span class="hn">7.</span>Build plan (small first F5, testable in stages)</h2>
+<ul>
+<li><strong>Phase 1 — the core question.</strong> WPF window + <strong>① DECISION</strong> (Council + the why-line) + <strong>② GATE</strong> (governor/kill/feed). Float + pin. This alone answers "is my brain alive &amp; am I cleared." ~one AddOn file, reuses <code>SentinelSkin.K*</code> + <code>SentinelCore.Get*State</code>. No changes to any existing tool → zero risk to the running test when we do F5.</li>
+<li><strong>Phase 2 — full readout.</strong> ③ CONTEXT + ④ VOTERS (all remaining seams), age dots, per-card show/hide, collapse persistence.</li>
+<li><strong>Phase 3 — dock + follow.</strong> ChartTrader dock mode; follow-active-chart instrument; optional "retire redundant on-chart cards" convenience (bulk-toggle the indicators' <code>ShowCard</code>).</li>
+</ul>
+<h2><span class="hn">8.</span>Naming</h2>
+<p>Window/AddOn <code>SentinelCockpit</code> · display <strong>"Sentinel Cockpit"</strong> · base AddOn namespace (a window, not an indicator or strategy — no picker-folder concern). Follows the federated naming law (Sentinel &lt;Thing&gt;).</p>
+<hr>
+<p><em>Companion visual mockup published as an artifact this session — approve the look before Phase 1.</em></p>
+<footer><span>Sentinel Suite · <b>The Sentinel Cockpit — Spec (v0, design)</b></span><span>living document · rendered from Markdown</span></footer>
+</div></body></html>

@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sentinel · The Sentinel Thesis</title>
+<style>
+  :root{
+    --void:#e7edf1; --panel:#f3f7f9; --surface:#ffffff; --surface2:#eaf0f3;
+    --ink:#16222c; --ink2:#586873; --line:#cdd8de; --grid:#dde5ea;
+    --accent:#0b8ea1; --flow:#0d8fa2;
+    --up:#12a56f; --down:#e0424f; --warn:#c9861a;
+    --mono:ui-monospace,"Cascadia Code","SF Mono",Consolas,Menlo,monospace;
+    --sans:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  }
+  @media (prefers-color-scheme:dark){
+    :root{
+      --void:#0a0e13; --panel:#0d131a; --surface:#141c25; --surface2:#0f161e;
+      --ink:#e2e9ee; --ink2:#8a9ba8; --line:#26333f; --grid:#131c25;
+      --accent:#4ad6e8; --flow:#3fb6c9; --up:#25d08b; --down:#ff5c6a; --warn:#f2b23c;
+    }
+  }
+  :root[data-theme="light"]{
+    --void:#e7edf1; --panel:#f3f7f9; --surface:#ffffff; --surface2:#eaf0f3;
+    --ink:#16222c; --ink2:#586873; --line:#cdd8de; --grid:#dde5ea;
+    --accent:#0b8ea1; --flow:#0d8fa2; --up:#12a56f; --down:#e0424f; --warn:#c9861a;
+  }
+  :root[data-theme="dark"]{
+    --void:#0a0e13; --panel:#0d131a; --surface:#141c25; --surface2:#0f161e;
+    --ink:#e2e9ee; --ink2:#8a9ba8; --line:#26333f; --grid:#131c25;
+    --accent:#4ad6e8; --flow:#3fb6c9; --up:#25d08b; --down:#ff5c6a; --warn:#f2b23c;
+  }
+
+  *{box-sizing:border-box}
+  body{margin:0; background:var(--void); color:var(--ink); font-family:var(--sans); line-height:1.55; -webkit-font-smoothing:antialiased; overflow-x:hidden}
+  .wrap{max-width:1120px; margin:0 auto; padding:56px 24px 100px; position:relative; z-index:1}
+
+  /* the Sentinel brand mark (Spartan barbute helmet) — faint fixed watermark + crisp header mark */
+  .watermark{position:fixed; z-index:0; pointer-events:none; top:50%; right:-2vw; transform:translateY(-50%); width:clamp(300px,40vw,560px); height:auto; fill:var(--accent); opacity:.18; filter:drop-shadow(0 0 55px color-mix(in srgb,var(--accent) 60%,transparent))}
+  .brandmark{width:16px; height:16px; flex:0 0 auto; fill:var(--accent); filter:drop-shadow(0 0 5px color-mix(in srgb,var(--accent) 50%,transparent))}
+
+  .kicker{font-family:var(--mono); font-size:11px; letter-spacing:.34em; text-transform:uppercase; color:var(--accent); display:flex; align-items:center; gap:9px; margin:0 0 14px}
+  .livedot{width:8px; height:8px; border-radius:50%; background:var(--accent); animation:pulse 2.4s ease-out infinite}
+  @keyframes pulse{0%{box-shadow:0 0 0 0 color-mix(in srgb,var(--accent) 55%,transparent)}70%{box-shadow:0 0 0 7px transparent}100%{box-shadow:0 0 0 0 transparent}}
+  h1{font-family:var(--mono); font-weight:700; font-size:clamp(30px,5.4vw,50px); letter-spacing:-.015em; margin:0 0 14px; text-wrap:balance}
+  .lede{font-size:18px; color:var(--ink2); max-width:66ch; margin:0 0 4px}
+  .lede b{color:var(--ink); font-weight:600}
+
+  .oneline{display:flex; flex-wrap:wrap; gap:7px; align-items:center; margin:28px 0 6px}
+  .oneline .s{font-family:var(--mono); font-size:12px; color:var(--ink); background:var(--surface); border:1px solid var(--line); border-radius:999px; padding:6px 13px}
+  .oneline .s b{color:var(--accent); font-weight:700}
+  .oneline .sep{color:var(--ink2); font-family:var(--mono)}
+
+  .toc{display:flex; flex-wrap:wrap; gap:6px 20px; margin:22px 0 6px; padding:16px 18px; border:1px solid var(--line); border-radius:12px; background:var(--panel)}
+  .toc a{font-family:var(--mono); font-size:12.5px; color:var(--ink2); text-decoration:none; white-space:nowrap}
+  .toc a:hover{color:var(--accent)}
+  .toc a b{color:var(--accent); font-weight:700; margin-right:6px}
+
+  .legend{display:flex; flex-wrap:wrap; gap:8px 18px; margin:18px 0 6px; padding:13px 16px; border:1px solid var(--line); border-radius:12px; background:var(--panel)}
+  .legend .k{display:flex; align-items:center; gap:8px; font-family:var(--mono); font-size:12px; color:var(--ink2)}
+  .swatch{width:22px; height:4px; border-radius:2px}
+  .swatch.a{background:var(--flow)} .swatch.u{background:var(--up)} .swatch.d{background:var(--down)} .swatch.w{background:var(--warn)}
+  .legend .k b{color:var(--ink); font-weight:600}
+
+  .part{display:flex; align-items:baseline; gap:16px; margin:80px 0 8px; padding-bottom:14px; border-bottom:1px solid var(--line)}
+  .part .pn{font-family:var(--mono); font-size:13px; font-weight:700; color:var(--accent); letter-spacing:.2em; white-space:nowrap}
+  .part h2{font-family:var(--mono); font-weight:700; font-size:15px; letter-spacing:.22em; text-transform:uppercase; color:var(--ink); margin:0}
+  .part .pd{margin-left:auto; font-size:13px; color:var(--ink2); font-family:var(--mono); text-align:right}
+
+  section{margin-top:44px}
+  .eyebrow{font-family:var(--mono); font-size:11px; letter-spacing:.24em; text-transform:uppercase; color:var(--accent); margin:0 0 8px; display:flex; gap:10px; align-items:baseline}
+  .eyebrow .num{color:var(--ink2); opacity:.7}
+  h3{font-family:var(--mono); font-weight:700; font-size:22px; margin:0 0 6px; letter-spacing:-.01em; text-wrap:balance}
+  .desc{color:var(--ink2); font-size:15px; margin:0 0 20px; max-width:74ch}
+  .desc b{color:var(--ink); font-weight:600}
+  code{font-family:var(--mono); font-size:.9em; background:var(--surface2); border:1px solid var(--line); border-radius:5px; padding:1px 5px; color:var(--ink)}
+
+  .panel{border:1px solid var(--line); border-radius:14px; background:var(--panel);
+    background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);
+    background-size:26px 26px; background-position:-1px -1px; padding:34px 30px; overflow-x:auto}
+
+  .node{background:var(--surface); border:1px solid var(--line); border-radius:11px; padding:11px 14px; min-width:120px; text-align:center; position:relative; box-shadow:0 1px 0 color-mix(in srgb,var(--ink) 6%,transparent)}
+  .node .t{font-family:var(--mono); font-weight:700; font-size:13px; color:var(--ink); white-space:nowrap}
+  .node .s{font-family:var(--mono); font-size:10.5px; color:var(--ink2); margin-top:3px; white-space:nowrap}
+  .node.accent{border-color:color-mix(in srgb,var(--accent) 55%,var(--line))}
+  .node.accent::before,.node.up::before,.node.down::before,.node.warn::before{content:""; position:absolute; left:0; top:9px; bottom:9px; width:3px; border-radius:3px}
+  .node.accent::before{background:var(--accent)}
+  .node.up::before{background:var(--up)} .node.up .t{color:color-mix(in srgb,var(--up) 78%,var(--ink))}
+  .node.down::before{background:var(--down)} .node.down .t{color:color-mix(in srgb,var(--down) 82%,var(--ink))}
+  .node.warn::before{background:var(--warn)}
+  .node.big{min-width:150px; padding:14px 16px}
+
+  .chip{font-family:var(--mono); font-size:11px; color:var(--ink); background:var(--surface2); border:1px solid var(--line); border-radius:7px; padding:5px 8px; white-space:nowrap; display:flex; justify-content:space-between; gap:10px; align-items:center}
+  .chip .w{color:var(--ink2); font-size:10px}
+  .chip.mute{color:var(--ink2)}
+
+  .flow{display:flex; align-items:center; justify-content:center; min-width:min-content}
+  .arrow{position:relative; flex:0 0 var(--aw,50px); height:2px; align-self:center; background:linear-gradient(90deg,color-mix(in srgb,var(--flow) 25%,transparent),var(--flow)); --c:var(--flow)}
+  .arrow::after{content:""; position:absolute; right:-1px; top:50%; transform:translateY(-50%); border-left:8px solid var(--c); border-top:5px solid transparent; border-bottom:5px solid transparent}
+  .arrow[data-l]::before{content:attr(data-l); position:absolute; left:50%; top:-15px; transform:translateX(-50%); font-family:var(--mono); font-size:9px; letter-spacing:.06em; text-transform:uppercase; color:var(--ink2); white-space:nowrap}
+  .arrow.up{--c:var(--up); background:linear-gradient(90deg,color-mix(in srgb,var(--up) 25%,transparent),var(--up))}
+  .arrow.down{--c:var(--down); background:linear-gradient(90deg,color-mix(in srgb,var(--down) 25%,transparent),var(--down))}
+  .arrow.warn{--c:var(--warn); background:linear-gradient(90deg,color-mix(in srgb,var(--warn) 25%,transparent),var(--warn))}
+  .arrow.v{width:2px; height:var(--ah,38px); flex:none; margin:0 auto; background:linear-gradient(180deg,color-mix(in srgb,var(--flow) 25%,transparent),var(--flow))}
+  .arrow.v::after{right:50%; top:auto; bottom:-1px; left:auto; transform:translateX(50%); border-left:5px solid transparent; border-right:5px solid transparent; border-top:8px solid var(--c); border-bottom:0}
+  .arrow.v.up-dir{background:linear-gradient(0deg,color-mix(in srgb,var(--flow) 25%,transparent),var(--flow))}
+  .arrow.v.up-dir::after{bottom:auto; top:-1px; border-top:0; border-bottom:8px solid var(--c)}
+  .arrow.v[data-l]::before{left:12px; top:50%; transform:translateY(-50%)}
+  .live .arrow{background-size:220% 100%; animation:travel 2.6s linear infinite}
+  @keyframes travel{0%{background-position:120% 0}100%{background-position:-40% 0}}
+
+  .group{border:1px dashed color-mix(in srgb,var(--line) 92%,var(--ink)); border-radius:11px; padding:12px; background:color-mix(in srgb,var(--surface) 55%,transparent)}
+  .group .gl{font-family:var(--mono); font-size:10px; letter-spacing:.14em; text-transform:uppercase; color:var(--ink2); margin:0 0 10px; text-align:center}
+  .grid2{display:grid; grid-template-columns:repeat(2,minmax(96px,1fr)); gap:6px}
+  .grid1{display:grid; gap:6px}
+  .rowflow{display:flex; align-items:center; justify-content:center; gap:0; min-width:min-content}
+  .stack{display:flex; flex-direction:column; align-items:center}
+  .band{display:flex; gap:8px; justify-content:center; flex-wrap:wrap; max-width:520px}
+
+  .verdict{background:var(--surface); border:1px solid color-mix(in srgb,var(--accent) 45%,var(--line)); border-radius:11px; padding:14px 16px; min-width:180px}
+  .verdict .vt{font-family:var(--mono); font-weight:700; font-size:12px; color:var(--accent); letter-spacing:.14em; margin-bottom:10px}
+  .vrow{display:flex; justify-content:space-between; gap:16px; font-family:var(--mono); font-size:12px; padding:4px 0; border-top:1px solid var(--line)}
+  .vrow span:first-child{color:var(--ink2)} .vrow span:last-child{color:var(--ink); font-weight:600}
+
+  .drow{display:flex; align-items:center; gap:14px; justify-content:center}
+  .branch{display:flex; align-items:center; gap:10px}
+  .blabel{font-family:var(--mono); font-size:9px; letter-spacing:.08em; text-transform:uppercase; color:var(--ink2)}
+  .qnode{background:var(--surface); border:1px solid var(--line); border-radius:11px; padding:12px 16px; text-align:center; position:relative}
+  .qnode.dec{border-color:color-mix(in srgb,var(--accent) 40%,var(--line))}
+  .qnode .t{font-family:var(--mono); font-weight:700; font-size:12.5px; color:var(--ink)}
+  .qnode .s{font-family:var(--mono); font-size:10px; color:var(--ink2); margin-top:4px}
+  .spine{display:flex; flex-direction:column; align-items:center}
+
+  .cast{display:grid; grid-template-columns:repeat(auto-fill,minmax(232px,1fr)); gap:12px}
+  .castcard{border:1px solid var(--line); border-radius:12px; background:var(--surface); padding:14px 15px; display:flex; flex-direction:column; gap:6px}
+  .castcard .role{font-family:var(--mono); font-size:9.5px; letter-spacing:.16em; text-transform:uppercase; color:var(--accent)}
+  .castcard .nm{font-family:var(--mono); font-weight:700; font-size:15px; color:var(--ink)}
+  .castcard p{margin:0; font-size:13px; color:var(--ink2)}
+  .castcard .seam{margin-top:auto; font-family:var(--mono); font-size:10.5px; color:var(--ink2); border-top:1px dashed var(--line); padding-top:7px}
+  .castcard .seam b{color:var(--ink); font-weight:600}
+
+  .two{display:grid; grid-template-columns:1.1fr .9fr; gap:26px; align-items:start}
+  .two .panel{margin:0}
+  .anno{display:flex; flex-direction:column; gap:12px}
+  .anno .a{display:flex; gap:12px; align-items:flex-start}
+  .anno .n{flex:0 0 22px; height:22px; border-radius:6px; background:var(--surface2); border:1px solid var(--line); color:var(--accent); font-family:var(--mono); font-weight:700; font-size:11px; display:flex; align-items:center; justify-content:center; margin-top:1px}
+  .anno .a div b{font-family:var(--mono); font-size:12.5px; color:var(--ink)}
+  .anno .a div p{margin:2px 0 0; font-size:13px; color:var(--ink2)}
+
+  .tblwrap{overflow-x:auto; border:1px solid var(--line); border-radius:12px; margin:8px 0}
+  table{width:100%; border-collapse:collapse; font-family:var(--mono); font-size:12.5px; min-width:640px}
+  thead th{text-align:left; font-size:10px; letter-spacing:.12em; text-transform:uppercase; color:var(--ink2); font-weight:600; padding:12px 14px; background:var(--panel); border-bottom:1px solid var(--line); white-space:nowrap}
+  tbody td{padding:10px 14px; border-bottom:1px solid var(--line); color:var(--ink); vertical-align:top}
+  tbody tr:last-child td{border-bottom:0}
+  td .vt{color:var(--ink2); font-size:11.5px}
+  td b{color:var(--ink)}
+  .wt{font-variant-numeric:tabular-nums; color:var(--accent); font-weight:700}
+  .ax-orth{color:var(--accent)} .ax-price{color:var(--ink2)}
+  .st{font-size:11px; color:var(--ink2)}
+
+  .principles{display:grid; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); gap:16px}
+  .pr{border:1px solid var(--line); border-left:3px solid var(--accent); border-radius:0 12px 12px 0; background:var(--surface); padding:16px 18px}
+  .pr h4{font-family:var(--mono); font-size:14px; margin:0 0 6px; color:var(--ink)}
+  .pr p{margin:0; font-size:13.5px; color:var(--ink2)}
+  .pr p b{color:var(--ink); font-weight:600}
+
+  .layers{display:flex; flex-direction:column; gap:12px}
+  .layer{display:grid; grid-template-columns:138px 1fr auto; align-items:center; gap:16px; border:1px solid var(--line); border-radius:12px; background:var(--surface); padding:14px 16px}
+  .layer .lb{font-family:var(--mono); font-size:10px; letter-spacing:.14em; text-transform:uppercase; color:var(--accent)}
+  .layer .lb b{display:block; color:var(--ink); font-size:14px; letter-spacing:0; margin-top:3px; text-transform:none}
+  .layer .lc{display:flex; flex-wrap:wrap; gap:6px}
+  .layer .lo{font-family:var(--mono); font-size:10.5px; color:var(--ink2); white-space:nowrap; text-align:right; line-height:1.5}
+  @media(max-width:640px){.layer{grid-template-columns:1fr; gap:10px} .layer .lo{text-align:left}}
+
+  /* prose + reference */
+  .prose{max-width:76ch}
+  .prose p{margin:0 0 14px; font-size:15px; color:var(--ink)}
+  .prose p.muted{color:var(--ink2)}
+  .callout{border:1px solid var(--line); border-left:3px solid var(--accent); border-radius:0 12px 12px 0; background:var(--surface); padding:14px 18px; margin:18px 0; font-size:14.5px; color:var(--ink); max-width:80ch}
+  .callout.warn{border-left-color:var(--warn)} .callout.caveat{border-left-color:var(--down)}
+  .callout b{color:var(--ink)}
+  .callout .cl{display:block; font-family:var(--mono); font-size:10px; letter-spacing:.16em; text-transform:uppercase; margin-bottom:6px; color:var(--accent)}
+  .callout.warn .cl{color:var(--warn)} .callout.caveat .cl{color:var(--down)}
+  .steps{list-style:none; counter-reset:s; padding:0; margin:0; display:flex; flex-direction:column; gap:12px; max-width:80ch}
+  .steps li{counter-increment:s; display:grid; grid-template-columns:28px minmax(0,1fr); column-gap:14px; row-gap:2px; align-items:start}
+  .steps li::before{content:counter(s); grid-column:1; grid-row:1; height:26px; width:26px; border-radius:7px; background:var(--surface2); border:1px solid var(--line); color:var(--accent); font-family:var(--mono); font-weight:700; font-size:12px; display:flex; align-items:center; justify-content:center}
+  .steps li b{grid-column:2; grid-row:1; color:var(--ink)} .steps li p{grid-column:2; grid-row:2; margin:3px 0 0; color:var(--ink2); font-size:14px}
+  .steps li code{font-size:.85em}
+  .code{background:var(--surface2); border:1px solid var(--line); border-radius:10px; padding:13px 15px; overflow-x:auto; font-family:var(--mono); font-size:12px; color:var(--ink); line-height:1.65; margin:14px 0; white-space:pre; max-width:100%}
+  .code .c{color:var(--ink2)} .code .k{color:var(--accent)}
+  .defs{display:grid; gap:0; max-width:80ch}
+  .defs .row{display:grid; grid-template-columns:170px 1fr; gap:16px; font-size:14px; padding:11px 0; border-bottom:1px solid var(--line)}
+  .defs b{font-family:var(--mono); font-size:12.5px; color:var(--ink)}
+  .defs .d{color:var(--ink2)}
+  .gauntlet{display:flex; flex-direction:column; gap:3px; font-family:var(--mono); font-size:12.5px; max-width:660px}
+  .gauntlet .g{display:flex; align-items:center; gap:12px; padding:10px 13px; border:1px solid var(--line); border-radius:8px; background:var(--surface)}
+  .gauntlet .g .ck{color:var(--up); font-weight:700; flex:0 0 auto}
+  .gauntlet .g .cond{color:var(--ink)} .gauntlet .g .res{margin-left:auto; color:var(--ink2); white-space:nowrap}
+  .reading{display:grid; grid-template-columns:1fr 1fr; gap:14px; margin:20px 0 6px; max-width:80ch}
+  .rp{border:1px solid var(--line); border-radius:12px; background:var(--surface); padding:14px 16px}
+  .rp .rt{font-family:var(--mono); font-size:11px; letter-spacing:.12em; text-transform:uppercase; color:var(--accent); margin-bottom:6px}
+  .rp p{margin:0; font-size:13.5px; color:var(--ink2)}
+  .rp b{color:var(--ink)}
+  @media(max-width:640px){ .reading{grid-template-columns:1fr} .defs .row{grid-template-columns:1fr; gap:2px} }
+
+  /* screenshot placeholders */
+  .shots{display:grid; grid-template-columns:repeat(auto-fit,minmax(238px,1fr)); gap:14px; margin:6px 0}
+  .shot{border:1.5px dashed color-mix(in srgb,var(--line) 78%,var(--ink)); border-radius:12px; background:var(--surface2); min-height:160px; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:18px 16px; gap:7px; margin:0}
+  .shot svg{color:var(--ink2); opacity:.55; margin-bottom:2px}
+  .shot .sid{font-family:var(--mono); font-size:10px; letter-spacing:.18em; font-weight:700; color:var(--accent)}
+  .shot .stt{font-family:var(--mono); font-size:13px; font-weight:700; color:var(--ink)}
+  .shot .scap{font-size:12px; color:var(--ink2); line-height:1.45; max-width:30ch}
+  .shot .sfile{font-family:var(--mono); font-size:9.5px; color:var(--ink2); opacity:.72; margin-top:3px}
+
+  footer{margin-top:72px; padding-top:22px; border-top:1px solid var(--line); font-family:var(--mono); font-size:11.5px; color:var(--ink2); display:flex; flex-wrap:wrap; gap:6px 18px; justify-content:space-between}
+  footer b{color:var(--ink); font-weight:600}
+
+  @media (prefers-reduced-motion:reduce){ .live .arrow{animation:none} .livedot{animation:none} }
+  @media (max-width:760px){ .two{grid-template-columns:1fr} }
+  @media (max-width:640px){ .wrap{padding:40px 14px 72px} .panel{padding:24px 16px} }
+</style>
+<style>
+  .wrap{max-width:900px}
+  .kicker .navsep{opacity:.45;margin:0 3px}
+  .kicker a.navhome{color:var(--ink2);border-bottom:0;text-decoration:none}
+  .kicker a.navhome:hover{color:var(--accent)}
+  .doc h2{font-family:var(--mono);font-weight:700;font-size:15px;letter-spacing:.2em;text-transform:uppercase;
+    color:var(--ink);margin:64px 0 4px;padding-bottom:12px;border-bottom:1px solid var(--line)}
+  .doc h2 .hn{color:var(--accent);margin-right:12px}
+  .doc h3{margin:34px 0 8px}
+  .doc p{font-size:15.5px;color:var(--ink);margin:0 0 15px;max-width:78ch}
+  .doc a{color:var(--accent);text-decoration:none;border-bottom:1px solid color-mix(in srgb,var(--accent) 40%,transparent)}
+  .doc a:hover{border-bottom-color:var(--accent)}
+  .doc strong{color:var(--ink);font-weight:670}
+  .doc em{color:var(--ink2);font-style:italic}
+  .doc ul,.doc ol{max-width:78ch;padding-left:1.3em;margin:0 0 15px}
+  .doc li{margin:.42em 0;font-size:15px;color:var(--ink)}
+  .doc li::marker{color:var(--accent)}
+  .doc hr{border:0;border-top:1px solid var(--line);margin:8px 0}
+  .doc blockquote{margin:18px 0;padding:14px 18px;border:1px solid var(--line);border-left:3px solid var(--accent);
+    border-radius:0 12px 12px 0;background:var(--surface);color:var(--ink2);max-width:80ch}
+  .doc blockquote p{color:var(--ink2);margin:0}
+  .doc blockquote strong{color:var(--ink)}
+  .doc pre{background:var(--surface2);border:1px solid var(--line);border-radius:10px;padding:14px 16px;
+    overflow-x:auto;font-family:var(--mono);font-size:12px;color:var(--ink);line-height:1.6;margin:16px 0;white-space:pre}
+  .doc pre code{background:none;border:0;padding:0;font-size:1em;color:inherit}
+</style>
+</head><body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><symbol id="helm" viewBox="0 0 512 512"><path fill-rule="nonzero" d="M255.406 17.75C189.313 39.42 124.536 85.124 79.03 150.344c21.238 57.44 32.72 94.314 32.72 131.375 0 36.493-11.52 73.723-32.125 129.655 49.72 36.73 100.08 58.95 150.313 64.938-5.052-60.378-9.83-120.748 1.593-181.125-30.644-3.28-61.384-13.286-92.03-30.72v-71.312c80.67 42.255 158.908 41.547 242.063 0v71.313c-30.06 14.376-60.192 24.722-90.25 29.28 8.684 60.46 7.723 120.915 2.03 181.375 46.386-7.335 92.89-28.824 139.032-64.312-33.966-112.954-34.03-145.933.594-260.47C391.162 84.844 317.924 39.89 255.405 17.75zm-75.125 212c-11.16-.13-19.646 3.174-21.25 9.156-2.33 8.7 10.778 19.76 29.282 24.72 18.505 4.957 35.388 1.92 37.72-6.782 2.33-8.7-10.775-19.76-29.282-24.72-5.783-1.55-11.396-2.315-16.47-2.374zm160.69 0c-5.074.06-10.687.825-16.47 2.375-18.507 4.96-31.613 16.018-29.28 24.72 2.33 8.7 19.213 11.738 37.717 6.78 18.505-4.958 31.613-16.018 29.282-24.72-1.604-5.98-10.09-9.286-21.25-9.155z"/></symbol></svg>
+<svg class="watermark" viewBox="0 0 512 512" aria-hidden="true"><use href="#helm"/></svg>
+<div class="wrap doc">
+<header>
+<p class="kicker"><svg class="brandmark" viewBox="0 0 512 512" aria-hidden="true"><use href="#helm"/></svg><span class="livedot"></span> Sentinel Suite · NinjaTrader 8 · living document<span class="navsep">·</span><a class="navhome" href="SENTINEL_DOCS.html">Docs home →</a></p>
+<h1>The Sentinel Thesis</h1>
+<p class="lede"><em>What this project actually is, why it is built the way it is, and where it is going — at altitude, readable without the code. The engineering sequence lives in <a href="ROADMAP.html">ROADMAP.md</a>; the product shape in <a href="PRODUCT_LADDER.html">PRODUCT_LADDER.md</a>; the ML mechanics in <a href="SENTINEL_ML_SPEC.html">SENTINEL_ML_SPEC.md</a>. This is the one-page "why."</em></p>
+</header>
+<hr>
+<h2><span class="hn">1.</span>Abstract</h2>
+<p><strong>A chart full of indicators is a room full of experts talking over each other. Sentinel makes them vote — then checks who was right.</strong></p>
+<p>It is a suite of NinjaTrader 8 tools that turns a screen of independent indicators into <strong>one honest, fitted decision</strong> — and then grades that decision against what the market actually did, so the decision can improve itself over time.</p>
+<p>Most trading indicators shout in isolation. Sentinel's premise is that the value is not in any one signal but in <strong>fusing many orthogonal ones into a single verdict</strong>, measuring that verdict's real outcome, and <strong>feeding the measurement back</strong> into how the fusion is weighted. The end state is not a fixed strategy — it is a <strong>learning loop</strong> whose parameters are fit from evidence rather than guessed, and which adapts as the market's character changes.</p>
+<p>The whole system is designed so it works at <strong>any depth of adoption</strong>: a single pretty indicator, a fused verdict you read but don't trade, an automated consumer, or the full self-tuning loop. Everything is open-source (MPL-2.0); the ladder is depth-of-adoption, not price.</p>
+<h3>The pieces (a two-minute glossary)</h3>
+<div class="tblwrap"><table><thead><tr><th>Name</th><th>What it is</th><th>Its one job</th></tr></thead><tbody><tr><td><strong>Sensors</strong></td><td>indicators (Trend, ADX, Woodies, VolEnvelope, Compression, Liquidity, GodReversal, WAE, + the axes)</td><td><em>watch</em> one thing well and <strong>publish</strong> a reading</td></tr><tr><td><strong>Seams</strong></td><td>typed <code>…State</code> values on a shared bus (<code>SentinelCore</code>)</td><td>let tools <strong>read each other without knowing each other</strong></td></tr><tr><td><strong>Council</strong></td><td>a read-only chart tool</td><td><strong>fuse</strong> every fresh seam into one verdict (bias · conviction · size)</td></tr><tr><td><strong>Deck / Bridge</strong></td><td>manual trader / automated consumer</td><td><strong>act</strong> on the verdict (the only pieces that place orders)</td></tr><tr><td><strong>Gate</strong></td><td>the pre-submit safety choke point</td><td><strong>guard</strong> — kill switch, governor, sizing, session/news vetoes</td></tr><tr><td><strong>Recorder</strong></td><td>a no-orders characterization tool</td><td><strong>grade</strong> — write each verdict's real forward outcome to disk</td></tr><tr><td><strong>Lab</strong></td><td>offline Python, outside NinjaTrader — now a stood-up data platform (SQLite corpus + JSONL ingester + Streamlit + Grafana)</td><td><strong>learn</strong> — fit the Council's weights + floor from the graded corpus</td></tr></tbody></table></div>
+<p>The rest of this document is how those pieces form a single loop, and why the order they were built in matters.</p>
+<hr>
+<h2><span class="hn">2.</span>The thesis: the Council is an unfitted linear model</h2>
+<p>At the center is the <strong>Council</strong> — a read-only chart tool that fuses every sensor's published reading into one verdict. Strip away the presentation and the Council computes exactly this:</p>
+<pre><code>netScore    = Σ ( voteᵢ × weightᵢ )        # each sensor votes −1 / 0 / +1
+conviction  = | netScore | / declaredWeight  # how aligned the awake voters are, 0..1
+bias        = sign(netScore)  if |netScore| &gt; deadband   else 0   (FLAT)
+sizeMult    = 0  if vetoed OR bias == 0 OR conviction &lt; floor    else conviction × contextDamping</code></pre>
+<p>That is a <strong>normalized linear model</strong>. And here is the load-bearing observation: <strong>its coefficients were chosen by hand and never fit.</strong> <code>WeightEye = 1.4</code>, <code>WeightTrend = 1.0</code>, …, the <code>0.20</code> conviction floor, the <code>0.15</code> bias deadband — every one is an educated guess. They have never been checked against whether verdicts that scored high actually did better than verdicts that scored low.</p>
+<p>So "adding machine learning to Sentinel" is not bolting on a neural net. It is the far more modest and honest act of <strong>fitting the parameters the Council already has</strong> from the Council's own recorded outcomes. The model already exists. We are going to stop guessing its numbers.</p>
+<h3>The voters are inputs, not fixtures</h3>
+<p>The Council today fuses a specific set of sensors — Trend, ADX, Woodies CCI, VolEnvelope, Compression, Liquidity, GodReversal, WAE, plus the orthogonal axes. <strong>That set was chosen to build and prove the fusion process, not because the Council is defined by it.</strong> The Council is a fusion <em>engine</em>; its voters are an <em>input</em>.</p>
+<p>The design principle: <strong>any Sentinel-compliant signal is a valid Council input, and the roster is the user's to choose and weight.</strong> "Compliant" is a contract, not a lock-in — an indicator earns a seat by (1) following the naming law and drawing to the skin, (2) publishing a normalized vote seam (direction + kind + freshness), and (3) being declared in the roster config. Meet the contract and you are a voter; the specific indicators we happened to test with are not privileged. A user should be able to drop in their own compliant indicator, or remove one of ours, without touching the Council's code.</p>
+<p>Today this is only half-true: voters are wired into the fusion in code and weighted by hand, so changing the roster still means a code edit. The near-term architecture closes that gap — a <strong>generic vote registry</strong> where the Council fuses <em>whatever</em> compliant votes are published for its scope, with weights read from the roster config (<code>Roster.conf</code> already declares the voter set and per-voter weights; it is the seam this grows from). When that lands, "customize your Council" becomes a config choice, and the learning loop below fits the weights for <em>whatever roster the user assembled</em> — not just ours.</p>
+<hr>
+<h2><span class="hn">3.</span>The learning loop (the spine)</h2>
+<p>Everything in the suite is a stage in one loop:</p>
+<pre><code>   ┌─────────────────────────────────────────────────────────────────────────┐
+   │                                                                          │
+   ▼                                                                          │
+① PUBLISH      each sensor computes its read and publishes a …State seam       │
+   │           (Trend, ADX, CCI, VolEnvelope, Compression, Liquidity, WAE,     │
+   │            GodReversal + the orthogonal axes Clock/Participation/          │
+   │            Location/MTF/Intermarket + the order-flow axis SentinelFlux —   │
+   │            the first genuinely orthogonal one, a flow-synchronised bar     │
+   │            clock)                                                          │
+   ▼                                                                          │
+② FUSE         the Council reads every fresh seam, weights it, sums to a       │
+   │           verdict: bias · conviction · sizeMult · a "why" audit           │
+   ▼                                                                          │
+③ DECIDE       the verdict is ADVISORY — a single honest number, not an order  │
+   ▼                                                                          │
+④ ACT + GRADE  ┌ the Bridge (opt-in) may act on the verdict                    │
+   │           └ the Recorder ALWAYS grades it: from each verdict it tracks     │
+   │             the real forward outcome (which barrier — target or stop —     │
+   │             is touched first) → an append-only corpus on disk              │
+   ▼                                                                          │
+⑤ LEARN        the offline Lab reads the corpus and FITS the parameters the    │
+   │           Council guessed: first the conviction floor (where expectancy    │
+   │           actually crosses breakeven), then the voter weights              │
+   ▼                                                                          │
+⑥ ADOPT        the fitted parameters FEED BACK into the live Council, which    │
+   │           now decides with evidence-based numbers instead of guesses ──────┘
+   (dynamic management — the loop closes and repeats, sharper each turn)</code></pre>
+<p><strong>Stage ⑥ is what makes it a loop rather than a report.</strong> Without the feedback, the Lab produces a nice number in a file and nothing changes. With it, the Council re-reads its fitted <code>Model.conf</code>, decides better, those better decisions get graded, and the next fit is cleaner still. This is the <strong>dynamic management</strong> target: the system tunes <em>itself</em> from its own measured results, and — because markets drift — keeps re-tuning as their character changes.</p>
+<p>Today the loop is <strong>open</strong>: stages ①–⑤ exist and run; stage ⑥ is the near-term goal. The floor and weights are still hand-set, and the Lab's output is not yet wired back. Closing ⑥ is the point of the current work.</p>
+<h3>One verdict, end to end</h3>
+<p>To make it concrete — a single verdict on a gold chart, from seams to graded row:</p>
+<pre><code>① PUBLISH   Trend +1 (w 1.0) · ADX +1 (0.6) · Woodies +1 (0.8) · Compression +1 (0.7)
+            · VolEnvelope −1 (0.6) · GodReversal 0 (quiet trigger — abstains)
+② FUSE      netScore   = 1.0 + 0.6 + 0.8 + 0.7 − 0.6            = 2.5
+            declaredW  = 1.0 + 0.6 + 0.8 + 0.7 + 0.6            = 3.7   (quiet trigger excluded)
+            conviction = |2.5| / 3.7                            = 0.68
+            deadband   = 0.15 × 3.7 = 0.56  →  netScore 2.5 clears it  →  bias = +1 (LONG)
+            floor 0.20 →  0.68 ≥ 0.20  →  sizeMult = 0.68 × context(≈1.0) = 0.68
+③ DECIDE    verdict published:  LONG · conviction 0.68 · size× 0.68
+④ GRADE     Recorder opens a row at fire price; barrier R = max(20t, ATR).
+            Six bars later the +R target is touched before the −R stop → firstTouch = +1 (win).
+            Row on disk: conviction 0.68 · sizeMult 0.68 · firstTouch +1
+⑤ LEARN     this row joins every other verdict near conviction≈0.68 → P(win | conviction) curve
+⑥ ADOPT     once fit, the floor/weights that produced this verdict are replaced by the ones the
+            outcomes justify — and the next identical setup is scored a little more truthfully</code></pre>
+<p>Note what nobody did: no sensor knew the Council existed, the Council knew nothing about <em>which</em> sensors voted (it read the bus), and the Recorder graded the verdict without any opinion about whether it was good. Each piece does one job and publishes; the coupling is the bus, not the code.</p>
+<hr>
+<h2><span class="hn">4.</span>The discipline: correctness precedes collection precedes learning</h2>
+<p>The temptation is to skip to stage ⑤ and fit something today. That is exactly the trap, because <strong>a model fit on a contaminated corpus learns the contamination.</strong> Most of this project's engineering is not the model — it is making the corpus <em>trustworthy</em> before a single number is fit. Three hard-won examples:</p>
+<ul>
+<li><strong>Scope keys.</strong> A verdict must be tied to the exact chart context it was computed for (instrument <em>and</em> bar type). Before this, two charts of the same instrument silently overwrote each other's verdict every tick — the corpus was joining outcomes to the wrong decisions.</li>
+<li><strong>The as-of guard.</strong> A published seam has no history: it is stamped with wall-clock time even while the Council replays historical bars. Recording during replay therefore stamped <em>today's</em> verdict onto bars from days ago — silent lookahead. The Recorder now records realtime only.</li>
+<li><strong>First-touch labels + below-floor recording.</strong> "Did it win?" is only meaningful if you know whether the target or the stop was hit <em>first</em> (not just that both were eventually touched), and if you record verdicts <em>below</em> the current floor too — otherwise the corpus is censored at the floor and can never reveal whether the floor is set too high. A floor cannot be fit from data that only exists above it.</li>
+</ul>
+<p>The principle: <strong>correctness precedes collection precedes learning.</strong> Each is a prerequisite for the next, and getting them out of order produces a confident model that is confidently wrong.</p>
+<hr>
+<h2><span class="hn">5.</span>Why this is honest-hard</h2>
+<p>Fitting a trading model is where people fool themselves most easily. Sentinel's Lab is built around the ways that happens:</p>
+<ul>
+<li><strong>Overlapping outcomes leak.</strong> Two verdicts 90 seconds apart share almost all of their forward window, so a random train/test split trains on the future. The Lab uses purged, embargoed, walk-forward splits — never random k-fold.</li>
+<li><strong>Effective N, not row count.</strong> Those overlapping rows are not independent; the honest sample size is far smaller than the row count, and every significance test that ignores this lies.</li>
+<li><strong>Censored rows are dropped, not called losses.</strong> A verdict that drifted sideways into the close is not a loss; labeling it one poisons the fit.</li>
+<li><strong>The baseline is the hand-set weights, not a coin flip.</strong> If the fitted model can't beat the guesses on an honest split, the honest answer is "the guesses win" — and you still learn which sensors are dead weight.</li>
+</ul>
+<p>The goal is not a model that looks good. It is a model whose edge survives the tests designed to destroy a fake one.</p>
+<hr>
+<h2><span class="hn">6.</span>Dynamic management: where stage ⑥ goes</h2>
+<p>Closing the loop is not one switch; it is a progression, each rung safer and more adaptive than the last:</p>
+<ol>
+<li><strong>Fit the floor</strong> (now unblocked). Map conviction → probability-of-win from the clean corpus, solve for where expectancy crosses breakeven after cost, and replace the hand-set <code>0.20</code>. One number, but the one the whole size decision pivots on.</li>
+<li><strong>Fit the weights.</strong> Ridge-regularized regression on the direction-folded voter vector replaces <code>WeightEye = 1.4, …</code>. This is where "which sensors actually carry information" stops being opinion.</li>
+<li><strong>Feed it back — static adoption.</strong> The Council reads a fitted <code>Model.conf</code> on load. Deterministic, auditable, reversible: a flat key=value file the C# side reads with no parser, versioned next to the configs that produced it.</li>
+<li><strong>Per-context models.</strong> One global fit is a blunt instrument. The same seam means different things in a trend vs a chop, at the open vs midday, on gold vs an index. The scope keys already carve the data into the coordinates a per-regime / per-scope model is defined over.</li>
+<li><strong>Guarded online adaptation.</strong> The end state: the model re-fits on a rolling window and updates the live parameters within hard, human-set bounds — never sizing beyond a cap, never overriding a safety veto, always logging what it changed and why. Adaptation lives <em>inside</em> the safety envelope, never around it.</li>
+</ol>
+<p>Throughout, one rule holds: <strong>the learned model advises size and selection; it never touches the safety layer.</strong> The kill switch, the governor, the order gate, the news and rollover vetoes are not things the model is allowed to learn its way around. Dynamic management makes the system <em>smarter</em>; the safety substrate keeps it <em>survivable</em>. Those are separate jobs and stay separate.</p>
+<hr>
+<h2><span class="hn">7.</span>Where we are</h2>
+<ul>
+<li><strong>①–④ built and running.</strong> Sensors publish; the Council fuses and publishes a verdict; the Bridge can consume it; the Recorder grades it with first-touch labels across the full conviction range.</li>
+<li><strong>⑤ unblocked, data-ready.</strong> The Lab exists and runs; the clean corpus has now accumulated — the SQLite DB holds ~5,300 trades, ~99% of them carrying the decision (vote) vector. Fitting the floor is the next concrete result and is no longer waiting on data — it is waiting on the fit being run.</li>
+<li><strong>⑥ is the horizon.</strong> Feeding the fit back — dynamic management — is the point of everything upstream. The plumbing (scope keys, seams, the config-git repo, <code>Model.conf</code>) was built so that when the fit is trustworthy, adopting it is a small, safe, reversible step.</li>
+<li><strong>The roster opens up in parallel.</strong> The generic vote registry (§2, <em>"the voters are inputs, not fixtures"</em>) turns the fixed sensor set into a user-assembled one — and because the loop fits weights for <em>whatever</em> roster is declared, "customize your Council" and "learn the customized Council" are the same machinery. Our test sensors were never the product; the fusion engine is.</li>
+</ul>
+<p>The one-sentence version: <strong>Sentinel fuses many honest signals into one fitted decision, grades that decision against reality, and feeds the grade back into the fusion — inside a safety envelope it is never allowed to learn around.</strong></p>
+<footer><span>Sentinel Suite · <b>The Sentinel Thesis</b></span><span>living document · rendered from Markdown</span></footer>
+</div></body></html>

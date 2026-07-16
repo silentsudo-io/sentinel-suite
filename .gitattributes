@@ -1,0 +1,13 @@
+# Normalize line endings in the repo (LF), check out native on each OS.
+* text=auto
+
+# NinjaScript / docs are text
+*.cs   text
+*.md   text
+*.html text
+*.xml  text
+*.conf text
+
+# Screenshots are binary
+*.png  binary
+*.jpg  binary

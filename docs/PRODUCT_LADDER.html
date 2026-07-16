@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sentinel · Sentinel — Product Ladder &amp; Open-Source Packaging</title>
+<style>
+  :root{
+    --void:#e7edf1; --panel:#f3f7f9; --surface:#ffffff; --surface2:#eaf0f3;
+    --ink:#16222c; --ink2:#586873; --line:#cdd8de; --grid:#dde5ea;
+    --accent:#0b8ea1; --flow:#0d8fa2;
+    --up:#12a56f; --down:#e0424f; --warn:#c9861a;
+    --mono:ui-monospace,"Cascadia Code","SF Mono",Consolas,Menlo,monospace;
+    --sans:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  }
+  @media (prefers-color-scheme:dark){
+    :root{
+      --void:#0a0e13; --panel:#0d131a; --surface:#141c25; --surface2:#0f161e;
+      --ink:#e2e9ee; --ink2:#8a9ba8; --line:#26333f; --grid:#131c25;
+      --accent:#4ad6e8; --flow:#3fb6c9; --up:#25d08b; --down:#ff5c6a; --warn:#f2b23c;
+    }
+  }
+  :root[data-theme="light"]{
+    --void:#e7edf1; --panel:#f3f7f9; --surface:#ffffff; --surface2:#eaf0f3;
+    --ink:#16222c; --ink2:#586873; --line:#cdd8de; --grid:#dde5ea;
+    --accent:#0b8ea1; --flow:#0d8fa2; --up:#12a56f; --down:#e0424f; --warn:#c9861a;
+  }
+  :root[data-theme="dark"]{
+    --void:#0a0e13; --panel:#0d131a; --surface:#141c25; --surface2:#0f161e;
+    --ink:#e2e9ee; --ink2:#8a9ba8; --line:#26333f; --grid:#131c25;
+    --accent:#4ad6e8; --flow:#3fb6c9; --up:#25d08b; --down:#ff5c6a; --warn:#f2b23c;
+  }
+
+  *{box-sizing:border-box}
+  body{margin:0; background:var(--void); color:var(--ink); font-family:var(--sans); line-height:1.55; -webkit-font-smoothing:antialiased; overflow-x:hidden}
+  .wrap{max-width:1120px; margin:0 auto; padding:56px 24px 100px; position:relative; z-index:1}
+
+  /* the Sentinel brand mark (Spartan barbute helmet) — faint fixed watermark + crisp header mark */
+  .watermark{position:fixed; z-index:0; pointer-events:none; top:50%; right:-2vw; transform:translateY(-50%); width:clamp(300px,40vw,560px); height:auto; fill:var(--accent); opacity:.18; filter:drop-shadow(0 0 55px color-mix(in srgb,var(--accent) 60%,transparent))}
+  .brandmark{width:16px; height:16px; flex:0 0 auto; fill:var(--accent); filter:drop-shadow(0 0 5px color-mix(in srgb,var(--accent) 50%,transparent))}
+
+  .kicker{font-family:var(--mono); font-size:11px; letter-spacing:.34em; text-transform:uppercase; color:var(--accent); display:flex; align-items:center; gap:9px; margin:0 0 14px}
+  .livedot{width:8px; height:8px; border-radius:50%; background:var(--accent); animation:pulse 2.4s ease-out infinite}
+  @keyframes pulse{0%{box-shadow:0 0 0 0 color-mix(in srgb,var(--accent) 55%,transparent)}70%{box-shadow:0 0 0 7px transparent}100%{box-shadow:0 0 0 0 transparent}}
+  h1{font-family:var(--mono); font-weight:700; font-size:clamp(30px,5.4vw,50px); letter-spacing:-.015em; margin:0 0 14px; text-wrap:balance}
+  .lede{font-size:18px; color:var(--ink2); max-width:66ch; margin:0 0 4px}
+  .lede b{color:var(--ink); font-weight:600}
+
+  .oneline{display:flex; flex-wrap:wrap; gap:7px; align-items:center; margin:28px 0 6px}
+  .oneline .s{font-family:var(--mono); font-size:12px; color:var(--ink); background:var(--surface); border:1px solid var(--line); border-radius:999px; padding:6px 13px}
+  .oneline .s b{color:var(--accent); font-weight:700}
+  .oneline .sep{color:var(--ink2); font-family:var(--mono)}
+
+  .toc{display:flex; flex-wrap:wrap; gap:6px 20px; margin:22px 0 6px; padding:16px 18px; border:1px solid var(--line); border-radius:12px; background:var(--panel)}
+  .toc a{font-family:var(--mono); font-size:12.5px; color:var(--ink2); text-decoration:none; white-space:nowrap}
+  .toc a:hover{color:var(--accent)}
+  .toc a b{color:var(--accent); font-weight:700; margin-right:6px}
+
+  .legend{display:flex; flex-wrap:wrap; gap:8px 18px; margin:18px 0 6px; padding:13px 16px; border:1px solid var(--line); border-radius:12px; background:var(--panel)}
+  .legend .k{display:flex; align-items:center; gap:8px; font-family:var(--mono); font-size:12px; color:var(--ink2)}
+  .swatch{width:22px; height:4px; border-radius:2px}
+  .swatch.a{background:var(--flow)} .swatch.u{background:var(--up)} .swatch.d{background:var(--down)} .swatch.w{background:var(--warn)}
+  .legend .k b{color:var(--ink); font-weight:600}
+
+  .part{display:flex; align-items:baseline; gap:16px; margin:80px 0 8px; padding-bottom:14px; border-bottom:1px solid var(--line)}
+  .part .pn{font-family:var(--mono); font-size:13px; font-weight:700; color:var(--accent); letter-spacing:.2em; white-space:nowrap}
+  .part h2{font-family:var(--mono); font-weight:700; font-size:15px; letter-spacing:.22em; text-transform:uppercase; color:var(--ink); margin:0}
+  .part .pd{margin-left:auto; font-size:13px; color:var(--ink2); font-family:var(--mono); text-align:right}
+
+  section{margin-top:44px}
+  .eyebrow{font-family:var(--mono); font-size:11px; letter-spacing:.24em; text-transform:uppercase; color:var(--accent); margin:0 0 8px; display:flex; gap:10px; align-items:baseline}
+  .eyebrow .num{color:var(--ink2); opacity:.7}
+  h3{font-family:var(--mono); font-weight:700; font-size:22px; margin:0 0 6px; letter-spacing:-.01em; text-wrap:balance}
+  .desc{color:var(--ink2); font-size:15px; margin:0 0 20px; max-width:74ch}
+  .desc b{color:var(--ink); font-weight:600}
+  code{font-family:var(--mono); font-size:.9em; background:var(--surface2); border:1px solid var(--line); border-radius:5px; padding:1px 5px; color:var(--ink)}
+
+  .panel{border:1px solid var(--line); border-radius:14px; background:var(--panel);
+    background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);
+    background-size:26px 26px; background-position:-1px -1px; padding:34px 30px; overflow-x:auto}
+
+  .node{background:var(--surface); border:1px solid var(--line); border-radius:11px; padding:11px 14px; min-width:120px; text-align:center; position:relative; box-shadow:0 1px 0 color-mix(in srgb,var(--ink) 6%,transparent)}
+  .node .t{font-family:var(--mono); font-weight:700; font-size:13px; color:var(--ink); white-space:nowrap}
+  .node .s{font-family:var(--mono); font-size:10.5px; color:var(--ink2); margin-top:3px; white-space:nowrap}
+  .node.accent{border-color:color-mix(in srgb,var(--accent) 55%,var(--line))}
+  .node.accent::before,.node.up::before,.node.down::before,.node.warn::before{content:""; position:absolute; left:0; top:9px; bottom:9px; width:3px; border-radius:3px}
+  .node.accent::before{background:var(--accent)}
+  .node.up::before{background:var(--up)} .node.up .t{color:color-mix(in srgb,var(--up) 78%,var(--ink))}
+  .node.down::before{background:var(--down)} .node.down .t{color:color-mix(in srgb,var(--down) 82%,var(--ink))}
+  .node.warn::before{background:var(--warn)}
+  .node.big{min-width:150px; padding:14px 16px}
+
+  .chip{font-family:var(--mono); font-size:11px; color:var(--ink); background:var(--surface2); border:1px solid var(--line); border-radius:7px; padding:5px 8px; white-space:nowrap; display:flex; justify-content:space-between; gap:10px; align-items:center}
+  .chip .w{color:var(--ink2); font-size:10px}
+  .chip.mute{color:var(--ink2)}
+
+  .flow{display:flex; align-items:center; justify-content:center; min-width:min-content}
+  .arrow{position:relative; flex:0 0 var(--aw,50px); height:2px; align-self:center; background:linear-gradient(90deg,color-mix(in srgb,var(--flow) 25%,transparent),var(--flow)); --c:var(--flow)}
+  .arrow::after{content:""; position:absolute; right:-1px; top:50%; transform:translateY(-50%); border-left:8px solid var(--c); border-top:5px solid transparent; border-bottom:5px solid transparent}
+  .arrow[data-l]::before{content:attr(data-l); position:absolute; left:50%; top:-15px; transform:translateX(-50%); font-family:var(--mono); font-size:9px; letter-spacing:.06em; text-transform:uppercase; color:var(--ink2); white-space:nowrap}
+  .arrow.up{--c:var(--up); background:linear-gradient(90deg,color-mix(in srgb,var(--up) 25%,transparent),var(--up))}
+  .arrow.down{--c:var(--down); background:linear-gradient(90deg,color-mix(in srgb,var(--down) 25%,transparent),var(--down))}
+  .arrow.warn{--c:var(--warn); background:linear-gradient(90deg,color-mix(in srgb,var(--warn) 25%,transparent),var(--warn))}
+  .arrow.v{width:2px; height:var(--ah,38px); flex:none; margin:0 auto; background:linear-gradient(180deg,color-mix(in srgb,var(--flow) 25%,transparent),var(--flow))}
+  .arrow.v::after{right:50%; top:auto; bottom:-1px; left:auto; transform:translateX(50%); border-left:5px solid transparent; border-right:5px solid transparent; border-top:8px solid var(--c); border-bottom:0}
+  .arrow.v.up-dir{background:linear-gradient(0deg,color-mix(in srgb,var(--flow) 25%,transparent),var(--flow))}
+  .arrow.v.up-dir::after{bottom:auto; top:-1px; border-top:0; border-bottom:8px solid var(--c)}
+  .arrow.v[data-l]::before{left:12px; top:50%; transform:translateY(-50%)}
+  .live .arrow{background-size:220% 100%; animation:travel 2.6s linear infinite}
+  @keyframes travel{0%{background-position:120% 0}100%{background-position:-40% 0}}
+
+  .group{border:1px dashed color-mix(in srgb,var(--line) 92%,var(--ink)); border-radius:11px; padding:12px; background:color-mix(in srgb,var(--surface) 55%,transparent)}
+  .group .gl{font-family:var(--mono); font-size:10px; letter-spacing:.14em; text-transform:uppercase; color:var(--ink2); margin:0 0 10px; text-align:center}
+  .grid2{display:grid; grid-template-columns:repeat(2,minmax(96px,1fr)); gap:6px}
+  .grid1{display:grid; gap:6px}
+  .rowflow{display:flex; align-items:center; justify-content:center; gap:0; min-width:min-content}
+  .stack{display:flex; flex-direction:column; align-items:center}
+  .band{display:flex; gap:8px; justify-content:center; flex-wrap:wrap; max-width:520px}
+
+  .verdict{background:var(--surface); border:1px solid color-mix(in srgb,var(--accent) 45%,var(--line)); border-radius:11px; padding:14px 16px; min-width:180px}
+  .verdict .vt{font-family:var(--mono); font-weight:700; font-size:12px; color:var(--accent); letter-spacing:.14em; margin-bottom:10px}
+  .vrow{display:flex; justify-content:space-between; gap:16px; font-family:var(--mono); font-size:12px; padding:4px 0; border-top:1px solid var(--line)}
+  .vrow span:first-child{color:var(--ink2)} .vrow span:last-child{color:var(--ink); font-weight:600}
+
+  .drow{display:flex; align-items:center; gap:14px; justify-content:center}
+  .branch{display:flex; align-items:center; gap:10px}
+  .blabel{font-family:var(--mono); font-size:9px; letter-spacing:.08em; text-transform:uppercase; color:var(--ink2)}
+  .qnode{background:var(--surface); border:1px solid var(--line); border-radius:11px; padding:12px 16px; text-align:center; position:relative}
+  .qnode.dec{border-color:color-mix(in srgb,var(--accent) 40%,var(--line))}
+  .qnode .t{font-family:var(--mono); font-weight:700; font-size:12.5px; color:var(--ink)}
+  .qnode .s{font-family:var(--mono); font-size:10px; color:var(--ink2); margin-top:4px}
+  .spine{display:flex; flex-direction:column; align-items:center}
+
+  .cast{display:grid; grid-template-columns:repeat(auto-fill,minmax(232px,1fr)); gap:12px}
+  .castcard{border:1px solid var(--line); border-radius:12px; background:var(--surface); padding:14px 15px; display:flex; flex-direction:column; gap:6px}
+  .castcard .role{font-family:var(--mono); font-size:9.5px; letter-spacing:.16em; text-transform:uppercase; color:var(--accent)}
+  .castcard .nm{font-family:var(--mono); font-weight:700; font-size:15px; color:var(--ink)}
+  .castcard p{margin:0; font-size:13px; color:var(--ink2)}
+  .castcard .seam{margin-top:auto; font-family:var(--mono); font-size:10.5px; color:var(--ink2); border-top:1px dashed var(--line); padding-top:7px}
+  .castcard .seam b{color:var(--ink); font-weight:600}
+
+  .two{display:grid; grid-template-columns:1.1fr .9fr; gap:26px; align-items:start}
+  .two .panel{margin:0}
+  .anno{display:flex; flex-direction:column; gap:12px}
+  .anno .a{display:flex; gap:12px; align-items:flex-start}
+  .anno .n{flex:0 0 22px; height:22px; border-radius:6px; background:var(--surface2); border:1px solid var(--line); color:var(--accent); font-family:var(--mono); font-weight:700; font-size:11px; display:flex; align-items:center; justify-content:center; margin-top:1px}
+  .anno .a div b{font-family:var(--mono); font-size:12.5px; color:var(--ink)}
+  .anno .a div p{margin:2px 0 0; font-size:13px; color:var(--ink2)}
+
+  .tblwrap{overflow-x:auto; border:1px solid var(--line); border-radius:12px; margin:8px 0}
+  table{width:100%; border-collapse:collapse; font-family:var(--mono); font-size:12.5px; min-width:640px}
+  thead th{text-align:left; font-size:10px; letter-spacing:.12em; text-transform:uppercase; color:var(--ink2); font-weight:600; padding:12px 14px; background:var(--panel); border-bottom:1px solid var(--line); white-space:nowrap}
+  tbody td{padding:10px 14px; border-bottom:1px solid var(--line); color:var(--ink); vertical-align:top}
+  tbody tr:last-child td{border-bottom:0}
+  td .vt{color:var(--ink2); font-size:11.5px}
+  td b{color:var(--ink)}
+  .wt{font-variant-numeric:tabular-nums; color:var(--accent); font-weight:700}
+  .ax-orth{color:var(--accent)} .ax-price{color:var(--ink2)}
+  .st{font-size:11px; color:var(--ink2)}
+
+  .principles{display:grid; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); gap:16px}
+  .pr{border:1px solid var(--line); border-left:3px solid var(--accent); border-radius:0 12px 12px 0; background:var(--surface); padding:16px 18px}
+  .pr h4{font-family:var(--mono); font-size:14px; margin:0 0 6px; color:var(--ink)}
+  .pr p{margin:0; font-size:13.5px; color:var(--ink2)}
+  .pr p b{color:var(--ink); font-weight:600}
+
+  .layers{display:flex; flex-direction:column; gap:12px}
+  .layer{display:grid; grid-template-columns:138px 1fr auto; align-items:center; gap:16px; border:1px solid var(--line); border-radius:12px; background:var(--surface); padding:14px 16px}
+  .layer .lb{font-family:var(--mono); font-size:10px; letter-spacing:.14em; text-transform:uppercase; color:var(--accent)}
+  .layer .lb b{display:block; color:var(--ink); font-size:14px; letter-spacing:0; margin-top:3px; text-transform:none}
+  .layer .lc{display:flex; flex-wrap:wrap; gap:6px}
+  .layer .lo{font-family:var(--mono); font-size:10.5px; color:var(--ink2); white-space:nowrap; text-align:right; line-height:1.5}
+  @media(max-width:640px){.layer{grid-template-columns:1fr; gap:10px} .layer .lo{text-align:left}}
+
+  /* prose + reference */
+  .prose{max-width:76ch}
+  .prose p{margin:0 0 14px; font-size:15px; color:var(--ink)}
+  .prose p.muted{color:var(--ink2)}
+  .callout{border:1px solid var(--line); border-left:3px solid var(--accent); border-radius:0 12px 12px 0; background:var(--surface); padding:14px 18px; margin:18px 0; font-size:14.5px; color:var(--ink); max-width:80ch}
+  .callout.warn{border-left-color:var(--warn)} .callout.caveat{border-left-color:var(--down)}
+  .callout b{color:var(--ink)}
+  .callout .cl{display:block; font-family:var(--mono); font-size:10px; letter-spacing:.16em; text-transform:uppercase; margin-bottom:6px; color:var(--accent)}
+  .callout.warn .cl{color:var(--warn)} .callout.caveat .cl{color:var(--down)}
+  .steps{list-style:none; counter-reset:s; padding:0; margin:0; display:flex; flex-direction:column; gap:12px; max-width:80ch}
+  .steps li{counter-increment:s; display:grid; grid-template-columns:28px minmax(0,1fr); column-gap:14px; row-gap:2px; align-items:start}
+  .steps li::before{content:counter(s); grid-column:1; grid-row:1; height:26px; width:26px; border-radius:7px; background:var(--surface2); border:1px solid var(--line); color:var(--accent); font-family:var(--mono); font-weight:700; font-size:12px; display:flex; align-items:center; justify-content:center}
+  .steps li b{grid-column:2; grid-row:1; color:var(--ink)} .steps li p{grid-column:2; grid-row:2; margin:3px 0 0; color:var(--ink2); font-size:14px}
+  .steps li code{font-size:.85em}
+  .code{background:var(--surface2); border:1px solid var(--line); border-radius:10px; padding:13px 15px; overflow-x:auto; font-family:var(--mono); font-size:12px; color:var(--ink); line-height:1.65; margin:14px 0; white-space:pre; max-width:100%}
+  .code .c{color:var(--ink2)} .code .k{color:var(--accent)}
+  .defs{display:grid; gap:0; max-width:80ch}
+  .defs .row{display:grid; grid-template-columns:170px 1fr; gap:16px; font-size:14px; padding:11px 0; border-bottom:1px solid var(--line)}
+  .defs b{font-family:var(--mono); font-size:12.5px; color:var(--ink)}
+  .defs .d{color:var(--ink2)}
+  .gauntlet{display:flex; flex-direction:column; gap:3px; font-family:var(--mono); font-size:12.5px; max-width:660px}
+  .gauntlet .g{display:flex; align-items:center; gap:12px; padding:10px 13px; border:1px solid var(--line); border-radius:8px; background:var(--surface)}
+  .gauntlet .g .ck{color:var(--up); font-weight:700; flex:0 0 auto}
+  .gauntlet .g .cond{color:var(--ink)} .gauntlet .g .res{margin-left:auto; color:var(--ink2); white-space:nowrap}
+  .reading{display:grid; grid-template-columns:1fr 1fr; gap:14px; margin:20px 0 6px; max-width:80ch}
+  .rp{border:1px solid var(--line); border-radius:12px; background:var(--surface); padding:14px 16px}
+  .rp .rt{font-family:var(--mono); font-size:11px; letter-spacing:.12em; text-transform:uppercase; color:var(--accent); margin-bottom:6px}
+  .rp p{margin:0; font-size:13.5px; color:var(--ink2)}
+  .rp b{color:var(--ink)}
+  @media(max-width:640px){ .reading{grid-template-columns:1fr} .defs .row{grid-template-columns:1fr; gap:2px} }
+
+  /* screenshot placeholders */
+  .shots{display:grid; grid-template-columns:repeat(auto-fit,minmax(238px,1fr)); gap:14px; margin:6px 0}
+  .shot{border:1.5px dashed color-mix(in srgb,var(--line) 78%,var(--ink)); border-radius:12px; background:var(--surface2); min-height:160px; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:18px 16px; gap:7px; margin:0}
+  .shot svg{color:var(--ink2); opacity:.55; margin-bottom:2px}
+  .shot .sid{font-family:var(--mono); font-size:10px; letter-spacing:.18em; font-weight:700; color:var(--accent)}
+  .shot .stt{font-family:var(--mono); font-size:13px; font-weight:700; color:var(--ink)}
+  .shot .scap{font-size:12px; color:var(--ink2); line-height:1.45; max-width:30ch}
+  .shot .sfile{font-family:var(--mono); font-size:9.5px; color:var(--ink2); opacity:.72; margin-top:3px}
+
+  footer{margin-top:72px; padding-top:22px; border-top:1px solid var(--line); font-family:var(--mono); font-size:11.5px; color:var(--ink2); display:flex; flex-wrap:wrap; gap:6px 18px; justify-content:space-between}
+  footer b{color:var(--ink); font-weight:600}
+
+  @media (prefers-reduced-motion:reduce){ .live .arrow{animation:none} .livedot{animation:none} }
+  @media (max-width:760px){ .two{grid-template-columns:1fr} }
+  @media (max-width:640px){ .wrap{padding:40px 14px 72px} .panel{padding:24px 16px} }
+</style>
+<style>
+  .wrap{max-width:900px}
+  .kicker .navsep{opacity:.45;margin:0 3px}
+  .kicker a.navhome{color:var(--ink2);border-bottom:0;text-decoration:none}
+  .kicker a.navhome:hover{color:var(--accent)}
+  .doc h2{font-family:var(--mono);font-weight:700;font-size:15px;letter-spacing:.2em;text-transform:uppercase;
+    color:var(--ink);margin:64px 0 4px;padding-bottom:12px;border-bottom:1px solid var(--line)}
+  .doc h2 .hn{color:var(--accent);margin-right:12px}
+  .doc h3{margin:34px 0 8px}
+  .doc p{font-size:15.5px;color:var(--ink);margin:0 0 15px;max-width:78ch}
+  .doc a{color:var(--accent);text-decoration:none;border-bottom:1px solid color-mix(in srgb,var(--accent) 40%,transparent)}
+  .doc a:hover{border-bottom-color:var(--accent)}
+  .doc strong{color:var(--ink);font-weight:670}
+  .doc em{color:var(--ink2);font-style:italic}
+  .doc ul,.doc ol{max-width:78ch;padding-left:1.3em;margin:0 0 15px}
+  .doc li{margin:.42em 0;font-size:15px;color:var(--ink)}
+  .doc li::marker{color:var(--accent)}
+  .doc hr{border:0;border-top:1px solid var(--line);margin:8px 0}
+  .doc blockquote{margin:18px 0;padding:14px 18px;border:1px solid var(--line);border-left:3px solid var(--accent);
+    border-radius:0 12px 12px 0;background:var(--surface);color:var(--ink2);max-width:80ch}
+  .doc blockquote p{color:var(--ink2);margin:0}
+  .doc blockquote strong{color:var(--ink)}
+  .doc pre{background:var(--surface2);border:1px solid var(--line);border-radius:10px;padding:14px 16px;
+    overflow-x:auto;font-family:var(--mono);font-size:12px;color:var(--ink);line-height:1.6;margin:16px 0;white-space:pre}
+  .doc pre code{background:none;border:0;padding:0;font-size:1em;color:inherit}
+</style>
+</head><body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><symbol id="helm" viewBox="0 0 512 512"><path fill-rule="nonzero" d="M255.406 17.75C189.313 39.42 124.536 85.124 79.03 150.344c21.238 57.44 32.72 94.314 32.72 131.375 0 36.493-11.52 73.723-32.125 129.655 49.72 36.73 100.08 58.95 150.313 64.938-5.052-60.378-9.83-120.748 1.593-181.125-30.644-3.28-61.384-13.286-92.03-30.72v-71.312c80.67 42.255 158.908 41.547 242.063 0v71.313c-30.06 14.376-60.192 24.722-90.25 29.28 8.684 60.46 7.723 120.915 2.03 181.375 46.386-7.335 92.89-28.824 139.032-64.312-33.966-112.954-34.03-145.933.594-260.47C391.162 84.844 317.924 39.89 255.405 17.75zm-75.125 212c-11.16-.13-19.646 3.174-21.25 9.156-2.33 8.7 10.778 19.76 29.282 24.72 18.505 4.957 35.388 1.92 37.72-6.782 2.33-8.7-10.775-19.76-29.282-24.72-5.783-1.55-11.396-2.315-16.47-2.374zm160.69 0c-5.074.06-10.687.825-16.47 2.375-18.507 4.96-31.613 16.018-29.28 24.72 2.33 8.7 19.213 11.738 37.717 6.78 18.505-4.958 31.613-16.018 29.282-24.72-1.604-5.98-10.09-9.286-21.25-9.155z"/></symbol></svg>
+<svg class="watermark" viewBox="0 0 512 512" aria-hidden="true"><use href="#helm"/></svg>
+<div class="wrap doc">
+<header>
+<p class="kicker"><svg class="brandmark" viewBox="0 0 512 512" aria-hidden="true"><use href="#helm"/></svg><span class="livedot"></span> Sentinel Suite · NinjaTrader 8 · living document<span class="navsep">·</span><a class="navhome" href="SENTINEL_DOCS.html">Docs home →</a></p>
+<h1>Sentinel — Product Ladder &amp; Open-Source Packaging</h1>
+<p class="lede"><strong>Living document (started 2026-07-10).</strong> This is the <strong>product map</strong> — <em>what a user adopts, how deep they go, and how the pieces are packaged.</em> It is deliberately distinct from <a href="ROADMAP.html">ROADMAP.md</a>, the <strong>pipeline map</strong> (how data flows: sense → decide → act → record → learn). Same system, two lenses. When they disagree, the ROADMAP owns <em>engineering sequence</em>; this doc owns <em>packaging &amp; product shape</em>.</p>
+</header>
+<blockquote><p><strong>North star:</strong> open-source <strong>all of Sentinel</strong>, designed so the plumbing works <strong>no matter which rung a user is standing on.</strong> Open source and modularity are the <em>same cut</em> — if every rung must stand alone as its own bundle over a shared runtime, you cannot accidentally build a monolith.</p></blockquote>
+<blockquote><p><strong>Adoption tiers, not price tiers.</strong> Everything is free, so the ladder is a <em>depth-of-adoption</em> path — how far a user chooses to climb — <strong>not</strong> a pricing menu. "Focus" therefore means <em>what we release first and point newcomers at</em>, not <em>what we sell first</em> (see §7).</p></blockquote>
+<hr>
+<h2><span class="hn">1.</span>Scope — what "Sentinel" means here</h2>
+<p>This document concerns <strong>only the Sentinel-owned files</strong> in <code>bin\Custom</code>. The unrelated commercial vendor tools in the same tree (FlowMatriX, PredatorX, NinZaRenko, GoldenAxe, EliteLicenser, etc.) are <strong>out of scope</strong> and are never part of any Sentinel bundle or license. Contributed work <em>inside</em> Sentinel was released with full permission for open-source use (to be recorded in <code>NOTICE</code>/<code>AUTHORS</code> — §6).</p>
+<hr>
+<h2><span class="hn">2.</span>The two axes of value</h2>
+<p>Sentinel spans <strong>two orthogonal axes</strong> that compose but are independently valuable:</p>
+<ul>
+<li><strong>Axis A — Beauty.</strong> The Skin + <code>SentinelSkin</code> drawing framework. Makes <em>any</em> NinjaTrader chart beautiful. Needs <strong>zero</strong> intelligence.</li>
+<li><strong>Axis B — Intelligence.</strong> The sense → decide → act → learn pipeline (sensors → Council → Bridge → Lab). Works with <strong>plain</strong> NT rendering. Needs <strong>zero</strong> skin.</li>
+</ul>
+<p>They compose, but appeal to different people at different depths. This mirrors the publish/consult decoupling already built into the code: aesthetics and intelligence are separable <em>by design</em>.</p>
+<hr>
+<h2><span class="hn">3.</span>The product ladder — the spine</h2>
+<p>Each rung <strong>stands alone</strong> (stop here and it's genuinely useful on its own) <strong>and unlocks the next.</strong> These are <strong>adoption tiers</strong> — how deep a user climbs — and a user climbs only as far as they want.</p>
+<div class="tblwrap"><table><thead><tr><th>Rung</th><th>Product</th><th>Stands alone because…</th><th>Audience</th></tr></thead><tbody><tr><td><strong>0</strong></td><td><strong>Sentinel Skins</strong> — 6 themes + <code>SentinelSkin</code></td><td>makes <em>any</em> NT chart beautiful; the widest, easiest entry</td><td>everyone</td></tr><tr><td><strong>1</strong></td><td><strong>The Sensors</strong> — SentinelTrend, ADXPro, WoodiesCCIPro, VolEnvelope, CompressionBase, LiquidityWalls, God Reversal, WAE (the <strong>8 hero signals</strong>) + Clock, Participation, Location, MTF, Intermarket (the <strong>5 axes</strong>) + the <strong>BarTypes</strong> (SentinelTBars/TbarsCount + <strong>SentinelFlux</strong>, the order-flow-imbalance bar-type axis)</td><td>each hero is a gorgeous, functional standalone indicator</td><td>indicator shoppers</td></tr><tr><td><strong>2</strong></td><td><strong>The Recorder + Log</strong> — the capture engines (excursion corpus + MAE/MFE journaling)</td><td>records every trade's outcome to JSONL, over <em>any</em> strategy</td><td>data-minded traders</td></tr><tr><td><strong>3</strong></td><td><strong>The Observatory</strong> — the human interface to the excursion corpus (<strong>consolidates</strong> Lens + the Dashboard Excursion tab + SentinelExcursions)</td><td>explore / curate / understand your recorded outcomes; the <strong>human counterpart to the ML Lab</strong></td><td>the "understand your trading" crowd</td></tr><tr><td><strong>4</strong></td><td><strong>The Council</strong></td><td>one honest verdict fused from all your sensors — a confluence dashboard</td><td>confluence traders</td></tr><tr><td><strong>5</strong></td><td><strong>The Deck</strong> (+ Cockpit + Dashboard)</td><td>advanced manual chart trader / command surface</td><td>discretionary traders</td></tr><tr><td><strong>6</strong></td><td><strong>The Prop-Survival Kit</strong> — Risk + Governor + Kill-switch + Gate + auto-flatten + reconnect reconciliation</td><td><em>keep your funded account alive</em></td><td><strong>prop-firm traders (large, urgent market)</strong></td></tr><tr><td><strong>7</strong></td><td><strong>The Bridge</strong></td><td>autopilot that consumes the Council</td><td>automation crowd</td></tr><tr><td><strong>8</strong></td><td><strong>The Copier</strong></td><td>mirror one account to many, prop-rule-aware</td><td>multi-account / prop</td></tr><tr><td><strong>9</strong></td><td><strong>Helm</strong> — discretionary human interdiction over <em>any</em> running setup (move stop / close early / skip / pause; publishes a <code>HelmIntent</code>, never touches an order). <strong>✅ BUILT 2026-07-15</strong> (Core v1.34.0 seam · Bridge v0.3.0 consumer · Cockpit v0.5.0 ⑤ Helm rail; plumbing tier live-validated)</td><td>oversight that works over the Deck <strong>and</strong> the Bridge — the human hand on the tiller</td><td>hands-on overseers</td></tr><tr><td><strong>10</strong></td><td><strong>The ML Lab</strong> — pairs with the Observatory (the <em>machine</em> counterpart over the same corpus); now a BUILT data platform (SQLite corpus <code>Lab\db\sentinel.db</code> + live JSONL→SQLite ingester + Streamlit :8501 + Grafana :3000)</td><td>the system fits its own weights from your outcomes</td><td>top tier, the believers</td></tr></tbody></table></div>
+<p><strong>Rung 6 is both a product and a runtime layer</strong> (§4, L2). The Safety layer <strong>is</strong> the survival kit, surfaced through the Cockpit/Dashboard. Some rungs are infrastructure turned into a product — build once, sell as a rung. <strong>Rung 9 (Helm) is the discretionary sibling of Rung 6:</strong> the survival kit is <em>automatic hard limits</em>, Helm is the <em>human hand on the tiller</em> — distinct capabilities, distinct products.</p>
+<p><strong>The ladder is a light tree, not a strict line.</strong> Rung 3 opens an <em>analysis branch</em> (Recorder → <strong>Observatory</strong> ↔ ML Lab) that runs parallel to the <em>execution branch</em> (sensors → Council → Deck/Bridge), both rising over the shared runtime (§4). The <strong>Observatory</strong> (Rung 3) and the <strong>ML Lab</strong> (Rung 10) are the <strong>human</strong> and <strong>machine</strong> consumers of the <em>same</em> excursion corpus — the analysis-tier mirror of the Deck↔Bridge (manual↔auto) duality.</p>
+<h3>Cross-cutting foundations (they span the rungs — NOT rungs themselves)</h3>
+<p>You don't <em>climb</em> to these; they are the ground the ladder stands on and the tissue between rungs:</p>
+<ul>
+<li><strong>The Runtime</strong> (L0 Skin + F Foundation + L1 Bus + L2 Safety — §4). The floor every rung stands on.</li>
+<li><strong>The Platform Contract</strong> — the naming law + the State-seam protocol + the <code>port-sentinel-indicator</code> skill. This <em>is</em> the "developer / SDK" story: the rules that let anyone extend <em>any</em> rung with a compliant tool. It makes Sentinel a <strong>platform</strong>, not just a product — but it is not a rung.</li>
+<li><strong>The Field Manual</strong> (<code>SENTINEL_PROCESS_ATLAS.html</code>) — the education / onboarding layer that makes every rung learnable. A retention asset, bundled, not a rung.</li>
+</ul>
+<h3>Still-open candidate products (genuine maybes)</h3>
+<ul>
+<li><strong>Council-as-a-signal</strong> — the verdict is already a published seam; it could become a shared/subscription feed. <em>(Kept as a parked candidate, 2026-07-10 — near-free optionality, no commitment yet.)</em></li>
+</ul>
+<hr>
+<h2><span class="hn">4.</span>The runtime floor — what makes "any rung" real</h2>
+<p>Every rung bundles a shared substrate. That substrate is <strong>not one floor — it is layers, and rungs only ever depend downward.</strong></p>
+<div class="tblwrap"><table><thead><tr><th>Layer</th><th>Contains</th><th>Needed by</th><th>Dependency</th></tr></thead><tbody><tr><td><strong>L0 · Skin</strong></td><td>palette, <code>Painter</code>, <code>CardLayout</code>, themes (<code>SentinelSkin.cs</code>)</td><td>everyone who draws</td><td>none</td></tr><tr><td><strong>F · Foundation</strong></td><td><code>SettingsDir</code>, <code>Log</code>, <code>SeamStore&lt;T&gt;</code>, <code>ScopeOf</code>/<code>BarTag</code>, <code>InstrumentRoot</code>, <code>Conditions</code>, <code>Alerts</code>, <strong><code>Ledger</code></strong>, <strong><code>State</code></strong> (audit/persistence primitives), + the context vetoes (kill / instrument-kill / news / rollover)</td><td>everyone</td><td>none (above NT)</td></tr><tr><td><strong>L1 · Bus/Seams</strong></td><td>the publish/consult registry — all 13 <code>…State</code> types + Set/Get, <code>EyeVerdict</code>, <code>BrickLog</code>, fleet/assist state</td><td>sensors, Council</td><td>→ F only</td></tr><tr><td><strong>L2 · Safety</strong></td><td>the account-risk <em>decision</em> logic — feed-health, <code>CanEnter</code>, governor, drawdown, profiles, session, <code>SizedQuantity</code>/<code>TickValue</code>/<code>SizeForRisk</code>, order guards, <code>GateEntry</code></td><td>anything that trades (Deck, Bridge, Copier, Risk)</td><td>→ F only</td></tr></tbody></table></div>
+<p><strong>The one rule that keeps every rung standalone:</strong> <em>a file may only reference files in its own layer or below.</em> L1 never references L2; L2 never references L1. (Verified today — §5.)</p>
+<h3>The NT one-assembly caveat</h3>
+<p>NinjaTrader compiles <strong>everything in <code>bin\Custom</code> into a single DLL</strong>, so we cannot ship literal separate assemblies. But <strong>distribution ≠ installation</strong>: a "Sentinel Skins" download is just the L0 files; "Sentinel Sensors" is L0 + F + L1 + the indicators; each bundle is self-contained and installs into the one assembly fine. <strong>The layering is enforced by dependency discipline, not by assembly boundaries.</strong></p>
+<hr>
+<h2><span class="hn">5.</span>Core-split finding (2026-07-10 structural read)</h2>
+<p><code>SentinelCore_v1_0_0.cs</code> is one <strong>3,215-line</strong> file, one giant <code>static class SentinelCore</code> with ~30 nested types. Verdict: <strong>splittable, not entangled — and the dependency arrows already point the right way.</strong></p>
+<ul>
+<li><strong>Safety does not read the seams.</strong> The entire gate region (<code>GateEntry</code>/<code>CanEnter</code>) has <strong>zero</strong> <code>GetXState</code>/<code>GetCouncilState</code> calls — it decides purely on kill/governor/session/news/rollover.</li>
+<li><strong>The seams only reach downward</strong> — the sole cross-call out of the seam setters is to <code>Conditions.*</code> (a Foundation utility), never to the Gate or Ledger.</li>
+</ul>
+<p><strong>Mechanism — split without API churn:</strong> make it <code>public static partial class SentinelCore</code> across three files — <code>SentinelCore.Foundation.cs</code>, <code>SentinelCore.Bus.cs</code>, <code>SentinelCore.Safety.cs</code>. <strong>Same class, same call sites, zero churn</strong> across the ~40 consumer files. A partial class missing one partial still compiles as a <em>smaller</em> class → <strong>this is the distribution tiering</strong>: a Rung-1 bundle ships Foundation + Bus only, and the class simply won't have <code>GateEntry</code> (which no sensor calls). The class shrinks gracefully per rung.</p>
+<p><strong>Two relocations the split surfaces:</strong></p>
+<ol>
+<li><code>Conditions</code> + <code>Alerts</code> are physically filed among Safety but are <strong>Foundation</strong> utilities (the Bus depends on <code>Conditions</code>) → move them to <code>SentinelCore.Foundation.cs</code>. Confirm <code>Conditions</code> itself doesn't reach back into Safety before committing.</li>
+<li>The <strong>context vetoes</strong> (kill / instrument-kill / news / rollover) are read by <em>both</em> the Council (L1-side veto) and the Gate (L2) → pure state stores, so they live in <strong>Foundation</strong>, preserving the downward-only rule.</li>
+</ol>
+<p><strong>Caveat:</strong> arrows verified by structural grep, not a full method-by-method read; re-compile each partial against only its downward deps to prove the split. And this file is the one NT loves to clobber at the tail on F5 — anchor mid-class and re-verify before building.</p>
+<hr>
+<h2><span class="hn">6.</span>Open-source posture</h2>
+<ul>
+<li><strong>Adoption tiers, not price tiers.</strong> Everything is free; the ladder is a depth-of-adoption path, not a pricing menu. Any monetization (hosted service / support / an "SDK-certified" program) rides <em>on top</em> of the retained trademark and is <strong>fully optional</strong> — nothing on the ladder depends on it. That is why deferring the license costs nothing.</li>
+<li><strong>License: MPL-2.0 (chosen 2026-07-11).</strong> Weak, <strong>file-level</strong> copyleft — improvements to Sentinel's own files flow back, while others can still build proprietary tools <em>alongside</em> it. Chosen because the suite absorbs MPL-2.0 components (e.g. LiquidityWalls, © TradingIQ) → <strong>no license-mixing</strong>; it's <strong>GPL-compatible</strong>; and it sidesteps GPL's friction with the proprietary NinjaTrader host. Every source file carries the MPL per-file header; the <strong>SENTINEL trademark is retained</strong> (not granted by MPL).</li>
+<li><strong>Umbrella = "Sentinel Suite"</strong> (decided 2026-07-10) — the public brand + monorepo (<code>sentinel-suite</code>); the trademark held is <strong>SENTINEL</strong>. Extends the Federated Naming Law: bundles read "Sentinel &lt;Thing&gt;" (Sentinel Skins / Sentinel Sensors / …).</li>
+<li><strong>Trademark retained.</strong> Open-sourcing the <em>code</em> doesn't give away the <em>name</em>. Hold "Sentinel" as a mark — free code, owned brand — preserving the optional commercial door above without closing a line.</li>
+<li><strong><code>NOTICE</code> / <code>AUTHORS</code>.</strong> Record, in writing, that contributed-Sentinel work was released for open-source use — so the permission never has to be reconstructed from memory later.</li>
+<li><strong>Provenance is clean.</strong> Only Sentinel-owned files are in scope; publicly-published indicators (WAE, Woodies, ADX) are reimplementations of public formulas — the implementations are ours. NinjaScript source is open-sourceable; we never redistribute NT's DLLs (reference them as build prerequisites).</li>
+</ul>
+<hr>
+<h2><span class="hn">7.</span>Release focus &amp; phasing</h2>
+<p>Because these are <strong>adoption tiers, not price tiers</strong> (§6), "focus" = <em>what we release first and point newcomers at.</em> The rungs collapse into <strong>4 release phases on a risk gradient:</strong></p>
+<div class="tblwrap"><table><thead><tr><th>Phase</th><th>Ships</th><th>Order risk</th><th>Why here</th></tr></thead><tbody><tr><td><strong>P1 · Beachhead</strong> ✅ <strong>the focus</strong></td><td>Runtime + <strong>Skins</strong> (0) + <strong>Sensors</strong> — the <strong>8 hero signal indicators + BarTypes</strong> (1)</td><td><strong>none</strong></td><td>beautiful, wide appeal, proves the modular runtime, zero liability</td></tr><tr><td><strong>P2 · Intelligence</strong></td><td>the <strong>5 orthogonal axes</strong> (Clock/Participation/Location/MTF/Intermarket, rung 1) + Recorder+Log (2) + <strong>Observatory</strong> (3) + <strong>Council</strong> (4)</td><td><strong>none</strong></td><td>"understand + fuse" — the axes only mean something once the Council consumes them; nothing touches an account</td></tr><tr><td><strong>P3 · Execution</strong></td><td><strong>Prop-Survival Kit</strong> (6, <em>first</em>) → Deck (5) → Bridge (7) → Copier (8) → <strong>Helm</strong> (9)</td><td><strong>real money</strong></td><td>safety ships <em>before</em> autopilot; Helm = human interdiction over any running setup; loudest disclaimers</td></tr><tr><td><strong>P4 · Learning</strong></td><td><strong>ML Lab</strong> (10)</td><td>n/a</td><td>capstone; needs a baked corpus anyway</td></tr></tbody></table></div>
+<p><strong>P1 is the confirmed focus (2026-07-10).</strong> It carries no order-execution risk, has the widest appeal, and <em>is</em> the platform floor every later phase plugs into. Clean risk gradient across the four phases: <strong>none → none → real-money → advanced.</strong></p>
+<h3>Decided (formerly open questions)</h3>
+<ul>
+<li><strong>Rung 1 splits across P1/P2</strong> (decided 2026-07-10) — the <strong>8 hero signal/regime indicators</strong> (SentinelTrend, ADXPro, WoodiesCCIPro, VolEnvelope, CompressionBase, LiquidityWalls, God Reversal, WAE) + the <strong>BarTypes</strong> ship in <strong>P1</strong>; the <strong>5 orthogonal axes</strong> (Clock, Participation, Location, MTF, Intermarket) are Council inputs, so their release waits for <strong>P2</strong>.</li>
+<li><strong>P1 ships as two rung-bundles</strong> (decided 2026-07-10) — <strong>Sentinel Skins</strong> (runtime + 6 themes) and <strong>Sentinel Sensors</strong> (runtime + bus + the 8 hero indicators + BarTypes), mirroring the two axes, plus an optional "grab-both" <strong>Sentinel Starter</strong> meta-bundle. Each bundle is self-contained (carries its own runtime floor per §4). This is the per-rung-bundle model for the whole ladder, seeded by P1.</li>
+<li><strong>Prop-Survival Kit is its own product</strong> (Rung 6) — and it <strong>leads P3</strong> (safety before autopilot).</li>
+<li><strong>Helm is its own advanced rung</strong> (Rung 9, decided 2026-07-10) — placed after the Bridge/Copier as discretionary oversight over any running setup; the human counterpart to the automatic Prop-Survival Kit.</li>
+<li><strong>The Copier is just Rung 8</strong> — the "free lead-gen" framing dissolves when everything is open.</li>
+<li><strong>No SDK rung</strong> — that role is the <strong>Platform Contract</strong> (a cross-cutting foundation, §3), not a product you climb to.</li>
+<li><strong>No education rung</strong> — that role is the <strong>Field Manual</strong> (a cross-cutting foundation, §3).</li>
+<li><strong>Repo = monorepo</strong> with per-rung folders + per-rung release bundles (mirrors the partial-class tiering).</li>
+<li><strong>Per-bundle SemVer</strong> (decided 2026-07-10) — each release bundle versions independently (Sentinel Skins v1.0.0, Sentinel Sensors v1.x.0), releasing on its own clock as phases ship. The internal per-file <code>_vX_Y_Z</code> convention stays as the source-of-truth for individual tools underneath; the bundle version is the release/changelog marker.</li>
+</ul>
+<h3>P1 Definition of Done — per bundle (bar: FULL community launch, decided 2026-07-10)</h3>
+<p>Each P1 bundle (<strong>Sentinel Skins</strong>, <strong>Sentinel Sensors</strong>) must satisfy <strong>A–E</strong> before release — contributor-ready from day one.</p>
+<p><strong>A · Code &amp; compliance</strong></p>
+<ul>
+<li>Every shipped tool <strong>F5-compiles clean</strong> (NT is authoritative).</li>
+<li>Each sensor <strong>fully naming-law compliant</strong> (via the <code>port-sentinel-indicator</code> skill): "Sentinel &amp;lt;Thing&amp;gt;", glass card, label remover, published <code>…State</code> seam. A half-plumbed sensor cannot ship.</li>
+<li><strong>Bundle dependency-clean</strong> — Skins references no Bus/Safety; Sensors references no L2 Safety. The downward-only rule (§4) holds at the <em>bundle</em> boundary, not just the file.</li>
+</ul>
+<p><strong>B · Docs</strong></p>
+<ul>
+<li>Top-level <strong>README</strong> (what Sentinel Suite is, the two-axis pitch, install).</li>
+<li><strong>Install guide</strong> (drop into <code>bin\Custom</code> → F5; NT-version prereq; we ship no NT DLLs).</li>
+<li><strong>Per-tool one-pager</strong> each (purpose, inputs, card readout) — or a combined Sensors reference.</li>
+<li>Links to the <strong>Field Manual</strong> + <strong>Design System</strong>.</li>
+</ul>
+<p><strong>C · Visual showcase</strong> (the beauty beachhead — non-negotiable)</p>
+<ul>
+<li>A <strong>demo workspace/template</strong> users open to see it instantly.</li>
+<li><strong>Screenshots / GIFs</strong> in the README, <strong>dark + light</strong> themes.</li>
+</ul>
+<p><strong>D · Legal / meta</strong></p>
+<ul>
+<li><strong>NOTICE / AUTHORS</strong> (records contributed-Sentinel work released with permission).</li>
+<li><strong>Trading disclaimer</strong> (educational, not financial advice, no warranty) — even for indicators.</li>
+<li><strong>LICENSE</strong> (deferred placeholder until §6 is chosen).</li>
+</ul>
+<p><strong>E · Community scaffolding</strong></p>
+<ul>
+<li><strong>CONTRIBUTING</strong> → the Platform Contract + the <code>port-sentinel-indicator</code> skill (how to add a compliant tool).</li>
+<li><strong>Issue / PR templates</strong>.</li>
+<li><strong>Third-party sensor compliance checklist</strong> (naming law + card + State seam).</li>
+<li><strong>Build verification</strong> — ⚠ <em>not conventional CI.</em> NT compiles ONE assembly and <strong>F5 is authoritative</strong>; headless builds false-clean and produce ghosts (see ../CONTRIBUTING.md build rules). So "CI" here = the <strong>documented headless-verify recipe + a manual F5 checklist</strong>, not an automated compile gate.</li>
+</ul>
+<hr>
+<h2><span class="hn">8.</span>Next steps</h2>
+<ol>
+<li><strong>Boundary inventory</strong> — enumerate every Sentinel-owned file, mapped to its rung + layer. The license-agnostic input every downstream step needs. Buildable offline.</li>
+<li><strong>Cut the two P1 bundles</strong> — from the inventory, isolate <strong>Sentinel Skins</strong> (runtime + themes) and <strong>Sentinel Sensors</strong> (runtime + bus + the 8 hero indicators + BarTypes), plus the grab-both <strong>Starter</strong>.</li>
+<li><strong>Prototype the Core partial-class split</strong> (behind a careful F5) to prove the three-layer floor.</li>
+<li><strong>Draft <code>NOTICE</code> / <code>AUTHORS</code></strong> + choose the monorepo layout.</li>
+<li>✅ <strong>License chosen — MPL-2.0</strong> (§6). Paste the full canonical MPL-2.0 text into <code>LICENSE</code> before publish.</li>
+</ol>
+<h3>✅ P2 ASSEMBLED (2026-07-11) — the Intelligence tier, two bundles</h3>
+<p>Both <strong>LAYER on Sensors</strong> for the runtime (no re-shipped <code>SentinelCore</code>/<code>SentinelSkin</code> → no CS0101), verified <strong>Safety-free</strong>. See SENTINEL_BOUNDARY_INVENTORY.md §9 for the file lists.</p>
+<ul>
+<li><strong>Sentinel Intelligence</strong> (Rungs 1→4): 5 orthogonal axes (Clock/Participation/Location/MTF/Intermarket) + <strong>Council</strong> + <code>SentinelNewsService</code>. Mtf/Intermarket host <code>SentinelTrend</code> (⇒ needs Sensors). <strong>Eye DEFERRED</strong> (JET engine; Council consumes its seam only, ships without it).</li>
+<li><strong>Sentinel Observatory</strong> (Rungs 2–3): <strong><code>SentinelExcursionRecorder_v2_0_0</code></strong> (clean-room — the private v1_4 with GodTrades21 hosting stripped; Council-only; schema 1.3 unchanged; <strong>headless-verified clean</strong>, awaits an F5) + LogEngine/LogService + Lens + Excursions.</li>
+<li><strong>Provenance:</strong> ⚠ the boundary doc's §6 was WRONG — v1_4 Recorder EMBEDDED GodTrades (not reference-only); fixed by the v2 clean-room. All shipped P2 files are now provenance-clean.</li>
+<li><strong>Open at P2:</strong> Eye clean-room · live write-validation of v2 recorder (market-open Council fires) · demo workspace + screenshots (DoD C) · the Dashboard Excursion-tab → Observatory consolidation (Dashboard is P3).</li>
+</ul>
+<hr>
+<h2><span class="hn">9.</span>Relationship to other docs</h2>
+<ul>
+<li><a href="ROADMAP.html">ROADMAP.md</a> — the pipeline map (engineering sequence). This doc is the product map.</li>
+<li><a href="SENTINEL_SHIP_MANIFEST.html">SENTINEL_SHIP_MANIFEST.md</a> — every indicator's hard-deps (SentinelCore + SentinelSkin); the raw material for the boundary inventory.</li>
+<li><a href="SENTINEL_NAMING_FEDERATION.html">SENTINEL_NAMING_FEDERATION.md</a> — the 4-layer naming tell; the heart of the Platform Contract.</li>
+<li><a href="SENTINEL_DESIGN_SYSTEM.html">SENTINEL_DESIGN_SYSTEM.md</a> — the palette/component/State-seam spec (L0 + the publish protocol).</li>
+<li><a href="SENTINEL_PROCESS_ATLAS.html">SENTINEL_PROCESS_ATLAS.html</a> — the Field Manual (the education foundation).</li>
+</ul>
+<footer><span>Sentinel Suite · <b>Sentinel — Product Ladder &amp; Open-Source Packaging</b></span><span>living document · rendered from Markdown</span></footer>
+</div></body></html>

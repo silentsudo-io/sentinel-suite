@@ -1,0 +1,15 @@
+<ResourceDictionary	xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+					xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+					xmlns:po="http://schemas.microsoft.com/winfx/2006/xaml/presentation/options">
+
+	<SolidColorBrush	po:Freeze="true"	x:Key="ConditionBackground"				Color="Transparent"/>
+	<SolidColorBrush	po:Freeze="true"	x:Key="ConditionForeground"				Color="White"/>
+	<SolidColorBrush	po:Freeze="true"	x:Key="MAGridForeground"				Color="#FFFFFFFF"/>
+	<SolidColorBrush	po:Freeze="true"	x:Key="MAGridLines"						Color="#3e3d42"/>
+	<SolidColorBrush	po:Freeze="true"	x:Key="LabelRowBackground"				Color="#00FFFFFF"/>
+	<SolidColorBrush	po:Freeze="true"	x:Key="LabelRowForeground"				Color="#FFFFFFFF"/>
+	<SolidColorBrush	po:Freeze="true"	x:Key="RowChangeHighlightBackground"	Color="Yellow"/>
+	<SolidColorBrush	po:Freeze="true"	x:Key="RowChangeHighlightForeground"	Color="Black"/>
+	<SolidColorBrush	po:Freeze="true"	x:Key="MAGridTotalRowBackground" 		Color="#FF8F6200" />
+
+</ResourceDictionary>

@@ -1,0 +1,15 @@
+# OS noise
+Thumbs.db
+desktop.ini
+.DS_Store
+
+# Editor cruft
+*.swp
+*~
+.vs/
+
+# NinjaTrader build artifacts (we ship source only — never compiled output)
+*.dll
+*.pdb
+obj/
+bin/

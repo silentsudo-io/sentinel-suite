@@ -1,0 +1,1457 @@
+<title>Sentinel · Field Manual</title>
+<style>
+  :root{
+    --void:#e7edf1; --panel:#f3f7f9; --surface:#ffffff; --surface2:#eaf0f3;
+    --ink:#16222c; --ink2:#586873; --line:#cdd8de; --grid:#dde5ea;
+    --accent:#0b8ea1; --flow:#0d8fa2;
+    --up:#12a56f; --down:#e0424f; --warn:#c9861a;
+    --mono:ui-monospace,"Cascadia Code","SF Mono",Consolas,Menlo,monospace;
+    --sans:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  }
+  @media (prefers-color-scheme:dark){
+    :root{
+      --void:#0a0e13; --panel:#0d131a; --surface:#141c25; --surface2:#0f161e;
+      --ink:#e2e9ee; --ink2:#8a9ba8; --line:#26333f; --grid:#131c25;
+      --accent:#4ad6e8; --flow:#3fb6c9; --up:#25d08b; --down:#ff5c6a; --warn:#f2b23c;
+    }
+  }
+  :root[data-theme="light"]{
+    --void:#e7edf1; --panel:#f3f7f9; --surface:#ffffff; --surface2:#eaf0f3;
+    --ink:#16222c; --ink2:#586873; --line:#cdd8de; --grid:#dde5ea;
+    --accent:#0b8ea1; --flow:#0d8fa2; --up:#12a56f; --down:#e0424f; --warn:#c9861a;
+  }
+  :root[data-theme="dark"]{
+    --void:#0a0e13; --panel:#0d131a; --surface:#141c25; --surface2:#0f161e;
+    --ink:#e2e9ee; --ink2:#8a9ba8; --line:#26333f; --grid:#131c25;
+    --accent:#4ad6e8; --flow:#3fb6c9; --up:#25d08b; --down:#ff5c6a; --warn:#f2b23c;
+  }
+
+  *{box-sizing:border-box}
+  body{margin:0; background:var(--void); color:var(--ink); font-family:var(--sans); line-height:1.55; -webkit-font-smoothing:antialiased; overflow-x:hidden}
+  .wrap{max-width:1120px; margin:0 auto; padding:56px 24px 100px; position:relative; z-index:1}
+
+  /* the Sentinel brand mark (Spartan barbute helmet) — faint fixed watermark + crisp header mark */
+  .watermark{position:fixed; z-index:0; pointer-events:none; top:50%; right:-2vw; transform:translateY(-50%); width:clamp(300px,40vw,560px); height:auto; fill:var(--accent); opacity:.18; filter:drop-shadow(0 0 55px color-mix(in srgb,var(--accent) 60%,transparent))}
+  .brandmark{width:16px; height:16px; flex:0 0 auto; fill:var(--accent); filter:drop-shadow(0 0 5px color-mix(in srgb,var(--accent) 50%,transparent))}
+
+  .kicker{font-family:var(--mono); font-size:11px; letter-spacing:.34em; text-transform:uppercase; color:var(--accent); display:flex; align-items:center; gap:9px; margin:0 0 14px}
+  .livedot{width:8px; height:8px; border-radius:50%; background:var(--accent); animation:pulse 2.4s ease-out infinite}
+  @keyframes pulse{0%{box-shadow:0 0 0 0 color-mix(in srgb,var(--accent) 55%,transparent)}70%{box-shadow:0 0 0 7px transparent}100%{box-shadow:0 0 0 0 transparent}}
+  h1{font-family:var(--mono); font-weight:700; font-size:clamp(30px,5.4vw,50px); letter-spacing:-.015em; margin:0 0 14px; text-wrap:balance}
+  .lede{font-size:18px; color:var(--ink2); max-width:66ch; margin:0 0 4px}
+  .lede b{color:var(--ink); font-weight:600}
+
+  .oneline{display:flex; flex-wrap:wrap; gap:7px; align-items:center; margin:28px 0 6px}
+  .oneline .s{font-family:var(--mono); font-size:12px; color:var(--ink); background:var(--surface); border:1px solid var(--line); border-radius:999px; padding:6px 13px}
+  .oneline .s b{color:var(--accent); font-weight:700}
+  .oneline .sep{color:var(--ink2); font-family:var(--mono)}
+
+  .toc{display:flex; flex-wrap:wrap; gap:6px 20px; margin:22px 0 6px; padding:16px 18px; border:1px solid var(--line); border-radius:12px; background:var(--panel)}
+  .toc a{font-family:var(--mono); font-size:12.5px; color:var(--ink2); text-decoration:none; white-space:nowrap}
+  .toc a:hover{color:var(--accent)}
+  .toc a b{color:var(--accent); font-weight:700; margin-right:6px}
+
+  .legend{display:flex; flex-wrap:wrap; gap:8px 18px; margin:18px 0 6px; padding:13px 16px; border:1px solid var(--line); border-radius:12px; background:var(--panel)}
+  .legend .k{display:flex; align-items:center; gap:8px; font-family:var(--mono); font-size:12px; color:var(--ink2)}
+  .swatch{width:22px; height:4px; border-radius:2px}
+  .swatch.a{background:var(--flow)} .swatch.u{background:var(--up)} .swatch.d{background:var(--down)} .swatch.w{background:var(--warn)}
+  .legend .k b{color:var(--ink); font-weight:600}
+
+  .part{display:flex; align-items:baseline; gap:16px; margin:80px 0 8px; padding-bottom:14px; border-bottom:1px solid var(--line)}
+  .part .pn{font-family:var(--mono); font-size:13px; font-weight:700; color:var(--accent); letter-spacing:.2em; white-space:nowrap}
+  .part h2{font-family:var(--mono); font-weight:700; font-size:15px; letter-spacing:.22em; text-transform:uppercase; color:var(--ink); margin:0}
+  .part .pd{margin-left:auto; font-size:13px; color:var(--ink2); font-family:var(--mono); text-align:right}
+
+  section{margin-top:44px}
+  .eyebrow{font-family:var(--mono); font-size:11px; letter-spacing:.24em; text-transform:uppercase; color:var(--accent); margin:0 0 8px; display:flex; gap:10px; align-items:baseline}
+  .eyebrow .num{color:var(--ink2); opacity:.7}
+  h3{font-family:var(--mono); font-weight:700; font-size:22px; margin:0 0 6px; letter-spacing:-.01em; text-wrap:balance}
+  .desc{color:var(--ink2); font-size:15px; margin:0 0 20px; max-width:74ch}
+  .desc b{color:var(--ink); font-weight:600}
+  code{font-family:var(--mono); font-size:.9em; background:var(--surface2); border:1px solid var(--line); border-radius:5px; padding:1px 5px; color:var(--ink)}
+
+  .panel{border:1px solid var(--line); border-radius:14px; background:var(--panel);
+    background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);
+    background-size:26px 26px; background-position:-1px -1px; padding:34px 30px; overflow-x:auto}
+
+  .node{background:var(--surface); border:1px solid var(--line); border-radius:11px; padding:11px 14px; min-width:120px; text-align:center; position:relative; box-shadow:0 1px 0 color-mix(in srgb,var(--ink) 6%,transparent)}
+  .node .t{font-family:var(--mono); font-weight:700; font-size:13px; color:var(--ink); white-space:nowrap}
+  .node .s{font-family:var(--mono); font-size:10.5px; color:var(--ink2); margin-top:3px; white-space:nowrap}
+  .node.accent{border-color:color-mix(in srgb,var(--accent) 55%,var(--line))}
+  .node.accent::before,.node.up::before,.node.down::before,.node.warn::before{content:""; position:absolute; left:0; top:9px; bottom:9px; width:3px; border-radius:3px}
+  .node.accent::before{background:var(--accent)}
+  .node.up::before{background:var(--up)} .node.up .t{color:color-mix(in srgb,var(--up) 78%,var(--ink))}
+  .node.down::before{background:var(--down)} .node.down .t{color:color-mix(in srgb,var(--down) 82%,var(--ink))}
+  .node.warn::before{background:var(--warn)}
+  .node.big{min-width:150px; padding:14px 16px}
+
+  .chip{font-family:var(--mono); font-size:11px; color:var(--ink); background:var(--surface2); border:1px solid var(--line); border-radius:7px; padding:5px 8px; white-space:nowrap; display:flex; justify-content:space-between; gap:10px; align-items:center}
+  .chip .w{color:var(--ink2); font-size:10px}
+  .chip.mute{color:var(--ink2)}
+
+  .flow{display:flex; align-items:center; justify-content:center; min-width:min-content}
+  .arrow{position:relative; flex:0 0 var(--aw,50px); height:2px; align-self:center; background:linear-gradient(90deg,color-mix(in srgb,var(--flow) 25%,transparent),var(--flow)); --c:var(--flow)}
+  .arrow::after{content:""; position:absolute; right:-1px; top:50%; transform:translateY(-50%); border-left:8px solid var(--c); border-top:5px solid transparent; border-bottom:5px solid transparent}
+  .arrow[data-l]::before{content:attr(data-l); position:absolute; left:50%; top:-15px; transform:translateX(-50%); font-family:var(--mono); font-size:9px; letter-spacing:.06em; text-transform:uppercase; color:var(--ink2); white-space:nowrap}
+  .arrow.up{--c:var(--up); background:linear-gradient(90deg,color-mix(in srgb,var(--up) 25%,transparent),var(--up))}
+  .arrow.down{--c:var(--down); background:linear-gradient(90deg,color-mix(in srgb,var(--down) 25%,transparent),var(--down))}
+  .arrow.warn{--c:var(--warn); background:linear-gradient(90deg,color-mix(in srgb,var(--warn) 25%,transparent),var(--warn))}
+  .arrow.v{width:2px; height:var(--ah,38px); flex:none; margin:0 auto; background:linear-gradient(180deg,color-mix(in srgb,var(--flow) 25%,transparent),var(--flow))}
+  .arrow.v::after{right:50%; top:auto; bottom:-1px; left:auto; transform:translateX(50%); border-left:5px solid transparent; border-right:5px solid transparent; border-top:8px solid var(--c); border-bottom:0}
+  .arrow.v.up-dir{background:linear-gradient(0deg,color-mix(in srgb,var(--flow) 25%,transparent),var(--flow))}
+  .arrow.v.up-dir::after{bottom:auto; top:-1px; border-top:0; border-bottom:8px solid var(--c)}
+  .arrow.v[data-l]::before{left:12px; top:50%; transform:translateY(-50%)}
+  .live .arrow{background-size:220% 100%; animation:travel 2.6s linear infinite}
+  @keyframes travel{0%{background-position:120% 0}100%{background-position:-40% 0}}
+
+  .group{border:1px dashed color-mix(in srgb,var(--line) 92%,var(--ink)); border-radius:11px; padding:12px; background:color-mix(in srgb,var(--surface) 55%,transparent)}
+  .group .gl{font-family:var(--mono); font-size:10px; letter-spacing:.14em; text-transform:uppercase; color:var(--ink2); margin:0 0 10px; text-align:center}
+  .grid2{display:grid; grid-template-columns:repeat(2,minmax(96px,1fr)); gap:6px}
+  .grid1{display:grid; gap:6px}
+  .rowflow{display:flex; align-items:center; justify-content:center; gap:0; min-width:min-content}
+  .stack{display:flex; flex-direction:column; align-items:center}
+  .band{display:flex; gap:8px; justify-content:center; flex-wrap:wrap; max-width:520px}
+
+  .verdict{background:var(--surface); border:1px solid color-mix(in srgb,var(--accent) 45%,var(--line)); border-radius:11px; padding:14px 16px; min-width:180px}
+  .verdict .vt{font-family:var(--mono); font-weight:700; font-size:12px; color:var(--accent); letter-spacing:.14em; margin-bottom:10px}
+  .vrow{display:flex; justify-content:space-between; gap:16px; font-family:var(--mono); font-size:12px; padding:4px 0; border-top:1px solid var(--line)}
+  .vrow span:first-child{color:var(--ink2)} .vrow span:last-child{color:var(--ink); font-weight:600}
+
+  .drow{display:flex; align-items:center; gap:14px; justify-content:center}
+  .branch{display:flex; align-items:center; gap:10px}
+  .blabel{font-family:var(--mono); font-size:9px; letter-spacing:.08em; text-transform:uppercase; color:var(--ink2)}
+  .qnode{background:var(--surface); border:1px solid var(--line); border-radius:11px; padding:12px 16px; text-align:center; position:relative}
+  .qnode.dec{border-color:color-mix(in srgb,var(--accent) 40%,var(--line))}
+  .qnode .t{font-family:var(--mono); font-weight:700; font-size:12.5px; color:var(--ink)}
+  .qnode .s{font-family:var(--mono); font-size:10px; color:var(--ink2); margin-top:4px}
+  .spine{display:flex; flex-direction:column; align-items:center}
+
+  .cast{display:grid; grid-template-columns:repeat(auto-fill,minmax(232px,1fr)); gap:12px}
+  .castcard{border:1px solid var(--line); border-radius:12px; background:var(--surface); padding:14px 15px; display:flex; flex-direction:column; gap:6px}
+  .castcard .role{font-family:var(--mono); font-size:9.5px; letter-spacing:.16em; text-transform:uppercase; color:var(--accent)}
+  .castcard .nm{font-family:var(--mono); font-weight:700; font-size:15px; color:var(--ink)}
+  .castcard p{margin:0; font-size:13px; color:var(--ink2)}
+  .castcard .seam{margin-top:auto; font-family:var(--mono); font-size:10.5px; color:var(--ink2); border-top:1px dashed var(--line); padding-top:7px}
+  .castcard .seam b{color:var(--ink); font-weight:600}
+
+  .two{display:grid; grid-template-columns:1.1fr .9fr; gap:26px; align-items:start}
+  .two .panel{margin:0}
+  .anno{display:flex; flex-direction:column; gap:12px}
+  .anno .a{display:flex; gap:12px; align-items:flex-start}
+  .anno .n{flex:0 0 22px; height:22px; border-radius:6px; background:var(--surface2); border:1px solid var(--line); color:var(--accent); font-family:var(--mono); font-weight:700; font-size:11px; display:flex; align-items:center; justify-content:center; margin-top:1px}
+  .anno .a div b{font-family:var(--mono); font-size:12.5px; color:var(--ink)}
+  .anno .a div p{margin:2px 0 0; font-size:13px; color:var(--ink2)}
+
+  .tblwrap{overflow-x:auto; border:1px solid var(--line); border-radius:12px; margin:8px 0}
+  table{width:100%; border-collapse:collapse; font-family:var(--mono); font-size:12.5px; min-width:640px}
+  thead th{text-align:left; font-size:10px; letter-spacing:.12em; text-transform:uppercase; color:var(--ink2); font-weight:600; padding:12px 14px; background:var(--panel); border-bottom:1px solid var(--line); white-space:nowrap}
+  tbody td{padding:10px 14px; border-bottom:1px solid var(--line); color:var(--ink); vertical-align:top}
+  tbody tr:last-child td{border-bottom:0}
+  td .vt{color:var(--ink2); font-size:11.5px}
+  td b{color:var(--ink)}
+  .wt{font-variant-numeric:tabular-nums; color:var(--accent); font-weight:700}
+  .ax-orth{color:var(--accent)} .ax-price{color:var(--ink2)}
+  .st{font-size:11px; color:var(--ink2)}
+
+  .principles{display:grid; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); gap:16px}
+  .pr{border:1px solid var(--line); border-left:3px solid var(--accent); border-radius:0 12px 12px 0; background:var(--surface); padding:16px 18px}
+  .pr h4{font-family:var(--mono); font-size:14px; margin:0 0 6px; color:var(--ink)}
+  .pr p{margin:0; font-size:13.5px; color:var(--ink2)}
+  .pr p b{color:var(--ink); font-weight:600}
+
+  .layers{display:flex; flex-direction:column; gap:12px}
+  .layer{display:grid; grid-template-columns:138px 1fr auto; align-items:center; gap:16px; border:1px solid var(--line); border-radius:12px; background:var(--surface); padding:14px 16px}
+  .layer .lb{font-family:var(--mono); font-size:10px; letter-spacing:.14em; text-transform:uppercase; color:var(--accent)}
+  .layer .lb b{display:block; color:var(--ink); font-size:14px; letter-spacing:0; margin-top:3px; text-transform:none}
+  .layer .lc{display:flex; flex-wrap:wrap; gap:6px}
+  .layer .lo{font-family:var(--mono); font-size:10.5px; color:var(--ink2); white-space:nowrap; text-align:right; line-height:1.5}
+  @media(max-width:640px){.layer{grid-template-columns:1fr; gap:10px} .layer .lo{text-align:left}}
+
+  /* prose + reference */
+  .prose{max-width:76ch}
+  .prose p{margin:0 0 14px; font-size:15px; color:var(--ink)}
+  .prose p.muted{color:var(--ink2)}
+  .callout{border:1px solid var(--line); border-left:3px solid var(--accent); border-radius:0 12px 12px 0; background:var(--surface); padding:14px 18px; margin:18px 0; font-size:14.5px; color:var(--ink); max-width:80ch}
+  .callout.warn{border-left-color:var(--warn)} .callout.caveat{border-left-color:var(--down)}
+  .callout b{color:var(--ink)}
+  .callout .cl{display:block; font-family:var(--mono); font-size:10px; letter-spacing:.16em; text-transform:uppercase; margin-bottom:6px; color:var(--accent)}
+  .callout.warn .cl{color:var(--warn)} .callout.caveat .cl{color:var(--down)}
+  .steps{list-style:none; counter-reset:s; padding:0; margin:0; display:flex; flex-direction:column; gap:12px; max-width:80ch}
+  .steps li{counter-increment:s; display:grid; grid-template-columns:28px minmax(0,1fr); column-gap:14px; row-gap:2px; align-items:start}
+  .steps li::before{content:counter(s); grid-column:1; grid-row:1; height:26px; width:26px; border-radius:7px; background:var(--surface2); border:1px solid var(--line); color:var(--accent); font-family:var(--mono); font-weight:700; font-size:12px; display:flex; align-items:center; justify-content:center}
+  .steps li b{grid-column:2; grid-row:1; color:var(--ink)} .steps li p{grid-column:2; grid-row:2; margin:3px 0 0; color:var(--ink2); font-size:14px}
+  .steps li code{font-size:.85em}
+  .code{background:var(--surface2); border:1px solid var(--line); border-radius:10px; padding:13px 15px; overflow-x:auto; font-family:var(--mono); font-size:12px; color:var(--ink); line-height:1.65; margin:14px 0; white-space:pre; max-width:100%}
+  .code .c{color:var(--ink2)} .code .k{color:var(--accent)}
+  .defs{display:grid; gap:0; max-width:80ch}
+  .defs .row{display:grid; grid-template-columns:170px 1fr; gap:16px; font-size:14px; padding:11px 0; border-bottom:1px solid var(--line)}
+  .defs b{font-family:var(--mono); font-size:12.5px; color:var(--ink)}
+  .defs .d{color:var(--ink2)}
+  .gauntlet{display:flex; flex-direction:column; gap:3px; font-family:var(--mono); font-size:12.5px; max-width:660px}
+  .gauntlet .g{display:flex; align-items:center; gap:12px; padding:10px 13px; border:1px solid var(--line); border-radius:8px; background:var(--surface)}
+  .gauntlet .g .ck{color:var(--up); font-weight:700; flex:0 0 auto}
+  .gauntlet .g .cond{color:var(--ink)} .gauntlet .g .res{margin-left:auto; color:var(--ink2); white-space:nowrap}
+  .reading{display:grid; grid-template-columns:1fr 1fr; gap:14px; margin:20px 0 6px; max-width:80ch}
+  .rp{border:1px solid var(--line); border-radius:12px; background:var(--surface); padding:14px 16px}
+  .rp .rt{font-family:var(--mono); font-size:11px; letter-spacing:.12em; text-transform:uppercase; color:var(--accent); margin-bottom:6px}
+  .rp p{margin:0; font-size:13.5px; color:var(--ink2)}
+  .rp b{color:var(--ink)}
+  @media(max-width:640px){ .reading{grid-template-columns:1fr} .defs .row{grid-template-columns:1fr; gap:2px} }
+
+  /* screenshot placeholders */
+  .shots{display:grid; grid-template-columns:repeat(auto-fit,minmax(238px,1fr)); gap:14px; margin:6px 0}
+  .shot{border:1.5px dashed color-mix(in srgb,var(--line) 78%,var(--ink)); border-radius:12px; background:var(--surface2); min-height:160px; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:18px 16px; gap:7px; margin:0}
+  .shot svg{color:var(--ink2); opacity:.55; margin-bottom:2px}
+  .shot .sid{font-family:var(--mono); font-size:10px; letter-spacing:.18em; font-weight:700; color:var(--accent)}
+  .shot .stt{font-family:var(--mono); font-size:13px; font-weight:700; color:var(--ink)}
+  .shot .scap{font-size:12px; color:var(--ink2); line-height:1.45; max-width:30ch}
+  .shot .sfile{font-family:var(--mono); font-size:9.5px; color:var(--ink2); opacity:.72; margin-top:3px}
+
+  footer{margin-top:72px; padding-top:22px; border-top:1px solid var(--line); font-family:var(--mono); font-size:11.5px; color:var(--ink2); display:flex; flex-wrap:wrap; gap:6px 18px; justify-content:space-between}
+  footer b{color:var(--ink); font-weight:600}
+
+  @media (prefers-reduced-motion:reduce){ .live .arrow{animation:none} .livedot{animation:none} }
+  @media (max-width:760px){ .two{grid-template-columns:1fr} }
+  @media (max-width:640px){ .wrap{padding:40px 14px 72px} .panel{padding:24px 16px} }
+</style>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><symbol id="helm" viewBox="0 0 512 512"><path fill-rule="nonzero" d="M255.406 17.75C189.313 39.42 124.536 85.124 79.03 150.344c21.238 57.44 32.72 94.314 32.72 131.375 0 36.493-11.52 73.723-32.125 129.655 49.72 36.73 100.08 58.95 150.313 64.938-5.052-60.378-9.83-120.748 1.593-181.125-30.644-3.28-61.384-13.286-92.03-30.72v-71.312c80.67 42.255 158.908 41.547 242.063 0v71.313c-30.06 14.376-60.192 24.722-90.25 29.28 8.684 60.46 7.723 120.915 2.03 181.375 46.386-7.335 92.89-28.824 139.032-64.312-33.966-112.954-34.03-145.933.594-260.47C391.162 84.844 317.924 39.89 255.405 17.75zm-75.125 212c-11.16-.13-19.646 3.174-21.25 9.156-2.33 8.7 10.778 19.76 29.282 24.72 18.505 4.957 35.388 1.92 37.72-6.782 2.33-8.7-10.775-19.76-29.282-24.72-5.783-1.55-11.396-2.315-16.47-2.374zm160.69 0c-5.074.06-10.687.825-16.47 2.375-18.507 4.96-31.613 16.018-29.28 24.72 2.33 8.7 19.213 11.738 37.717 6.78 18.505-4.958 31.613-16.018 29.282-24.72-1.604-5.98-10.09-9.286-21.25-9.155z"/></symbol></svg>
+<svg class="watermark" viewBox="0 0 512 512" aria-hidden="true"><use href="#helm"/></svg>
+
+<div class="wrap">
+  <header>
+    <p class="kicker"><svg class="brandmark" viewBox="0 0 512 512" aria-hidden="true"><use href="#helm"/></svg><span class="livedot"></span> Sentinel Suite · NinjaTrader 8 · living document</p>
+    <h1>Field Manual</h1>
+    <p class="lede">One document that takes you from <b>"I have no idea what any of this is"</b> to <b>"I can run it, extend it, and trust it."</b> The suite turns a pile of arguing indicators into one nervous system — sensors that watch, a Council that decides, hands that act, a gate that guards, and a ledger that remembers. Everything below is pulled from the live source, not remembered.</p>
+
+    <div class="reading">
+      <div class="rp"><div class="rt">If you just want to run it</div><p>Read <b>0 → III</b>, then the lab (<b>VIII</b>) and the worked example (<b>IX</b>), then operate the safety layer (<b>IV</b>). Skip the code parts.</p></div>
+      <div class="rp"><div class="rt">If you'll write code for it</div><p>Read <b>0 → II</b> for the model, then the seam reference (<b>VII</b>), the recipes (<b>VII</b>), the safety policy (<b>IV</b>), and trace it end-to-end in <b>IX</b>.</p></div>
+      <div class="rp"><div class="rt">If you want it to learn</div><p>Read the lab (<b>VIII</b>) for how outcomes are measured, then <b>X</b> — what changes, what doesn't, how the offline fitting works outside NinjaTrader, and how you <b>name your setups</b> so the fleet stays legible.</p></div>
+      <div class="rp"><div class="rt">If you're inheriting this cold</div><p>Read <b>0</b>, then <b>IV</b> (safety) before touching anything live. The one rule: a model proposes, <b>the Gate disposes.</b></p></div>
+    </div>
+
+    <div class="oneline" aria-label="The system in one line">
+      <span class="s"><b>SENSORS</b> watch</span><span class="sep">→</span>
+      <span class="s"><b>CORE</b> carries</span><span class="sep">→</span>
+      <span class="s"><b>COUNCIL</b> decides</span><span class="sep">→</span>
+      <span class="s"><b>BRIDGE/DECK</b> act</span><span class="sep">→</span>
+      <span class="s"><b>GATE</b> guards</span><span class="sep">→</span>
+      <span class="s"><b>LEDGER</b> remembers</span><span class="sep">→</span>
+      <span class="s"><b>LENS</b> grades</span><span class="sep">→</span>
+      <span class="s"><b>LAB</b> learns</span>
+    </div>
+
+    <nav class="toc" aria-label="Contents">
+      <a href="#quickstart"><b>0</b> Quickstart</a>
+      <a href="#vision"><b>I</b> The vision</a>
+      <a href="#model"><b>II</b> The mental model</a>
+      <a href="#flows"><b>III</b> The flows</a>
+      <a href="#safety"><b>IV</b> Orchestration &amp; safety</a>
+      <a href="#catalog"><b>V</b> Component catalog</a>
+      <a href="#seams"><b>VI</b> Seam reference</a>
+      <a href="#extending"><b>VII</b> Extending Sentinel</a>
+      <a href="#lab"><b>VIII</b> The MAE/MFE lab</a>
+      <a href="#example"><b>IX</b> Worked example</a>
+      <a href="#learning"><b>X</b> The learning loop</a>
+      <a href="#hood"><b>XI</b> Under the hood</a>
+      <a href="#reference"><b>XII</b> Reference</a>
+    </nav>
+
+    <div class="legend" aria-label="Colour key">
+      <span class="k"><span class="swatch a"></span> <b>cyan</b> — live · signal flow</span>
+      <span class="k"><span class="swatch u"></span> <b>green</b> — long · money up</span>
+      <span class="k"><span class="swatch d"></span> <b>red</b> — short · veto · block</span>
+      <span class="k"><span class="swatch w"></span> <b>amber</b> — caution · modulator</span>
+    </div>
+  </header>
+
+  <!-- ============ PART 0 ============ -->
+  <div class="part"><span class="pn">PART 0</span><h2>Quickstart</h2><span class="pd">see it breathe in five minutes</span></div>
+  <section id="quickstart">
+    <p class="eyebrow">Five minutes, no risk</p>
+    <h3>Watch many signals become one verdict</h3>
+    <p class="desc">The fastest way to understand Sentinel is to watch it run. This is read-only — no orders, no risk. You'll put four sensors and the brain on a chart and see them fuse live.</p>
+    <ol class="steps">
+      <li><b>Open a GC chart.</b><p>New → Chart → <b>GC</b> (front month), any bar type. GC (gold) is the reference instrument throughout this manual.</p></li>
+      <li><b>Add four sensors.</b><p>Right-click → Indicators → open the <b>Sentinel</b> folder and add <b>Eye</b>, <b>SentinelTrend</b>, <b>ADXPro</b>, and <b>WoodiesCCIPro</b>. All publish by default — you've put four voters on the bus without configuring anything.</p></li>
+      <li><b>Add the brain.</b><p>Add <b>Council</b> from the same folder. It immediately reads whatever is publishing for GC and draws a glass card, top-right.</p></li>
+      <li><b>Read the card.</b><p>A <b>LONG / SHORT / FLAT</b> pill (the fused bias), a big <b>conviction %</b> and <b>size ×</b>, a row of voter chips (green agrees, red disagrees, grey neutral), and a red <code>VETO</code> line when something blocks it.</p></li>
+      <li><b>Watch it breathe.</b><p>As price moves, sensors republish, chips flip colour, conviction climbs when they line up and falls toward the floor when they fight. Many signals → one honest verdict. That's the whole idea in one card.</p></li>
+    </ol>
+    <div class="callout"><span class="cl">What you just proved</span>The sensors don't know the Council exists — they just <b>publish</b>. The Council doesn't know your sensors — it just <b>reads the bus</b> and <b>fuses</b>. Add or remove a sensor and the voter count changes automatically. <b>Nothing is wired by hand.</b> That decoupling is the entire architecture, and you're now looking at it.</div>
+  </section>
+
+  <section>
+    <p class="eyebrow">Live look</p>
+    <h3>Your first chart, in pictures</h3>
+    <p class="desc">Placeholders for the screenshots that make the quickstart concrete. Capture on SIM or replay, then drop each PNG at the path shown. <span class="st">(For the published artifact, embed as a data URI — its strict CSP blocks external images; the in-repo <code>.html</code> can use the relative <code>img/…</code> path directly.)</span></p>
+    <div class="shots">
+      <figure class="shot" id="s1">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="8.5" cy="9.5" r="1.6"/><path d="M4 17l5-5 4 4 3-3 4 4"/></svg>
+        <span class="sid">S1</span><span class="stt">The Council card, live</span>
+        <span class="scap">Bias pill, conviction %, size×, coloured voter chips, tally footer.</span>
+        <span class="sfile">→ img/s1-council-card.png</span>
+      </figure>
+      <figure class="shot" id="s3">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="8.5" cy="9.5" r="1.6"/><path d="M4 17l5-5 4 4 3-3 4 4"/></svg>
+        <span class="sid">S3</span><span class="stt">The "Sentinel" picker folder</span>
+        <span class="scap">The indicator picker expanded, suite tools clustered in their folder.</span>
+        <span class="sfile">→ img/s3-picker-folder.png</span>
+      </figure>
+    </div>
+  </section>
+
+  <!-- ============ PART I ============ -->
+  <div class="part"><span class="pn">PART I</span><h2>The vision</h2><span class="pd">from zero · why it exists</span></div>
+  <section id="vision">
+    <p class="eyebrow">The problem</p>
+    <h3>A pile of islands becomes one nervous system</h3>
+    <div class="prose">
+      <p>A serious NinjaTrader chart ends up with a dozen indicators screaming at once — a trend line, a CCI, an ADX, a volatility band, a session clock — plus a strategy trying to trade, plus a prop firm's rules hanging over you like a guillotine. Nothing on that chart <i>talks to anything else.</i> The trend line doesn't know the CCI disagrees. The strategy doesn't know a news blackout starts in four minutes. Every tool is an island.</p>
+      <p><b>Sentinel is the plumbing that turns that pile of islands into one nervous system.</b> It isn't one indicator — it's a <i>design</i>: a shared spine every tool plugs into, so they share a vocabulary, a safety layer, a memory, and a single fused opinion about what to do next.</p>
+    </div>
+    <p class="desc" style="margin-top:26px"><b>The four jobs every trading system needs</b> — every file in the suite belongs to exactly one of them.</p>
+    <div class="tblwrap">
+      <table>
+        <thead><tr><th>Role</th><th>The job, in plain English</th><th>Who does it</th></tr></thead>
+        <tbody>
+          <tr><td><b>Signal sources</b></td><td>"Is there an edge, and which way?"</td><td class="st">Trend · CCI · ADX · VolEnvelope · Compression · WAE · Eye + the orthogonal axes</td></tr>
+          <tr><td><b>Decision</b></td><td>"Given <i>all</i> the signals, what's the verdict?"</td><td class="st">The Council (the brain)</td></tr>
+          <tr><td><b>Execution</b></td><td>"Put the trade on and manage its life."</td><td class="st">Deck (manual) · GTrader21 (auto) · Bridge (auto)</td></tr>
+          <tr><td><b>Observation &amp; safety</b></td><td>"Keep us alive, remember everything, prove it later."</td><td class="st">SentinelCore (Gate/Ledger/Alerts) · Risk · Dashboard · Copier · Log · Lens · Arc</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="callout"><span class="cl">The one big idea · the decoupled seam bus</span>Tools <b>never call each other directly.</b> They publish small typed facts to a shared bus (<code>SentinelCore</code>) and read facts back off it. A sensor publishes <code>TrendState</code>; it doesn't know the Council exists. The Council publishes <code>CouncilState</code>; it doesn't know the Bridge exists. This buys <b>fault isolation</b> (a missing publisher just means its fact is absent — every reader treats <i>absent = abstain</i>), <b>independent evolution</b> (rewrite a sensor's internals freely, as long as it still publishes its seam), and <b>one decision, many consumers</b> (the Council fuses once; everyone reads the same verdict).</div>
+    <div class="callout caveat"><span class="cl">The honest caveat you must keep repeating</span>Today most voters are <b>price-derived</b> — ADX, CCI, Trend, VolEnvelope and Brick all echo the same OHLC. When they "agree," that isn't five witnesses confirming a fact; it's one witness saying the same thing five ways. <b>Conviction measures agreement, not confirmation.</b> The suite gets genuinely smarter only as <b>orthogonal</b> axes (Clock, Participation, Location, MTF, Intermarket) add information the price sensors can't see.</div>
+
+    <p class="desc" style="margin-top:34px"><b>The cast</b> — eleven tools, one nervous system. Nothing calls another directly; each depends only on the shared spine, so any piece can be missing and the rest still runs.</p>
+    <div class="cast">
+      <div class="castcard"><span class="role">The spine</span><span class="nm">SentinelCore</span><p>The one shared dependency. Carries the kill-switch, the order gate, the ledger, and every sensor's published state.</p><span class="seam">exposes <b>every …State seam</b></span></div>
+      <div class="castcard"><span class="role">The brain</span><span class="nm">Council</span><p>Fuses every sensor's vote into one explainable verdict — direction, conviction, size — and republishes it.</p><span class="seam">publishes <b>CouncilState</b></span></div>
+      <div class="castcard"><span class="role">The auto hands</span><span class="nm">Bridge</span><p>The autopilot. Consults the Council verdict, gates it, sizes it, fires — recording each shot to the ledger.</p><span class="seam">reads <b>CouncilState</b> → orders</span></div>
+      <div class="castcard"><span class="role">The manual hands</span><span class="nm">Deck</span><p>The human's order pad. Manual entry, plus SIGNAL ARM: read any indicator's plot and arm or auto-fire on it.</p><span class="seam">reads <b>any plot</b> → orders</span></div>
+      <div class="castcard"><span class="role">The command surface</span><span class="nm">Cockpit</span><p>The one place to answer "is my brain alive, and why isn't it trading?" — a floatable rail that re-reads every seam so no card stays buried. Surfaces the decision, the gate, and the honest <b>stale</b>/<b>floor</b> reasons.</p><span class="seam">reads <b>every …State seam</b></span></div>
+      <div class="castcard"><span class="role">The scout</span><span class="nm">Eye</span><p>Runs GodTrades across ~24 bar-types, scores them, qualifies the best direction — a meta-signal.</p><span class="seam">publishes <b>EyeVerdict</b></span></div>
+      <div class="castcard"><span class="role">The mirror</span><span class="nm">Copier</span><p>Mirrors fills from a primary account to followers, honouring prop rules, gating on Eye.</p><span class="seam">reads <b>EyeVerdict</b> + fills</span></div>
+      <div class="castcard"><span class="role">The judge</span><span class="nm">Lens</span><p>Analytics over the ledger + logs — win-rate, expectancy, MAE/MFE, and whether each weight earns its seat.</p><span class="seam">reads <b>Ledger + Log</b></span></div>
+      <div class="castcard"><span class="role">The watchdog</span><span class="nm">Risk</span><p>Watches feed health. On lag or stall it engages the kill-switch, halting new entries until clean.</p><span class="seam">engages <b>the kill</b></span></div>
+      <div class="castcard"><span class="role">The supervisor</span><span class="nm">Arc</span><p>Fleet orchestration across instruments — which slots are live, leader supervision, per-instrument gating.</p><span class="seam">the <b>SlotLive</b> gate</span></div>
+      <div class="castcard"><span class="role">The sensors</span><span class="nm">Trend · ADX · CCI …</span><p>The eyes on the tape. Each watches one thing and publishes its read as a typed seam.</p><span class="seam">publish <b>one …State each</b></span></div>
+    </div>
+  </section>
+
+  <!-- ============ PART II ============ -->
+  <div class="part"><span class="pn">PART II</span><h2>The mental model</h2><span class="pd">how it all fits</span></div>
+
+  <section id="model">
+    <p class="eyebrow">Anatomy of a seam</p>
+    <h3>How one tool tells another what it sees</h3>
+    <p class="desc">The whole suite is glued by one tiny idea: a sensor <b>publishes</b> a small typed record — a <code>…State</code> — into SentinelCore, keyed by <b>scope</b> (one chart: instrument × bar type) and stamped with the time. A consumer <b>consults</b> it, checking freshness. Neither knows the other exists.</p>
+    <div class="two">
+      <div class="panel" style="display:flex; justify-content:center">
+        <div class="verdict" style="min-width:210px">
+          <div class="vt">TRENDSTATE</div>
+          <div class="vrow"><span>Instrument</span><span>GC</span></div>
+          <div class="vrow"><span>Direction</span><span>+1</span></div>
+          <div class="vrow"><span>TrendPrice</span><span>4082.4</span></div>
+          <div class="vrow"><span>DistanceTicks</span><span>+6</span></div>
+          <div class="vrow"><span>Source</span><span>SentinelTrend</span></div>
+          <div class="vrow"><span>UpdatedUtc</span><span>18:20:20Z</span></div>
+        </div>
+      </div>
+      <div class="anno">
+        <div class="a"><span class="n">1</span><div><b>Keyed by instrument</b><p>Stored per master-instrument ("GC"), never per class — so a tool on any chart of that instrument reads it.</p></div></div>
+        <div class="a"><span class="n">2</span><div><b>A signed reading</b><p>The payload is plain <code>int</code>/<code>double</code>/<code>bool</code>. The bus never couples to a private enum — publish <code>(int)</code>, the reader interprets.</p></div></div>
+        <div class="a"><span class="n">3</span><div><b>Stamped every publish</b><p><code>UpdatedUtc</code> is the freshness clock. Consumers pass a <code>maxAgeSec</code> and get <code>null</code> if it's gone cold.</p></div></div>
+        <div class="a"><span class="n">4</span><div><b>Helper verbs</b><p>Each state ships an <code>Aligned(dir)</code> / <code>Near(atr)</code> helper so consumers ask a question, not re-implement logic.</p></div></div>
+        <div class="a"><span class="n">5</span><div><b>Fail-open</b><p>Absent or stale ⇒ the consumer <b>abstains</b>. A quiet sensor never blocks the system — it just stops voting.</p></div></div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <p class="eyebrow">The core loop</p>
+    <h3>Signal in, decision out, graded, fed back</h3>
+    <p class="desc">Follow one signal from birth to graded outcome. Sensors publish into <b>SentinelCore</b>; the <b>Council</b> fuses; the <b>Bridge</b> acts through the <b>Order Gate</b>; every fill lands in the <b>Ledger</b>; and <b>Lens</b> grades the outcome to tune the weights. <b>Publish → fuse → consume → record</b> is the whole suite — everything else is detail.</p>
+    <div class="panel">
+      <div class="flow live" style="--aw:46px">
+        <div class="node"><div class="t">SENSORS</div><div class="s">voters + axes</div></div>
+        <div class="arrow" data-l="publish"></div>
+        <div class="node accent"><div class="t">SENTINELCORE</div><div class="s">seam registry</div></div>
+        <div class="arrow" data-l="consult"></div>
+        <div class="node accent"><div class="t">COUNCIL</div><div class="s">bias·conv·size</div></div>
+        <div class="arrow" data-l="verdict"></div>
+        <div class="node"><div class="t">BRIDGE</div><div class="s">gate + size×mult</div></div>
+        <div class="arrow" data-l="submit"></div>
+        <div class="node warn"><div class="t">ORDER GATE</div><div class="s">kill·feed·risk</div></div>
+        <div class="arrow up" data-l="fill"></div>
+        <div class="node"><div class="t">LEDGER</div><div class="s">durable record</div></div>
+      </div>
+      <div class="flow" style="margin-top:26px">
+        <div class="arrow" data-l="Lens grades the weights → tune the Council" style="--aw:min(72vw,700px)"></div>
+      </div>
+    </div>
+    <div class="callout"><span class="cl">Three ideas to lock in</span><b>1 · The seam is advisory; the Gate is authoritative.</b> Reading <code>CouncilState</code> tells you <i>whether there's an edge</i> — it does not put the trade on safely. You still call <code>GateEntry</code> at submit. <b>2 · Every fire is recorded so it can be graded.</b> Writing the verdict to the Ledger on each fire is what lets Lens later answer <i>"does the Council's confidence actually make money?"</i> <b>3 · The weights are a hypothesis</b> until the data says otherwise.</div>
+  </section>
+
+  <!-- ============ PART III ============ -->
+  <div class="part"><span class="pn">PART III</span><h2>The flows</h2><span class="pd">the signal path, end to end</span></div>
+
+  <section id="flows">
+    <p class="eyebrow"><span class="num">01</span> Council fusion</p>
+    <h3>Ten voices, one verdict</h3>
+    <p class="desc">Each sensor with a fresh reading casts a signed, weighted vote; a stale or absent one abstains. <b>Modulators</b> from above scale conviction by context — session, volume, higher-timeframe, location. <b>Hard vetoes</b> from below can zero it outright. Out comes one explainable verdict: direction, conviction, and a size multiplier.</p>
+    <div class="panel">
+      <div class="stack">
+        <div class="band"><span class="chip mute">Clock</span><span class="chip mute">Participation</span><span class="chip mute">MTF</span><span class="chip mute">Location</span></div>
+        <div class="arrow v warn" data-l="× dampen" style="--ah:30px"></div>
+        <div class="rowflow">
+          <div class="group" style="min-width:214px">
+            <p class="gl">Voters · weighted</p>
+            <div class="grid2">
+              <span class="chip">EYE <span class="w">1.4</span></span><span class="chip">TRND <span class="w">1.0</span></span>
+              <span class="chip">CCI <span class="w">0.8</span></span><span class="chip">ADX <span class="w">0.6</span></span>
+              <span class="chip">ENV <span class="w">0.6</span></span><span class="chip">BRK <span class="w">0.5</span></span>
+              <span class="chip">CMP <span class="w">0.7</span></span><span class="chip">IMKT <span class="w">0.6</span></span>
+              <span class="chip">WAE <span class="w">0.7</span></span><span class="chip">GREV <span class="w">0.9</span></span>
+            </div>
+          </div>
+          <div class="arrow" data-l="Σ vote×w" style="--aw:58px"></div>
+          <div class="node big accent"><div class="t">FUSE</div><div class="s">netScore → deadband</div></div>
+          <div class="arrow" style="--aw:58px"></div>
+          <div class="verdict">
+            <div class="vt">VERDICT</div>
+            <div class="vrow"><span>Bias</span><span>−1 / 0 / +1</span></div>
+            <div class="vrow"><span>Conviction</span><span>agreement 0 → 1</span></div>
+            <div class="vrow"><span>SizeMult</span><span>conv × context</span></div>
+          </div>
+        </div>
+        <div class="arrow v up-dir down" data-l="→ conviction 0" style="--ah:30px"></div>
+        <div class="band"><span class="chip">kill</span><span class="chip">rollover</span><span class="chip">news lockout</span><span class="chip">liquidity wall</span></div>
+        <p style="font-family:var(--mono); font-size:10px; letter-spacing:.14em; text-transform:uppercase; color:var(--down); margin:8px 0 0">Hard vetoes</p>
+      </div>
+    </div>
+    <div class="callout warn"><span class="cl">The roster is DECLARED, not emergent</span>The Council used to fuse <i>whatever seams happened to be fresh</i>. So when the Eye crashed on load it simply never voted — across <b>332 verdicts</b>, carrying the heaviest weight (1.4) — and <b>nothing anywhere said so</b>. Under fail-open abstention a <b>crashed sensor is indistinguishable from a quiet one</b>.<br><br>Now the expected voter set is declared, and resolved against reality every update: <b>declared + fresh</b> → votes · <b>declared + absent</b> → reported <code>missing</code>, <code>RosterComplete=false</code>, named in the audit string · <b>present but undeclared</b> → flagged <code>unexpected</code> and <b>not folded into the fusion</b>. The Cockpit shows <code>Roster 8/10 — EYE, BRK missing</code>.<br><br>The declaration comes from <code>Sentinel\Models\&lt;INST&gt;\&lt;bartag&gt;\Roster.conf</code>, else defaults to every known voter whose weight &gt; 0. <b>It must be config-derived, never observation-derived</b> — building the "expected" set by looking at which seams are live would bake today's outage into it, and the roster could never report the very thing it exists to catch. This also makes the model <i>attributable</i>: you can finally tell <b>the model</b> apart from <b>what happened to be loaded on the chart</b>.</div>
+    <div class="callout"><span class="cl">Weight 0 · the exploration primitive</span>A voter declared with <code>w = 0</code> still votes and is still recorded in the mask — but contributes <b>nothing</b> to <code>netScore</code>, <code>activeW</code>, the agree/disagree tally, or the breadth damping. You accumulate a candidate sensor's full history, and can measure exactly what it <i>would</i> have contributed, <b>before it ever influences a single trade</b>. Adding and retiring sensors becomes a config change with zero code and zero risk.</div>
+    <p class="desc" style="margin-top:22px"><b>The voter roster</b> — the weights <i>are</i> the edge. Note the last column: most voters are price-derived (they echo the same candles), so their agreement is <b>confluence, not confirmation</b>. Only <span class="ax-orth">orthogonal</span> axes carry genuinely new information.</p>
+    <div class="tblwrap">
+      <table>
+        <thead><tr><th>Voter</th><th>What it senses</th><th>Weight</th><th>Axis</th></tr></thead>
+        <tbody>
+          <tr><td><b>Eye</b></td><td>Best-scoring GodTrades direction across ~24 bar-types <span class="vt">(a meta-signal)</span></td><td class="wt">1.4</td><td class="ax-orth">meta</td></tr>
+          <tr><td><b>God&nbsp;Reversal</b></td><td>Candle-grammar reversal at a band edge <span class="vt">(shaved · engulf · equal-high · VI)</span></td><td class="wt">0.9</td><td class="ax-orth">timing · mean-rev</td></tr>
+          <tr><td><b>Trend</b></td><td>Trailing-line regime direction <span class="vt">(ATR + CCI hysteresis)</span></td><td class="wt">1.0</td><td class="ax-price">price</td></tr>
+          <tr><td><b>CCI</b></td><td>Woodies CCI trend bias <span class="vt">(×1.5 when strong)</span></td><td class="wt">0.8</td><td class="ax-price">price</td></tr>
+          <tr><td><b>Compression</b></td><td>Coil-base breakout, held a few bars</td><td class="wt">0.7</td><td class="ax-price">price</td></tr>
+          <tr><td><b>WAE</b></td><td>Confirmed momentum-explosion breakout</td><td class="wt">0.7</td><td class="ax-price">price</td></tr>
+          <tr><td><b>ADX</b></td><td>Regime strength + DI bias, when trend is on</td><td class="wt">0.6</td><td class="ax-price">price</td></tr>
+          <tr><td><b>Envelope</b></td><td>Volatility regime <span class="vt">(honest-Bollinger trend/squeeze)</span></td><td class="wt">0.6</td><td class="ax-price">price</td></tr>
+          <tr><td><b>Intermarket</b></td><td>Net lean from correlated instruments <span class="vt">(ZN/ZB for gold)</span></td><td class="wt">0.6</td><td class="ax-orth">macro</td></tr>
+          <tr><td><b>Brick</b></td><td>Adaptive-brick micro-trend direction</td><td class="wt">0.5</td><td class="ax-price">price</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="callout"><span class="cl">How the vote fuses <span class="w">(Council v1.2.1)</span></span><code>netScore = Σ sign(dir)×weight</code>; <code>declaredW = Σ base weight of the DECLARED voters</code>. <b>Bias</b> = ±1 when <code>|netScore| &gt; deadband·declaredW</code> (deadband 0.15), else FLAT. <b>Conviction</b> = <code>min(1, |netScore| / declaredW)</code> — <b>agreement, and nothing else</b>. <b>contextMult</b> = ×breadth ×squeeze ×clock ×rvol ×mtf ×location (all fail-open, all ≤ 1). <b>SizeMult</b> = <code>0 if vetoed / Bias 0 / conviction &lt; floor, else conviction × contextMult</code>.<br><br><b>Two rules that were learned the hard way, both by measuring:</b><br>① <b>The denominator is the DECLARED weight, not the weight that showed up.</b> It used to be <code>activeW</code> (present, directional voters), so a missing voter did not dilute conviction — it <i>vanished from the denominator</i>. One awake sensor of weight 0.6 gave <code>0.6/0.6 = 1.0</code>: perfect unanimity. The fewer sensors awake, the <i>more certain</i> the Council sounded. Seen live as <code>size=0.57 (1/0, 2v) · roster 2/10</code> — a tradeable verdict from one of ten voters.<br>② <b>Conviction and context are separate numbers.</b> Every modulator used to multiply <i>into</i> conviction before the floor test, so the floor silently asked "do my sensors agree <i>and</i> is the context good?" Once absence began diluting the base, both penalties compounded and <b>nothing could clear the floor</b> — four voters aligned, zero dissent, still <code>size=0.00</code>. Now the floor gates on agreement; a poor context makes the trade <b>smaller</b>, never silently absent.<br><br><b>The weights are the edge — tune them, ship them ON, and let Lens grade whether agreement actually paid.</b></div>
+    <div class="callout warn"><span class="cl">⚠ Open: state voters vs trigger voters</span><code>declaredW</code> still conflates two kinds of voter. <b>STATE</b> voters (<code>TRND ADX ENV IMKT</code>) always carry a direction. <b>TRIGGER</b> voters (<code>EYE BRK CMP WAE GREV</code>) are ±1 only on the rare bar they fire, and read <code>~</code> otherwise — yet they carry <b>4.2 of the 7.80 total weight</b>. Over half the model is therefore parked at zero on a typical bar, pinning conviction near <b>0.16</b> (measured: mean 0.160, max 0.36 across 97 verdicts).<br><br>The Council is scoring a silent trigger identically to <code>ENV~</code> genuinely reading a flat regime. Those are different statements: <b>a trigger that has not fired is an absence of evidence, not evidence against.</b> Same one-number-two-jobs bug as ②, one level down. <b>The fix</b> — a voter <i>kind</i> in <code>Roster.conf</code> (<code>CMP w=0.7 trigger</code>), whose weight joins <code>declaredW</code> only on the bar it fires — <b>is not built.</b> Interim: <code>ConvictionFloor</code> lowered 0.35 → 0.20, which sits on a cliff (0.25→11% of verdicts, 0.20→41%, 0.15→60%). <b>Do not nudge it by feel; fit it.</b></div>
+  </section>
+
+  <section>
+    <p class="eyebrow"><span class="num">02</span> The order gate</p>
+    <h3>One pre-submit choke point</h3>
+    <p class="desc">No order reaches the broker without passing <b>GateEntry</b> — the single place kill-switch, feed-health, a rate guard, and risk-based sizing are all enforced. Pass and it submits; fail and it's blocked with an alert. The <b>Risk watchdog</b> can engage the kill on feed lag — exactly what fired on GC recently (a 2.6&nbsp;s lag → halt → auto-release when clean).</p>
+    <div class="panel">
+      <div class="rowflow" style="align-items:stretch">
+        <div class="node" style="align-self:center"><div class="t">INTENT</div><div class="s">dir + size</div></div>
+        <div class="arrow" style="--aw:48px"></div>
+        <div class="group" style="min-width:190px; align-self:center">
+          <p class="gl">GateEntry · choke point</p>
+          <div class="grid1">
+            <span class="chip">kill-switch <span class="w">global/scoped</span></span>
+            <span class="chip">feed-health <span class="w">lag/stall</span></span>
+            <span class="chip">rate guard <span class="w">throttle</span></span>
+            <span class="chip">size-for-risk <span class="w">ticks→qty</span></span>
+          </div>
+        </div>
+        <div class="stack" style="gap:20px; margin-left:8px">
+          <div class="flow">
+            <div class="arrow up" data-l="pass" style="--aw:44px"></div>
+            <div class="node up"><div class="t">SUBMIT</div><div class="s">→ fill</div></div>
+            <div class="arrow up" style="--aw:34px"></div>
+            <div class="node"><div class="t">LEDGER</div><div class="s">+ slippage</div></div>
+          </div>
+          <div class="flow">
+            <div class="arrow down" data-l="fail" style="--aw:44px"></div>
+            <div class="node down"><div class="t">BLOCKED</div><div class="s">+ alert</div></div>
+          </div>
+        </div>
+      </div>
+      <div class="flow" style="justify-content:flex-start; margin:22px 0 0 40px">
+        <div class="node warn"><div class="t">RISK WATCHDOG</div><div class="s">feed lag · stall</div></div>
+        <div class="arrow warn" data-l="engage kill" style="--aw:120px"></div>
+        <span style="font-family:var(--mono); font-size:11px; color:var(--ink2)">↑ feeds the gate</span>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <p class="eyebrow"><span class="num">03</span> The seam hub</p>
+    <h3>Publish once, consult anywhere</h3>
+    <p class="desc">Every tool talks to one small shared core, never to each other. An indicator <b>publishes</b> its <code>…State</code> and forgets it; a consumer <b>consults</b> it fresh — or abstains if it's stale or absent. That fail-open seam is why the suite degrades gracefully instead of breaking when one sensor goes quiet.</p>
+    <div class="panel">
+      <div class="rowflow" style="align-items:center">
+        <div class="group" style="min-width:250px">
+          <p class="gl">Publishers · indicators</p>
+          <div class="grid2">
+            <span class="chip">Trend</span><span class="chip">ADX</span><span class="chip">CCI</span><span class="chip">Envelope</span>
+            <span class="chip">Liquidity</span><span class="chip">Brick</span><span class="chip">Clock</span><span class="chip">Participation</span>
+            <span class="chip">MTF</span><span class="chip">Location</span><span class="chip">Intermarket</span><span class="chip">WAE</span>
+            <span class="chip">GodReversal</span><span class="chip">Eye</span>
+          </div>
+        </div>
+        <div class="arrow" data-l="publish" style="--aw:60px"></div>
+        <div class="node big accent" style="align-self:center"><div class="t">SENTINELCORE</div><div class="s">…State registry</div></div>
+        <div class="arrow" data-l="consult" style="--aw:60px"></div>
+        <div class="group" style="min-width:150px">
+          <p class="gl">Consumers</p>
+          <div class="grid1">
+            <span class="chip">Council</span><span class="chip">Bridge</span><span class="chip">Copier</span>
+            <span class="chip">GTrader21</span><span class="chip">Deck</span><span class="chip">Lens</span>
+          </div>
+        </div>
+      </div>
+      <p style="text-align:center; font-family:var(--mono); font-size:10.5px; color:var(--ink2); margin:18px 0 0">stale · absent ⇒ consumer abstains — fail-open, with a heartbeat re-stamp so a still market doesn't read as "gone"</p>
+    </div>
+  </section>
+
+  <section>
+    <p class="eyebrow"><span class="num">04</span> God Reversal detection</p>
+    <h3>A reversal at a predictable place</h3>
+    <p class="desc">The newest sensor, encoding the candle grammar the structural signals miss. It only looks when price is <b>at a band edge</b>, reads the reversal candle, scores the confluence, clears the no-trade guards, then fires — marking the chart and publishing <code>GodReversalState</code> as the Council's <b>GREV</b> voter. Fires on the candle's close: confirmed, non-repainting.</p>
+    <div class="panel">
+      <div class="spine">
+        <div class="drow">
+          <div class="qnode dec"><div class="t">At a Bollinger band edge?</div><div class="s">the "predictable place"</div></div>
+          <div class="branch"><span class="blabel">no →</span><span class="chip mute">idle · mid-band</span></div>
+        </div>
+        <div class="arrow v" data-l="yes" style="--ah:30px"></div>
+        <div class="qnode"><div class="t">Read the reversal candle</div><div class="s">shaved · engulf · equal-high · doji-exhaust · VI · attack</div></div>
+        <div class="arrow v" style="--ah:30px"></div>
+        <div class="drow">
+          <div class="qnode dec"><div class="t">Confluence ≥ MinQuality?</div><div class="s">stacked-confirmation score</div></div>
+          <div class="branch"><span class="blabel">no →</span><span class="chip mute">drop</span></div>
+        </div>
+        <div class="arrow v" data-l="yes" style="--ah:30px"></div>
+        <div class="drow">
+          <div class="qnode dec"><div class="t">No-trade guards pass?</div><div class="s">endless-doji chop · sideways grind</div></div>
+          <div class="branch"><span class="blabel">fail →</span><span class="chip mute">drop</span></div>
+        </div>
+        <div class="arrow v up" data-l="pass" style="--ah:30px"></div>
+        <div class="node up big"><div class="t">FIRE ▲▼</div><div class="s">mark chart + single-candle stop → publish GodReversalState → Council GREV</div></div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <p class="eyebrow"><span class="num">05</span> Eye → Copy loop</p>
+    <h3>Qualify first, then mirror only the qualified</h3>
+    <p class="desc">Eye is a scout, not a signal of its own. It runs the GodTrades logic across ~24 bar-type rows, <b>simulates</b> each, ranks them on rolling performance, and <b>qualifies</b> a direction only when the best row clears its bar. The <b>Copier</b> mirrors a primary fill to followers only when Eye endorses it — and everything is logged so <b>Lens adjudicates</b> whether Eye actually earns its gate.</p>
+    <div class="panel">
+      <div class="flow" style="--aw:44px">
+        <div class="group" style="min-width:150px; align-self:center">
+          <p class="gl">Eye · scan</p>
+          <div class="grid1">
+            <span class="chip">~24 bar-type rows</span>
+            <span class="chip">simulate GodTrades</span>
+            <span class="chip">score &amp; rank</span>
+          </div>
+        </div>
+        <div class="arrow" data-l="qualify" style="--aw:46px"></div>
+        <div class="node accent"><div class="t">EYEVERDICT</div><div class="s">dir + score</div></div>
+        <div class="arrow" data-l="consult"></div>
+        <div class="stack" style="gap:16px">
+          <div class="drow">
+            <div class="qnode dec"><div class="t">Eye-gate</div><div class="s">endorsed &amp; fresh?</div></div>
+            <div class="branch"><span class="blabel">no / stale →</span><span class="chip mute">block mirror</span></div>
+          </div>
+          <div class="flow" style="justify-content:flex-start">
+            <div class="arrow up" data-l="yes" style="--aw:40px"></div>
+            <div class="node up"><div class="t">MIRROR</div><div class="s">primary → followers</div></div>
+          </div>
+        </div>
+      </div>
+      <div class="flow" style="margin-top:22px">
+        <div class="arrow" data-l="fills → Log → Lens adjudicates: does the gate earn its seat? (sloped curve → keep · flat → demote)" style="--aw:min(80vw,760px)"></div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <p class="eyebrow"><span class="num">06</span> Deck · SIGNAL ARM</p>
+    <h3>Point the cockpit at any signal</h3>
+    <p class="desc">The Deck is the human's manual trader — and its SIGNAL ARM turns <b>any loaded indicator's plot</b> into a trigger, discovered live from the chart (no hardcoding). A rule reads the plot on the <b>just-closed bar</b> — re-checked every tick so the bar-boundary race self-heals — then either <b>arms</b> (highlights BUY/SELL for a human to confirm) or <b>auto-fires</b> through a deliberately <b>fail-closed</b> gate: one shot per bar, flat-only, forced MARKET. Because the Council exposes Bias/Conviction plots, the Deck can arm directly off the Council.</p>
+    <div class="panel">
+      <div class="flow" style="--aw:44px">
+        <div class="node"><div class="t">ANY PLOT</div><div class="s">from ChartControl</div></div>
+        <div class="arrow" data-l="rule"></div>
+        <div class="node accent"><div class="t">RULE TEST</div><div class="s">sign · rising · A×B · thresh</div></div>
+        <div class="arrow" data-l="just-closed bar"></div>
+        <div class="stack" style="gap:16px">
+          <div class="flow" style="justify-content:flex-start">
+            <div class="node"><div class="t">ARM</div><div class="s">human confirms</div></div>
+            <div class="arrow" data-l="confirm" style="--aw:40px"></div>
+            <div class="node up"><div class="t">FIRE</div><div class="s">→ gate</div></div>
+          </div>
+          <div class="flow" style="justify-content:flex-start">
+            <div class="node warn"><div class="t">AUTO-FIRE</div><div class="s">fail-CLOSED gate</div></div>
+            <div class="arrow warn" data-l="one-shot/bar · flat-only" style="--aw:60px"></div>
+            <div class="node up"><div class="t">MARKET</div><div class="s">tag Deck:signal</div></div>
+          </div>
+        </div>
+      </div>
+      <p style="text-align:center; font-family:var(--mono); font-size:10.5px; color:var(--ink2); margin:18px 0 0">reads the <b style="color:var(--ink)">just-closed</b> bar and re-checks each tick → fires on the bar <b style="color:var(--ink)">after</b> the signal: confirmed, never repainting</p>
+    </div>
+  </section>
+
+  <section>
+    <p class="eyebrow">The interdiction layer · Helm</p>
+    <h3>Grab the wheel without stopping the car</h3>
+    <p class="desc">Three ways to trade the suite: the <b>Deck</b> — you drive · the <b>Bridge</b> — it drives · <b>Helm</b> — you grab the wheel of a <i>running</i> Bridge without stopping it. Helm owns <b>nothing</b>: it publishes an <b>intent</b> addressed to one running actor's <code>instanceKey</code>, and that actor executes it with its <b>own</b> order handles and stays the sole owner — because a panel that touches a managed strategy's orders desyncs the position and can terminate the strategy. It is the publish/consult idiom pointed the other way: <b>human input as a seam</b>. Risk-<b>reducing</b> verbs (Flatten · Pause · Skip · tighten-stop) are <b>fail-open</b>; risk-<b>adding</b> verbs (Resume · widen-stop · Scale-up) pass the same <code>GateEntry</code> — the gate does not care whose finger it was. Every intent is written to the Ledger and marks its episode <b>interdicted</b>, so the Lab grades the policy, not the human.</p>
+    <div class="panel">
+      <div class="flow" style="--aw:44px">
+        <div class="node accent"><div class="t">COCKPIT ⑤</div><div class="s">a human clicks</div></div>
+        <div class="arrow" data-l="SetHelmIntent"></div>
+        <div class="node"><div class="t">INTENT</div><div class="s">verb + expiry · one-shot</div></div>
+        <div class="arrow" data-l="TakeHelmIntent · drains each tick"></div>
+        <div class="stack" style="gap:16px">
+          <div class="flow" style="justify-content:flex-start">
+            <div class="node up"><div class="t">BRIDGE</div><div class="s">its own handles</div></div>
+            <div class="arrow up" data-l="reduce → fail-OPEN" style="--aw:60px"></div>
+            <div class="node up"><div class="t">ACTS</div><div class="s">exit · move stop · pause</div></div>
+          </div>
+          <div class="flow" style="justify-content:flex-start">
+            <div class="qnode dec"><div class="t">add risk?</div><div class="s">Resume · widen · scale-up</div></div>
+            <div class="arrow warn" data-l="→ GateEntry · fail-CLOSED" style="--aw:56px"></div>
+            <div class="node warn"><div class="t">GATE</div><div class="s">kill · governor · session</div></div>
+          </div>
+        </div>
+      </div>
+      <p style="text-align:center; font-family:var(--mono); font-size:10.5px; color:var(--ink2); margin:18px 0 0">the Bridge publishes <b style="color:var(--ink)">HelmState</b> back → the Cockpit renders reality (position · live stop/target · paused/override), never a guess. Verbs: <code>Pause · Resume · SkipNext · FlattenNow · MoveStop · MoveTarget · BreakevenNow · Scale · TakeOver · HandBack</code>.</p>
+    </div>
+  </section>
+
+  <section>
+    <p class="eyebrow">Live look</p>
+    <h3>The suite on a live chart</h3>
+    <p class="desc">What the flows above look like rendered on price — the glass cards, the veto, and the on-chart order tools.</p>
+    <div class="shots">
+      <figure class="shot" id="s2">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="8.5" cy="9.5" r="1.6"/><path d="M4 17l5-5 4 4 3-3 4 4"/></svg>
+        <span class="sid">S2</span><span class="stt">A Council VETO</span>
+        <span class="scap">The red <code>VETO: …</code> line firing — e.g. news lockout or a liquidity wall.</span>
+        <span class="sfile">→ img/s2-council-veto.png</span>
+      </figure>
+      <figure class="shot" id="s4">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="8.5" cy="9.5" r="1.6"/><path d="M4 17l5-5 4 4 3-3 4 4"/></svg>
+        <span class="sid">S4</span><span class="stt">Stacked glass cards</span>
+        <span class="scap">Two+ Sentinel cards in one corner, auto-stacked by CardLayout, never overlapping.</span>
+        <span class="sfile">→ img/s4-stacked-cards.png</span>
+      </figure>
+      <figure class="shot" id="s10">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="8.5" cy="9.5" r="1.6"/><path d="M4 17l5-5 4 4 3-3 4 4"/></svg>
+        <span class="sid">S10</span><span class="stt">Deck on-chart order visuals</span>
+        <span class="scap">Entry (cyan) / stop (red) / target (green) lines with R / $ / tick chips.</span>
+        <span class="sfile">→ img/s10-deck-visuals.png</span>
+      </figure>
+      <figure class="shot" id="s12">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="8.5" cy="9.5" r="1.6"/><path d="M4 17l5-5 4 4 3-3 4 4"/></svg>
+        <span class="sid">S12</span><span class="stt">The Bridge card + ARM button</span>
+        <span class="scap">The autopilot's glass card with the clickable ARM BRIDGE control.</span>
+        <span class="sfile">→ img/s12-bridge-card.png</span>
+      </figure>
+    </div>
+  </section>
+
+  <!-- ============ PART IV ============ -->
+  <div class="part"><span class="pn">PART IV</span><h2>Orchestration &amp; safety</h2><span class="pd">control the fleet · guard every order</span></div>
+
+  <section id="safety">
+    <p class="eyebrow"><span class="num">07</span> Fleet orchestration · Arc</p>
+    <h3>One board decides which instruments trade, and when</h3>
+    <p class="desc">A NinjaScript AddOn <b>can't start or stop</b> a chart strategy — so Arc doesn't try. It <b>publishes a plan</b> (per instrument: enabled, contracts, session window) and watches the leader account; Sentinel-aware strategies <b>consult</b> <code>SlotLive</code> at entry and trade only when their slot is live. Load a strategy once per chart, then control the whole fleet from one place.</p>
+    <div class="panel">
+      <div class="flow" style="--aw:42px">
+        <div class="node"><div class="t">Arc.conf</div><div class="s">leader + slots</div></div>
+        <div class="arrow"></div>
+        <div class="node accent"><div class="t">ARC</div><div class="s">publish + supervise</div></div>
+        <div class="arrow" data-l="FleetSlot"></div>
+        <div class="node accent"><div class="t">SENTINELCORE</div><div class="s">enable·qty·session</div></div>
+        <div class="arrow" data-l="consult"></div>
+        <div class="stack" style="gap:14px">
+          <div class="drow">
+            <div class="qnode dec"><div class="t">SlotLive?</div><div class="s">at entry time</div></div>
+            <div class="branch"><span class="blabel">off / closed →</span><span class="chip mute">skip entry</span></div>
+          </div>
+          <div class="flow" style="justify-content:flex-start">
+            <div class="arrow up" data-l="live" style="--aw:40px"></div>
+            <div class="node up"><div class="t">TRADE</div><div class="s">this instrument</div></div>
+          </div>
+        </div>
+      </div>
+      <div class="flow" style="gap:8px; flex-wrap:wrap; margin-top:24px; justify-content:center">
+        <span class="chip" style="border-color:color-mix(in srgb,var(--up) 45%,var(--line))">GC = LIVE <span class="w">25f</span></span>
+        <span class="chip mute">NQ = IDLE <span class="w">0f</span></span>
+        <span class="chip mute">ES = IDLE <span class="w">0f</span></span>
+        <span style="font-family:var(--mono); font-size:10px; color:var(--ink2); align-self:center; margin-left:6px">health: OFF · CLOSED · IDLE · LIVE · DARK (leader down)</span>
+      </div>
+      <p style="text-align:center; font-family:var(--mono); font-size:10.5px; color:var(--ink2); margin:14px 0 0">fail-open: no plan ⇒ the strategy trades normally — Arc adds control without becoming a single point of failure</p>
+    </div>
+  </section>
+
+  <section>
+    <p class="eyebrow"><span class="num">08</span> The hardening substrate</p>
+    <h3>Three layers that keep a tired human safe at 9:32am</h3>
+    <p class="desc">The safety system isn't eighteen features — it's <b>three substrates</b> every order path shares. One guards the submit, one records and can restore, one watches and shouts. The question the whole thing exists to answer: <i>could a tired human on a funded account blow it up? → No.</i></p>
+    <div class="panel">
+      <div class="layers">
+        <div class="layer">
+          <div class="lb">Layer 1<b>Gate</b></div>
+          <div class="lc"><span class="chip">kill-switch</span><span class="chip">feed-health</span><span class="chip">rate guard</span><span class="chip">size-for-risk</span></div>
+          <div class="lo">pre-submit choke<br>→ Clear / Advisory / Hard</div>
+        </div>
+        <div class="layer">
+          <div class="lb">Layer 2<b>Record &amp; restore</b></div>
+          <div class="lc"><span class="chip">Ledger <span class="w">Order·Action·Fill</span></span><span class="chip">Journal · Slippage</span><span class="chip">State <span class="w">atomic blob</span></span><span class="chip">restore on restart</span></div>
+          <div class="lo">append-only stream<br>+ survives a restart</div>
+        </div>
+        <div class="layer">
+          <div class="lb">Layer 3<b>Watch &amp; notify</b></div>
+          <div class="lc"><span class="chip">readiness</span><span class="chip">reconnect reconcile</span><span class="chip">auto-flatten</span><span class="chip">Alerts <span class="w">2-tier</span></span><span class="chip">Conditions <span class="w">debounce · re-state</span></span></div>
+          <div class="lo">detect &amp; alert<br>→ sound + push</div>
+        </div>
+      </div>
+    </div>
+
+    <p class="eyebrow" style="margin-top:34px">Layer 3, in detail · the rule that governs every detector</p>
+    <h3>A latch that never re-arms is indistinguishable from a detector that never fires</h3>
+    <p class="desc">Three different things get written as <code>if (set.Add(key)) Warn();</code>, and <b>only one of them is correctly a latch</b>. Confusing them produced four separate bugs in this suite — including <b>160 false <span style="color:var(--down)">CRITICAL</span> "naked position" alerts</b>, because a stop order transiting <code>ChangePending</code> during a routine trail-step read as <i>no stop at all</i>. The alert you most need to trust had been crying wolf for five days.</p>
+    <div class="tblwrap">
+      <table>
+        <thead><tr><th>Kind</th><th>Means</th><th>Correct behaviour</th><th>Example</th></tr></thead>
+        <tbody>
+          <tr><td><b>Action latch</b></td><td class="st">"do this once"</td><td class="st">latch; clear on the day roll</td><td class="st"><code>_hardFlattened</code> — flatten an account once ✔</td></tr>
+          <tr><td><b>Transition log</b></td><td class="st">"say when it changed"</td><td class="st">fire on change</td><td class="st"><code>_govPrevStatus</code> — governor status ✔</td></tr>
+          <tr><td><b>Condition alert</b></td><td class="st">"something is wrong <i>now</i>"</td><td class="st"><b>debounce</b> transients → report → <b>keep re-stating</b> on a cooldown while true → <b>auto-clear</b> on resolve</td><td class="st">naked position · orphan orders · scope contention · ambiguous scope</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="code"><span class="c">// SentinelCore.Conditions — route every condition alert through this:</span>
+<span class="k">if</span> (SentinelCore.Conditions.ShouldReport(acct + <span class="k">"|naked|"</span> + instr, isNaked,
+                                        debounceSec: 10, cooldownSec: 300))
+    Alerts.Critical(…, account: acct);   <span class="c">// silent &lt;10s; then re-stated every 5 min while true</span></div>
+    <p class="desc"><b>Never leave a CRITICAL condition on <code>cooldownSec: 0</code></b> — silence would then mean "still broken." For <i>event-shaped</i> detections that have no "false" observation to feed back (scope contention is only ever observed at write time), report on detection and <code>Clear(key)</code> on teardown.</p>
+    <div class="callout warn"><span class="cl">How the latch bug was caught — and why it matters</span>Nothing in the system reported it. Two Councils on one NQ chart collided for twenty minutes in total silence, because the contention warning was a <code>HashSet</code> that fired <b>once per process</b>. The tell was that their <i>roster deviations</i> logged as duplicate same-millisecond lines — impossible for a single instance, since deviations are change-logged. <b>The roster caught the bug in the thing built to catch bugs.</b> That is the general lesson: cross-checking two independent sources finds what neither reports alone, and it is what a future <b>Doctor</b> view should automate.</div>
+    <p class="desc" style="margin-top:22px"><b>The one policy that governs it all</b> — know which side of it any actor is on:</p>
+    <div class="tblwrap">
+      <table>
+        <thead><tr><th>Actor</th><th>On an ambiguous / absent signal</th><th>Why</th></tr></thead>
+        <tbody>
+          <tr><td><b>Manual</b> <span class="vt">(Deck actions)</span></td><td>fail <b style="color:var(--up)">OPEN</b> — allow</td><td class="st">a human is in the loop</td></tr>
+          <tr><td><b>Automated</b> <span class="vt">(GTrader21 · Copier · Bridge · Deck auto)</span></td><td>fail <b style="color:var(--down)">CLOSED</b> — block</td><td class="st">no human to catch a mistake</td></tr>
+          <tr><td><b>Exits</b></td><td>never gate</td><td class="st">you must always be able to get out</td></tr>
+          <tr><td><b>A thrown exception</b></td><td>fail <b style="color:var(--up)">OPEN</b></td><td class="st">a bug must not freeze exits</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="callout"><span class="cl">What <code>CanEnter</code> actually checks</span>An automated entry fires only when <b>all</b> are true: not global kill · not scoped instrument kill · feed healthy · governor allows today (daily cap / loss-stop) · trailing-drawdown cushion intact · inside the account session · not in rollover blackout · not in a news lockout. Then, at submit, <code>GateEntry</code> risk-sizes and returns Clear / Advisory / Hard. <b>Reconcile only ever detects + alerts — it never auto-cancels a real stop.</b></div>
+  </section>
+
+  <section>
+    <p class="eyebrow"><span class="num">09</span> A strategy's lifecycle · GTrader21</p>
+    <h3>How one strategy threads the whole machine</h3>
+    <p class="desc">GTrader21 is the worked example — an unmanaged GodTrades strategy that uses every layer. On restart it <b>restores or reconciles</b> its position (never duplicating a stop). A signal only becomes an order after clearing <b>three gates in series</b> — Arc, Council, then the Order Gate — and every fill is captured for grading.</p>
+    <div class="panel">
+      <div class="spine">
+        <div class="node accent big"><div class="t">ON RESTART · restore + reconcile</div><div class="s">resume · leave-unmanaged + alert · detect + alert — never a dup stop</div></div>
+        <div class="arrow v" style="--ah:28px"></div>
+        <div class="flow" style="--aw:32px">
+          <div class="node"><div class="t">SIGNAL</div><div class="s">GodTrades</div></div>
+          <div class="arrow" data-l="armed?"></div>
+          <div class="node"><div class="t">Arc</div><div class="s">SlotLive</div></div>
+          <div class="arrow"></div>
+          <div class="node"><div class="t">Council</div><div class="s">edge+aligned</div></div>
+          <div class="arrow"></div>
+          <div class="node warn"><div class="t">Gate</div><div class="s">Clear only</div></div>
+          <div class="arrow up"></div>
+          <div class="node up"><div class="t">SUBMIT</div><div class="s">unmanaged</div></div>
+        </div>
+        <div class="arrow v" data-l="manage" style="--ah:28px"></div>
+        <div class="flow" style="--aw:40px">
+          <div class="node"><div class="t">TRAIL · BE</div><div class="s">persist state each change</div></div>
+          <div class="arrow up" data-l="fill"></div>
+          <div class="node"><div class="t">LEDGER</div><div class="s">fill + slippage</div></div>
+        </div>
+      </div>
+      <p style="text-align:center; font-family:var(--mono); font-size:10.5px; color:var(--ink2); margin:18px 0 0">three gates, all fail-CLOSED for an automated strategy — a signal that clears the panel arm still stops if Arc, the Council, or the risk gate says no</p>
+    </div>
+  </section>
+
+  <section>
+    <p class="eyebrow">The prop-firm governor</p>
+    <h3>Compliance that falls out by construction</h3>
+    <p class="desc">On a funded account, two rules can end it that have nothing to do with your strategy: the <b>trailing drawdown</b> (Risk owns it — the real-time floor vs the firm's −$4,500-type limit) and the <b>consistency rule</b> (the Governor owns it — no single day may exceed R × your total profit). Rather than track a ratio intraday, the Governor caps each day at <code>DailyCap = R × ProfitTarget</code> — if no day ever exceeds that, compliance is automatic.</p>
+    <div class="tblwrap">
+      <table>
+        <thead><tr><th>Firm</th><th>R (ratio)</th><th>Target</th><th>DailyCap</th><th>Preset</th></tr></thead>
+        <tbody>
+          <tr><td><b>Lucid</b></td><td>0.20</td><td>$9,000</td><td class="wt">$1,800/day</td><td class="st">lucid</td></tr>
+          <tr><td><b>Bulenox</b></td><td>0.40</td><td>$9,000</td><td class="wt">$3,600/day</td><td class="st">bulenox</td></tr>
+          <tr><td><b>TPT</b></td><td>0.50</td><td>$9,000</td><td class="wt">$4,500/day</td><td class="st">tpt</td></tr>
+          <tr><td><b>Apex</b></td><td>0.30</td><td>—</td><td class="st">—</td><td class="st">apex</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="callout warn"><span class="cl">Set the reset hour · this saves accounts</span>Two daily triggers reset at session rollover: <b>profit cap</b> (today's realized ≥ DailyCap → DayComplete, bank it) and <b>loss stop</b> (≤ −DailyLossStop → DayHalted). Set <code>resetHour</code> to your firm's rollover (TPT 5 PM ET, etc.) — <b>a wrong reset silently breaks the daily rule.</b> Prop rules drift constantly; always verify against the firm's live docs (<code>Docs/PropFirmRules.md</code>). The most common way a funded account dies isn't strategy — it's the trailing floor ratcheting on an unrealized peak.</div>
+  </section>
+
+  <section>
+    <p class="eyebrow">Operate it</p>
+    <h3>Prove the safety net before you trust it</h3>
+    <p class="desc">A safety system you haven't watched fire is a story you're telling yourself. Most of the Dashboard <b>Test tab</b> works with the market <b>closed</b> — do these first.</p>
+    <ol class="steps">
+      <li><b>Alert channel.</b><p>Test tab → <b>Test Critical</b> → hear a sound + a Risk alert row + a ledger line. Set a <code>pushCommand</code> (ntfy/Pushover/Slack), re-fire, confirm the phone push — no NT restart needed.</p></li>
+      <li><b>Dry-run gate probe.</b><p>Pick account + instrument + qty/stop/risk → <b>Evaluate</b> → expect <b>GATE = CLEAR</b> + sized qty. Engage the top-bar <b>KILL</b> → Evaluate → <b>GATE = HARD</b>. No order is ever sent.</p></li>
+      <li><b>Self-checks.</b><p><b>Run checks</b> → expect 3/3 PASS (scoped-kill isolation · sizer unaffordable→0 / generous→≥1 · TickValue &gt; 0).</p></li>
+      <li><b>Ledger is flowing.</b><p>Fire a SIM Deck order, toggle the kill → a JSON line per order + per toggle in <code>Ledger\ledger-YYYY-MM-DD.jsonl</code>, mirrored in the Journal tab (▶ Live streams within ~2s).</p></li>
+    </ol>
+    <div class="callout caveat"><span class="cl">The funded-account gate · market-open proofs still pending</span>Don't risk a real prop dollar until each of these has shown ☑ live: <b>①</b> kill-switch blocks entries everywhere · <b>②</b> the fail-open/closed split observed for real (Deck lets a human click while GTrader21/Copier refuse) · <b>③</b> hard daily-loss auto-flatten + lockout · <b>④</b> GTrader21 restore with <b>no duplicate stop</b> · <b>⑤</b> stop-fill slippage captured · <b>⑥</b> reconnect naked-position alert. Until then, the safety layer is <b>built but unproven.</b></div>
+  </section>
+
+  <section>
+    <p class="eyebrow">Live look</p>
+    <h3>The safety surfaces</h3>
+    <p class="desc">The dashboard tabs where you prove the net actually catches something.</p>
+    <div class="shots">
+      <figure class="shot" id="s8">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="8.5" cy="9.5" r="1.6"/><path d="M4 17l5-5 4 4 3-3 4 4"/></svg>
+        <span class="sid">S8</span><span class="stt">Dashboard — Test tab</span>
+        <span class="scap">The dry-run gate probe showing GATE = CLEAR, then HARD after the kill.</span>
+        <span class="sfile">→ img/s8-test-tab.png</span>
+      </figure>
+      <figure class="shot" id="s9">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="8.5" cy="9.5" r="1.6"/><path d="M4 17l5-5 4 4 3-3 4 4"/></svg>
+        <span class="sid">S9</span><span class="stt">Journal + Slippage</span>
+        <span class="scap">A fill row with intended / fill / slip — red (worse) vs green (better).</span>
+        <span class="sfile">→ img/s9-journal-slippage.png</span>
+      </figure>
+    </div>
+  </section>
+
+  <!-- ============ PART V ============ -->
+  <div class="part"><span class="pn">PART V</span><h2>Component catalog</h2><span class="pd">every load-bearing file</span></div>
+
+  <section id="catalog">
+    <p class="eyebrow">The two files everything depends on</p>
+    <h3>A shippable tool is just three files</h3>
+    <p class="desc">Every subscribed Sentinel indicator hard-references <b>exactly two</b> AddOn files — that's the entire compile dependency. <b>SentinelCore</b> is the bus + the safety substrates (seam registry, kill-switch, feed-health, Gate, Ledger, State, Alerts, and the account registries). <b>SentinelSkin</b> is the look (the glass-card Painter, the palette, and CardLayout's anti-overlap docking). With the services absent, every <code>Get…State</code> returns no-data and the tool degrades to <b>neutral, throwing nothing</b> — that standalone-safe property is a hard rule.</p>
+
+    <p class="desc" style="margin-top:30px"><b>The sensing layer · the voters</b> — each is an <code>Indicators.Sentinel</code> indicator, publishes a seam (default ON), and is wired into the Council.</p>
+    <div class="tblwrap">
+      <table>
+        <thead><tr><th>Sensor</th><th>Publishes</th><th>Weight</th><th>The read it contributes</th></tr></thead>
+        <tbody>
+          <tr><td><b>Eye</b></td><td>EyeVerdict</td><td class="wt">1.4</td><td class="st">Adaptive GodTrades scanner's directional qualification</td></tr>
+          <tr><td><b>SentinelTrend</b></td><td>TrendState</td><td class="wt">1.0</td><td class="st">ATR trailing-line direction (supersedes TrendMagic)</td></tr>
+          <tr><td><b>God Reversal</b></td><td>GodReversalState</td><td class="wt">0.9</td><td class="st">Candle-grammar reversal at a band edge</td></tr>
+          <tr><td><b>WoodiesCCIPro</b></td><td>CciState</td><td class="wt">0.8</td><td class="st">Woodies CCI trend state −2..+2 (×1.5 if strong)</td></tr>
+          <tr><td><b>CompressionBase</b></td><td>CompressionState</td><td class="wt">0.7</td><td class="st">Coil-base breakout direction ±1</td></tr>
+          <tr><td><b>Sentinel WAE</b></td><td>WaeState</td><td class="wt">0.7</td><td class="st">Waddah Attar confirmed momentum-explosion breakout</td></tr>
+          <tr><td><b>ADXPro</b></td><td>AdxState</td><td class="wt">0.6</td><td class="st">ADX trend on/off + DI bias (×1.25 if strong)</td></tr>
+          <tr><td><b>VolEnvelope</b></td><td>EnvelopeState</td><td class="wt">0.6</td><td class="st">"Honest Bollinger" regime (squeeze/trend/expansion)</td></tr>
+          <tr><td><b>Intermarket</b></td><td>IntermarketState</td><td class="wt">0.6</td><td class="st">Correlated-instrument lean — the one truly orthogonal voter</td></tr>
+          <tr><td><b>Brick</b> <span class="vt">(bar type)</span></td><td>BrickState</td><td class="wt">0.5</td><td class="st">Adaptive HA/Renko brick direction</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p class="desc" style="margin-top:30px"><b>The orthogonal axes</b> — the independence engine. Four <b>modulate</b> conviction; Intermarket (above) is the fifth and it votes. Plus the one veto sensor.</p>
+    <div class="tblwrap">
+      <table>
+        <thead><tr><th>Axis</th><th>Publishes</th><th>Council role</th></tr></thead>
+        <tbody>
+          <tr><td><b>Clock</b></td><td>ClockState <span class="vt">(phase / mins-to-close / kill window)</span></td><td class="st">midday &amp; off-session damp + kill-window veto</td></tr>
+          <tr><td><b>Participation</b></td><td>ParticipationState <span class="vt">(RVOL + climax/dry-up)</span></td><td class="st">thin-tape damp (never inflates)</td></tr>
+          <tr><td><b>Location</b></td><td>LevelState <span class="vt">(VWAP/PDH-PDL/OR/IB + nearest)</span></td><td class="st">into-a-level damp (don't trade into the wall)</td></tr>
+          <tr><td><b>MTF</b></td><td>MtfState <span class="vt">(1/5/15/60/240 ladder)</span></td><td class="st">counter-higher-TF damp</td></tr>
+          <tr><td><b>LiquidityWalls</b></td><td>LiquidityState <span class="vt">(absorption z-score + walls)</span></td><td class="st"><b>hard veto</b> — a wall on the intended side zeroes conviction</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p class="desc" style="margin-top:30px"><b>Execution &amp; the service layer</b> — the hands, and everything that keeps them safe and remembered.</p>
+    <div class="tblwrap">
+      <table>
+        <thead><tr><th>Tool</th><th>Role</th></tr></thead>
+        <tbody>
+          <tr><td><b>GTrader21</b> <span class="vt">strategy</span></td><td class="st">Automated GodTrades (BG/FC/OBR), unmanaged, panel + risk card; auto-reads lab configs; <code>UseCouncilGate</code> decouple</td></tr>
+          <tr><td><b>Bridge</b> <span class="vt">strategy</span></td><td class="st">The autopilot — consumes CouncilState, sizes ×SizeMult → GateEntry, records every fire. Base <code>Strategies</code> namespace</td></tr>
+          <tr><td><b>Deck</b> <span class="vt">indicator</span></td><td class="st">Manual order deck + full trade management + on-chart order visuals + SIGNAL ARM</td></tr>
+          <tr><td><b>Dashboard</b></td><td class="st">12-tab control center: Copy · Log · Risk · Journal · Slippage · Lens · Eye · Arc · Assist · Excursion · Accounts · Test</td></tr>
+          <tr><td><b>Risk</b></td><td class="st">Feed lag/stall watchdog → engages the kill; rollover; hosts news-lockout + the governor</td></tr>
+          <tr><td><b>Alert · State · Copier · Log · Lens · Arc</b></td><td class="st">Sound/push · state.json snapshot · fill-mirror · per-trade MAE/MFE · weight-grading · fleet orchestration</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ============ PART VI ============ -->
+  <div class="part"><span class="pn">PART VI</span><h2>Seam reference</h2><span class="pd">the …State contracts</span></div>
+
+  <section id="seams">
+    <p class="eyebrow">The shape every seam shares</p>
+    <h3>One publisher, one consult, one snapshot</h3>
+    <div class="code"><span class="c">// every …State seam follows this identical trio on SentinelCore:</span>
+<span class="k">void</span>      Set&lt;X&gt;State(<span class="k">string</span> scope, <span class="k">string</span> bartype, <span class="k">string</span> instrument, …); <span class="c">// publisher</span>
+&lt;X&gt;State  Get&lt;X&gt;State(<span class="k">string</span> scopeOrInstrument, <span class="k">double</span> maxAgeSec);      <span class="c">// consult; null if absent OR stale</span>
+List&lt;X&gt;   All&lt;X&gt;States();                                         <span class="c">// snapshot of every scope</span></div>
+    <p class="desc">Keyed by <b>SCOPE</b> — <code>"&lt;instrument&gt;.&lt;barTag&gt;"</code>, e.g. <code>GC.69697v6x24</code>, from <code>SentinelCore.ScopeOf(Instrument, BarsPeriod)</code>. A scope is <b>one chart's worth of context</b>, and exactly the coordinate a model is defined over. Case-insensitive, lock-guarded. <code>Get…</code> returns <code>null</code> if nothing was published <i>or</i> the entry is older than <code>maxAgeSec</code> (pass 0 to disable expiry) — <b>absent/stale = the consumer abstains</b>, the fail-open backbone. The read always travels as int / double / bool; the bus never couples to a private enum.</p>
+    <p class="desc">All seams share one <code>SeamStore&lt;T&gt;</code>, whose <code>Get()</code> resolves in three rungs. <b>(1) exact key</b> — a migrated publisher consulted by scope; the normal path. <b>(2) a scope asked of an instrument-keyed entry</b> — a publisher that has not migrated yet. That rung is what lets the migration land <b>one F5 at a time</b> rather than all at once, and it disappears when the last publisher moves. <b>(3) a bare instrument asked of scope-keyed entries</b> — resolved only if <b>exactly one</b> scope carries it, else <code>null</code> plus a throttled log. That rung is <b>fail-CLOSED on purpose</b>: <i>"I don't know which chart you mean"</i> must never be answered with <i>"here's whichever wrote last."</i></p>
+    <div class="callout warn"><span class="cl">Why scope, and not just the instrument?</span>Two GC charts on different bar types are two different worlds — different sensors loaded, different bar clocks, different volatility. Keyed by <code>"GC"</code> they overwrote each other's readings <b>every bar</b>, and a Council could fuse the <i>other</i> chart's ADX and report it as confluence. Scope separates GC from NQ, and GC-TBars from GC-150tick. It <b>cannot</b> separate two charts sharing instrument <i>and</i> bar type — nor two copies of one indicator on a single chart. That case is detected and logged as <code>SCOPE CONTENTION</code>, never silently permitted.</div>
+    <div class="tblwrap">
+      <table>
+        <thead><tr><th>Seam</th><th>Key payload</th><th>Convenience</th></tr></thead>
+        <tbody>
+          <tr><td><b>EyeVerdict</b></td><td class="st">Direction(±1/0), Score</td><td class="st">—</td></tr>
+          <tr><td><b>TrendState</b></td><td class="st">Direction, TrendPrice, DistanceTicks, BarsInTrend, Flipped</td><td class="st">IsUp/IsDown, Aligned</td></tr>
+          <tr><td><b>CciState</b></td><td class="st">TrendState(−2..+2), MainCci, TurboCci, Signal, Weakening</td><td class="st">Bias, Strong, Aligned</td></tr>
+          <tr><td><b>AdxState</b></td><td class="st">Adx, DiPlus, DiMinus, Bias, Slope5, Strong</td><td class="st">TrendOn, Building, Aligned</td></tr>
+          <tr><td><b>EnvelopeState</b></td><td class="st">Regime(0–4), Stretch, BandwidthPctile, MultUp/Down</td><td class="st">IsSqueeze, IsTrend</td></tr>
+          <tr><td><b>BrickState</b></td><td class="st">Direction, Atr, SameDirCount, TicksToUpper/Lower</td><td class="st">AtrTicks(), Aligned</td></tr>
+          <tr><td><b>CompressionState</b></td><td class="st">Signal(pulse), BreakDir(held), Coil, Compressed, Armed</td><td class="st">JustBroke, Aligned</td></tr>
+          <tr><td><b>IntermarketState</b></td><td class="st">Lean, Score(−1..1), RefCount, Refs</td><td class="st">Aligned</td></tr>
+          <tr><td><b>WaeState</b></td><td class="st">Signal(±1 confirmed), Power, Explosion, DeadZone, IsExploding</td><td class="st">Aligned</td></tr>
+          <tr><td><b>GodReversalState</b></td><td class="st">Signal(pulse), Dir(held), Quality, Setup, AtBand, Exhausted</td><td class="st">JustReversed, Aligned</td></tr>
+          <tr><td><b>ClockState</b></td><td class="st">Phase(0–3), MinsToClose, InSession, InKillWindow</td><td class="st">IsMidday, IsClose</td></tr>
+          <tr><td><b>ParticipationState</b></td><td class="st">Rvol, VolZ, Climax, DryUp</td><td class="st">Backed</td></tr>
+          <tr><td><b>LevelState</b></td><td class="st">Vwap±bands, Pdh/Pdl, Orh/Orl, NearestName, NearestDistTicks/Atr</td><td class="st">Near(), InPath()</td></tr>
+          <tr><td><b>MtfState</b></td><td class="st">Bias, AlignmentScore(−1..1), AlignedCount, AllAgree, Dirs</td><td class="st">Aligned</td></tr>
+          <tr><td><b>CouncilState</b></td><td class="st">Bias, Conviction, SizeMult, Agree/Disagree/Voters, Vetoed, Reasons</td><td class="st"><b>HasEdge</b>, Aligned</td></tr>
+          <tr><td><b>LiquidityState</b></td><td class="st">Zscore, AbsorbSide, WallAbove/Below, DistAbove/BelowTicks</td><td class="st"><b>BlocksEntry(dir,ticks)</b></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="desc" style="margin-top:16px"><code>Aligned(int dir)</code>: <code>+1</code>=long, <code>−1</code>=short, <code>0</code>=flat. Also on Core, keyed by account: the <b>kill-switch</b>, scoped kill, <b>governor</b>, trailing drawdown, account profiles, news lockout, rollover, and fleet slots — bundled into the combined entry gate <code>CanEnter</code>.</p>
+  </section>
+
+  <!-- ============ PART VII ============ -->
+  <div class="part"><span class="pn">PART VII</span><h2>Extending Sentinel</h2><span class="pd">add a voter · get logging</span></div>
+
+  <section id="extending">
+    <div class="callout"><span class="cl">The Council Protocol · memorize this</span>Any new signal / regime / bias / context indicator MUST: <b>(a)</b> publish a <code>…State</code> seam carrying its read as int/double/bool (never an enum); <b>(b)</b> gate publishing behind a <code>PublishState</code> property that <b>defaults ON</b> — don't ship it dark; <b>(c)</b> be wired into the Council as a <b>voter</b>, <b>modulator</b>, or <b>veto</b>, appearing in the Reasons audit. <b>A hidden plot alone is not enough — the Council reads seams, not plots.</b></div>
+
+    <p class="eyebrow" style="margin-top:34px">Step 1 · publish your seam</p>
+    <h3>Default-ON, keyed by scope, never throws</h3>
+    <div class="code"><span class="c">// SetDefaults:</span>  PublishState = <span class="k">true</span>;   <span class="c">// ON out of the box — never ship dark</span>
+
+<span class="c">// resolved lazily, then cached. A null scope no-ops the publish — the right</span>
+<span class="c">// fail-silent for an indicator that is not configured yet.</span>
+<span class="k">private string</span> _scope;
+<span class="k">private string</span> Scope()
+{
+    <span class="k">if</span> (_scope == <span class="k">null</span>) { <span class="k">try</span> { _scope = SentinelCore.ScopeOf(Instrument, BarsPeriod); } <span class="k">catch</span> { } }
+    <span class="k">return</span> _scope;
+}
+
+<span class="c">// end of the compute path in OnBarUpdate:</span>
+<span class="k">if</span> (PublishState &amp;&amp; Instrument?.MasterInstrument != <span class="k">null</span>)
+{
+    <span class="k">try</span> {
+        SentinelCore.SetMyState(
+            Scope(),                              <span class="c">// THIS CHART — never the bare instrument</span>
+            SentinelCore.BarTag(BarsPeriod),
+            Instrument.MasterInstrument.Name,
+            (<span class="k">int</span>)myDir,                            <span class="c">// publish int, never an enum</span>
+            <span class="k">"MySensor"</span>);
+    } <span class="k">catch</span> { }   <span class="c">// publishing must NEVER throw into OnBarUpdate</span>
+}</div>
+    <p class="desc">Publish <b>every processed bar</b> so the seam stays fresh — consumers staleness-gate, so a seam you stop refreshing goes stale and your voter silently abstains.</p>
+    <div class="callout warn"><span class="cl">Two things that will bite you</span><b>A crashed sensor is indistinguishable from a quiet one.</b> Fail-open abstention means an indicator that throws in <code>OnStateChange</code> simply never votes, forever, and nothing says so — the Eye did exactly this across 332 verdicts while carrying the heaviest weight in the Council. Guard anything that can throw at construction, and <b>declare your voter in the roster</b> (below) so its silence is reported instead of assumed.<br><br><b>A seam has no history and no as-of semantics.</b> <code>SetXState</code> stamps <code>UpdatedUtc = DateTime.UtcNow</code> <i>even while the publisher replays historical bars</i>, so a consumer's freshness gate cannot tell replay from live. Anything that <b>records</b> must gate on <code>State == State.Realtime</code>.</div>
+
+    <p class="eyebrow" style="margin-top:30px">Step 2 · wire it into the Council</p>
+    <h3>One line of logic; the plumbing is generic</h3>
+    <div class="code"><span class="c">// add a weight (SetDefaults + a [NinjaScriptProperty] in the Weights group), then</span>
+<span class="c">// inside the gather try{} in OnBarUpdate, alongside the other voters:</span>
+<span class="k">var</span> mine = SentinelCore.GetMyState(inst, StaleSec);
+<span class="k">if</span> (mine != <span class="k">null</span>)
+    AddVote(<span class="k">"MINE"</span>, mine.Direction, WeightMyNew, <span class="k">ref</span> netScore, <span class="k">ref</span> activeW, <span class="k">ref</span> voters);</div>
+    <p class="desc"><code>AddVote</code> collapses the value to its sign, adds <code>sign×weight</code> to netScore and <code>weight</code> to activeW, counts the fresh voter, and appends to the tally / card chip / Reasons token — all generic. Pass <b>0</b> when present-but-neutral (still counts toward breadth). Fold strength into the weight (<code>× (mine.Strong ? 1.5 : 1.0)</code>). If your sensor is <b>context</b>, make it a modulator (<code>conviction *= myDamp</code>); if it's a <b>hard gate</b>, add a branch to the veto chain.</p>
+
+    <p class="eyebrow" style="margin-top:30px">Step 3 · consume &amp; record</p>
+    <h3>Read one seam, then still gate at submit</h3>
+    <div class="code"><span class="k">var</span> v = SentinelCore.GetCouncilState(Scope(), maxAgeSec);   <span class="c">// SCOPE, not the bare instrument</span>
+<span class="k">if</span> (v != <span class="k">null</span> &amp;&amp; v.HasEdge &amp;&amp; v.Aligned(myDir)) {          <span class="c">// HasEdge = !Vetoed &amp;&amp; Bias≠0 &amp;&amp; SizeMult&gt;0</span>
+    <span class="c">// SIZE → CLAMP → VALIDATE. Never skip the middle step.</span>
+    <span class="k">int</span> want = Math.Max(1, (<span class="k">int</span>)Math.Round(baseQty * v.SizeMult));
+    want = SentinelCore.SizedQuantity(Account, want);       <span class="c">// × SizeScale × governor, clamp ContractLimit</span>
+    <span class="k">var</span> g = SentinelCore.GateEntry(Account, Instrument, want, stopTicks, <span class="k">0</span>, instr);
+    <span class="k">if</span> (g.IsClear) { <span class="c">/* submit */</span> SentinelCore.NoteOrderSubmitted(Account); }
+}
+<span class="c">// on fill: SentinelCore.Ledger.Fill(...) + record the Council verdict for Lens to grade</span></div>
+    <div class="callout warn"><span class="cl">Three ways this line goes wrong</span><b>① <code>HasEdge</code> must gate on <code>SizeMult</code>, not <code>Conviction</code>.</b> Since conviction became pure agreement, a below-floor verdict still has <code>Conviction &gt; 0</code>. The old test reported an edge with <code>SizeMult = 0</code> — and because a consumer computes <code>Math.Max(1, baseQty × SizeMult)</code>, it would fire a <b>one-lot on a stand-down</b>. Size is the only number that can say no.<br><b>② <code>SizedQuantity()</code> is not optional.</b> The Bridge skipped it for months, so the account profile's <code>size=</code>, the governor's <code>RecommendedSize()</code>, and <code>ContractLimit</code> were all silently ignored — a governor telling a strategy to size down <i>was not obeyed</i>. It is, in Core's own words, <b>"the one place sizing math lives."</b><br><b>③ Pass <code>riskDollars = 0</code> to <code>GateEntry</code> when you have already sized.</b> Otherwise the Gate <i>re-sizes from risk</i> and can reject your quantity as "risk too small". That flip silently blocked the Bridge's first live trade.<br><br><b>Resolution note:</b> with <code>baseQty = 1</code>, <code>SizeMult</code> cannot scale a position <i>down</i> — <code>1 × 0.19</code> rounds to 0 and the <code>Max(1,…)</code> floor restores a 1-lot. <code>SizeMult</code> only has resolution at <code>baseQty ≥ 2</code>. <b><code>ConvictionFloor</code> (SizeMult = 0) is what expresses "do not trade"</b> — SizeMult is not a substitute for it.</div>
+    <div class="callout warn"><span class="cl">The gotchas that bite</span><b>Log CHANGES only, never per-tick</b> (<code>SentinelCore.Log("MyTool", …)</code> → sentinel.log). <b>Never build a second journal</b> — the Ledger is the one event stream. <b>Strategies stay in the base <code>Strategies</code> namespace</b> (NT hides sub-namespaced strategies); indicators use <code>Indicators.Sentinel</code>. After forking a versioned file, <b>strip all NT generated <code>#region</code>s</b> or a running NT re-appends them (CS0111/CS0102). Position a card from <code>ChartPanel.X/Y/W/H</code>, never <code>ActualHeight</code>.</div>
+  </section>
+
+  <!-- ============ PART VIII ============ -->
+  <div class="part"><span class="pn">PART VIII</span><h2>The MAE/MFE lab</h2><span class="pd">turn a hunch into a graded rule</span></div>
+
+  <section id="lab">
+    <p class="eyebrow">Measure the path, don't trade it</p>
+    <h3>Record every excursion, simulate any TP/SL after</h3>
+    <p class="desc"><b>MAE</b> = max adverse excursion (how far a signal went against you). <b>MFE</b> = max favorable. If you know the <i>distribution</i> of both for a signal, you can pick a take-profit and stop that match how it actually behaves — instead of guessing. The trick: record the <b>full, untruncated</b> price path after every signal, so you can simulate any TP/SL against real excursions.</p>
+    <div class="panel">
+      <div class="flow" style="--aw:40px; flex-wrap:wrap">
+        <div class="node"><div class="t">RECORDER</div><div class="s">full MFE/MAE path</div></div>
+        <div class="arrow" data-l="*.jsonl"></div>
+        <div class="node accent"><div class="t">ANALYTICS</div><div class="s">expectancy grid</div></div>
+        <div class="arrow" data-l="◆ apply"></div>
+        <div class="node"><div class="t">.conf</div><div class="s">TP/SL rule</div></div>
+        <div class="arrow up" data-l="auto-read"></div>
+        <div class="node up"><div class="t">STRATEGY</div><div class="s">GTrader21 · Bridge</div></div>
+      </div>
+    </div>
+    <p class="desc" style="margin-top:26px"><b>The workflow, click by click</b> — from a blank chart to a live TP/SL rule the strategy obeys.</p>
+    <ol class="steps">
+      <li><b>Record.</b><p>Drop <code>SentinelExcursionRecorder</code> on each chart / instrument / bar-type you want to characterize (e.g. GC 100T, NQ 1000T). It places <b>no orders</b> and never truncates the path — leave the strategy off, or run a <i>measurement</i> template with every TP / SL / reverse / BE / trailing / cutoff <b>OFF</b> so nothing clips the excursion. It flushes each signal to <code>\Sentinel\Excursions\*.jsonl</code> at end-of-day, and also records the <b>Council verdict</b> as its own signal, tagged by conviction bucket.</p></li>
+      <li><b>Load.</b><p>Dashboard → <b>Excursion</b> tab → <b>Load / Refresh excursions</b>. The status line shows unique records / files / groups (with duplicate + legacy-schema records skipped). Tick <b>"Confident only (n≥30)"</b> to hide small-sample noise.</p></li>
+      <li><b>Scan the edge chart.</b><p>One diverging bar per signal group (trend regime): green MFE vs red MAE at 15 min, ranked by edge, a <b>✓</b> when <code>HasEdge</code> (median MFE &gt; median MAE). This is your shortlist.</p></li>
+      <li><b>Drill into a group.</b><p>Pick one in <b>"Detail signal"</b> and read the four panels + two referees below — the growth line, the outcome scatter, the 12-config grid, and whether the Eye / Conviction actually paid.</p></li>
+      <li><b>Find the ◆ and apply.</b><p><b>★</b> = best raw EV (usually a wide-stop mirage — big EV bought with catastrophic risk). <b>◆</b> = best <i>responsible</i> config, Stop ≤ TP (R:R ≥ 1) — <b>apply the ◆.</b> <b>"Apply ◆ to GTrader21 config"</b> writes one <code>.conf</code>; <b>"Sync all ◆ configs"</b> writes one for every confident group with positive Exp.</p></li>
+      <li><b>The strategy auto-reads it.</b><p>On the target chart's strategy, group <b>"14. Sentinel Integration"</b>: set <code>UseSentinelConfig = true</code> and <code>SentinelConfigName = "GC_FC_Short"</code>. On <code>DataLoaded</code> it overrides its own TP / SL / trend-filter / Eye-gate with the lab values <i>before any trade</i>, and republishes what it loaded so it appears in the dashboard's <b>Active lab configs</b> list.</p></li>
+    </ol>
+
+    <p class="desc" style="margin-top:30px"><b>Reading the tab</b> — the four analysis panels and the two referees that grade whether a filter earns its seat.</p>
+    <div class="defs">
+      <div class="row"><b>Growth line</b><span class="d">Median MFE vs MAE at 5 / 15 / 60 min — does the favorable side pull away from the adverse side over time?</span></div>
+      <div class="row"><b>Outcome scatter</b><span class="d">Every fire as a dot: MAE15 (x) vs MFE15 (y), coloured by regime, a hollow ring = Eye-endorsed, dashed lines = the chosen TP / SL.</span></div>
+      <div class="row"><b>Expectancy grid</b><span class="d">12 configs — TP at the 33 / 50 / 67th pct of MFE15, Stop = TP × {0.5, 0.75, 1.0, 1.5}. Each shows HitRate + Exp (est. ticks/trade); ★ and ◆ are marked.</span></div>
+      <div class="row"><b>Eye referee</b><span class="d">Does Eye-endorsed out-earn the rest at 15m by ≥ 3 ticks? → +1 / −1 / 0. If conclusive, the written <code>.conf</code> flips <code>useEyeGate</code> on.</span></div>
+      <div class="row"><b>Conviction referee</b><span class="d">For the <b>COUNCIL</b> group: does the HIGH-conviction bucket out-earn MID / LOW? The same test, applied to the Council's own confidence.</span></div>
+    </div>
+
+    <p class="desc" style="margin-top:24px"><b>What Apply writes</b> — a plain <code>key = value</code> file; the strategy applies five keys, the rest is informational.</p>
+    <div class="code"><span class="c"># \Sentinel\GTraderConfigs\GC_FC_Short.conf</span>
+instrument = GC
+signal = FC
+direction = Short
+useTrendFilter    = true    <span class="c">→ UseTrendFilter</span>
+trendAdxThreshold = 25      <span class="c">→ TrendAdxThreshold</span>
+useEyeGate        = false   <span class="c">→ UseEyeGate (only when the Eye referee is conclusive)</span>
+takeProfitTicks   = 40      <span class="c">→ ProfitTargetTicks (+ UseProfitTarget)</span>
+stopLossTicks     = 30      <span class="c">→ StopLossTicks (+ UseStopLoss)</span></div>
+
+    <div class="callout caveat"><span class="cl">Fill-resolution caveat · hard-won</span>The grid is a <b>screen, not a verdict.</b> Validate the chosen TP/SL at <b>High/Tick fill resolution</b>, not bar level — bar-level excursion is optimistic. One strategy's apparent 81% win rate collapsed to 37.5% at tick fills. First real lab finding: signal quality is <b>FC &gt; BG &gt; OBR</b>, and FC-in-trend (ADX ≥ 25) is the first cross-instrument edge; OBR ≈ noise.</div>
+  </section>
+
+  <section>
+    <p class="eyebrow">Live look</p>
+    <h3>The Excursion tab</h3>
+    <p class="desc">The three read-decide panels and the one-click handoff that turn recorded paths into a live rule.</p>
+    <div class="shots">
+      <figure class="shot" id="s5">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="8.5" cy="9.5" r="1.6"/><path d="M4 17l5-5 4 4 3-3 4 4"/></svg>
+        <span class="sid">S5</span><span class="stt">Edge chart</span>
+        <span class="scap">Diverging MFE / MAE bars per signal group, ranked, ✓ on the real edges.</span>
+        <span class="sfile">→ img/s5-edge-chart.png</span>
+      </figure>
+      <figure class="shot" id="s6">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="8.5" cy="9.5" r="1.6"/><path d="M4 17l5-5 4 4 3-3 4 4"/></svg>
+        <span class="sid">S6</span><span class="stt">TP/SL grid</span>
+        <span class="scap">The 12 configs with the ★ (raw EV) and ◆ (responsible) marked.</span>
+        <span class="sfile">→ img/s6-tpsl-grid.png</span>
+      </figure>
+      <figure class="shot" id="s7">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="8.5" cy="9.5" r="1.6"/><path d="M4 17l5-5 4 4 3-3 4 4"/></svg>
+        <span class="sid">S7</span><span class="stt">Outcome scatter</span>
+        <span class="scap">MAE15 vs MFE15 dots, regime-coloured, Eye rings, dashed TP/SL lines.</span>
+        <span class="sfile">→ img/s7-outcome-scatter.png</span>
+      </figure>
+      <figure class="shot" id="s11">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="8.5" cy="9.5" r="1.6"/><path d="M4 17l5-5 4 4 3-3 4 4"/></svg>
+        <span class="sid">S11</span><span class="stt">The .conf handoff</span>
+        <span class="scap">GTrader21 group 14 <code>UseSentinelConfig</code> + the Active-lab-configs list.</span>
+        <span class="sfile">→ img/s11-conf-handoff.png</span>
+      </figure>
+    </div>
+  </section>
+
+  <!-- ============ PART IX ============ -->
+  <div class="part"><span class="pn">PART IX</span><h2>Worked example</h2><span class="pd">GC FC-Short, raw signal → graded edge</span></div>
+
+  <section id="example">
+    <p class="eyebrow">One trade, birth to grade</p>
+    <h3>The whole suite in a single story</h3>
+    <p class="desc">You trade <b>GC</b> and suspect the GodTrades <b>FC</b> (continuation) signal is your edge, but only in a trend. Here's how the suite turns that hunch into a graded, live, risk-gated strategy. <span class="st">(Numbers illustrative; the process is exact.)</span></p>
+    <div class="prose">
+      <p><b>Act 1 — Measure.</b> Put the Excursion recorder on a GC chart for a couple of weeks. It never trades — it records the full price path after every FC/BG/OBR fire (MFE/MAE at 1/5/15/60m), tagged with regime and Eye verdict. You end with a few hundred FC-Short fires and their real excursions.</p>
+      <p><b>Act 2 — Find the responsible edge.</b> Excursion tab → Load. <b>GC · FC · Short (trend)</b> shows green MFE ≫ red MAE at 15m. The ◆ lands at <b>TP 40t / Stop 30t</b>, ~<b>+6t/trade</b> at 58% hit rate, firing 1.8×/day, n = 140. The Eye referee says endorsed fires out-earn the rest. Click <b>Apply ◆</b> → writes <code>GC_FC_Short.conf</code>.</p>
+      <p><b>Act 3 — Hand it to the strategy.</b> On the live GC chart, set the strategy's <code>UseSentinelConfig = true</code>. On load it overrides its own dialog — TP 40 / Stop 30 / trend filter on — before it can place a single trade. The lab result is now the live rule. <span class="st">(The Bridge does exactly this off the Council; the executor is pluggable.)</span></p>
+      <p><b>Act 4 — A signal fires. Watch the gauntlet:</b></p>
+    </div>
+    <div class="gauntlet" style="margin:18px 0">
+      <div class="g"><span class="ck">✔</span><span class="cond">Trend filter — ADX 27 ≥ 25</span><span class="res">trend confirmed</span></div>
+      <div class="g"><span class="ck">✔</span><span class="cond">Council — Bias −1, HasEdge, Conviction 0.71</span><span class="res">size × 0.71</span></div>
+      <div class="g"><span class="ck">✔</span><span class="cond">CanEnter — kill / feed / governor / drawdown / session / rollover / news</span><span class="res">all clear</span></div>
+      <div class="g"><span class="ck">✔</span><span class="cond">GateEntry(GC, qty 1, stop 30t) → Level = Clear</span><span class="res">→ SUBMIT</span></div>
+    </div>
+    <div class="prose">
+      <p><b>Act 5 — Fill, record, manage.</b> The sell fills at 2041.2 (intended 2041.4 → 0.2t slip, visible in the Slippage tab). The strategy records the Council verdict on this fire into the Ledger — the seed Lens will grade — sets its 40t target / 30t stop, and persists position-state so a mid-trade restart re-adopts the stop instead of duplicating it. Target hits: +40t minus slip. One clean, fully-audited round trip.</p>
+      <p><b>Act 6 — Grade it.</b> Days later, 30+ of these. Dashboard → Lens answers the only question that matters: <i>when the Council was confident (0.7+) on FC-Short, did those trades pay more than the low-conviction ones?</i> <b>If yes</b> → conviction is real edge; lean in. <b>If no</b> → "agreement" was just correlated price-lenses nodding along; the fix isn't more of the same voters, it's an <b>orthogonal</b> axis carrying information the others don't have.</p>
+    </div>
+    <div class="callout"><span class="cl">That is the full Sentinel loop</span>measure → find the responsible edge → hand it to the strategy → run the safety gauntlet → record every verdict → grade whether the confidence paid → tune the weights → repeat. <b>Every part of this manual is one station on that loop.</b></div>
+  </section>
+
+  <!-- ============ PART X ============ -->
+  <!-- ============ PART X ============ -->
+  <div class="part"><span class="pn">PART X</span><h2>The learning loop</h2><span class="pd">stop guessing the weights</span></div>
+
+  <section id="learning">
+    <p class="eyebrow">The one-sentence version</p>
+    <h3>The Council is already a model. Nobody ever fitted it.</h3>
+    <div class="prose">
+      <p>The Council computes <code>netScore = Σ(voteᵢ × wᵢ)</code>, calls the sign of it the <b>bias</b>, and calls <code>|netScore| ÷ Σ(active weight)</code> the <b>conviction</b>. That is a normalized <i>linear model</i> over ten signed features. The coefficients — <code>WeightEye = 1.4</code>, <code>WeightTrend = 1.0</code>, <code>WeightCci = 0.8</code> … — the <code>0.35</code> conviction floor, and the <code>0.15</code> deadband are all <b>numbers a human picked</b>.</p>
+      <p>So "adding machine learning" to Sentinel does not mean bolting a neural network onto price bars. It means <b>fitting the parameters the Council already has</b>, using the outcomes the Recorder already writes. The architecture doesn't change. Three guesses become three measurements.</p>
+    </div>
+
+    <div class="callout"><span class="cl">The shape of it</span>Sensors still publish. The Council still fuses. The Bridge still fires. The Gate still guards. <b>The model can only make the Council quieter or louder — it can never open the Gate.</b> Every safety property in Part IV survives untouched, because the learned artifact only ever supplies <i>weights</i>, and weights feed conviction, and conviction feeds a request that the Gate is still free to refuse.</div>
+
+    <p class="eyebrow" style="margin-top:34px">The whole machine, as one map</p>
+    <h3>Signal → verdict → order → grade → weights → signal</h3>
+    <p class="desc">The entire decision-and-learning cycle on one surface. The <b>top row is the live decision path</b> — sensor to order, left to right. The <b>bottom row is the offline learning path</b> — every fire graded against what price did next, the weights refit <i>per bar type</i>, fed back in. The loop closes at <span style="color:var(--accent);font-weight:700">COUNCIL</span>, the only box both paths touch — and nothing the bottom row produces can open the Gate on the top.</p>
+    <div class="panel">
+      <div class="flow" style="--aw:38px">
+        <div class="node"><div class="t">SENSORS</div><div class="s">22 voters · 5 axes</div></div>
+        <div class="arrow" data-l="publish"></div>
+        <div class="node accent"><div class="t">SENTINELCORE</div><div class="s">scope-keyed seams</div></div>
+        <div class="arrow" data-l="consult"></div>
+        <div class="node big accent"><div class="t">COUNCIL</div><div class="s">Σ vote×w → bias·conv·size</div></div>
+        <div class="arrow" data-l="verdict"></div>
+        <div class="node"><div class="t">CONSUMERS</div><div class="s">Bridge·GTrader21·Deck</div></div>
+        <div class="arrow warn" data-l="request"></div>
+        <div class="node warn"><div class="t">ORDER GATE</div><div class="s">fail-closed</div></div>
+        <div class="arrow up" data-l="fill"></div>
+        <div class="node"><div class="t">LEDGER</div><div class="s">durable record</div></div>
+      </div>
+      <div class="flow" style="margin-top:12px;gap:10px;flex-wrap:wrap">
+        <span class="chip mute">▲ modulators × dampen — Clock · Participation · MTF · Location</span>
+        <span class="chip mute">▼ hard vetoes zero it — kill · rollover · news · wall</span>
+      </div>
+      <div class="flow" style="margin-top:20px"><div class="arrow v" data-l="every fire recorded + labelled" style="--ah:34px"></div></div>
+      <div class="flow" style="--aw:52px">
+        <div class="node"><div class="t">RECORDER</div><div class="s">verdict + firstTouch</div></div>
+        <div class="arrow" data-l="write"></div>
+        <div class="node"><div class="t">CORPUS</div><div class="s">council\1.3 · per bar type</div></div>
+        <div class="arrow" data-l="read"></div>
+        <div class="node"><div class="t">LAB · train.py</div><div class="s">purged CV · fit</div></div>
+        <div class="arrow up" data-l="emit"></div>
+        <div class="node up"><div class="t">MODEL.CONF</div><div class="s">weights · floor</div></div>
+      </div>
+      <div class="flow" style="margin-top:20px"><div class="arrow up" data-l="Model.conf → Council weights · fail-open to hand-set if absent / stale / wrong-instrument" style="--aw:min(80vw,780px)"></div></div>
+    </div>
+    <div class="callout"><span class="cl">Read the loop in one breath</span><b>Down</b> the top row, a signal becomes a guarded order and a durable record. <b>Along</b> the bottom row, that record becomes a first-touch label, the labels become a per-bar-type fit, the fit becomes <code>Model.conf</code>. <b>Up</b> the return arrow, <code>Model.conf</code> becomes the Council's weights — or, if it is missing, stale, or for the wrong instrument, the hand-set weights stand. The machine can get <i>smarter</i>, or fall back to <i>exactly what it is today</i>; it can never get more <i>dangerous</i>, because the Gate lives on the top row and the model on the bottom.</div>
+
+    <p class="desc" style="margin-top:30px"><b>What stays the same, what changes</b> — the honest inventory. Nothing in the left column is touched.</p>
+    <div class="tblwrap">
+      <table>
+        <thead><tr><th>Layer</th><th>Stays exactly the same</th><th>What the learning loop changes</th></tr></thead>
+        <tbody>
+          <tr><td><b>Sensors</b></td><td class="st">Publish a <code>…State</code> seam, default on. Never know who reads them.</td><td class="st">Nothing. A sensor is a voter whether its weight is 1.4 or 0.</td></tr>
+          <tr><td><b>SentinelCore</b></td><td class="st">One static bus. Publish / consult. Freshness via <code>UpdatedUtc</code>.</td><td class="st">Additive fields only: the decision vector on <code>CouncilState</code>, an <code>EpisodeId</code>, a scope-aware key.</td></tr>
+          <tr><td><b>Council</b></td><td class="st">Fuses votes → bias · conviction · size×. Hard vetoes. Reasons audit. Publishes one verdict.</td><td class="st">Reads its weights from <code>Model.conf</code> when present. <b>Falls back to the hand-set weights</b> if absent, stale, or wrong-instrument.</td></tr>
+          <tr><td><b>Bridge / Deck / GTrader21</b></td><td class="st">Consume <code>CouncilState</code>. Size, bracket, fire. ARM is a deliberate click.</td><td class="st">Claim a unique <code>instanceKey</code> before arming, and stamp <code>instance</code> · <code>model</code> · <code>policy</code> · <code>episode</code> on every Ledger row.</td></tr>
+          <tr><td><b>The Gate</b></td><td class="st">Fail-closed. Kill · governor · session · rate. The one pre-submit choke point.</td><td class="st"><b>Nothing. Ever.</b> A model is never allowed to widen a limit.</td></tr>
+          <tr><td><b>Ledger</b></td><td class="st">Append-only JSONL. order · action · fill.</td><td class="st">Additive context: <code>strat</code> · <code>instance</code> · <code>model</code> · <code>policy</code> · <code>episode</code> — the five identities that today all read <i>"SentinelBridge"</i>.</td></tr>
+          <tr><td><b>Arc</b></td><td class="st">Publishes a fleet plan; strategies consult <code>SlotLive()</code>, fail-open.</td><td class="st">Slots keyed by <code>instanceKey</code>, not by instrument — so it can idle one GC chart and run another.</td></tr>
+          <tr><td><b>Recorder</b></td><td class="st">Records MFE/MAE for every signal. Places no orders.</td><td class="st">Also records <i>the inputs</i> — the voter vector — plus a <code>firstTouch</code> barrier latch. Schema 1.2 → 1.3.</td></tr>
+          <tr><td><b>You</b></td><td class="st">Arm the chart. Read the Cockpit. Trust the Gate.</td><td class="st">Run <code>train.py</code> when the market is closed. Decide whether to promote a challenger.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout warn"><span class="cl">Prerequisite · the correctness bug (Council + 4 sensor seams fixed; 11 sensors still open)</span>Every seam was keyed by <b>instrument name alone</b> — <code>_council["GC"]</code>, <code>_adx["GC"]</code>, <code>_trend["GC"]</code>. Two GC charts on different bar types therefore <b>overwrote each other's readings</b>, and a Bridge on one chart could read — and trade — the other chart's brain. Separately, <code>SetCouncilState</code> stamps <code>UpdatedUtc = DateTime.UtcNow</code> even while replaying <b>historical</b> bars, so the freshness gate could not tell a live verdict from a replayed one.<br><br><b>Council seam fixed in Core v1.15.0</b> (scope keys + the Recorder gates on <code>State.Realtime</code>). <b>Batch 1 of the sensors fixed in v1.18.0</b> — <code>Adx · Trend · Cci · Envelope</code>, the four price-derived voters, now share a <code>SeamStore&lt;T&gt;</code> keyed by scope. <b>Eleven seams remain instrument-keyed</b> (Eye, Liquidity, Brick, Clock, Participation, Level, Mtf, Compression, Intermarket, Wae, GodReversal), as does Arc's <code>_fleet</code> — that is the rest of Phase 1.4. The store's scope→instrument shim means a half-migrated tree still resolves correctly, so batches land one F5 at a time.<br><br>Note scope <b>cannot</b> separate two charts sharing instrument <i>and</i> bar type, nor two copies of one indicator on a single chart. That is detected and logged as <code>SCOPE CONTENTION</code> — proved live: two Councils on one NQ chart. See <code>Docs/SENTINEL_ML_SPEC.md</code> §10–11.</div>
+  </section>
+
+  <section id="offline">
+    <p class="eyebrow">Across the file boundary</p>
+    <h3>How the processing works outside NinjaTrader</h3>
+    <p class="desc"><b>NinjaTrader never runs Python. Python never touches <code>bin\Custom</code>.</b> They meet at exactly two places, and both are flat files on disk. That is the whole integration — no DLLs to reference, no ONNX runtime, no CS0101 collisions, no F5, and no way for a broken experiment to stop the platform from trading.</p>
+
+    <div class="panel">
+      <div class="flow" style="--aw:38px; flex-wrap:wrap; gap:0">
+        <div class="group" style="min-width:190px">
+          <p class="gl">inside NT · .NET 4.8 · data thread</p>
+          <div class="grid1">
+            <div class="chip">SENSORS <span class="w">publish</span></div>
+            <div class="chip">COUNCIL <span class="w">fuses</span></div>
+            <div class="chip">BRIDGE <span class="w">fires</span></div>
+            <div class="chip">RECORDER <span class="w">observes</span></div>
+          </div>
+        </div>
+        <div class="arrow" data-l="Excursions\*.jsonl"></div>
+        <div class="group" style="min-width:210px">
+          <p class="gl">outside NT · python · no platform access</p>
+          <div class="grid1">
+            <div class="chip">dataset.py <span class="w">load · fold</span></div>
+            <div class="chip">labels.py <span class="w">barrier · weight</span></div>
+            <div class="chip">cv.py <span class="w">purged CV</span></div>
+            <div class="chip">train.py <span class="w">fit · emit</span></div>
+          </div>
+        </div>
+        <div class="arrow" data-l="Model.conf"></div>
+        <div class="verdict">
+          <div class="vt">MODEL.CONF</div>
+          <div class="vrow"><span>w.EYE</span><span>1.22</span></div>
+          <div class="vrow"><span>w.TRND</span><span>0.61</span></div>
+          <div class="vrow"><span>calib.floor</span><span>0.42</span></div>
+          <div class="vrow"><span>expiresUtc</span><span>+30d</span></div>
+        </div>
+      </div>
+      <div class="flow" style="--aw:120px; margin-top:22px">
+        <div class="node"><div class="t">MODEL.CONF</div><div class="s">flat key = value</div></div>
+        <div class="arrow up" data-l="read on DataLoaded · default OFF"></div>
+        <div class="node accent"><div class="t">COUNCIL</div><div class="s">weights, not decisions</div></div>
+      </div>
+    </div>
+
+    <div class="two" style="margin-top:26px">
+      <div class="anno">
+        <div class="a"><span class="n">1</span><div><b>The Recorder writes the training set</b><p>One row per Council <i>episode</i> — a maximal run of constant bias. The row holds the <b>inputs</b> (which voter said what, at what weight, plus the orthogonal-axis context) and the <b>outcome</b> (the full MFE/MAE path, and which barrier was touched first). It places no orders.</p></div></div>
+        <div class="a"><span class="n">2</span><div><b>The files cross the boundary</b><p><code>Sentinel\Excursions\*.jsonl</code> and <code>Sentinel\Ledger\*.jsonl</code>. Plain text, append-only, one row per line. Python opens them with <code>json.loads</code>. Nothing is exported, nothing is compiled.</p></div></div>
+        <div class="a"><span class="n">3</span><div><b>The Lab fits, and mostly refuses to</b><p>Most of the code is <i>defensive</i>, not predictive — censoring, uniqueness weighting, purged cross-validation. Its job is to stop you believing an edge you don't have.</p></div></div>
+        <div class="a"><span class="n">4</span><div><b>One flat artifact returns</b><p><code>Model.conf</code> is <code>key = value</code> — so the C# side needs no JSON parser. It lands in the <code>Sentinel\</code> config-git repo, committed next to the P&amp;L it produced.</p></div></div>
+        <div class="a"><span class="n">5</span><div><b>The Council reads weights, never decisions</b><p>It still computes its own verdict, on this chart, this tick. The file supplies numbers. If the file is missing, expired, or for the wrong instrument, the hand-set weights are used and it logs once. <b>Fail-open.</b></p></div></div>
+      </div>
+      <div>
+        <p class="desc"><b>What each offline stage actually does</b> — five ideas, four of which exist only to keep you honest.</p>
+        <div class="defs">
+          <div class="row"><b>Direction folding</b><span class="d">Multiply every vote by the verdict's own direction. A long with <code>EYE = +1</code> and a short with <code>EYE = −1</code> are the <i>same evidence</i> — "the Eye agreed." Halves the feature space, doubles effective N.</span></div>
+          <div class="row"><b>Barrier label</b><span class="d">Not "did the trade win" — trades only exist above the floor. Instead: from the fire, was <b>+R</b> touched before <b>−R</b>? That label exists for <i>every</i> verdict, including the ones you stood down on. <b>The training set contains the counterfactual.</b> That is why the floor can be <i>learned</i>, not merely checked.</span></div>
+          <div class="row"><b>Censoring</b><span class="d">A verdict that drifted sideways into the close is <b>dropped</b>, not scored as a loss. It never cost anything; teaching the model to fear it is a lie.</span></div>
+          <div class="row"><b>Uniqueness weighting</b><span class="d">Two verdicts 90 seconds apart share most of their forward window. They are <b>not</b> independent observations. Without this, effective N is wildly overstated and every significance test lies.</span></div>
+          <div class="row"><b>Purged walk-forward CV</b><span class="d">Train only on rows whose outcome <i>closed</i> before the test fold opened, with an embargo. Never random k-fold — overlapping labels leak the test set into training. This is the single most common way traders convince themselves they have an edge they don't.</span></div>
+          <div class="row"><b>Partial pooling</b><span class="d">For the GC / NQ / ES / CL fleet: fit <i>one</i> joint model — a shared global weight vector plus small per-instrument deviations, penalized hard. Thin instruments shrink toward the consensus. You learn <b>which</b> contracts genuinely differ instead of assuming all of them do.</span></div>
+        </div>
+      </div>
+    </div>
+
+    <p class="desc" style="margin-top:30px"><b>Before the Council trusts a model file</b> — every guard must pass, or the hand-set weights are used and nothing stops.</p>
+    <div class="gauntlet">
+      <div class="g"><span class="ck">✓</span><span class="cond"><code>schema</code> is recognised</span><span class="res">else → hand weights</span></div>
+      <div class="g"><span class="ck">✓</span><span class="cond"><code>instrument</code> matches this chart</span><span class="res">a GC model never runs NQ</span></div>
+      <div class="g"><span class="ck">✓</span><span class="cond"><code>bartype</code> matches this chart</span><span class="res">bar granularity <i>is</i> the model</span></div>
+      <div class="g"><span class="ck">✓</span><span class="cond"><code>expiresUtc</code> is in the future</span><span class="res">a stale model self-disables</span></div>
+      <div class="g"><span class="ck">✓</span><span class="cond">every <code>w.*</code> voter tag present</span><span class="res">no silent partial weights</span></div>
+      <div class="g"><span class="ck">✓</span><span class="cond">roster is complete</span><span class="res">else publish, but flag</span></div>
+    </div>
+    <div class="callout"><span class="cl">The rule</span><b>A model file is never allowed to stop the platform.</b> Any guard that fails costs you the learned weights, not the session. This is the same fail-open posture every sensor already has: a stale voter abstains, it doesn't halt the Council.</div>
+  </section>
+
+  <section id="roles">
+    <p class="eyebrow">Who does what</p>
+    <h3>Each tool's job in the learning loop</h3>
+    <p class="desc">Nothing new is invented. Every part below already exists and already does most of this — the loop mostly consists of teaching them to <b>write down what they knew at the time.</b></p>
+    <div class="cast">
+      <div class="castcard"><span class="role">observes</span><span class="nm">Excursion Recorder</span><p>Writes one row per Council episode: the decision vector <i>in</i>, the MFE/MAE path and first-touch barrier <i>out</i>. It is the only component that sees inputs and outcomes together. Places no orders, ever.</p><span class="seam">writes <b>Excursions\*.jsonl</b> · schema 1.3</span></div>
+      <div class="castcard"><span class="role">is the model</span><span class="nm">Council</span><p>At runtime the Council <i>is</i> the fitted linear model. Today its coefficients are hand-set; after the loop closes it reads them from disk. Its arithmetic, vetoes and Reasons audit are unchanged either way.</p><span class="seam">reads <b>Model.conf</b> · publishes <b>CouncilState</b></span></div>
+      <div class="castcard"><span class="role">carries</span><span class="nm">SentinelCore</span><p>The bus. Gains the decision vector, the <code>EpisodeId</code>, and scope-aware seam keys. Additive only — it is one static class in one assembly and can never be forked.</p><span class="seam"><b>Set/GetCouncilState</b> · <b>Ledger</b></span></div>
+      <div class="castcard"><span class="role">acts</span><span class="nm">Bridge · Deck · GTrader21</span><p>Unchanged as traders. They gain one obligation: stamp <code>episodeId</code> and <code>modelId</code> on every order, action and fill, so a trade can be traced back to the exact decision and the exact model that produced it.</p><span class="seam">writes <b>Ledger</b> w/ strat·model·episode</span></div>
+      <div class="castcard"><span class="role">guards</span><span class="nm">The Gate</span><p>Completely untouched. Fail-closed. Kill, governor, session and rate limits are policy, not prediction. The learned model proposes; the Gate disposes.</p><span class="seam"><b>GateEntry</b> — unchanged</span></div>
+      <div class="castcard"><span class="role">joins</span><span class="nm">Ledger</span><p>Today its only identity is a free-text tag, so a fill cannot be joined to its verdict. With <code>episode</code> as a real key it becomes a database rather than a diary — the spine the whole loop hangs from.</p><span class="seam"><b>Ledger\*.jsonl</b> · order · action · fill</span></div>
+      <div class="castcard"><span class="role">grades</span><span class="nm">Lens</span><p>Joins fills → episode → verdict → outcome and reports which <i>model</i> paid, per instrument. This is the job it was always described as doing and could not actually do, because the join key didn't exist.</p><span class="seam">reads <b>Ledger</b> ⋈ <b>Excursions</b></span></div>
+      <div class="castcard"><span class="role">fits</span><span class="nm">The Lab</span><p>Python, outside <code>bin\Custom</code>. Loads the JSONL, folds by direction, labels by barrier, weights by uniqueness, validates by purged walk-forward, and emits one flat artifact. Cannot break the platform because the platform cannot see it.</p><span class="seam">Sentinel\Lab\ → <b>Model.conf</b></span></div>
+      <div class="castcard"><span class="role">shows you · names things</span><span class="nm">Cockpit</span><p>The operator's answer to "why isn't it trading?" — and now also "which model is loaded, is the roster complete, how old is the verdict." The stale ▸ floor why-line gains a <b>roster</b> rung: <code>Roster 8/10 — EYE, BRK missing</code>. It is also <b>the naming surface</b> (§ setups): the whole fleet in one list, aliases editable in place.</p><span class="seam">reads every <b>…State</b> seam · writes <b>Aliases.conf</b></span></div>
+      <div class="castcard"><span class="role">supervises</span><span class="nm">Arc</span><p>Publishes the fleet plan each chart consults before it fires. Today its slots are keyed by <i>instrument</i>, so it sees one "GC" and cannot idle one GC chart while running another — the same collision the seams have. Slots must key by <code>instanceKey</code>.</p><span class="seam"><b>FleetSlot</b> · <b>SlotLive()</b> — fail-open</span></div>
+    </div>
+  </section>
+
+  <section id="fleet">
+    <p class="eyebrow">GC · NQ · ES · CL</p>
+    <h3>One chart, one scope, one model</h3>
+    <p class="desc">The mechanics of running the fleet reduce to a single rule: <b>a chart is a scope, and a scope is a model.</b> Everything else — file paths, model identity, which verdict the Bridge reads — falls out of that one coordinate.</p>
+
+    <div class="layers">
+      <div class="layer">
+        <div class="lb">Lane A<b>In the NT tree</b></div>
+        <div class="lc"><span class="chip">scope the seams</span><span class="chip">as-of guard</span><span class="chip">EpisodeId</span><span class="chip">Ledger context</span><span class="chip">roster</span><span class="chip">modelId</span></div>
+        <div class="lo">behavior-neutral<br>one F5 · patch in place</div>
+      </div>
+      <div class="layer">
+        <div class="lb">Lane B<b>Outside the tree</b></div>
+        <div class="lc"><span class="chip">Sentinel\Lab\</span><span class="chip">python</span><span class="chip">never compiled by NT</span><span class="chip">branch freely</span></div>
+        <div class="lo">zero platform risk<br>iterate for weeks</div>
+      </div>
+      <div class="layer">
+        <div class="lb">Lane C<b>Consumption</b></div>
+        <div class="lc"><span class="chip">UseLearnedWeights</span><span class="chip">default OFF</span><span class="chip">fail-open</span><span class="chip">challengers</span></div>
+        <div class="lo">fork by flag, not by file<br>promote via config edit</div>
+      </div>
+    </div>
+
+    <p class="desc" style="margin-top:28px"><b>The coordinate propagates everywhere.</b> Add a fourth chart and nothing collides, because nothing was ever global.</p>
+    <div class="code"><span class="c"># one chart = one scope = one model</span>
+scope     = <span class="k">GC</span>|<span class="k">TBC6-24-69697</span>          <span class="c">← instrument | bartype tag</span>
+seam key  = _council[scope]              <span class="c">← was _council["GC"] — the collision</span>
+config    = Sentinel\Models\GC\TBC6-24-69697\{Roster.conf, model.conf, challengers\}
+data      = Sentinel\Excursions\&lt;stamp&gt;__GC__TBC6-24-69697.jsonl
+modelId   = sha1(scope + roster + weights + thresholds)[0..7]
+workspace = "Sentinel Fleet.wsz"         <span class="c">← NT's own fleet manifest</span></div>
+
+    <div class="callout"><span class="cl">Champion &amp; challenger · how to explore while running</span>Two Councils <b>cannot</b> coexist on one instrument — they'd stomp the same seam. But you never needed two. Scoring <i>K</i> weight vectors against one voter vector is <i>K</i> dot products — nanoseconds. So the Council evaluates the champion <b>and</b> every challenger on the identical vote, <b>publishes only the champion</b>, and records them all. Every live bar grades every candidate model at zero capital risk. And because champion and challenger see the <b>same episode</b>, the comparison is <i>paired</i> — it cancels the market-regime variance term outright. Promotion is a config edit. Demotion is instant.</div>
+
+    <div class="callout"><span class="cl">Weight-0 voters · the exploration primitive</span>The sensing layer is deliberately provisional; the voters <i>will</i> churn. Add a candidate sensor to <code>Roster.conf</code> with <b>w = 0</b>. It votes. It is recorded. It contributes <b>nothing</b> to <code>netScore</code> or <code>activeW</code>. You accumulate its full history — and can measure exactly what it <i>would have</i> contributed — <b>before it ever influences a single trade.</b> Adding and retiring sensors becomes a config change with zero risk and zero code.</div>
+
+  </section>
+
+  <section id="setups">
+    <p class="eyebrow">The interface</p>
+    <h3>Naming your setups — how a trader actually drives this</h3>
+    <p class="desc">Every identifier above is content-addressed: <code>gc-tbars-a3f91c2</code>, <code>pol-5f21</code>, <code>GC-20260709-0042</code>. Machine-perfect, human-hostile. <b>No trader will ever type one, and none should ever have to see one.</b> A design this structured is worthless if the interface isn't straightforward — so the naming rules come first, and the hashes hide behind them.</p>
+
+    <div class="callout"><span class="cl">Rule ① · the system must be usable with zero naming</span>Naming is an <b>optional refinement</b>, never a setup step. Every alias auto-derives into something readable, so a trader who never opens a settings dialog still gets a legible card and legible Ledger rows. <b>A hash is never shown by default.</b></div>
+
+    <div class="tblwrap">
+      <table>
+        <thead><tr><th>Thing</th><th>Auto-derived default (type nothing)</th><th>You may override to</th></tr></thead>
+        <tbody>
+          <tr><td><b>Setup</b> <span class="vt">the instance</span></td><td class="st">GC · TBars 6-24 · Sim101</td><td class="st">"GC Morning"</td></tr>
+          <tr><td><b>Brain</b> <span class="vt">the model</span></td><td class="st">Hand weights <span class="vt">— or Model.conf's own <code>alias=</code></span></td><td class="st">"Balanced v3"</td></tr>
+          <tr><td><b>Play</b> <span class="vt">the policy</span></td><td class="st">TP40/SL20 <span class="vt">— or the lab <code>.conf</code> filename</span></td><td class="st">"Tight"</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="two" style="margin-top:26px">
+      <div class="panel">
+        <div class="band" style="max-width:none">
+          <div class="verdict" style="min-width:236px">
+            <div class="vt">GC MORNING · ● LIVE</div>
+            <div class="vrow"><span>scope</span><span>GC · TBars 6-24 · Sim101</span></div>
+            <div class="vrow"><span>brain</span><span>Balanced v3</span></div>
+            <div class="vrow"><span>play</span><span>Tight 20/40</span></div>
+            <div class="vrow"><span>verdict</span><span>LONG · 0.62 · 1×</span></div>
+            <div class="vrow"><span>roster</span><span>8 / 10 ⚠</span></div>
+            <div class="vrow"><span>&nbsp;</span><span>[ ARM BRIDGE ]</span></div>
+          </div>
+          <div class="verdict" style="min-width:236px; border-color:color-mix(in srgb,var(--down) 55%,var(--line))">
+            <div class="vt" style="color:var(--down)">NAME TAKEN · ✕ BLOCKED</div>
+            <div class="vrow"><span>alias</span><span>GC Morning</span></div>
+            <div class="vrow"><span>conflict</span><span>armed on Sim101</span></div>
+            <div class="vrow"><span>where</span><span>chart 2</span></div>
+            <div class="vrow"><span>verdict</span><span class="st">— not read —</span></div>
+            <div class="vrow"><span>&nbsp;</span><span class="st">arm disabled</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="anno">
+        <div class="a"><span class="n">2</span><div><b>Alias ≠ identity</b><p>The keys are derived and immutable; the alias is a mutable display string bound to one. <b>Rename freely — nothing re-keys, no history orphans.</b> Aliases live in <code>Sentinel\Aliases.conf</code>, in the config-git repo. The Ledger writes <i>both</i>: the id as the join key, the alias denormalized beside it so a raw JSONL line reads without a lookup.</p></div></div>
+        <div class="a"><span class="n">3</span><div><b>One human name, not three</b><p>You configure <i>a chart</i>. Call it a <b>Setup</b>, and let its name be the only thing you ever type. <code>modelId</code> and <code>policyId</code> become <b>automatically-versioned eras inside it.</b> Widen the stop on "GC Morning" and the policy fingerprint changes while the name does not — so Lens reports <i>"GC Morning — policy changed 2026-08-14"</i>, which is how you already think about it.</p></div></div>
+        <div class="a"><span class="n">4</span><div><b>Name where uniqueness is visible</b><p>A per-chart property grid is the worst place to notice you've named two things alike — you can only see one at a time. The <b>Cockpit</b> is the naming surface: the whole fleet at once, alias editable in place.</p></div></div>
+      </div>
+    </div>
+
+    <p class="desc" style="margin-top:28px"><b>Humans name the thing they can see; the machine versions everything underneath.</b> Three surfaces, one precedence order.</p>
+    <div class="defs">
+      <div class="row"><b>Cockpit</b><span class="d"><b>The real workflow.</b> One row per discovered setup — alias · scope · brain · play · armed · roster · day P&amp;L. Edit the alias in place. This is where the fleet becomes legible and where a duplicate name is obvious.</span></div>
+      <div class="row"><b>F6 property grid</b><span class="d">A <code>Setup name</code> string on the strategy. A <b>seed, not the store</b> — a <code>[Display]</code>-only property (never <code>[NinjaScriptProperty]</code>) so it serializes to the workspace without touching the generated region.</span></div>
+      <div class="row"><b>The on-chart card</b><span class="d"><b>Displays, never edits.</b> Setup alias large, derived scope small beneath it, brain and play on their own rows, then the verdict block and the ARM button.</span></div>
+      <div class="row"><b>Precedence</b><span class="d"><code>Aliases.conf</code> &gt; F6 <code>Setup name</code> &gt; auto-derived default.</span></div>
+    </div>
+
+    <div class="callout warn"><span class="cl">Rule ⑤ · the name is an interlock, not a label</span>Two setups may share a <b>nickname</b>; they may never share an <b>identity</b>. So the two collisions are handled oppositely — and the distinction is a safety property, not a nicety.<br><br><b>Duplicate <code>instanceKey</code> → BLOCK the arm.</b> That means two Bridges on the same scope <i>and the same account</i>. NT's account position is shared across strategies, and a managed strategy whose account position moves underneath it desyncs and refuses all new entries until you disable and re-enable it. <b>The configuration that is ambiguous in the Ledger is the same configuration that is dangerous in the account</b> — so naming and safety turn out to be one mechanism, and you get the second one free.<br><br><b>Duplicate alias → WARN only.</b> Confusing, never dangerous.<br><br>The corollary for A/B testing: two <i>armed</i> Bridges on one instrument need <b>separate accounts</b>, or one runs <b>shadow-record</b> — evaluating and writing its hypothetical fire without submitting an order.</div>
+
+    <div class="callout"><span class="cl">A fourth naming axis</span>The <b>Federated Naming Law</b> governs file · class · display · namespace — all <b>build-time</b> names, fixed at compile. <code>Setup name</code> is a <b>runtime instance alias</b>: a different kind of thing, chosen by the trader, changeable at will, and bound to a derived key that never moves. Every actor in the suite — <b>Bridge · Deck · GTrader21 · Copier</b> — should expose it identically.</div>
+
+    <div class="callout caveat"><span class="cl">Where this honestly stands · 2026-07-09, end of day</span><b>Phase 0 and Phase 1.1–1.3 are BUILT and F5-verified.</b> Python is installed and the Lab <b>runs</b> (it immediately caught three of its own bugs, including overwriting the live <code>Model.conf</code> with a model it had just rejected). <b>SentinelCore is at v1.15.0</b>: <code>CouncilState</code> is keyed by <b>scope</b> (<code>GC.69697v6x24</code>) and carries <code>BarTimeUtc</code> + <code>IsHistorical</code>, and the Recorder now records Council fires <b>only in <code>State.Realtime</code></b> — the as-of guard.<br><br><b>Fixed since:</b> <code>Eye_v1_1_0</code> defaulted its TBars and NinzaRenko bar-type IDs to numbers that are <b>not registered bar types</b>, so <code>AddDataSeries</code> threw out of <code>State.Configure</code> on every load. That is why <code>EYE</code> — weight 1.4, the heaviest voter — <b>never voted once in 332 verdicts</b>. It loads now, and every row add is guarded so a bad bar type degrades to "row skipped and logged" instead of taking the sensor offline. ⚠ It is <b>present but still directionally neutral</b> until it qualifies: present in the tally, contributing breadth, but its 1.4 has yet to enter <code>netScore</code>. The <b>declared roster</b> now reports any such absence instead of hiding it, and <b>batch 1 of the sensor seams</b> (Adx/Trend/Cci/Envelope) is scope-keyed.<br><br><b>Fixed since (2026-07-10):</b> the Eye's <code>EYE</code> row appears again; <b>batch 1 + 2 of the sensor seams are scope-keyed</b> (Adx · Trend · Cci · Envelope · Brick · Compression · Wae · GodReversal — <b>8 of 15</b>); the sensors gained an <b>OnMarketData heartbeat</b>, so a healthy <code>OnBarClose</code> voter no longer ages out of the roster in a quiet market (measured: a fully-loaded chart used to report <code>roster 3/10</code>; after the heartbeat only the two un-heartbeated seams ever drop). <b>Conviction was rebuilt twice</b> — absence now dilutes, and context damping moved out of conviction into <code>SizeMult</code>. <b>HasEdge</b> gates on size. <b>SentinelBridge</b> finally routes sizing through <code>SizedQuantity()</code>.<br><br><b>Still true, still uncomfortable:</b> the Council's bias <b>chatters</b> at a 0.4-minute median cadence against a 15-minute label window, so effective N was <b>60, not 301</b>. Conviction ranks outcomes slightly <i>backwards</i> on that (contaminated) sample. The corpus gets <b>archived, not repaired</b>, at step 1.5. <b>Seven sensor seams — and Arc's <code>_fleet</code> — are still keyed by instrument alone</b> (the rest of Phase 1.4; <code>EyeVerdict</code> among them, which is why <code>EYE</code> still drops out of the roster). And scope alone <b>cannot</b> separate two charts sharing instrument <i>and</i> bar type, nor two copies of one indicator on a single chart; that is now detected and logged as <code>SCOPE CONTENTION</code> — proved live.<br><br><b>And the newest one:</b> <code>declaredW</code> conflates <b>state</b> voters with <b>trigger</b> voters, so half the model's weight is parked at zero on a typical bar and conviction is pinned near 0.16 (1 of 97 verdicts cleared the 0.35 floor). The floor was lowered to <b>0.20</b> as an interim; the real fix — a voter <i>kind</i> in <code>Roster.conf</code> — is not built.<br><br><b>None of this says the Council is wrong. It says nobody ever checked</b> — which is precisely the gap this part closes. Everything above was found by <i>measuring</i>, in a single day, after the roster made the model's own silence visible.</div>
+  </section>
+
+  <!-- ============ PART XI ============ -->
+  <div class="part"><span class="pn">PART XI</span><h2>Under the hood</h2><span class="pd">the ideas that hold it together</span></div>
+
+  <section id="hood">
+    <p class="eyebrow">Non-repaint timing</p>
+    <h3>Why a signal you can trust always arrives one bar late</h3>
+    <p class="desc">A candle's shape isn't final until it closes. So every Sentinel signal is computed on a <b>closed</b> bar and consumed on the <b>next</b> one — read at <code>barsAgo=1</code>, re-checked each tick so the processing-order race between two indicators self-heals. The cost is a one-bar delay; the payoff is a signal that never repaints out from under you.</p>
+    <div class="panel">
+      <div class="flow" style="--aw:48px">
+        <div class="node"><div class="t">BAR N</div><div class="s">forming…</div></div>
+        <div class="arrow" data-l="close"></div>
+        <div class="node accent"><div class="t">COMPUTE</div><div class="s">grammar on N</div></div>
+        <div class="arrow" data-l="publish"></div>
+        <div class="node accent"><div class="t">PULSE ±1 · HELD dir</div><div class="s">into the seam</div></div>
+        <div class="arrow" data-l="bar N+1"></div>
+        <div class="node up"><div class="t">CONSUME &amp; ACT</div><div class="s">read barsAgo=1</div></div>
+      </div>
+      <p style="text-align:center; font-family:var(--mono); font-size:10.5px; color:var(--ink2); margin:18px 0 0">a one-bar <b style="color:var(--ink)">pulse</b> is fleeting, so sensors also publish a <b style="color:var(--ink)">held direction</b> for a few bars — that's what the Council actually votes on</p>
+    </div>
+  </section>
+
+  <section>
+    <p class="eyebrow">Principles</p>
+    <h3>Six decisions that shape everything</h3>
+    <div class="principles">
+      <div class="pr"><h4>Fail-open sensing, fail-closed firing</h4><p>A missing <b>sensor</b> abstains — the system keeps deciding with what it has. A missing safety check <b>blocks</b>: the order gate and auto-fire fail <b>closed</b>. Read loosely, act strictly.</p></div>
+      <div class="pr"><h4>One choke point</h4><p>Every order — Bridge, Deck, GTrader21, Copier — passes the <b>same</b> <code>GateEntry</code>. Kill-switch, feed-health, sizing, and rate-limits live in one place, so safety can't be forgotten on one path.</p></div>
+      <div class="pr"><h4>Confluence isn't confirmation</h4><p>Most voters read the same candles, so their agreement can be an echo. The suite treats conviction as <b>alignment</b>, and only gets truly smarter as <b>orthogonal</b> axes come online.</p></div>
+      <div class="pr"><h4>The weights are learnable</h4><p>The Council's vote weights are the edge, and they're not frozen. Every fire records the verdict; <b>Lens</b> grades which voices actually paid — so the weights become measured, not guessed.</p></div>
+      <div class="pr"><h4>Advisory, then enforced</h4><p>The Council <b>advises</b> — it shapes bias and size but never sends an order. The consuming strategy still calls its own gate at submit. Decision and enforcement are separate layers.</p></div>
+      <div class="pr"><h4>Frozen checkpoints</h4><p>Every tool is versioned per-file with an in-file changelog; old versions are frozen, never edited. A safe fallback always exists, and a chart never silently loses an indicator to a rename.</p></div>
+    </div>
+  </section>
+
+  <!-- ============ PART XI ============ -->
+  <div class="part"><span class="pn">PART XII</span><h2>Reference</h2><span class="pd">glossary · file index</span></div>
+
+  <section id="reference">
+    <p class="eyebrow">Glossary</p>
+    <h3>The words that recur</h3>
+    <div class="defs">
+      <div class="row"><b>Seam / bus</b><span class="d">A small typed fact published to SentinelCore (<code>…State</code>) that any tool can read.</span></div>
+      <div class="row"><b>Voter / modulator / veto</b><span class="d">A Council input that adds a directional vote / scales conviction / hard-blocks.</span></div>
+      <div class="row"><b>Bias / Conviction / SizeMult</b><span class="d">The fused direction (−1/0/+1) / alignment strength (0..1) / size multiplier (0..1, 0 when vetoed).</span></div>
+      <div class="row"><b>MFE / MAE</b><span class="d">Max favorable / adverse excursion — the raw material of TP/SL selection.</span></div>
+      <div class="row"><b>★ vs ◆</b><span class="d">Best raw-EV config vs best <i>responsible</i> config (R:R ≥ 1). Apply the ◆.</span></div>
+      <div class="row"><b>Fail-open / closed</b><span class="d">Allow vs block when a signal is ambiguous or absent.</span></div>
+      <div class="row"><b>Root symbol</b><span class="d"><code>Instrument.MasterInstrument.Name</code> (e.g. "GC") — the seam registry key.</span></div>
+      <div class="row"><b>GodTrades</b><span class="d">The BG/FC/OBR signal family the Eye scans and GTrader21 trades.</span></div>
+    </div>
+
+    <p class="eyebrow" style="margin-top:34px">File index</p>
+    <h3>The load-bearing files</h3>
+    <div class="tblwrap">
+      <table>
+        <thead><tr><th>File</th><th>Role</th></tr></thead>
+        <tbody>
+          <tr><td class="st">AddOns/SentinelCore_v1_0_0.cs</td><td class="st">The bus + Gate/Ledger/State/Alerts + all registries</td></tr>
+          <tr><td class="st">AddOns/SentinelSkin.cs</td><td class="st">Glass-card Painter + palette + CardLayout</td></tr>
+          <tr><td class="st">Indicators/Council_v1_0_0.cs</td><td class="st">The fusion brain</td></tr>
+          <tr><td class="st">Indicators/{Eye,SentinelTrend,WoodiesCCIPro,ADXPro,VolEnvelope,CompressionBase,Intermarket,SentinelWAE,SentinelGodReversal}_*.cs</td><td class="st">The voters</td></tr>
+          <tr><td class="st">Indicators/{Clock,Participation,Location,Mtf}_v1_0_0.cs</td><td class="st">The orthogonal modulator axes</td></tr>
+          <tr><td class="st">Strategies/GTrader21v_0_1_7.cs · SentinelBridge_v0_2_0.cs</td><td class="st">The executors</td></tr>
+          <tr><td class="st">Indicators/Deck_v0_2_2.cs</td><td class="st">The manual order deck + SIGNAL ARM</td></tr>
+          <tr><td class="st">AddOns/SentinelDashboard + Sentinel{Risk,Alert,State,Copier,Log,Lens,Arc}Service*.cs</td><td class="st">The control center + service layer</td></tr>
+          <tr><td class="st">Docs/SENTINEL_DESIGN_SYSTEM.md · SENTINEL_GOD_REVERSAL_DOCTRINE.md · ROADMAP.md</td><td class="st">The specs this manual condenses</td></tr>
+          <tr><td class="st">Docs/SENTINEL_ML_SPEC.md</td><td class="st">The learning loop (Part X) in full — schema 1.3, scope keys, identity, the fleet</td></tr>
+          <tr><td class="st">Docs/SENTINEL_DATASET_DICTIONARY.md</td><td class="st">The corpus reference — scope grammar, bar-type IDs, schema-1.3 fields, the full 22-voter catalog, how the Lab reads it</td></tr>
+          <tr><td class="st">Sentinel/Lab/</td><td class="st">The offline trainer. Python, outside <code>bin\Custom</code>, never compiled by NT</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="callout"><span class="cl">Where this is today</span>The <b>trading</b> loop is closed and running — sensors → Council → Bridge (auto) fire and record; GTrader21 gained the Council decouple. Built and compiling: <b>22 voters</b>, 5 orthogonal axes, the full hardening substrate. <b>Still pending:</b> live market-open safety proofs (kill / auto-flatten / restore / reconnect).<br><br>The <b>learning</b> loop (Part X) is now <b>running, not just spec.</b> Its correctness prerequisites are <b>done</b> — seams are keyed by <i>scope</i> (13 scope-keyed + 2 instrument-by-design), historical bars are excluded via the as-of guard, and <code>episodeId</code> exists. The Council reads a shared <b>voter catalog</b> (<code>Models\catalog.conf</code>, emitted from the one C# source), and the offline Lab fits <b>per bar type</b> from the clean schema-1.3 corpus with a <b>data-driven voter set</b>. The honest next step is to <b>bake enough clean rows, then fit the ConvictionFloor + weights</b> — the first look (<code>Lab\voter_edge.py</code>) shows the edge lives largely in <i>bar construction</i>, and the hand-set weights are a hypothesis, not yet a measurement. This document is living; it is updated as the system evolves.</div>
+  </section>
+
+  <footer>
+    <span>Sentinel · Field Manual — living document · updated <b>2026-07-15</b></span>
+    <span>SentinelCore v1.33.0 · Council v1.8.0 · Bridge v0.2.4 · scope migration COMPLETE (13 scope + 2 instrument-by-design) · 22 voters · shared voter catalog · data-driven per-bar-type fit · per-chart lanes · cyan = live · green/red = money &amp; direction</span>
+    <span>Brand mark: "Barbute" by Lorc, game-icons.net — CC&nbsp;BY&nbsp;3.0</span>
+  </footer>
+</div>

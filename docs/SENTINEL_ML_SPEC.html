@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sentinel · Sentinel ML — Schema 1.3 Instrumentation + The Offline Lab</title>
+<style>
+  :root{
+    --void:#e7edf1; --panel:#f3f7f9; --surface:#ffffff; --surface2:#eaf0f3;
+    --ink:#16222c; --ink2:#586873; --line:#cdd8de; --grid:#dde5ea;
+    --accent:#0b8ea1; --flow:#0d8fa2;
+    --up:#12a56f; --down:#e0424f; --warn:#c9861a;
+    --mono:ui-monospace,"Cascadia Code","SF Mono",Consolas,Menlo,monospace;
+    --sans:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  }
+  @media (prefers-color-scheme:dark){
+    :root{
+      --void:#0a0e13; --panel:#0d131a; --surface:#141c25; --surface2:#0f161e;
+      --ink:#e2e9ee; --ink2:#8a9ba8; --line:#26333f; --grid:#131c25;
+      --accent:#4ad6e8; --flow:#3fb6c9; --up:#25d08b; --down:#ff5c6a; --warn:#f2b23c;
+    }
+  }
+  :root[data-theme="light"]{
+    --void:#e7edf1; --panel:#f3f7f9; --surface:#ffffff; --surface2:#eaf0f3;
+    --ink:#16222c; --ink2:#586873; --line:#cdd8de; --grid:#dde5ea;
+    --accent:#0b8ea1; --flow:#0d8fa2; --up:#12a56f; --down:#e0424f; --warn:#c9861a;
+  }
+  :root[data-theme="dark"]{
+    --void:#0a0e13; --panel:#0d131a; --surface:#141c25; --surface2:#0f161e;
+    --ink:#e2e9ee; --ink2:#8a9ba8; --line:#26333f; --grid:#131c25;
+    --accent:#4ad6e8; --flow:#3fb6c9; --up:#25d08b; --down:#ff5c6a; --warn:#f2b23c;
+  }
+
+  *{box-sizing:border-box}
+  body{margin:0; background:var(--void); color:var(--ink); font-family:var(--sans); line-height:1.55; -webkit-font-smoothing:antialiased; overflow-x:hidden}
+  .wrap{max-width:1120px; margin:0 auto; padding:56px 24px 100px; position:relative; z-index:1}
+
+  /* the Sentinel brand mark (Spartan barbute helmet) — faint fixed watermark + crisp header mark */
+  .watermark{position:fixed; z-index:0; pointer-events:none; top:50%; right:-2vw; transform:translateY(-50%); width:clamp(300px,40vw,560px); height:auto; fill:var(--accent); opacity:.18; filter:drop-shadow(0 0 55px color-mix(in srgb,var(--accent) 60%,transparent))}
+  .brandmark{width:16px; height:16px; flex:0 0 auto; fill:var(--accent); filter:drop-shadow(0 0 5px color-mix(in srgb,var(--accent) 50%,transparent))}
+
+  .kicker{font-family:var(--mono); font-size:11px; letter-spacing:.34em; text-transform:uppercase; color:var(--accent); display:flex; align-items:center; gap:9px; margin:0 0 14px}
+  .livedot{width:8px; height:8px; border-radius:50%; background:var(--accent); animation:pulse 2.4s ease-out infinite}
+  @keyframes pulse{0%{box-shadow:0 0 0 0 color-mix(in srgb,var(--accent) 55%,transparent)}70%{box-shadow:0 0 0 7px transparent}100%{box-shadow:0 0 0 0 transparent}}
+  h1{font-family:var(--mono); font-weight:700; font-size:clamp(30px,5.4vw,50px); letter-spacing:-.015em; margin:0 0 14px; text-wrap:balance}
+  .lede{font-size:18px; color:var(--ink2); max-width:66ch; margin:0 0 4px}
+  .lede b{color:var(--ink); font-weight:600}
+
+  .oneline{display:flex; flex-wrap:wrap; gap:7px; align-items:center; margin:28px 0 6px}
+  .oneline .s{font-family:var(--mono); font-size:12px; color:var(--ink); background:var(--surface); border:1px solid var(--line); border-radius:999px; padding:6px 13px}
+  .oneline .s b{color:var(--accent); font-weight:700}
+  .oneline .sep{color:var(--ink2); font-family:var(--mono)}
+
+  .toc{display:flex; flex-wrap:wrap; gap:6px 20px; margin:22px 0 6px; padding:16px 18px; border:1px solid var(--line); border-radius:12px; background:var(--panel)}
+  .toc a{font-family:var(--mono); font-size:12.5px; color:var(--ink2); text-decoration:none; white-space:nowrap}
+  .toc a:hover{color:var(--accent)}
+  .toc a b{color:var(--accent); font-weight:700; margin-right:6px}
+
+  .legend{display:flex; flex-wrap:wrap; gap:8px 18px; margin:18px 0 6px; padding:13px 16px; border:1px solid var(--line); border-radius:12px; background:var(--panel)}
+  .legend .k{display:flex; align-items:center; gap:8px; font-family:var(--mono); font-size:12px; color:var(--ink2)}
+  .swatch{width:22px; height:4px; border-radius:2px}
+  .swatch.a{background:var(--flow)} .swatch.u{background:var(--up)} .swatch.d{background:var(--down)} .swatch.w{background:var(--warn)}
+  .legend .k b{color:var(--ink); font-weight:600}
+
+  .part{display:flex; align-items:baseline; gap:16px; margin:80px 0 8px; padding-bottom:14px; border-bottom:1px solid var(--line)}
+  .part .pn{font-family:var(--mono); font-size:13px; font-weight:700; color:var(--accent); letter-spacing:.2em; white-space:nowrap}
+  .part h2{font-family:var(--mono); font-weight:700; font-size:15px; letter-spacing:.22em; text-transform:uppercase; color:var(--ink); margin:0}
+  .part .pd{margin-left:auto; font-size:13px; color:var(--ink2); font-family:var(--mono); text-align:right}
+
+  section{margin-top:44px}
+  .eyebrow{font-family:var(--mono); font-size:11px; letter-spacing:.24em; text-transform:uppercase; color:var(--accent); margin:0 0 8px; display:flex; gap:10px; align-items:baseline}
+  .eyebrow .num{color:var(--ink2); opacity:.7}
+  h3{font-family:var(--mono); font-weight:700; font-size:22px; margin:0 0 6px; letter-spacing:-.01em; text-wrap:balance}
+  .desc{color:var(--ink2); font-size:15px; margin:0 0 20px; max-width:74ch}
+  .desc b{color:var(--ink); font-weight:600}
+  code{font-family:var(--mono); font-size:.9em; background:var(--surface2); border:1px solid var(--line); border-radius:5px; padding:1px 5px; color:var(--ink)}
+
+  .panel{border:1px solid var(--line); border-radius:14px; background:var(--panel);
+    background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);
+    background-size:26px 26px; background-position:-1px -1px; padding:34px 30px; overflow-x:auto}
+
+  .node{background:var(--surface); border:1px solid var(--line); border-radius:11px; padding:11px 14px; min-width:120px; text-align:center; position:relative; box-shadow:0 1px 0 color-mix(in srgb,var(--ink) 6%,transparent)}
+  .node .t{font-family:var(--mono); font-weight:700; font-size:13px; color:var(--ink); white-space:nowrap}
+  .node .s{font-family:var(--mono); font-size:10.5px; color:var(--ink2); margin-top:3px; white-space:nowrap}
+  .node.accent{border-color:color-mix(in srgb,var(--accent) 55%,var(--line))}
+  .node.accent::before,.node.up::before,.node.down::before,.node.warn::before{content:""; position:absolute; left:0; top:9px; bottom:9px; width:3px; border-radius:3px}
+  .node.accent::before{background:var(--accent)}
+  .node.up::before{background:var(--up)} .node.up .t{color:color-mix(in srgb,var(--up) 78%,var(--ink))}
+  .node.down::before{background:var(--down)} .node.down .t{color:color-mix(in srgb,var(--down) 82%,var(--ink))}
+  .node.warn::before{background:var(--warn)}
+  .node.big{min-width:150px; padding:14px 16px}
+
+  .chip{font-family:var(--mono); font-size:11px; color:var(--ink); background:var(--surface2); border:1px solid var(--line); border-radius:7px; padding:5px 8px; white-space:nowrap; display:flex; justify-content:space-between; gap:10px; align-items:center}
+  .chip .w{color:var(--ink2); font-size:10px}
+  .chip.mute{color:var(--ink2)}
+
+  .flow{display:flex; align-items:center; justify-content:center; min-width:min-content}
+  .arrow{position:relative; flex:0 0 var(--aw,50px); height:2px; align-self:center; background:linear-gradient(90deg,color-mix(in srgb,var(--flow) 25%,transparent),var(--flow)); --c:var(--flow)}
+  .arrow::after{content:""; position:absolute; right:-1px; top:50%; transform:translateY(-50%); border-left:8px solid var(--c); border-top:5px solid transparent; border-bottom:5px solid transparent}
+  .arrow[data-l]::before{content:attr(data-l); position:absolute; left:50%; top:-15px; transform:translateX(-50%); font-family:var(--mono); font-size:9px; letter-spacing:.06em; text-transform:uppercase; color:var(--ink2); white-space:nowrap}
+  .arrow.up{--c:var(--up); background:linear-gradient(90deg,color-mix(in srgb,var(--up) 25%,transparent),var(--up))}
+  .arrow.down{--c:var(--down); background:linear-gradient(90deg,color-mix(in srgb,var(--down) 25%,transparent),var(--down))}
+  .arrow.warn{--c:var(--warn); background:linear-gradient(90deg,color-mix(in srgb,var(--warn) 25%,transparent),var(--warn))}
+  .arrow.v{width:2px; height:var(--ah,38px); flex:none; margin:0 auto; background:linear-gradient(180deg,color-mix(in srgb,var(--flow) 25%,transparent),var(--flow))}
+  .arrow.v::after{right:50%; top:auto; bottom:-1px; left:auto; transform:translateX(50%); border-left:5px solid transparent; border-right:5px solid transparent; border-top:8px solid var(--c); border-bottom:0}
+  .arrow.v.up-dir{background:linear-gradient(0deg,color-mix(in srgb,var(--flow) 25%,transparent),var(--flow))}
+  .arrow.v.up-dir::after{bottom:auto; top:-1px; border-top:0; border-bottom:8px solid var(--c)}
+  .arrow.v[data-l]::before{left:12px; top:50%; transform:translateY(-50%)}
+  .live .arrow{background-size:220% 100%; animation:travel 2.6s linear infinite}
+  @keyframes travel{0%{background-position:120% 0}100%{background-position:-40% 0}}
+
+  .group{border:1px dashed color-mix(in srgb,var(--line) 92%,var(--ink)); border-radius:11px; padding:12px; background:color-mix(in srgb,var(--surface) 55%,transparent)}
+  .group .gl{font-family:var(--mono); font-size:10px; letter-spacing:.14em; text-transform:uppercase; color:var(--ink2); margin:0 0 10px; text-align:center}
+  .grid2{display:grid; grid-template-columns:repeat(2,minmax(96px,1fr)); gap:6px}
+  .grid1{display:grid; gap:6px}
+  .rowflow{display:flex; align-items:center; justify-content:center; gap:0; min-width:min-content}
+  .stack{display:flex; flex-direction:column; align-items:center}
+  .band{display:flex; gap:8px; justify-content:center; flex-wrap:wrap; max-width:520px}
+
+  .verdict{background:var(--surface); border:1px solid color-mix(in srgb,var(--accent) 45%,var(--line)); border-radius:11px; padding:14px 16px; min-width:180px}
+  .verdict .vt{font-family:var(--mono); font-weight:700; font-size:12px; color:var(--accent); letter-spacing:.14em; margin-bottom:10px}
+  .vrow{display:flex; justify-content:space-between; gap:16px; font-family:var(--mono); font-size:12px; padding:4px 0; border-top:1px solid var(--line)}
+  .vrow span:first-child{color:var(--ink2)} .vrow span:last-child{color:var(--ink); font-weight:600}
+
+  .drow{display:flex; align-items:center; gap:14px; justify-content:center}
+  .branch{display:flex; align-items:center; gap:10px}
+  .blabel{font-family:var(--mono); font-size:9px; letter-spacing:.08em; text-transform:uppercase; color:var(--ink2)}
+  .qnode{background:var(--surface); border:1px solid var(--line); border-radius:11px; padding:12px 16px; text-align:center; position:relative}
+  .qnode.dec{border-color:color-mix(in srgb,var(--accent) 40%,var(--line))}
+  .qnode .t{font-family:var(--mono); font-weight:700; font-size:12.5px; color:var(--ink)}
+  .qnode .s{font-family:var(--mono); font-size:10px; color:var(--ink2); margin-top:4px}
+  .spine{display:flex; flex-direction:column; align-items:center}
+
+  .cast{display:grid; grid-template-columns:repeat(auto-fill,minmax(232px,1fr)); gap:12px}
+  .castcard{border:1px solid var(--line); border-radius:12px; background:var(--surface); padding:14px 15px; display:flex; flex-direction:column; gap:6px}
+  .castcard .role{font-family:var(--mono); font-size:9.5px; letter-spacing:.16em; text-transform:uppercase; color:var(--accent)}
+  .castcard .nm{font-family:var(--mono); font-weight:700; font-size:15px; color:var(--ink)}
+  .castcard p{margin:0; font-size:13px; color:var(--ink2)}
+  .castcard .seam{margin-top:auto; font-family:var(--mono); font-size:10.5px; color:var(--ink2); border-top:1px dashed var(--line); padding-top:7px}
+  .castcard .seam b{color:var(--ink); font-weight:600}
+
+  .two{display:grid; grid-template-columns:1.1fr .9fr; gap:26px; align-items:start}
+  .two .panel{margin:0}
+  .anno{display:flex; flex-direction:column; gap:12px}
+  .anno .a{display:flex; gap:12px; align-items:flex-start}
+  .anno .n{flex:0 0 22px; height:22px; border-radius:6px; background:var(--surface2); border:1px solid var(--line); color:var(--accent); font-family:var(--mono); font-weight:700; font-size:11px; display:flex; align-items:center; justify-content:center; margin-top:1px}
+  .anno .a div b{font-family:var(--mono); font-size:12.5px; color:var(--ink)}
+  .anno .a div p{margin:2px 0 0; font-size:13px; color:var(--ink2)}
+
+  .tblwrap{overflow-x:auto; border:1px solid var(--line); border-radius:12px; margin:8px 0}
+  table{width:100%; border-collapse:collapse; font-family:var(--mono); font-size:12.5px; min-width:640px}
+  thead th{text-align:left; font-size:10px; letter-spacing:.12em; text-transform:uppercase; color:var(--ink2); font-weight:600; padding:12px 14px; background:var(--panel); border-bottom:1px solid var(--line); white-space:nowrap}
+  tbody td{padding:10px 14px; border-bottom:1px solid var(--line); color:var(--ink); vertical-align:top}
+  tbody tr:last-child td{border-bottom:0}
+  td .vt{color:var(--ink2); font-size:11.5px}
+  td b{color:var(--ink)}
+  .wt{font-variant-numeric:tabular-nums; color:var(--accent); font-weight:700}
+  .ax-orth{color:var(--accent)} .ax-price{color:var(--ink2)}
+  .st{font-size:11px; color:var(--ink2)}
+
+  .principles{display:grid; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); gap:16px}
+  .pr{border:1px solid var(--line); border-left:3px solid var(--accent); border-radius:0 12px 12px 0; background:var(--surface); padding:16px 18px}
+  .pr h4{font-family:var(--mono); font-size:14px; margin:0 0 6px; color:var(--ink)}
+  .pr p{margin:0; font-size:13.5px; color:var(--ink2)}
+  .pr p b{color:var(--ink); font-weight:600}
+
+  .layers{display:flex; flex-direction:column; gap:12px}
+  .layer{display:grid; grid-template-columns:138px 1fr auto; align-items:center; gap:16px; border:1px solid var(--line); border-radius:12px; background:var(--surface); padding:14px 16px}
+  .layer .lb{font-family:var(--mono); font-size:10px; letter-spacing:.14em; text-transform:uppercase; color:var(--accent)}
+  .layer .lb b{display:block; color:var(--ink); font-size:14px; letter-spacing:0; margin-top:3px; text-transform:none}
+  .layer .lc{display:flex; flex-wrap:wrap; gap:6px}
+  .layer .lo{font-family:var(--mono); font-size:10.5px; color:var(--ink2); white-space:nowrap; text-align:right; line-height:1.5}
+  @media(max-width:640px){.layer{grid-template-columns:1fr; gap:10px} .layer .lo{text-align:left}}
+
+  /* prose + reference */
+  .prose{max-width:76ch}
+  .prose p{margin:0 0 14px; font-size:15px; color:var(--ink)}
+  .prose p.muted{color:var(--ink2)}
+  .callout{border:1px solid var(--line); border-left:3px solid var(--accent); border-radius:0 12px 12px 0; background:var(--surface); padding:14px 18px; margin:18px 0; font-size:14.5px; color:var(--ink); max-width:80ch}
+  .callout.warn{border-left-color:var(--warn)} .callout.caveat{border-left-color:var(--down)}
+  .callout b{color:var(--ink)}
+  .callout .cl{display:block; font-family:var(--mono); font-size:10px; letter-spacing:.16em; text-transform:uppercase; margin-bottom:6px; color:var(--accent)}
+  .callout.warn .cl{color:var(--warn)} .callout.caveat .cl{color:var(--down)}
+  .steps{list-style:none; counter-reset:s; padding:0; margin:0; display:flex; flex-direction:column; gap:12px; max-width:80ch}
+  .steps li{counter-increment:s; display:grid; grid-template-columns:28px minmax(0,1fr); column-gap:14px; row-gap:2px; align-items:start}
+  .steps li::before{content:counter(s); grid-column:1; grid-row:1; height:26px; width:26px; border-radius:7px; background:var(--surface2); border:1px solid var(--line); color:var(--accent); font-family:var(--mono); font-weight:700; font-size:12px; display:flex; align-items:center; justify-content:center}
+  .steps li b{grid-column:2; grid-row:1; color:var(--ink)} .steps li p{grid-column:2; grid-row:2; margin:3px 0 0; color:var(--ink2); font-size:14px}
+  .steps li code{font-size:.85em}
+  .code{background:var(--surface2); border:1px solid var(--line); border-radius:10px; padding:13px 15px; overflow-x:auto; font-family:var(--mono); font-size:12px; color:var(--ink); line-height:1.65; margin:14px 0; white-space:pre; max-width:100%}
+  .code .c{color:var(--ink2)} .code .k{color:var(--accent)}
+  .defs{display:grid; gap:0; max-width:80ch}
+  .defs .row{display:grid; grid-template-columns:170px 1fr; gap:16px; font-size:14px; padding:11px 0; border-bottom:1px solid var(--line)}
+  .defs b{font-family:var(--mono); font-size:12.5px; color:var(--ink)}
+  .defs .d{color:var(--ink2)}
+  .gauntlet{display:flex; flex-direction:column; gap:3px; font-family:var(--mono); font-size:12.5px; max-width:660px}
+  .gauntlet .g{display:flex; align-items:center; gap:12px; padding:10px 13px; border:1px solid var(--line); border-radius:8px; background:var(--surface)}
+  .gauntlet .g .ck{color:var(--up); font-weight:700; flex:0 0 auto}
+  .gauntlet .g .cond{color:var(--ink)} .gauntlet .g .res{margin-left:auto; color:var(--ink2); white-space:nowrap}
+  .reading{display:grid; grid-template-columns:1fr 1fr; gap:14px; margin:20px 0 6px; max-width:80ch}
+  .rp{border:1px solid var(--line); border-radius:12px; background:var(--surface); padding:14px 16px}
+  .rp .rt{font-family:var(--mono); font-size:11px; letter-spacing:.12em; text-transform:uppercase; color:var(--accent); margin-bottom:6px}
+  .rp p{margin:0; font-size:13.5px; color:var(--ink2)}
+  .rp b{color:var(--ink)}
+  @media(max-width:640px){ .reading{grid-template-columns:1fr} .defs .row{grid-template-columns:1fr; gap:2px} }
+
+  /* screenshot placeholders */
+  .shots{display:grid; grid-template-columns:repeat(auto-fit,minmax(238px,1fr)); gap:14px; margin:6px 0}
+  .shot{border:1.5px dashed color-mix(in srgb,var(--line) 78%,var(--ink)); border-radius:12px; background:var(--surface2); min-height:160px; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:18px 16px; gap:7px; margin:0}
+  .shot svg{color:var(--ink2); opacity:.55; margin-bottom:2px}
+  .shot .sid{font-family:var(--mono); font-size:10px; letter-spacing:.18em; font-weight:700; color:var(--accent)}
+  .shot .stt{font-family:var(--mono); font-size:13px; font-weight:700; color:var(--ink)}
+  .shot .scap{font-size:12px; color:var(--ink2); line-height:1.45; max-width:30ch}
+  .shot .sfile{font-family:var(--mono); font-size:9.5px; color:var(--ink2); opacity:.72; margin-top:3px}
+
+  footer{margin-top:72px; padding-top:22px; border-top:1px solid var(--line); font-family:var(--mono); font-size:11.5px; color:var(--ink2); display:flex; flex-wrap:wrap; gap:6px 18px; justify-content:space-between}
+  footer b{color:var(--ink); font-weight:600}
+
+  @media (prefers-reduced-motion:reduce){ .live .arrow{animation:none} .livedot{animation:none} }
+  @media (max-width:760px){ .two{grid-template-columns:1fr} }
+  @media (max-width:640px){ .wrap{padding:40px 14px 72px} .panel{padding:24px 16px} }
+</style>
+<style>
+  .wrap{max-width:900px}
+  .kicker .navsep{opacity:.45;margin:0 3px}
+  .kicker a.navhome{color:var(--ink2);border-bottom:0;text-decoration:none}
+  .kicker a.navhome:hover{color:var(--accent)}
+  .doc h2{font-family:var(--mono);font-weight:700;font-size:15px;letter-spacing:.2em;text-transform:uppercase;
+    color:var(--ink);margin:64px 0 4px;padding-bottom:12px;border-bottom:1px solid var(--line)}
+  .doc h2 .hn{color:var(--accent);margin-right:12px}
+  .doc h3{margin:34px 0 8px}
+  .doc p{font-size:15.5px;color:var(--ink);margin:0 0 15px;max-width:78ch}
+  .doc a{color:var(--accent);text-decoration:none;border-bottom:1px solid color-mix(in srgb,var(--accent) 40%,transparent)}
+  .doc a:hover{border-bottom-color:var(--accent)}
+  .doc strong{color:var(--ink);font-weight:670}
+  .doc em{color:var(--ink2);font-style:italic}
+  .doc ul,.doc ol{max-width:78ch;padding-left:1.3em;margin:0 0 15px}
+  .doc li{margin:.42em 0;font-size:15px;color:var(--ink)}
+  .doc li::marker{color:var(--accent)}
+  .doc hr{border:0;border-top:1px solid var(--line);margin:8px 0}
+  .doc blockquote{margin:18px 0;padding:14px 18px;border:1px solid var(--line);border-left:3px solid var(--accent);
+    border-radius:0 12px 12px 0;background:var(--surface);color:var(--ink2);max-width:80ch}
+  .doc blockquote p{color:var(--ink2);margin:0}
+  .doc blockquote strong{color:var(--ink)}
+  .doc pre{background:var(--surface2);border:1px solid var(--line);border-radius:10px;padding:14px 16px;
+    overflow-x:auto;font-family:var(--mono);font-size:12px;color:var(--ink);line-height:1.6;margin:16px 0;white-space:pre}
+  .doc pre code{background:none;border:0;padding:0;font-size:1em;color:inherit}
+</style>
+</head><body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><symbol id="helm" viewBox="0 0 512 512"><path fill-rule="nonzero" d="M255.406 17.75C189.313 39.42 124.536 85.124 79.03 150.344c21.238 57.44 32.72 94.314 32.72 131.375 0 36.493-11.52 73.723-32.125 129.655 49.72 36.73 100.08 58.95 150.313 64.938-5.052-60.378-9.83-120.748 1.593-181.125-30.644-3.28-61.384-13.286-92.03-30.72v-71.312c80.67 42.255 158.908 41.547 242.063 0v71.313c-30.06 14.376-60.192 24.722-90.25 29.28 8.684 60.46 7.723 120.915 2.03 181.375 46.386-7.335 92.89-28.824 139.032-64.312-33.966-112.954-34.03-145.933.594-260.47C391.162 84.844 317.924 39.89 255.405 17.75zm-75.125 212c-11.16-.13-19.646 3.174-21.25 9.156-2.33 8.7 10.778 19.76 29.282 24.72 18.505 4.957 35.388 1.92 37.72-6.782 2.33-8.7-10.775-19.76-29.282-24.72-5.783-1.55-11.396-2.315-16.47-2.374zm160.69 0c-5.074.06-10.687.825-16.47 2.375-18.507 4.96-31.613 16.018-29.28 24.72 2.33 8.7 19.213 11.738 37.717 6.78 18.505-4.958 31.613-16.018 29.282-24.72-1.604-5.98-10.09-9.286-21.25-9.155z"/></symbol></svg>
+<svg class="watermark" viewBox="0 0 512 512" aria-hidden="true"><use href="#helm"/></svg>
+<div class="wrap doc">
+<header>
+<p class="kicker"><svg class="brandmark" viewBox="0 0 512 512" aria-hidden="true"><use href="#helm"/></svg><span class="livedot"></span> Sentinel Suite · NinjaTrader 8 · living document<span class="navsep">·</span><a class="navhome" href="SENTINEL_DOCS.html">Docs home →</a></p>
+<h1>Sentinel ML — Schema 1.3 Instrumentation + The Offline Lab</h1>
+</header>
+<blockquote><p><strong>Status:</strong> SPEC (2026-07-09). Nothing in this doc changes a trading decision. Phase 1 is behavior-neutral instrumentation; Phase 2 is offline Python; Phase 3 is an opt-in, default-OFF consumption flag. Read alongside <code>Docs/SENTINEL_DESIGN_SYSTEM.md</code> §6 (SentinelCore seams) and the <code>council</code> + <code>backtest-fill-resolution-lesson</code> memories.</p></blockquote>
+<hr>
+<h2><span class="hn">0.</span>The thesis in one paragraph</h2>
+<p><code>Council</code> computes <code>netScore = Σ(voteᵢ × wᵢ)</code>, <code>Bias = sign(netScore)</code> past a deadband, <code>Conviction = |netScore| / declaredW</code>. That is a <strong>normalized linear model over signed features with hand-set coefficients</strong>. The weights (Eye 1.4, Trend 1.0, CCI 0.8 …), the conviction floor, and the 0.15 deadband are model parameters set by intuition. Fitting them to the suite's own recorded outcomes <em>is</em> the machine-learning project. Everything below exists to make that fit possible, honest, and reversible.</p>
+<blockquote><p><strong>⚠ Roster size (2026-07-14).</strong> This spec was written against the original <strong>10-voter</strong> roster (<code>EYE TRND CCI ADX ENV BRK CMP IMKT WAE GREV</code>). The Council now fuses <strong>22 voters</strong> (Council v1.6.3, incl. the order-flow FLUX voter). The 10-tag lists below are the ORIGINAL set, not the current one; the fit machinery (ridge over the signed vote vector) is unchanged and scales to whatever roster is declared.</p></blockquote>
+<blockquote><p><strong>⚠ UPDATED 2026-07-10 — this spec predates three changes to the model. Read before trusting any number below.</strong>  1. <strong>The denominator is <code>declaredW</code>, not <code>Σ(active weight)</code></strong> (Council v1.1.0). It used to be the summed weight of    the <em>present, directional</em> voters — so a missing voter did not dilute conviction, it <strong>vanished from the    denominator</strong>. One awake sensor of weight 0.6 scored <code>0.6/0.6 = 1.0</code>. The fewer sensors awake, the more certain    the Council sounded. Absence now dilutes. <strong>Every conviction figure recorded before this date is on the old    scale and is not comparable.</strong> 2. <strong>Conviction is now pure agreement</strong> (Council v1.2.0). Context modulators (Clock · MTF · Participation ·    Location · squeeze · breadth) used to multiply <em>into</em> conviction before the floor test; they now scale    <code>SizeMult</code> instead. The floor gates on agreement alone. 3. <strong>The floor is 0.20, not 0.35</strong> (Council v1.2.1, interim). Under the new scale only 1 of 97 live verdicts    cleared 0.35. ⚠ <strong>The floor sits on a cliff</strong> — 0.25→11% of verdicts, 0.20→41%, 0.15→60%. Fit it; do not nudge it.  <strong>And the finding that supersedes the floor question entirely:</strong> <code>declaredW</code> conflates <strong>STATE</strong> voters (<code>TRND ADX ENV IMKT</code> — always directional) with <strong>TRIGGER</strong> voters (<code>EYE BRK CMP WAE GREV</code> — ±1 only on the bar they fire). The triggers carry <strong>4.2 of the 7.80 total weight</strong>, parked at zero on a typical bar, pinning conviction near 0.16. <em>A trigger that has not fired is an absence of evidence, not evidence against.</em> The fix — a voter <strong>kind</strong> in <code>Roster.conf</code>, whose weight joins <code>declaredW</code> only when it fires — is <strong>not built</strong>, and it should be settled <strong>before</strong> any weight fit, because it changes what the features mean.  The §11 empirical tables below (conviction bands vs win rate) were computed on the <strong>old</strong> scale and on a corpus now known to be contaminated (pre-scope-keys, pre-as-of-guard). They are kept as method, not as findings.</p></blockquote>
+<p><strong>The blocker:</strong> we record the model's <em>output</em> (<code>conviction</code>, <code>convBucket</code>) but never its <em>inputs</em>. The per-voter direction vector lives in <code>Council._votes</code> at decision time and is discarded. Today we can <strong>grade</strong> the Council; we cannot <strong>fit</strong> it.</p>
+<hr>
+<h2><span class="hn">1.</span>Three findings that shaped this spec</h2>
+<h3>1.1 Two Councils cannot run side-by-side. (This answers "can I fork it?")</h3>
+<p><code>SentinelCore</code> keys <code>CouncilState</code> <strong>by instrument name only</strong>:</p>
+<pre><code>private static readonly Dictionary&lt;string, CouncilState&gt; _council = …   // key = instrument
+public static void SetCouncilState(string instrument, …) { _council[instrument] = s; }</code></pre>
+<p>Two Council indicators on the same instrument — say <code>Council_v1_0_0</code> and a hypothetical <code>SentinelCouncil_v1_1_0</code> — are <strong>last-writer-wins</strong>. They stomp each other on every tick, and every consumer (Bridge, GTrader21, Cockpit, the Recorder) reads whichever fired most recently. There is no <code>Source</code> scoping in the key.</p>
+<p>So the natural "run the old build while developing the new one" instinct <strong>cannot be satisfied by forking the Council</strong>. It can, however, be satisfied a better way — see §4.</p>
+<p>The <strong>Recorder</strong> is the opposite case: it writes per-instance files (historically <code>&lt;stamp&gt;__&lt;inst&gt;__&lt;bartype&gt;.jsonl</code>; the current <code>SentinelExcursionRecorder_v2_0_0</code> writes schema-1.3 rows under <code>Excursions\council\1.3\</code> + tick sidecars under <code>council\ticks\</code>) and already disambiguates two instances on one chart. Two recorders coexist cleanly.</p>
+<h3>1.2 The orthogonal axes never reach the training set.</h3>
+<p>The Council computes <code>_clockPhase</code>, <code>_pRvol</code>, <code>_mtfBias</code>, <code>_lvlInPath</code> and folds them into conviction as modulators. None of them are published on <code>CouncilState</code>, so none reach the JSONL. These are precisely the <strong>feature-independent</strong> signals — the ones most likely to survive regularization against the collinear price-derived voter block. Omitting them would train a model on the weakest half of the evidence.</p>
+<h3>1.3 The current schema cannot resolve barrier ORDER.</h3>
+<p><code>maxMFE</code> and <code>maxMAE</code> are running maxima to EOD. <code>msToMFE</code> / <code>msToMAE</code> are the times of those <em>maxima</em>, <strong>not</strong> the first touch of any level. So given <code>maxMFE = 30t</code>, <code>maxMAE = 25t</code>, and a 20-tick barrier, <strong>we cannot tell whether the target or the stop was hit first</strong> — which is the entire label.</p>
+<p>The 1/5/15/60-minute milestone grid partially rescues this (a horizon label at 15 min is well-defined), but ambiguity remains whenever both barriers are breached inside one horizon. Schema 1.3 fixes this directly with a <strong>first-touch</strong> record.</p>
+<hr>
+<h2><span class="hn">2.</span>Schema 1.3 — the additive changes</h2>
+<p>All three changes are <strong>additive</strong>. Old readers ignore new fields; the trainer reads mixed 1.2/1.3 files and simply has fewer features on old rows.</p>
+<h3>2.1 <code>SentinelCore</code> v1.14.0 → <strong>v1.15.0</strong> — <code>CouncilState</code> gains the decision vector</h3>
+<p><code>SentinelCore</code> is a single static class in a single assembly. <strong>It can never be forked.</strong> Additive only. Add to <code>CouncilState</code>:</p>
+<pre><code>public sealed class CouncilState
+{
+    …existing fields unchanged…
+
+    // v1.15.0 — the DECISION VECTOR (what the Council actually saw). Machine-readable
+    // counterpart to the human-readable Reasons string. Nulls when the publisher predates 1.15.0.
+    public Dictionary&lt;string,int&gt; Votes;      // tag → -1/0/+1, ONLY fresh voters (abstainers absent)
+    public Dictionary&lt;string,double&gt; VoteW;   // tag → effective weight applied this update
+    public double NetScore;                   // Σ(dir × w)  — SIGNED, pre-normalization
+    public double ActiveW;                    // Σ(w) over voters that cast a direction
+    // modulator context (the orthogonal axes — currently invisible to consumers)
+    public int    ClockPhase;                 // -1 unknown · 0 Closed · 1 OpenDrive · 2 Midday · 3 Close
+    public double Rvol;                       // ParticipationState rvol, NaN = none
+    public int    MtfBias;                    // MtfState consensus (0 = none/agree)
+    public bool   LevelInPath;                // a structural level lies in the bias's path
+    public string LevelName;                  // that level's name
+}</code></pre>
+<p><code>Votes</code> / <code>VoteW</code> keyed by the Council's existing chip tags — <code>EYE TRND CCI ADX ENV BRK CMP IMKT WAE GREV</code>. Use a stable tag order; the trainer treats an absent key as <strong>abstain</strong>, which is <em>not</em> the same as a zero vote and must not be imputed as one.</p>
+<p>Add an <strong>overload</strong> rather than editing the 11-arg <code>SetCouncilState</code> signature, so any caller that predates this compiles untouched:</p>
+<pre><code>public static void SetCouncilState(string instrument, int bias, double conviction, double sizeMult,
+                                   int agree, int disagree, int voters, bool vetoed, string vetoReason,
+                                   string reasons, string source)
+    =&gt; SetCouncilState(instrument, bias, conviction, sizeMult, agree, disagree, voters,
+                       vetoed, vetoReason, reasons, source, null, null, 0, 0, -1, double.NaN, 0, false, null);
+
+public static void SetCouncilState(string instrument, int bias, double conviction, double sizeMult,
+                                   int agree, int disagree, int voters, bool vetoed, string vetoReason,
+                                   string reasons, string source,
+                                   Dictionary&lt;string,int&gt; votes, Dictionary&lt;string,double&gt; voteW,
+                                   double netScore, double activeW,
+                                   int clockPhase, double rvol, int mtfBias, bool levelInPath, string levelName)
+{ … }</code></pre>
+<blockquote><p><strong>Copy the dictionaries into the state object.</strong> The Council reuses <code>_votes</code> every update; handing out a live reference publishes a struct that mutates under the reader's feet on the next tick.</p></blockquote>
+<h3>2.2 <code>Council_v1_0_0</code> — populate the vector (behavior-neutral, IN-PLACE)</h3>
+<p><code>AddVote</code> already receives <code>(tag, dir, weight)</code> and already maintains <code>_votes</code>. The change is to carry <code>netScore</code> / <code>activeW</code> through to the publish call and project <code>_votes</code> into the two dictionaries. <strong>No change to <code>netScore</code> arithmetic, the deadband, conviction, <code>SizeMult</code>, or any veto.</strong> Diffable proof of neutrality: nothing upstream of <code>SetCouncilState</code> moves.</p>
+<p>Also add a <code>LabelBarrierTicks</code> property (default <code>20</code>, <code>[Display]</code>-only — <strong>not</strong> <code>[NinjaScriptProperty]</code>, per the design-system rule about not touching the generated region).</p>
+<h3>2.3 <code>SentinelExcursionRecorder_v1_4</code> — schema <code>"1.2"</code> → <code>"1.3"</code></h3>
+<blockquote><p><strong>⚠ Current recorder (2026-07-14):</strong> the live writer is now <strong><code>SentinelExcursionRecorder_v2_0_0</code> (internal v2.1.2)</strong> — Council-only, and it writes schema-1.3 <strong>row</strong> files to <code>Excursions\council\1.3\</code> plus per-fire <strong>tick-path sidecars</strong> to <code>Excursions\council\ticks\</code> (v2.1.2 streams each row to disk on excursion-window completion, ~60 min, for crash-safety). The field list below is the schema-1.3 definition and still applies.</p></blockquote>
+<p>Emit, in addition to today's fields:</p>
+<div class="tblwrap"><table><thead><tr><th>Field</th><th>Type</th><th>Notes</th></tr></thead><tbody><tr><td><code>id</code></td><td>string</td><td>stable row id: <code>sha1(inst + fireTime + signal + dir)[..12]</code>. Needed to join + to dedupe re-runs.</td></tr><tr><td><code>votes</code></td><td>object</td><td><code>{"EYE":1,"TRND":1,"ADX":-1,…}</code> — <strong>fresh voters only</strong></td></tr><tr><td><code>voteW</code></td><td>object</td><td><code>{"EYE":1.4,"CCI":1.2,…}</code> — effective weight (post <code>×1.5</code> strong-CCI etc.)</td></tr><tr><td><code>netScore</code></td><td>number</td><td>signed</td></tr><tr><td><code>activeW</code></td><td>number</td><td></td></tr><tr><td><code>clockPhase</code></td><td>number</td><td>-1 / 0-3</td></tr><tr><td><code>rvol</code></td><td>number\</td><td>null</td><td></td></tr><tr><td><code>mtfBias</code></td><td>number</td><td></td></tr><tr><td><code>levelInPath</code></td><td>bool</td><td></td></tr><tr><td><code>levelName</code></td><td>string\</td><td>null</td><td></td></tr><tr><td><code>barrierTicks</code></td><td>number</td><td>the <code>R</code> used for the first-touch fields below</td></tr><tr><td><code>firstTouch</code></td><td>number</td><td><code>+1</code> target hit first · <code>-1</code> stop first · <code>0</code> neither touched by EOD</td></tr><tr><td><code>msToFirstTouch</code></td><td>number\</td><td>null</td><td></td></tr><tr><td><code>trigger</code></td><td>string</td><td><code>"flip"</code> (today's edge-detect) — reserved for <code>"snap"</code>, see §5.3</td></tr><tr><td><code>costTicks</code></td><td>number</td><td>commission + assumed slippage, in ticks, at fire</td></tr></tbody></table></div>
+<p><strong><code>firstTouch</code> is the single most valuable addition.</strong> It is what makes a clean, unambiguous label possible. Implement it in the running-update loop: once <code>fav &gt;= barrierTicks</code> or <code>adv &gt;= barrierTicks</code>, latch whichever crossed first and stop updating it.</p>
+<blockquote><p><strong>Fill realism (non-negotiable).</strong> <code>firstTouch</code> is resolved from the same bar stream the recorder already walks. On a coarse bar type it will be <strong>optimistic</strong>, exactly as CompressionBase was (81% → 37.5% when moved from bar to tick fills — see the <code>backtest-fill-resolution-lesson</code> memory). Record <code>bartype</code> (already present) and <strong>train per bartype</strong>, or run the recorder on a tick-based series. Do not pool a Renko-labeled dataset with a minute-labeled one.</p></blockquote>
+<hr>
+<h2><span class="hn">3.</span>The label</h2>
+<p>Do not train on "did the trade win." Train on a barrier outcome, which exists for <strong>every verdict</strong>, including ones no strategy took.</p>
+<pre><code>R          = barrierTicks
+cost       = costTicks
+label y    = 1  if firstTouch == +1 and (R - cost) &gt; 0
+             0  if firstTouch == -1
+           drop if firstTouch ==  0   (censored — never resolved by EOD)</code></pre>
+<p>Censored rows are <strong>dropped, not labeled zero.</strong> A verdict that drifted sideways to the close is not a loss; treating it as one teaches the model to fear chop that never cost anything.</p>
+<p><code>sample_weight</code> = <strong>uniqueness</strong> — the reciprocal of how many other rows' label windows overlap this row's <code>[fireTime, fireTime + msToFirstTouch]</code>. Two verdicts 90 seconds apart share most of their forward window and are <strong>not</strong> independent observations. Without this, effective N is wildly overstated and every significance test lies.</p>
+<hr>
+<h2><span class="hn">4.</span>The fork question — three lanes, only one of which is in the NT tree</h2>
+<p><strong>Git branches do not give you isolation here.</strong> NinjaTrader compiles the <em>working tree</em> of <code>bin\Custom</code> into one assembly. A branch checkout swaps the files under the running platform; you cannot run <code>master</code> while editing a branch. NT's real branching mechanism is the <strong>version-suffixed filename</strong>, and even that fails for the Council (§1.1 — shared seam key).</p>
+<p>So do not fork the tree. Split by <strong>lane</strong>:</p>
+<h3>Lane A — in-tree instrumentation (Phase 1). Merge to head, no fork.</h3>
+<p><code>SentinelCore</code> +overload · <code>Council_v1_0_0</code> populate · Recorder → schema 1.3. Behavior-neutral: no decision path is touched. One F5, then it accumulates training data <strong>while you keep trading the build exactly as it is.</strong> This is the whole point — the data starts building today and costs you nothing.</p>
+<p>Precedent for patching the head in place rather than version-forking: GTrader21 v0.1.7's <em>"in-place hardening: Ledger fill capture"</em> and Deck v0.2.2's <em>"kept IN-PLACE; freeze v0.2.3 once auto-fire passes SIM."</em> Freeze <code>SentinelCouncil_v1_1_0</code> at the Phase-3 boundary — which is also the right moment to pay the naming-law rename, since <strong>that</strong> is the change that legitimately breaks serialization identity and drops the indicator off saved charts.</p>
+<h3>Lane B — the offline Lab (Phase 2). Lives OUTSIDE <code>bin\Custom</code>. Fork freely.</h3>
+<p><code>Documents\NinjaTrader 8\Sentinel\Lab\</code> — Python. <strong>NinjaTrader never compiles it</strong>, so no CS0101, no ghost errors, no F5, no risk to a live account. <code>Sentinel\</code> is already the config-git repo, so the Lab gets real branches, real history, and model artifacts versioned next to the configs that produced them.</p>
+<p>This is where the parallelism you want actually lives. Iterate on the trainer for weeks while the platform runs untouched.</p>
+<blockquote><p><strong>Update (2026-07-14):</strong> the Lab is no longer just a trainer script — it is now a BUILT SQLite <strong>data platform</strong> (<code>Lab\db\sentinel.db</code> + a live-watch JSONL→SQLite ingester that folds the <code>council\1.3</code> vote vectors in, + a Streamlit explorer on :8501 and Grafana on :3000). ~5,300 trades ingested, ~99% carrying the decision vector.</p></blockquote>
+<h3>Lane C — consumption (Phase 3). Fork by <strong>flag</strong>, not by file.</h3>
+<p><code>Council</code> gains <code>UseLearnedWeights</code> (default <strong>OFF</strong>) and reads <code>Sentinel\Model.conf</code>. Absent, stale, wrong-instrument, or malformed model ⇒ <strong>fall back to the hand-set weights</strong> — fail-open, matching the suite's abstention semantics everywhere else.</p>
+<p>Precedent: <code>UseCouncilGate</code> in GTrader21 v0.1.7 (default OFF; ON + <code>UseEyeGate</code> OFF = fully decoupled) and <code>hardEnforce</code> on the Gate. The suite already knows how to introduce a new brain behind a switch.</p>
+<p><strong>This gives you a true A/B</strong>: flip the flag on one chart, leave it off on another instrument, and the Recorder tags every row with which weight set produced it.</p>
+<hr>
+<h2><span class="hn">5.</span>Phases</h2>
+<h3>5.1 Phase 1 — Calibrate (needs <em>no</em> schema change; start now)</h3>
+<p>Fit a monotone map <code>conviction → P(win)</code> (isotonic, or Platt with 2 parameters). Two effective parameters, converges on a few hundred rows, and <strong>schema 1.2 already has everything it needs.</strong></p>
+<p>Payoff: the 0.35 conviction floor stops being a guess. <em>(The <code>0.35</code> here predates the conviction rescale; §0's <strong>0.20 interim</strong> floor is the authoritative current value — fittable, not yet fitted.)</em> Set it where calibrated expectancy crosses zero after <code>costTicks</code>. Ship as <code>calib.<em></code> in <code>Model.conf</code>; the Cockpit's why-line can then say </em>"below floor (0.31 → 47% est.)"* instead of a bare number.</p>
+<h3>5.2 Phase 2 — Fit the weights (needs schema 1.3 + ~3 months of flips)</h3>
+<p><strong>Ridge-regularized logistic regression</strong> on the signed voter vector. L2 is not optional: ADX, CCI, Trend, Envelope and Brick are all price-derived and echo the same OHLC (the Council's own header admits this). Unregularized, collinear coefficients thrash — huge positive on one twin, huge negative on the other, superb in-sample, worthless out.</p>
+<p>The fitted coefficients answer the question the suite was built to ask: <strong>which voters carry independent information.</strong> My prior is that Clock, Participation, Intermarket and Location survive shrinkage better than half the price-derived trend block.</p>
+<p><strong>Sample volume, honestly.</strong> The Recorder edge-detects on <code>v.Bias != _lastCouncilBias</code>, so it is one row <strong>per bias flip</strong>. Measured on the existing data (§9): <strong>~150 rows/day on one GC chart</strong> — plenty of rows, but the median gap between fires is <strong>0.4 minutes</strong> against a 15-minute label window, so <strong>effective N is a small fraction of row count.</strong> Volume was never the constraint. Independence is. Fit 10 ridge coefficients, not 40, and quote <code>nEffective</code>, never <code>nSamples</code>. <em>(The roster has since grown to <strong>22 voters</strong> — Council v1.6.3; the coefficient count is whatever the declared roster holds, but the same independence caution applies, now more so.)</em></p>
+<p>The one genuinely lucky property: the Recorder fires on <strong>every</strong> <code>HasEdge</code> flip, including verdicts below the conviction floor that no strategy ever traded. <strong>The training set contains the counterfactual.</strong> That is why the floor can be <em>learned</em> rather than merely <em>validated</em> — and it is worth far more than any model-class upgrade.</p>
+<h3>5.3 Phase 3 — Regime-conditional weights, and only then trees</h3>
+<p>Separate weight vectors per coarse context bucket (<code>clockPhase</code>, ADX on/off, rvol high/low). A shallow tree over the orthogonal axes with a linear model at each leaf. Keep buckets few — parameter count multiplies by bucket count and §5.2's N does not.</p>
+<p>If you later want more label density for calibration specifically, add <code>trigger:"snap"</code> rows (periodic verdict snapshots). <strong>They inflate N without inflating information</strong> — heavily autocorrelated — so they are admissible only under uniqueness weighting, and only for the calibration curve, never for weights.</p>
+<p>Gradient-boosted trees are the realistic ceiling for tabular market data, not deep learning. But the gain over §5.3 is usually modest and it <strong>destroys the <code>Reasons</code> audit string</strong>, which the entire Cockpit why-line depends on. Reach for them last, if at all.</p>
+<h3>5.4 Explicitly out of scope</h3>
+<ul>
+<li><strong>RL for entry/sizing.</strong> Sample-inefficient, and it needs a simulator — which brings back the 81%→37.5% fill-resolution collapse. An RL agent trained on an optimistic simulator learns to exploit the simulator. It will look magnificent and lose money.</li>
+<li><strong>Sequence models on raw price.</strong> Signal-to-noise is too low; they fit microstructure and calendar artifacts. The edge here is five <em>orthogonal axes</em> most traders don't have — feed those to a simple model.</li>
+<li><strong>Training in-process.</strong> NinjaScript is .NET Framework 4.8 on the UI/data thread. A GC pause in <code>OnBarUpdate</code> is a missed fill. Score inline (a dot product); train offline, always.</li>
+</ul>
+<hr>
+<h2><span class="hn">6.</span>Validation protocol — decide it <em>before</em> looking at results</h2>
+<ol>
+<li><strong>Purged walk-forward CV with an embargo.</strong> Never random k-fold. Overlapping forward windows mean adjacent rows share outcomes; random k-fold leaks the test set into training and is the single most common way people convince themselves they have an edge they don't. (López de Prado, <em>Advances in Financial Machine Learning</em>, ch. 7 — worth reading specifically because it is about this failure mode rather than about models.)</li>
+<li><strong>Purge</strong> any training row whose label window overlaps the test fold. <strong>Embargo</strong> a fixed span after each test fold before training resumes.</li>
+<li><strong>Uniqueness-weight</strong> every sample (§3).</li>
+<li><strong>Hold out a final untouched period.</strong> Spend it once. Every hyperparameter tried burns significance.</li>
+<li><strong>Baseline is the hand-set weights</strong>, not a coin flip. If ridge cannot beat the current Council on a purged walk-forward split, the honest report is <em>"the hand-set weights win"</em> — and you still gain the coefficient ranking, which tells you which sensors are dead weight and where to build next.</li>
+</ol>
+<hr>
+<h2><span class="hn">7.</span><code>Model.conf</code> — the artifact</h2>
+<p>Flat <code>key=value</code>, matching the suite's existing <code>.conf</code> idiom (<code>Profiles.conf</code>, <code>Alerts.conf</code>, <code>News.conf</code>) so the C# side needs <strong>no JSON parser</strong>. Lands in the config-git repo, so every model version is committed and diffable against the P&amp;L it produced.</p>
+<pre><code>schema=1
+trainedUtc=2026-10-02T14:11:03Z
+expiresUtc=2026-11-02T00:00:00Z     # stale ⇒ Council falls back to hand weights (fail-open)
+instrument=GC
+bartype=SentinelTBars
+nSamples=1180
+nEffective=412                       # after uniqueness weighting — the honest N
+auc=0.578
+brier=0.238
+baselineAuc=0.561                    # the hand-set weights, same purged split
+
+# fitted voter weights (replaces WeightEye / WeightTrend / …)
+w.EYE=1.22
+w.TRND=0.61
+w.CCI=0.09
+w.ADX=0.44
+w.ENV=0.12
+w.BRK=0.31
+w.CMP=0.83
+w.IMKT=0.77
+w.WAE=0.55
+w.GREV=0.68
+w.intercept=-0.14
+
+# calibration: P(win) = 1 / (1 + exp(-(a * netScoreNorm + b)))
+calib.a=2.31
+calib.b=-0.27
+calib.floor=0.42                     # conviction where expectancy crosses zero after cost
+                                     # (illustrative — the live interim floor is 0.20 per §0, pending the fit)</code></pre>
+<p><strong>Guards the Council must enforce before trusting it:</strong> <code>schema</code> matches · <code>instrument</code> and <code>bartype</code> match the chart · <code>expiresUtc</code> in the future · every <code>w.*</code> tag present. Any failure ⇒ log once, use hand weights, keep trading. A model file is never allowed to stop the platform.</p>
+<hr>
+<h2><span class="hn">8.</span>Build order</h2>
+<blockquote><p><strong>STATUS (2026-07-12):</strong> items <strong>2–4 SHIPPED</strong> (CouncilState vector + overload · Council populate · Recorder schema 1.3 + first-touch) — bridge-verified, needs one F5. Item 1 (offline calibration trainer) exists in <code>Sentinel\Lab\</code>. See §11.5.</p></blockquote>
+<div class="tblwrap"><table><thead><tr><th>#</th><th>Lane</th><th>Item</th><th>Risk</th><th>Blocks</th></tr></thead><tbody><tr><td>1</td><td>B</td><td>Trainer reads schema 1.2 → <strong>calibration curve</strong></td><td>none (offline)</td><td>—</td></tr><tr><td>2</td><td>A</td><td><code>SentinelCore</code> v1.15.0 <code>CouncilState</code> vector + overload</td><td>none (additive)</td><td>3, 4</td></tr><tr><td>3</td><td>A</td><td><code>Council_v1_0_0</code> populate (behavior-neutral)</td><td>none</td><td>5</td></tr><tr><td>4</td><td>A</td><td>Recorder schema 1.3 + <code>firstTouch</code> latch</td><td>none (writer only)</td><td>5</td></tr><tr><td>5</td><td>—</td><td><strong>Accumulate ~1 quarter of flips.</strong> Keep trading the build as-is.</td><td>none</td><td>6</td></tr><tr><td>6</td><td>B</td><td>Ridge logistic + purged walk-forward vs. hand-weight baseline</td><td>none (offline)</td><td>7</td></tr><tr><td>7</td><td>C</td><td><code>UseLearnedWeights</code> flag + <code>Model.conf</code> reader, default OFF</td><td><strong>gated</strong></td><td>—</td></tr><tr><td>8</td><td>C</td><td>Freeze <code>SentinelCouncil_v1_1_0</code> (pay the naming-law rename here)</td><td>serialization break</td><td>—</td></tr></tbody></table></div>
+<p>Items 1–4 are a single evening and change nothing about how the platform trades. Item 5 is patience. Everything with real risk is item 7, behind a default-OFF flag, on a decoupling pattern the suite has already run twice.</p>
+<hr>
+<h2><span class="hn">9.</span>Measured baseline — what <code>Sentinel\Excursions\</code> actually contains (2026-07-09)</h2>
+<p>1,258 rows across 11 files: 878 <code>CBRK</code>, <strong>332 <code>COUNCIL</code></strong>, 61 <code>OBR</code>. All schema 1.2. Of the Council rows, 308 carry a usable 15-minute milestone. Effectively all of it is <strong>GC / <code>69697v6</code></strong> (303 rows); <code>NQ</code> has 11 and a second GC bartype has 5. Four facts fell out, and each one is load-bearing:</p>
+<p><strong>① The Council's bias chatters.</strong> Median gap between fires: <strong>0.4 minutes</strong> (~150 rows/day). Against a 15-minute label window every row overlaps ~35 neighbours. <strong>303 rows is nowhere near 303 observations</strong> — the honest effective N is in the tens. This is why §3's uniqueness weighting is not a refinement but a prerequisite. It also suggests the Council itself wants a <strong>minimum-dwell debounce</strong> before it flips bias: <code>netScore</code> hovers near the deadband and oscillates across it. Recommend the Recorder additionally emit <code>msSinceLastFlip</code>, and that a dwell filter be evaluated (offline first — it changes nothing to <em>measure</em> it).</p>
+<p><strong>② <code>EYE</code> and <code>BRK</code> never vote.</strong> Across 332 verdicts the <code>reasons</code> string contains <code>TRND</code> (330), <code>ADX</code> (312), <code>WAE</code> (310), <code>ENV</code> (310), <code>CMP</code> (310), <code>CCI</code> (310), <code>GREV</code> (306), <code>IMKT</code> (305) — and <strong>zero</strong> occurrences of the Eye or the Brick. 285 of 332 verdicts have exactly 8 fresh voters. So <code>WeightEye = 1.4</code>, nominally <em>"the strongest single voice,"</em> has never once been applied on this chart. Before fitting anything: either load the Eye, or accept that its weight is dead code and that any model fitted here estimates <strong>8 of 10 coefficients</strong>.</p>
+<p><strong>③ Conviction does not currently rank outcomes — it ranks them slightly backwards.</strong> On GC/<code>69697v6</code>, <code>P(mfe15 &gt; mae15)</code> by conviction band:</p>
+<div class="tblwrap"><table><thead><tr><th>conviction</th><th>n</th><th>P(MFE &gt; MAE)</th></tr></thead><tbody><tr><td>0.00 – 0.20</td><td>158</td><td>52.5%</td></tr><tr><td>0.20 – 0.35</td><td>94</td><td>51.1%</td></tr><tr><td>0.35 – 1.01</td><td>51</td><td><strong>43.1%</strong></td></tr></tbody></table></div>
+<p>The band the 0.35 floor <em>admits</em> is the worst-performing band. Given ① the effective N here is tiny and this is a descriptive in-sample peek — it is <strong>not</strong> evidence the Council is broken. It is evidence that <strong>nobody has ever checked</strong>, and that the floor was never derived from anything. Exactly the gap Phase 1 closes. Do not act on this table; reproduce it under purged CV with uniqueness weights.</p>
+<p><strong>④ The schema-1.2 fallback label is unusable at realistic barriers — empirically, not just in theory.</strong> Applying §3's pessimistic both-breached-⇒-loss rule to the 15-minute milestone:</p>
+<div class="tblwrap"><table><thead><tr><th>R (ticks)</th><th>win</th><th>loss</th><th>censored</th><th>win rate</th><th>breakeven @ 1.5t cost</th></tr></thead><tbody><tr><td>5</td><td>38</td><td>270</td><td>0</td><td>12.3%</td><td>65.0%</td></tr><tr><td>20</td><td>75</td><td>231</td><td>2</td><td>24.5%</td><td>53.8%</td></tr><tr><td>40</td><td>123</td><td>175</td><td>10</td><td>41.3%</td><td>51.9%</td></tr><tr><td>80</td><td>89</td><td>104</td><td>115</td><td>46.1%</td><td>50.9%</td></tr></tbody></table></div>
+<p><code>mae15</code> exceeds any small R almost always, so the pessimistic rule calls nearly everything a loss. This is <strong>not</strong> a finding about the Council — it is the direct, measured consequence of §1.3: <em>schema 1.2 cannot resolve barrier order.</em> The <code>firstTouch</code> latch is what converts this table from noise into a label. It is the single highest-value line of C# in this document.</p>
+<blockquote><p><strong>Corollary:</strong> run the Recorder on a chart whose bartype gives fine forward resolution, and set <code>barrierTicks</code> from ATR rather than from a constant. The <code>maxMAE</code> distribution here (mean ~60t at 15 min on gold) says a 20-tick barrier is inside the noise.</p></blockquote>
+<hr>
+<h2><span class="hn">10.</span>Identity, roster, and the multi-contract fleet</h2>
+<blockquote><p>The sensing layer is <strong>deliberately provisional</strong>. The voters are scaffolding erected to find the right inputs, and they will churn. A design that only works once the voter set settles is the wrong design. What follows makes <em>churn</em> the normal case and <em>attribution</em> the invariant.</p></blockquote>
+<h3>10.1 Three identities are currently collapsed into one</h3>
+<p><code>SentinelBridge_v0_2_0</code> submits every order with <code>_tag = "SentinelBridge"</code> — a <code>const</code>. <code>Ledger.Write</code> carries only <code>acct</code> and that free <code>tag</code>. The verdict is recorded as <strong>prose</strong> in <code>Ledger.Action("bridge-fire", acct, detail)</code>. The excursion JSONL lives in a different file with <strong>no shared key</strong>.</p>
+<p><strong>Five</strong> distinct things wear one name:</p>
+<div class="tblwrap"><table><thead><tr><th>Identity</th><th>What it answers</th><th>Today</th></tr></thead><tbody><tr><td><strong>Actor class</strong></td><td>which code submitted the order</td><td><code>"SentinelBridge"</code></td></tr><tr><td><strong>Actor instance</strong></td><td><em>which running Bridge</em> — this chart's, on this account</td><td><strong>nowhere</strong></td></tr><tr><td><strong>Decider (model)</strong></td><td>what produced the verdict — voters, versions, params, weights, floor, deadband, bartype</td><td><strong>nowhere</strong></td></tr><tr><td><strong>Policy</strong></td><td><em>how it acted</em> — TP / SL / size / exit rules</td><td><strong>nowhere</strong></td></tr><tr><td><strong>Episode</strong></td><td>which decision this fill belongs to</td><td><strong>nowhere</strong> (timestamp proximity only)</td></tr></tbody></table></div>
+<p>The consequence is blunt: <strong>Lens cannot join a fill to the verdict that caused it</strong>, and no artifact anywhere records <em>what the model was</em>. The claim that the Bridge "records the verdict so Lens can grade the weights" is true only in the sense that it writes a sentence a human can read.</p>
+<p>Fix all five. They are cheap, additive, and independent of any ML. §§10.2–10.4 handle the <em>decider</em> and the <em>episode</em>; <strong>§§10.9–10.11 handle the actor and the policy</strong>, which an earlier draft of this document wrongly treated as solved by <code>modelId</code>. They are not: <code>modelId</code> fingerprints the <strong>Council's</strong> config, and says nothing about the thing that acted on it.</p>
+<h3>10.2 <code>EpisodeId</code> — the missing primary key</h3>
+<p>The Council's verdict updates continuously, but the meaningful unit is the <strong>episode</strong>: a maximal run of constant <code>Bias</code>. The Bridge fires once per episode. The Recorder opens one <code>Rec</code> per episode. They are already talking about the same object — it just has no name.</p>
+<p>Give it one. <code>CouncilState.EpisodeId</code>, e.g. <code>GC-20260709-0042</code>, incremented on each bias change (<strong>not</strong> each tick), stable across the episode's life.</p>
+<p>Then it threads everywhere, and the joins close:</p>
+<ul>
+<li>Recorder writes <code>"episodeId"</code> into the excursion row.</li>
+<li>Bridge tags orders <code>SentinelBridge|GC-20260709-0042</code> <strong>and</strong> puts <code>episodeId</code> in the Ledger row.</li>
+<li>Fills inherit it via the order tag.</li>
+</ul>
+<p><code>fills → episode → verdict → excursion outcome</code> becomes a real join on a real key. This one field is worth more to Lens than any model.</p>
+<h3>10.3 <code>ModelId</code> — a content-addressed fingerprint of the decision config</h3>
+<pre><code>modelId = "gc-tbars-" + sha1(canonical(config))[0..7]</code></pre>
+<p><code>canonical(config)</code> is a <strong>decision-relevant allowlist</strong>, sorted, stable-serialized:</p>
+<pre><code>instrument · bartype · councilVersion · coreVersion
+weights[tag→w]  (sorted by tag)
+deadband · convictionFloor · staleSec
+roster[(voterTag, indicatorType, indicatorVersion, paramHash)]  (sorted)
+modulatorsEnabled · vetoSet</code></pre>
+<p><strong>It must be an allowlist, never "hash everything."</strong> <code>ShowCard</code>, <code>CardCorner</code>, <code>ShowIndicatorLabel</code>, <code>LogChanges</code> are cosmetics; if they enter the hash, every UI tweak orphans your history and the fleet fragments into unjoinable singletons. This rule is the whole game — write it down and enforce it in one function.</p>
+<p><code>Sentinel\Models\&lt;modelId&gt;.json</code> is the <strong>model card</strong>: the full expansion of that hash. Content-addressed ⇒ <strong>write-once, never mutated.</strong> Same config ⇒ same id ⇒ same file. Different config ⇒ new id, new file, and every prior row still resolves to the exact model that produced it.</p>
+<h3>10.4 Declare the roster; record the deviation</h3>
+<p><strong>This is the deepest problem, and §9's finding ② is its symptom.</strong> The Council's roster is <em>emergent</em> — it votes with whatever seams happen to be fresh. So <code>EYE</code> and <code>BRK</code> silently never voted for 332 verdicts and nothing anywhere said so. With a deliberately churning voter set, an emergent roster makes attribution impossible: you cannot distinguish <em>the model</em> from <em>what happened to be loaded on the chart</em>.</p>
+<p>Declare it. <code>Sentinel\Models\&lt;INST&gt;\&lt;bartype&gt;\Roster.conf</code> lists the <strong>expected</strong> voters. On load the Council resolves the declaration against reality:</p>
+<ul>
+<li>expected <strong>and</strong> fresh → votes</li>
+<li>expected <strong>and</strong> absent/stale → <code>RosterComplete = false</code>, <code>missing = [EYE, BRK]</code></li>
+<li>present but <strong>not</strong> declared → flag <code>unexpected</code>; do not silently fold it in</li>
+</ul>
+<p>Then:</p>
+<ul>
+<li><strong><code>modelId</code> fingerprints the declaration</strong> — stable, intentional.</li>
+<li><strong>each verdict carries a <code>rosterMask</code></strong> — which declared voters actually spoke <em>this time</em>.</li>
+</ul>
+<p>Fingerprint the intent; record the reality. Training can then filter on <code>rosterComplete</code>, or better, <em>learn from</em> the abstention structure — which voter was missing is itself information.</p>
+<p>The Cockpit gains the line that would have caught finding ② on day one: <strong><code>Roster 8/10 — EYE, BRK missing</code></strong>. Same class of bug as the stale-vs-absent confusion it was built for.</p>
+<blockquote><p><strong>Weight-0 voters are the exploration primitive.</strong> Add a candidate sensor to <code>Roster.conf</code> with <code>w = 0</code>. It votes, it is recorded in <code>votes</code>/<code>voteW</code>, and it contributes <strong>nothing</strong> to <code>netScore</code> or <code>activeW</code>. You accumulate its full history — and can measure exactly what it would have contributed — <strong>before it ever influences a single trade.</strong> Adding and retiring sensors becomes a config change with zero risk and zero code. This is the workflow a provisional sensing layer actually needs.</p></blockquote>
+<h3>10.5 Champion / challenger — how to explore <em>while</em> running</h3>
+<p>We established (§4) that two Councils cannot coexist: <code>CouncilState</code> is keyed by instrument, so they stomp each other. But you never needed a second Council. <strong>Scoring K weight-vectors against one voter vector is K dot products</strong> — nanoseconds, no allocation, no new indicator.</p>
+<p>So the Council loads <code>Sentinel\Models\&lt;INST&gt;\challengers\*.conf</code>, computes the <strong>active</strong> verdict from the champion (or the hand weights), and <em>also</em> evaluates every challenger on the identical voter vector. It <strong>publishes only the champion</strong> — every downstream consumer is untouched — and <strong>records all of them</strong>:</p>
+<pre><code>"challengers": { "gc-tbars-a3f91c2": {"bias": 1, "conv": 0.42},
+                 "gc-tbars-77b0e41": {"bias": 0, "conv": 0.11} }</code></pre>
+<p>Every live bar now grades every candidate model on real data, at zero capital risk, with no fork and no second chart. And because champion and challenger see the <strong>same episode</strong>, the offline comparison is <strong>paired</strong> — it cancels the market-regime variance term entirely. Given §9's brutal effective-N problem, a paired comparison is worth more than several extra months of unpaired data.</p>
+<p>Promotion becomes a config edit. Demotion is instant. Neither touches code.</p>
+<h3>10.6 The fleet: per-instrument artifacts, <em>jointly</em> fitted</h3>
+<p>You are right that GC, NQ, ES and CL want different models. But the naive reading — four independent pipelines — is the wrong one, and §9 says why: effective N per instrument is already in the tens. Split that four ways and every model is noise.</p>
+<p>The standard answer is <strong>partial pooling</strong>. Fit one joint model with a shared global weight vector plus per-instrument deviations, penalizing the deviations hard:</p>
+<pre><code>w_inst = w_global + δ_inst        minimize  loss + λ‖w_global‖² + λ_δ‖δ_inst‖²      (λ_δ ≫ λ)</code></pre>
+<p>An instrument with little data is shrunk toward the global consensus; one with lots of data is allowed to depart from it. You get per-instrument models <strong>without</strong> per-instrument overfitting, and you find out <em>which</em> instruments genuinely differ rather than assuming they all do.</p>
+<p>The C# side stays dumb: <strong><code>Model.conf</code> remains per-instrument, flat, fully expanded.</strong> Only the <em>fitting</em> is joint. Resolution chain in the Council: <code>(inst, bartype)</code> → <code>(inst, *)</code> → hand weights, fail-open, log once.</p>
+<blockquote><p><strong>Cross-contract features must be scale-free.</strong> Ticks are not comparable across GC, NQ, ES and CL — neither in size nor in dollar value. Pooling raw tick MFE/MAE is meaningless. Schema 1.3 must therefore also record <strong><code>atrAtFire</code></strong> and <strong><code>tickValue</code></strong>, so barriers and excursions become <strong>R-multiples in ATR units</strong>. Without this, joint fitting is not merely inaccurate — it is nonsense. It is also, separately, the right way to set <code>barrierTicks</code> (§9 corollary).</p></blockquote>
+<h3>10.7 Ledger schema — three fields, additive</h3>
+<p><code>Ledger.Write(evt, account, data)</code> gains a context block, emitted on <code>order</code> / <code>action</code> / <code>fill</code> alike:</p>
+<pre><code>"strat": "SentinelBridge_v0_2_0",
+"model": "gc-tbars-a3f91c2",
+"episode": "GC-20260709-0042"</code></pre>
+<p><code>tag</code> stays for backward compatibility; <code>Entry</code> gains three parsed fields. Old rows simply carry nulls. Every actor that submits an order — Bridge, Deck, GTrader21, Copier — passes the same context. <strong>Actor, decider, and episode become separable for the first time.</strong></p>
+<h3>10.9 Actor instance + policy — the two identities <code>modelId</code> does not supply</h3>
+<p>Walk the collisions. Two Bridges on <strong>different instruments</strong> are distinguishable today, but only by accident: the Ledger happens to record <code>instr</code>. Two Bridges on the <strong>same instrument, different bartype</strong> write identical <code>instr</code> (<code>GC 08-26</code>), <code>acct</code> and <code>tag</code> — only <code>modelId</code> separates them, since scope carries bartype. That case §10.3 covers.</p>
+<p>But two Bridges on the <strong>same scope with different TP/SL</strong> — the A/B you most want to run — share a <code>modelId</code>, share an <code>episodeId</code>, and are <strong>indistinguishable</strong>. So is one Bridge before and after you widen its stop: the Ledger cannot tell the two eras apart.</p>
+<p>Two more keys close it:</p>
+<pre><code>instanceKey = "SentinelBridge#GC.TBC6-24-69697@SIM-LAB-A"   // class # scope @ account — DERIVED, stable
+policyId    = "pol-" + sha1(canonical(execConfig))[0..3]    // tp · sl · baseQty · exitOnCouncilFlip · …</code></pre>
+<blockquote><p><strong>Delimiters are load-bearing.</strong> Scope is <code>GC.TBC6-24-69697</code>, <strong>not</strong> <code>GC|TBC6-24-69697</code> — <code>|</code> is <code>Profiles.conf</code>'s field separator and cannot appear in a composite key. Account names are governed by <code>Docs/SENTINEL_NAMING_FEDERATION.md</code> §7 (<code>SIM-&lt;LANE&gt;-&lt;SLOT&gt;</code>, charset <code>[A-Z0-9-]</code>), which forbids every character used as a delimiter anywhere in the suite. The Gate verifies the <code>SIM-</code> prefix against the live connection, refuses unprofiled accounts, and treats <code>Sim101</code> as permanent quarantine.</p></blockquote>
+<p>Splitting <strong>policy</strong> from <strong>model</strong> is what makes A/B a comparison rather than a filing system. Two Bridges on one chart running <code>TP=40</code> and <code>TP=60</code> share <code>modelId</code> <strong>and</strong> <code>episodeId</code> and differ only in <code>policyId</code> — which is exactly right: <em>same decision, two policies, a paired comparison.</em> Same statistical trick as champion/challenger (§10.5), one layer down.</p>
+<p><code>policyId</code> obeys the same allowlist discipline as <code>modelId</code> (§10.3): execution parameters in, cosmetics out.</p>
+<h3>10.10 The name is an interlock, not a label</h3>
+<p><code>SentinelCore.RegisterActor(instanceKey, account, instrument)</code> returns <strong>false</strong> on collision, and the Bridge <strong>refuses to arm</strong> when it cannot claim its key.</p>
+<p>This is not bookkeeping hygiene. Consider what an <code>instanceKey</code> collision <em>is</em>: two Bridges on the same scope <strong>and the same account</strong>. NT's account position is shared across strategies, and a managed strategy whose account position moves underneath it desyncs and blocks all new entries until disable/re-enable (see the managed-position lesson in <code>CONTRIBUTING.md</code>). <strong>The configuration that is ambiguous in the Ledger is the same configuration that is dangerous in the account.</strong> Naming and safety are one mechanism; the second falls out free.</p>
+<p>Consequence for A/B testing: two <em>armed</em> Bridges on one instrument need <strong>separate accounts</strong> (<code>Sim101</code> / <code>Sim102</code>), or one must run <strong>shadow-record</strong> — evaluating and writing its hypothetical fire to the Ledger without submitting an order. Today a disarmed Bridge records <em>nothing</em>, which throws away the cheapest data in the system. Shadow-record extends champion/challenger from Council weights up to execution policy.</p>
+<p><strong>NT mechanics, two real traps.</strong></p>
+<ul>
+<li>Register in <code>State.Realtime</code>, never <code>DataLoaded</code> — otherwise a historical/replay instance claims the key.</li>
+<li>On <code>Terminated</code>, unregister <strong>only if the registry entry is still this object</strong> (reference check). NT re-enables a strategy by constructing a new instance and terminating the old one, and the terminate can land <em>after</em> the new registration. Unregistering blindly silently releases a live actor's key. Same shape as the "re-adopt refs, never fabricate" lesson.</li>
+</ul>
+<h3>10.11 Arc has the same disease</h3>
+<pre><code>private static readonly Dictionary&lt;string, FleetSlot&gt; _fleet;   // key = master instrument name
+public sealed class FleetSlot { public string Instrument; public string Strategy; /* a LABEL, not a key */ … }</code></pre>
+<p><code>SlotLive("GC")</code> returns <strong>one answer for every GC strategy</strong>. Two Bridges on GC share one slot, one plan, one supervision record — so Arc cannot enable one and idle the other, and its <code>FillsToday</code> / <code>DayPnl</code> / <code>Health</code> are silently summed across both. <code>FleetSlot.Strategy</code> already exists as a descriptive label; promote it into the key. <code>_fleet[instanceKey]</code>, and <code>SlotLive(instanceKey)</code> with the existing fail-open (no slot ⇒ true) preserved.</p>
+<h3>10.12 The trader's interface — names, not hashes</h3>
+<blockquote><p><strong>A design this structured will be under-used if the interface is not straightforward.</strong> The content- addressed IDs above are machine-perfect and human-hostile. No trader will ever type <code>gc-tbars-a3f91c2</code>.</p></blockquote>
+<p>Four rules, in priority order.</p>
+<p><strong>① The system must be fully usable with zero naming.</strong> Naming is an optional refinement, never a setup step. Every alias has an auto-derived, human-readable default:</p>
+<div class="tblwrap"><table><thead><tr><th>Thing</th><th>Auto-default</th><th>Trader may override to</th></tr></thead><tbody><tr><td>instance</td><td><code>GC · TBars 6-24 · Sim101</code></td><td><code>"GC Morning"</code></td></tr><tr><td>model</td><td><code>Hand weights</code> (or <code>Model.conf</code>'s <code>alias=</code>)</td><td><code>"Balanced v3"</code></td></tr><tr><td>policy</td><td><code>TP40/SL20</code> (or the lab <code>.conf</code> filename)</td><td><code>"Tight"</code></td></tr></tbody></table></div>
+<p>A trader who never opens the Cockpit still gets readable Ledger rows. <strong>A hash is never shown by default.</strong></p>
+<p><strong>② Alias ≠ identity.</strong> The trader renames freely; nothing re-keys. <code>instanceKey</code> / <code>modelId</code> / <code>policyId</code> are derived and immutable; the alias is a mutable display string bound to one. Rename "GC Morning" → "GC Morning (old)" and every historical row still resolves. Store aliases in <strong><code>Sentinel\Aliases.conf</code></strong> (<code>instanceKey = alias</code>), which lands in the config-git repo. The Ledger writes <strong>both</strong> — the id as the join key, the alias denormalized alongside it so a raw JSONL line is readable without a lookup.</p>
+<p><strong>③ One human name, not three.</strong> The trader configures <em>a chart</em>. Call that a <strong>Setup</strong>. The Setup name is the single durable human thread; <code>modelId</code> and <code>policyId</code> are <strong>automatically-versioned eras inside it.</strong> Change the stop on "GC Morning" and the policy fingerprint changes while the Setup name does not — so Lens reports <em>"GC Morning, policy changed 2026-08-14"</em>, which is exactly how a trader already thinks about it. This is the whole UX thesis: <strong>humans name the thing they can see; the machine versions everything under it.</strong></p>
+<p><strong>④ Name where uniqueness is visible.</strong> Uniqueness is obvious when you can see the whole fleet at once, and invisible in a per-chart property grid. So:</p>
+<ul>
+<li><strong>F6 property grid</strong> — <code>Setup name</code>, a <code>[Display]</code>-only string (not <code>[NinjaScriptProperty]</code>, so it serializes without touching the generated region — the Deck-presets precedent). A seed, not the store.</li>
+<li><strong>The Cockpit</strong> — the real naming surface. It already re-reads every seam; it lists each discovered <code>instanceKey</code> with its alias, scope, brain, policy, armed state, roster completeness and day P&amp;L, and lets you edit the alias in place. This is where the fleet is legible.</li>
+<li><strong>The on-chart card</strong> — displays, never edits. Setup name large; derived scope small beneath it; brain and policy aliases on their own rows; then the existing verdict block and ARM button.</li>
+</ul>
+<p>Precedence: <code>Aliases.conf</code> &gt; F6 <code>Setup name</code> &gt; auto-derived default.</p>
+<p><strong>Collision behaviour differs by kind, and this distinction matters:</strong></p>
+<ul>
+<li>a duplicate <strong><code>instanceKey</code></strong> is the <em>dangerous</em> case (§10.10) → <strong>block the arm</strong>, card goes red, reason shown verbatim: <code>NAME TAKEN — "GC Morning" is armed on Sim101 (chart 2)</code>.</li>
+<li>a duplicate <strong>alias</strong> is merely confusing → <strong>warn</strong>, never block. Two setups may share a nickname; they cannot share an identity.</li>
+</ul>
+<pre><code>┌──────────────────────────────┐
+│ GC MORNING            ● LIVE │   setup alias      (human)
+│ GC · TBars 6-24 · Sim101     │   derived scope    (machine, shown small)
+│ Brain   Balanced v3          │   model alias
+│ Play    Tight 20/40          │   policy alias
+│ ──────────────────────────── │
+│ LONG    conv 0.62   size 1×  │
+│ Roster  8/10  ⚠ EYE, BRK     │
+│        [ ARM BRIDGE ]        │
+└──────────────────────────────┘</code></pre>
+<p><strong>This extends the Federated Naming Law with a fourth axis.</strong> The law governs <em>class / file / display / namespace</em> — all <strong>build-time</strong> names. <code>Setup name</code> is a <strong>runtime instance alias</strong>, a different kind of thing, and every actor in the suite (Bridge, Deck, GTrader21, Copier) should expose it identically.</p>
+<h3>10.13 Revised build order</h3>
+<blockquote><p><strong>STATUS (2026-07-12):</strong> 0a–0c (scope keys · as-of guard · corpus cut) done earlier. This session shipped <strong>item 1</strong> (<code>EpisodeId</code>), <strong>item 3</strong> (Ledger <code>episode</code>/<code>instance</code> context), the <strong>collision-refusal half of item 4</strong> (<code>RegisterActor</code> + Bridge instanceKey refuse-to-arm — which also settles the §10.11 hazard), and <strong>item 9's vector</strong> (schema-1.3 votes/voteW/netScore/activeW; <code>atrAtFire</code>/<code>tickValue</code> still pending). Item 8 (Arc <code>_fleet[instanceKey]</code>) DEFERRED as a genuine Arc+GTrader21 redesign. See §11.5.</p></blockquote>
+<p>Items 2–4 of §8 absorb this; the identity work is a <strong>prerequisite</strong> to Phase 2, not a follow-on.</p>
+<div class="tblwrap"><table><thead><tr><th>#</th><th>Lane</th><th>Item</th><th>Why it comes first</th></tr></thead><tbody><tr><td>0a</td><td>A</td><td><strong>Scope-key every seam</strong> (`GC\</td><td>TBC6-24-69697`), ambiguity-guarded compat shim</td><td>two charts on one instrument currently overwrite each other</td></tr><tr><td>0b</td><td>A</td><td><strong>As-of guard</strong> — <code>BarTimeUtc</code> + gate recording on <code>State.Realtime</code></td><td>historical bars are stamped with realtime verdicts</td></tr><tr><td>0c</td><td>—</td><td><strong>Regenerate the excursion corpus</strong></td><td>the existing rows are contaminated by 0a + 0b</td></tr><tr><td>1</td><td>A</td><td><code>EpisodeId</code> on <code>CouncilState</code>; Recorder + Bridge stamp it</td><td>without it there is no join key at all</td></tr><tr><td>2</td><td>A</td><td><strong><code>_tag</code> → derived <code>instanceKey</code></strong> (one line; no Core change)</td><td>80% of attribution for 10 minutes of work</td></tr><tr><td>3</td><td>A</td><td>Ledger <code>strat</code>/<code>instance</code>/<code>model</code>/<code>policy</code>/<code>episode</code> context</td><td>separates the five identities of §10.1</td></tr><tr><td>4</td><td>A</td><td><code>RegisterActor</code> interlock + refuse-to-arm on collision</td><td>the ambiguous config <em>is</em> the dangerous config</td></tr><tr><td>5</td><td>A</td><td><code>Roster.conf</code> + <code>rosterMask</code> + <code>RosterComplete</code></td><td>makes the model <em>declared</em> rather than emergent</td></tr><tr><td>6</td><td>A</td><td><code>modelId</code> + <code>policyId</code> fingerprints + write-once model card</td><td>makes history addressable</td></tr><tr><td>7</td><td>A</td><td><code>Aliases.conf</code> + <code>Setup name</code> + Cockpit fleet roster</td><td><strong>the interface</strong> — without it none of this gets used</td></tr><tr><td>8</td><td>A</td><td>Arc <code>_fleet[instanceKey]</code> (§10.11)</td><td>Arc cannot currently supervise two GC charts</td></tr><tr><td>9</td><td>A</td><td>schema 1.3 vector + <code>firstTouch</code> + <code>atrAtFire</code> + <code>tickValue</code></td><td>the training set</td></tr><tr><td>10</td><td>A</td><td>challenger + shadow-record loop (no orders)</td><td>paired grading at zero risk</td></tr><tr><td>11</td><td>B</td><td>joint partial-pooled fit → per-instrument <code>Model.conf</code></td><td>the fleet</td></tr><tr><td>12</td><td>C</td><td><code>UseLearnedWeights</code>, default OFF</td><td>the switch</td></tr></tbody></table></div>
+<p><strong>Items 0a–8 carry no ML at all</strong> and are worth doing even if the modelling is abandoned entirely: 0a–0c are outright correctness fixes, and 1–8 turn the Ledger from a diary into a database. Item 7 is not decoration — a design this structured is <strong>under-used if the interface is not straightforward</strong>, and the trader must never meet a hash.</p>
+<hr>
+<h2><span class="hn">11.</span>IMPLEMENTATION LOG — what actually shipped (2026-07-09)</h2>
+<p>Phases 0 and 1.1–1.3 are <strong>built and F5-verified</strong>. Three corrections to this spec fell out of building it.</p>
+<h3>11.1 The real bar tag is <code>69697v6x24</code>, not <code>TBC6-24-69697</code></h3>
+<p><code>TBC6-24-69697</code> is a <strong>legacy filename tag</strong>. The Recorder's own comment explains why it changed: a custom bar type's <em>name</em> resolves inconsistently by load state, so it now uses the numeric <code>(int)BarsPeriodType</code> id. The canonical tag is <code>&lt;typeId&gt;v&lt;Value&gt;[x&lt;Value2&gt;]</code>.</p>
+<p><strong><code>SentinelCore.BarTag(bp)</code> additionally folds in <code>Value2</code>, which the Recorder's private version omitted</strong> — so TBars 6-24 and TBars 6-48 produced an <em>identical</em> tag and would have shared a scope. Real scopes look like:</p>
+<pre><code>GC.69697v6x24        // instrument . typeId v Value x Value2
+GC.0v150             // 150-tick</code></pre>
+<h3>11.2 Scope is necessary but <strong>not sufficient</strong> — hence contention detection</h3>
+<p>Scope separates GC from NQ, and GC-TBars from GC-150-tick. <strong>It cannot separate two charts that share instrument <em>and</em> bartype</strong> — which is exactly what was live: two GC charts, both TBars 6-24, differing only in which sensors were loaded, therefore computing <em>different</em> verdicts into one key.</p>
+<p>Rather than invent a synthetic chart id, apply §10.10's principle: <strong>two publishers claiming one key is a misconfiguration to surface, never to silently permit.</strong> Each Council carries a per-instance publisher id (<code>Council#a3f9</code>); <code>SetCouncilState</code> logs once when a <em>fresh</em> (&lt;5 s) entry from a different source is overwritten:</p>
+<blockquote><p><code>SCOPE CONTENTION: two live publishers for 'GC.69697v6x24' … consumers read whichever wrote last.</code></p></blockquote>
+<p><code>ClearCouncilScope(scope, source)</code> lets a publisher release <strong>its own</strong> entry on teardown, so a closed chart never leaves a stale verdict and an F5 doesn't false-trip the detector against its own replacement.</p>
+<p><strong>Open decision:</strong> different bar types · close one · or fold the <strong>roster + Setup name</strong> into the scope (§10.4, §10.12) — which is what Phase 3 was already going to build, and is the principled answer.</p>
+<h3>11.3 The as-of guard, and the proof it was needed</h3>
+<p><code>SetCouncilState</code> stamps <code>UpdatedUtc = DateTime.UtcNow</code> <strong>unconditionally</strong>, including while the Council replays historical bars. So the freshness gate could never distinguish a replayed verdict from a live one, and the Recorder stamped whatever the live seam happened to hold onto bars from days earlier.</p>
+<p><strong>Measured proof:</strong> in <code>20260709T002037__GC__0v150.jsonl</code>, five COUNCIL rows with fire times spanning three days all carry <code>conviction = 0.1541</code> — identical to four decimals. A freshly-computed verdict cannot do that.</p>
+<p>Fix: <code>CouncilState</code> gains <code>BarTimeUtc</code> + <code>IsHistorical</code>; the Recorder records Council fires <strong>only in <code>State.Realtime</code></strong>, with the <code>IsHistorical</code> flag as belt-and-braces. <strong>The existing corpus is unsalvageable</strong> — no field distinguishes the contaminated rows — so it gets archived at step 1.5, not repaired.</p>
+<h3>11.4 Bugs surfaced while building</h3>
+<div class="tblwrap"><table><thead><tr><th>#</th><th>Bug</th><th>Consequence</th></tr></thead><tbody><tr><td>1</td><td><strong><code>Eye_v1_1_0</code> throws on <code>OnStateChange</code></strong> (<code>AddDataSeries: no implementation for this BarsPeriod</code>)</td><td>it never publishes ⇒ <strong><code>EYE</code> appears in ZERO of 332 verdicts.</strong> <code>WeightEye = 1.4</code>, the heaviest voter, has never voted</td></tr><tr><td>2</td><td><code>SentinelBridge</code> never calls <code>SizedQuantity()</code></td><td><code>Profiles.conf</code> <code>size=</code> <strong>and</strong> the governor's <code>RecommendedSize()</code> are silently ignored</td></tr><tr><td>3</td><td><code>ContractLimit</code> <strong>rejects</strong> rather than clamps</td><td>a <code>BaseQty</code> above the limit hard-blocks <em>every</em> entry rather than trading small</td></tr><tr><td>4</td><td>164 <code>ALERT-CRIT</code> Ledger rows carry <code>acct=""</code></td><td>every <code>NAKED POSITION</code> alert is un-attributable</td></tr><tr><td>5</td><td>live prop account's loss stop is <strong>advisory</strong></td><td>it ran to <strong>−$3,230 against a −$1,500 stop</strong>, alerting eight times</td></tr></tbody></table></div>
+<p>Bug 1 vindicates §10.4: <strong>a crashed sensor is indistinguishable from a quiet one</strong> under fail-open abstention. The declared roster (<code>RosterComplete</code>, <code>Roster 8/10 — EYE, BRK missing</code>) would have caught it on day one.</p>
+<hr>
+<h2>11.5 IMPLEMENTATION LOG — 2026-07-12 (Phase 2 instrumentation SHIPPED, bridge-verified)</h2>
+<p>Everything below <strong>compiles clean against NinjaTrader's own compiler</strong> (driven headless via the <code>cli-nt-bridge</code> AddOn — authoritative F5-equivalent, no ghost errors) and is <strong>additive / behaviour-neutral</strong> except the Bridge arm interlock. It needs <strong>one F5</strong> in the NinjaScript editor to hot-load (generated regions were stripped on disk during editing; NT regenerates one clean copy on F5). No type renames → saved charts/workspaces are unaffected.</p>
+<p><strong>Live versions after this session:</strong> SentinelCore <strong>v1.25.0</strong> · Council <strong>v1.4.0</strong> · ExcursionRecorder v1_4 (schema 1.3, +vote vector) + v2_0_0 · SentinelBridge <strong>v0.2.3</strong> · CompressionBase <strong>v1.3.2</strong>. <em>(Point-in-time snapshot; kept as the historical log. Current as of 2026-07-14: SentinelCore <strong>v1.31.0</strong>, Council <strong>v1.6.3</strong> fusing <strong>22 voters</strong> incl. FLUX. The live recorder is now <strong>SentinelExcursionRecorder_v2_0_0 (internal v2.1.2)</strong> — Council-only, schema-1.3 rows in <code>Excursions\council\1.3\</code> + per-fire tick sidecars in <code>council\ticks\</code>.)</em></p>
+<p><strong>§2.1–2.3 — the decision VECTOR (DONE).</strong> <code>CouncilState</code> now carries <code>Votes</code>/<code>VoteW</code>/<code>NetScore</code>/<code>ActiveW</code> + the modulator context (<code>ClockPhase</code>/<code>Rvol</code>/<code>MtfBias</code>/<code>LevelInPath</code>/<code>LevelName</code>). A <strong>new full <code>SetCouncilState</code> overload</strong> carries them; every prior overload delegates with vector defaults (Core v1.24.0). The Council projects <code>_votes</code>→dicts at publish and <strong>caches them for the <code>OnMarketData</code> heartbeat republish</strong>. Both recorders emit <code>votes</code>/<code>voteW</code>/<code>netScore</code>/<code>activeW</code> + modulators into the schema-1.3 JSONL. <em>The training set now contains the model's INPUTS — the weight fit (§5.2), not just the floor calibration (§5.1), is unblocked.</em> One deviation from §2.2: the vestigial <code>LabelBarrierTicks</code> constant was <strong>not</strong> added — the recorder's ATR-scaled <code>FirstTouchBarrier()</code> (the §10.6 corollary's own recommendation) supersedes it.</p>
+<p><strong>§10.2 — <code>EpisodeId</code> (DONE).</strong> <code>CouncilState.EpisodeId = "&lt;inst&gt;-&lt;yyyymmdd&gt;-&lt;NNNN&gt;"</code>, bumped <strong>only on a bias flip</strong>; published + recorded (<code>episodeId</code>) by both recorders.</p>
+<p><strong>§10.9–10.10 — the actor INTERLOCK (DONE, Core v1.25.0).</strong> <code>RegisterActor</code>/<code>UnregisterActor</code>/<code>AllActors</code> back an <code>ActorReg</code> registry keyed by <code>instanceKey</code>. The <strong>Bridge (v0.2.3)</strong> derives <code>InstanceKey()</code> = <code>SentinelBridge#&lt;scope&gt;@&lt;account&gt;</code> and its <strong>ARM button REFUSES to arm on a collision</strong> ("NAME TAKEN"), with a reference-checked release on disarm/Terminated (the re-enable race). <strong>This closes the exact hazard §10.11 targets</strong> (two actors on one scope+account = managed-position desync) — so the safety goal is met without the Arc rekey.</p>
+<p><strong>§10.7 — Ledger context (DONE).</strong> <code>Ledger.Order/Action/Fill</code> gained optional <code>episode</code>/<code>instance</code> params (additive); the Bridge stamps both on every fire. <code>fill → episode → verdict</code> is now a real join.</p>
+<p><strong>Bug #2 (SizedQuantity) — was ALREADY FIXED</strong> in Bridge v0.2.2 (2026-07-10); verified this session.</p>
+<p><strong>CBRK baseline → schema 1.3 (DONE, CompressionBase v1.3.2).</strong> The CBRK per-sensor baseline now writes the ATR-scaled first-touch label (<code>barrierTicks</code>/<code>barsToTargetR</code>/<code>barsToStopR</code>/<code>firstTouch</code>/<code>ftAmbig</code>), matching the Council corpus so the two are comparable. Writer-only; <code>RecordExcursions</code> still default OFF; still lands in <code>Excursions\_baselines\cbrk\&lt;schema&gt;\</code>.</p>
+<p><strong>⚠ CORRECTION — VolEnvelope has NO excursion writer.</strong> Earlier notes ("VolEnvelope still 1.2") are <strong>wrong</strong>: <code>VolEnvelope_v0_2_0</code> records nothing; the only per-sensor baseline writer in the tree is CompressionBase (CBRK). Giving VolEnvelope first-touch baselines would be a <strong>net-new recorder</strong>, not an uplift — an open decision, not done.</p>
+<p><strong>DEFERRED — Arc <code>_fleet[instanceKey]</code> (§10.11).</strong> Not a mechanical rekey: Arc's fleet plan is <em>instrument+strategy</em>-scoped while <code>instanceKey</code> is <em>scope+account</em>-scoped, so a faithful change reworks Arc's config model <strong>and</strong> GTrader21's <code>SlotLive()</code> consult (order-adjacent). Its own focused step. The safety motive is already covered by the actor interlock.</p>
+<hr>
+<h2>Changelog</h2>
+<ul>
+<li><strong>2026-07-12 — v1.5</strong> — added §11.5: <strong>Phase 2 instrumentation SHIPPED</strong> (bridge-verified, needs one F5). The decision VECTOR (§2.1–2.3), <code>EpisodeId</code> (§10.2), the actor INTERLOCK (§10.9–10.10 — Bridge refuses to arm on an instanceKey collision, which closes §10.11's hazard), Ledger episode/instance context (§10.7), and the CBRK baseline first-touch uplift. Corrected the VolEnvelope "still 1.2" error (it has no recorder). Bug #2 was already fixed in v0.2.2. Arc rekey deferred (genuine redesign). Live: Core v1.25.0 · Council v1.4.0 · Bridge v0.2.3 · CompressionBase v1.3.2.</li>
+<li><strong>2026-07-09 — v1.4</strong> — added §11 implementation log. Corrected the bar tag (<code>69697v6x24</code>, numeric type id + <code>Value2</code>; <code>TBC6-24-69697</code> was a legacy filename artifact). Recorded that <strong>scope alone cannot separate two charts sharing instrument + bartype</strong> → per-publisher id + <code>SCOPE CONTENTION</code> detection + <code>ClearCouncilScope</code>. Documented the as-of guard and its measured proof (five rows over three days, <code>conviction=0.1541</code> to 4dp). Logged five bugs found while building, incl. the Eye never loading — which explains why the heaviest voter never voted.</li>
+<li><strong>2026-07-09 — v1.3</strong> — <strong>closed the actor-identity gap v1.2 wrongly declared solved.</strong> <code>modelId</code> fingerprints the <em>Council's</em> config and says nothing about the thing that acted on it, so two Bridges on one scope with different TP/SL were indistinguishable. Added §10.9 (<code>instanceKey</code> + <code>policyId</code>; splitting policy from model is what makes A/B a <em>paired</em> comparison), §10.10 (<code>RegisterActor</code> — <strong>the name is an interlock, not a label</strong>: an <code>instanceKey</code> collision is precisely the managed-position hazard, so refuse to arm; plus the Realtime-register / reference-checked-unregister traps), §10.11 (Arc's <code>_fleet</code> is keyed by instrument too — <code>SlotLive("GC")</code> answers for every GC strategy at once), and <strong>§10.12, the trader's interface</strong>: usable with zero naming · alias ≠ identity · one human "Setup" name with machine-versioned eras inside it · name in the Cockpit where uniqueness is visible · block on <code>instanceKey</code> collision, warn on alias collision. Extends the Federated Naming Law with a fourth, <strong>runtime</strong> axis. Rebuilt the build order around the two correctness prerequisites (0a–0c) and the ten-minute <code>_tag</code> win.</li>
+<li><strong>2026-07-09 — v1.2</strong> — added §10: identity, roster, and the multi-contract fleet. Diagnosed the actor/decider/episode collapse (the Bridge tags every order with a <code>const</code>, the verdict is stored as prose, and the excursion file shares no key — so Lens cannot actually join a fill to its verdict). Introduced <code>EpisodeId</code> (the join key), content-addressed <code>modelId</code> + write-once model cards (with the allowlist rule), the <strong>declared roster</strong> + <code>rosterMask</code> + weight-0 voters as the exploration primitive, <strong>champion/challenger shadow scoring</strong> as the way to explore without forking, and <strong>partial-pooled joint fitting</strong> with ATR-normalized features for the GC/NQ/ES/CL fleet. Revised the build order: identity work precedes modelling.</li>
+<li><strong>2026-07-09 — v1.1</strong> — added §9 measured baseline from 1,258 live excursion rows. Four findings: bias chatter at 0.4-min cadence (effective N ≪ row count); Eye + Brick never vote (8 of 10 coefficients estimable); conviction ranks outcomes slightly <em>backwards</em> on this sample; and the 1.2 fallback label is empirically unusable, confirming <code>firstTouch</code> as the critical field. Corrected the §5.2 volume estimate — volume was never the constraint, independence is.</li>
+<li><strong>2026-07-09 — v1.0</strong> — initial spec. Schema 1.3 decision-vector instrumentation; the three-lane fork model (in-tree behavior-neutral / offline Lab / flag-gated consumption); label definition with <code>firstTouch</code> + censoring + uniqueness weighting; purged walk-forward protocol; <code>Model.conf</code> artifact.</li>
+</ul>
+<footer><span>Sentinel Suite · <b>Sentinel ML — Schema 1.3 Instrumentation + The Offline Lab</b></span><span>living document · rendered from Markdown</span></footer>
+</div></body></html>

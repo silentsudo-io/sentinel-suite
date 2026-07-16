@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sentinel · Sentinel Rail — spec</title>
+<style>
+  :root{
+    --void:#e7edf1; --panel:#f3f7f9; --surface:#ffffff; --surface2:#eaf0f3;
+    --ink:#16222c; --ink2:#586873; --line:#cdd8de; --grid:#dde5ea;
+    --accent:#0b8ea1; --flow:#0d8fa2;
+    --up:#12a56f; --down:#e0424f; --warn:#c9861a;
+    --mono:ui-monospace,"Cascadia Code","SF Mono",Consolas,Menlo,monospace;
+    --sans:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  }
+  @media (prefers-color-scheme:dark){
+    :root{
+      --void:#0a0e13; --panel:#0d131a; --surface:#141c25; --surface2:#0f161e;
+      --ink:#e2e9ee; --ink2:#8a9ba8; --line:#26333f; --grid:#131c25;
+      --accent:#4ad6e8; --flow:#3fb6c9; --up:#25d08b; --down:#ff5c6a; --warn:#f2b23c;
+    }
+  }
+  :root[data-theme="light"]{
+    --void:#e7edf1; --panel:#f3f7f9; --surface:#ffffff; --surface2:#eaf0f3;
+    --ink:#16222c; --ink2:#586873; --line:#cdd8de; --grid:#dde5ea;
+    --accent:#0b8ea1; --flow:#0d8fa2; --up:#12a56f; --down:#e0424f; --warn:#c9861a;
+  }
+  :root[data-theme="dark"]{
+    --void:#0a0e13; --panel:#0d131a; --surface:#141c25; --surface2:#0f161e;
+    --ink:#e2e9ee; --ink2:#8a9ba8; --line:#26333f; --grid:#131c25;
+    --accent:#4ad6e8; --flow:#3fb6c9; --up:#25d08b; --down:#ff5c6a; --warn:#f2b23c;
+  }
+
+  *{box-sizing:border-box}
+  body{margin:0; background:var(--void); color:var(--ink); font-family:var(--sans); line-height:1.55; -webkit-font-smoothing:antialiased; overflow-x:hidden}
+  .wrap{max-width:1120px; margin:0 auto; padding:56px 24px 100px; position:relative; z-index:1}
+
+  /* the Sentinel brand mark (Spartan barbute helmet) — faint fixed watermark + crisp header mark */
+  .watermark{position:fixed; z-index:0; pointer-events:none; top:50%; right:-2vw; transform:translateY(-50%); width:clamp(300px,40vw,560px); height:auto; fill:var(--accent); opacity:.18; filter:drop-shadow(0 0 55px color-mix(in srgb,var(--accent) 60%,transparent))}
+  .brandmark{width:16px; height:16px; flex:0 0 auto; fill:var(--accent); filter:drop-shadow(0 0 5px color-mix(in srgb,var(--accent) 50%,transparent))}
+
+  .kicker{font-family:var(--mono); font-size:11px; letter-spacing:.34em; text-transform:uppercase; color:var(--accent); display:flex; align-items:center; gap:9px; margin:0 0 14px}
+  .livedot{width:8px; height:8px; border-radius:50%; background:var(--accent); animation:pulse 2.4s ease-out infinite}
+  @keyframes pulse{0%{box-shadow:0 0 0 0 color-mix(in srgb,var(--accent) 55%,transparent)}70%{box-shadow:0 0 0 7px transparent}100%{box-shadow:0 0 0 0 transparent}}
+  h1{font-family:var(--mono); font-weight:700; font-size:clamp(30px,5.4vw,50px); letter-spacing:-.015em; margin:0 0 14px; text-wrap:balance}
+  .lede{font-size:18px; color:var(--ink2); max-width:66ch; margin:0 0 4px}
+  .lede b{color:var(--ink); font-weight:600}
+
+  .oneline{display:flex; flex-wrap:wrap; gap:7px; align-items:center; margin:28px 0 6px}
+  .oneline .s{font-family:var(--mono); font-size:12px; color:var(--ink); background:var(--surface); border:1px solid var(--line); border-radius:999px; padding:6px 13px}
+  .oneline .s b{color:var(--accent); font-weight:700}
+  .oneline .sep{color:var(--ink2); font-family:var(--mono)}
+
+  .toc{display:flex; flex-wrap:wrap; gap:6px 20px; margin:22px 0 6px; padding:16px 18px; border:1px solid var(--line); border-radius:12px; background:var(--panel)}
+  .toc a{font-family:var(--mono); font-size:12.5px; color:var(--ink2); text-decoration:none; white-space:nowrap}
+  .toc a:hover{color:var(--accent)}
+  .toc a b{color:var(--accent); font-weight:700; margin-right:6px}
+
+  .legend{display:flex; flex-wrap:wrap; gap:8px 18px; margin:18px 0 6px; padding:13px 16px; border:1px solid var(--line); border-radius:12px; background:var(--panel)}
+  .legend .k{display:flex; align-items:center; gap:8px; font-family:var(--mono); font-size:12px; color:var(--ink2)}
+  .swatch{width:22px; height:4px; border-radius:2px}
+  .swatch.a{background:var(--flow)} .swatch.u{background:var(--up)} .swatch.d{background:var(--down)} .swatch.w{background:var(--warn)}
+  .legend .k b{color:var(--ink); font-weight:600}
+
+  .part{display:flex; align-items:baseline; gap:16px; margin:80px 0 8px; padding-bottom:14px; border-bottom:1px solid var(--line)}
+  .part .pn{font-family:var(--mono); font-size:13px; font-weight:700; color:var(--accent); letter-spacing:.2em; white-space:nowrap}
+  .part h2{font-family:var(--mono); font-weight:700; font-size:15px; letter-spacing:.22em; text-transform:uppercase; color:var(--ink); margin:0}
+  .part .pd{margin-left:auto; font-size:13px; color:var(--ink2); font-family:var(--mono); text-align:right}
+
+  section{margin-top:44px}
+  .eyebrow{font-family:var(--mono); font-size:11px; letter-spacing:.24em; text-transform:uppercase; color:var(--accent); margin:0 0 8px; display:flex; gap:10px; align-items:baseline}
+  .eyebrow .num{color:var(--ink2); opacity:.7}
+  h3{font-family:var(--mono); font-weight:700; font-size:22px; margin:0 0 6px; letter-spacing:-.01em; text-wrap:balance}
+  .desc{color:var(--ink2); font-size:15px; margin:0 0 20px; max-width:74ch}
+  .desc b{color:var(--ink); font-weight:600}
+  code{font-family:var(--mono); font-size:.9em; background:var(--surface2); border:1px solid var(--line); border-radius:5px; padding:1px 5px; color:var(--ink)}
+
+  .panel{border:1px solid var(--line); border-radius:14px; background:var(--panel);
+    background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);
+    background-size:26px 26px; background-position:-1px -1px; padding:34px 30px; overflow-x:auto}
+
+  .node{background:var(--surface); border:1px solid var(--line); border-radius:11px; padding:11px 14px; min-width:120px; text-align:center; position:relative; box-shadow:0 1px 0 color-mix(in srgb,var(--ink) 6%,transparent)}
+  .node .t{font-family:var(--mono); font-weight:700; font-size:13px; color:var(--ink); white-space:nowrap}
+  .node .s{font-family:var(--mono); font-size:10.5px; color:var(--ink2); margin-top:3px; white-space:nowrap}
+  .node.accent{border-color:color-mix(in srgb,var(--accent) 55%,var(--line))}
+  .node.accent::before,.node.up::before,.node.down::before,.node.warn::before{content:""; position:absolute; left:0; top:9px; bottom:9px; width:3px; border-radius:3px}
+  .node.accent::before{background:var(--accent)}
+  .node.up::before{background:var(--up)} .node.up .t{color:color-mix(in srgb,var(--up) 78%,var(--ink))}
+  .node.down::before{background:var(--down)} .node.down .t{color:color-mix(in srgb,var(--down) 82%,var(--ink))}
+  .node.warn::before{background:var(--warn)}
+  .node.big{min-width:150px; padding:14px 16px}
+
+  .chip{font-family:var(--mono); font-size:11px; color:var(--ink); background:var(--surface2); border:1px solid var(--line); border-radius:7px; padding:5px 8px; white-space:nowrap; display:flex; justify-content:space-between; gap:10px; align-items:center}
+  .chip .w{color:var(--ink2); font-size:10px}
+  .chip.mute{color:var(--ink2)}
+
+  .flow{display:flex; align-items:center; justify-content:center; min-width:min-content}
+  .arrow{position:relative; flex:0 0 var(--aw,50px); height:2px; align-self:center; background:linear-gradient(90deg,color-mix(in srgb,var(--flow) 25%,transparent),var(--flow)); --c:var(--flow)}
+  .arrow::after{content:""; position:absolute; right:-1px; top:50%; transform:translateY(-50%); border-left:8px solid var(--c); border-top:5px solid transparent; border-bottom:5px solid transparent}
+  .arrow[data-l]::before{content:attr(data-l); position:absolute; left:50%; top:-15px; transform:translateX(-50%); font-family:var(--mono); font-size:9px; letter-spacing:.06em; text-transform:uppercase; color:var(--ink2); white-space:nowrap}
+  .arrow.up{--c:var(--up); background:linear-gradient(90deg,color-mix(in srgb,var(--up) 25%,transparent),var(--up))}
+  .arrow.down{--c:var(--down); background:linear-gradient(90deg,color-mix(in srgb,var(--down) 25%,transparent),var(--down))}
+  .arrow.warn{--c:var(--warn); background:linear-gradient(90deg,color-mix(in srgb,var(--warn) 25%,transparent),var(--warn))}
+  .arrow.v{width:2px; height:var(--ah,38px); flex:none; margin:0 auto; background:linear-gradient(180deg,color-mix(in srgb,var(--flow) 25%,transparent),var(--flow))}
+  .arrow.v::after{right:50%; top:auto; bottom:-1px; left:auto; transform:translateX(50%); border-left:5px solid transparent; border-right:5px solid transparent; border-top:8px solid var(--c); border-bottom:0}
+  .arrow.v.up-dir{background:linear-gradient(0deg,color-mix(in srgb,var(--flow) 25%,transparent),var(--flow))}
+  .arrow.v.up-dir::after{bottom:auto; top:-1px; border-top:0; border-bottom:8px solid var(--c)}
+  .arrow.v[data-l]::before{left:12px; top:50%; transform:translateY(-50%)}
+  .live .arrow{background-size:220% 100%; animation:travel 2.6s linear infinite}
+  @keyframes travel{0%{background-position:120% 0}100%{background-position:-40% 0}}
+
+  .group{border:1px dashed color-mix(in srgb,var(--line) 92%,var(--ink)); border-radius:11px; padding:12px; background:color-mix(in srgb,var(--surface) 55%,transparent)}
+  .group .gl{font-family:var(--mono); font-size:10px; letter-spacing:.14em; text-transform:uppercase; color:var(--ink2); margin:0 0 10px; text-align:center}
+  .grid2{display:grid; grid-template-columns:repeat(2,minmax(96px,1fr)); gap:6px}
+  .grid1{display:grid; gap:6px}
+  .rowflow{display:flex; align-items:center; justify-content:center; gap:0; min-width:min-content}
+  .stack{display:flex; flex-direction:column; align-items:center}
+  .band{display:flex; gap:8px; justify-content:center; flex-wrap:wrap; max-width:520px}
+
+  .verdict{background:var(--surface); border:1px solid color-mix(in srgb,var(--accent) 45%,var(--line)); border-radius:11px; padding:14px 16px; min-width:180px}
+  .verdict .vt{font-family:var(--mono); font-weight:700; font-size:12px; color:var(--accent); letter-spacing:.14em; margin-bottom:10px}
+  .vrow{display:flex; justify-content:space-between; gap:16px; font-family:var(--mono); font-size:12px; padding:4px 0; border-top:1px solid var(--line)}
+  .vrow span:first-child{color:var(--ink2)} .vrow span:last-child{color:var(--ink); font-weight:600}
+
+  .drow{display:flex; align-items:center; gap:14px; justify-content:center}
+  .branch{display:flex; align-items:center; gap:10px}
+  .blabel{font-family:var(--mono); font-size:9px; letter-spacing:.08em; text-transform:uppercase; color:var(--ink2)}
+  .qnode{background:var(--surface); border:1px solid var(--line); border-radius:11px; padding:12px 16px; text-align:center; position:relative}
+  .qnode.dec{border-color:color-mix(in srgb,var(--accent) 40%,var(--line))}
+  .qnode .t{font-family:var(--mono); font-weight:700; font-size:12.5px; color:var(--ink)}
+  .qnode .s{font-family:var(--mono); font-size:10px; color:var(--ink2); margin-top:4px}
+  .spine{display:flex; flex-direction:column; align-items:center}
+
+  .cast{display:grid; grid-template-columns:repeat(auto-fill,minmax(232px,1fr)); gap:12px}
+  .castcard{border:1px solid var(--line); border-radius:12px; background:var(--surface); padding:14px 15px; display:flex; flex-direction:column; gap:6px}
+  .castcard .role{font-family:var(--mono); font-size:9.5px; letter-spacing:.16em; text-transform:uppercase; color:var(--accent)}
+  .castcard .nm{font-family:var(--mono); font-weight:700; font-size:15px; color:var(--ink)}
+  .castcard p{margin:0; font-size:13px; color:var(--ink2)}
+  .castcard .seam{margin-top:auto; font-family:var(--mono); font-size:10.5px; color:var(--ink2); border-top:1px dashed var(--line); padding-top:7px}
+  .castcard .seam b{color:var(--ink); font-weight:600}
+
+  .two{display:grid; grid-template-columns:1.1fr .9fr; gap:26px; align-items:start}
+  .two .panel{margin:0}
+  .anno{display:flex; flex-direction:column; gap:12px}
+  .anno .a{display:flex; gap:12px; align-items:flex-start}
+  .anno .n{flex:0 0 22px; height:22px; border-radius:6px; background:var(--surface2); border:1px solid var(--line); color:var(--accent); font-family:var(--mono); font-weight:700; font-size:11px; display:flex; align-items:center; justify-content:center; margin-top:1px}
+  .anno .a div b{font-family:var(--mono); font-size:12.5px; color:var(--ink)}
+  .anno .a div p{margin:2px 0 0; font-size:13px; color:var(--ink2)}
+
+  .tblwrap{overflow-x:auto; border:1px solid var(--line); border-radius:12px; margin:8px 0}
+  table{width:100%; border-collapse:collapse; font-family:var(--mono); font-size:12.5px; min-width:640px}
+  thead th{text-align:left; font-size:10px; letter-spacing:.12em; text-transform:uppercase; color:var(--ink2); font-weight:600; padding:12px 14px; background:var(--panel); border-bottom:1px solid var(--line); white-space:nowrap}
+  tbody td{padding:10px 14px; border-bottom:1px solid var(--line); color:var(--ink); vertical-align:top}
+  tbody tr:last-child td{border-bottom:0}
+  td .vt{color:var(--ink2); font-size:11.5px}
+  td b{color:var(--ink)}
+  .wt{font-variant-numeric:tabular-nums; color:var(--accent); font-weight:700}
+  .ax-orth{color:var(--accent)} .ax-price{color:var(--ink2)}
+  .st{font-size:11px; color:var(--ink2)}
+
+  .principles{display:grid; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); gap:16px}
+  .pr{border:1px solid var(--line); border-left:3px solid var(--accent); border-radius:0 12px 12px 0; background:var(--surface); padding:16px 18px}
+  .pr h4{font-family:var(--mono); font-size:14px; margin:0 0 6px; color:var(--ink)}
+  .pr p{margin:0; font-size:13.5px; color:var(--ink2)}
+  .pr p b{color:var(--ink); font-weight:600}
+
+  .layers{display:flex; flex-direction:column; gap:12px}
+  .layer{display:grid; grid-template-columns:138px 1fr auto; align-items:center; gap:16px; border:1px solid var(--line); border-radius:12px; background:var(--surface); padding:14px 16px}
+  .layer .lb{font-family:var(--mono); font-size:10px; letter-spacing:.14em; text-transform:uppercase; color:var(--accent)}
+  .layer .lb b{display:block; color:var(--ink); font-size:14px; letter-spacing:0; margin-top:3px; text-transform:none}
+  .layer .lc{display:flex; flex-wrap:wrap; gap:6px}
+  .layer .lo{font-family:var(--mono); font-size:10.5px; color:var(--ink2); white-space:nowrap; text-align:right; line-height:1.5}
+  @media(max-width:640px){.layer{grid-template-columns:1fr; gap:10px} .layer .lo{text-align:left}}
+
+  /* prose + reference */
+  .prose{max-width:76ch}
+  .prose p{margin:0 0 14px; font-size:15px; color:var(--ink)}
+  .prose p.muted{color:var(--ink2)}
+  .callout{border:1px solid var(--line); border-left:3px solid var(--accent); border-radius:0 12px 12px 0; background:var(--surface); padding:14px 18px; margin:18px 0; font-size:14.5px; color:var(--ink); max-width:80ch}
+  .callout.warn{border-left-color:var(--warn)} .callout.caveat{border-left-color:var(--down)}
+  .callout b{color:var(--ink)}
+  .callout .cl{display:block; font-family:var(--mono); font-size:10px; letter-spacing:.16em; text-transform:uppercase; margin-bottom:6px; color:var(--accent)}
+  .callout.warn .cl{color:var(--warn)} .callout.caveat .cl{color:var(--down)}
+  .steps{list-style:none; counter-reset:s; padding:0; margin:0; display:flex; flex-direction:column; gap:12px; max-width:80ch}
+  .steps li{counter-increment:s; display:grid; grid-template-columns:28px minmax(0,1fr); column-gap:14px; row-gap:2px; align-items:start}
+  .steps li::before{content:counter(s); grid-column:1; grid-row:1; height:26px; width:26px; border-radius:7px; background:var(--surface2); border:1px solid var(--line); color:var(--accent); font-family:var(--mono); font-weight:700; font-size:12px; display:flex; align-items:center; justify-content:center}
+  .steps li b{grid-column:2; grid-row:1; color:var(--ink)} .steps li p{grid-column:2; grid-row:2; margin:3px 0 0; color:var(--ink2); font-size:14px}
+  .steps li code{font-size:.85em}
+  .code{background:var(--surface2); border:1px solid var(--line); border-radius:10px; padding:13px 15px; overflow-x:auto; font-family:var(--mono); font-size:12px; color:var(--ink); line-height:1.65; margin:14px 0; white-space:pre; max-width:100%}
+  .code .c{color:var(--ink2)} .code .k{color:var(--accent)}
+  .defs{display:grid; gap:0; max-width:80ch}
+  .defs .row{display:grid; grid-template-columns:170px 1fr; gap:16px; font-size:14px; padding:11px 0; border-bottom:1px solid var(--line)}
+  .defs b{font-family:var(--mono); font-size:12.5px; color:var(--ink)}
+  .defs .d{color:var(--ink2)}
+  .gauntlet{display:flex; flex-direction:column; gap:3px; font-family:var(--mono); font-size:12.5px; max-width:660px}
+  .gauntlet .g{display:flex; align-items:center; gap:12px; padding:10px 13px; border:1px solid var(--line); border-radius:8px; background:var(--surface)}
+  .gauntlet .g .ck{color:var(--up); font-weight:700; flex:0 0 auto}
+  .gauntlet .g .cond{color:var(--ink)} .gauntlet .g .res{margin-left:auto; color:var(--ink2); white-space:nowrap}
+  .reading{display:grid; grid-template-columns:1fr 1fr; gap:14px; margin:20px 0 6px; max-width:80ch}
+  .rp{border:1px solid var(--line); border-radius:12px; background:var(--surface); padding:14px 16px}
+  .rp .rt{font-family:var(--mono); font-size:11px; letter-spacing:.12em; text-transform:uppercase; color:var(--accent); margin-bottom:6px}
+  .rp p{margin:0; font-size:13.5px; color:var(--ink2)}
+  .rp b{color:var(--ink)}
+  @media(max-width:640px){ .reading{grid-template-columns:1fr} .defs .row{grid-template-columns:1fr; gap:2px} }
+
+  /* screenshot placeholders */
+  .shots{display:grid; grid-template-columns:repeat(auto-fit,minmax(238px,1fr)); gap:14px; margin:6px 0}
+  .shot{border:1.5px dashed color-mix(in srgb,var(--line) 78%,var(--ink)); border-radius:12px; background:var(--surface2); min-height:160px; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:18px 16px; gap:7px; margin:0}
+  .shot svg{color:var(--ink2); opacity:.55; margin-bottom:2px}
+  .shot .sid{font-family:var(--mono); font-size:10px; letter-spacing:.18em; font-weight:700; color:var(--accent)}
+  .shot .stt{font-family:var(--mono); font-size:13px; font-weight:700; color:var(--ink)}
+  .shot .scap{font-size:12px; color:var(--ink2); line-height:1.45; max-width:30ch}
+  .shot .sfile{font-family:var(--mono); font-size:9.5px; color:var(--ink2); opacity:.72; margin-top:3px}
+
+  footer{margin-top:72px; padding-top:22px; border-top:1px solid var(--line); font-family:var(--mono); font-size:11.5px; color:var(--ink2); display:flex; flex-wrap:wrap; gap:6px 18px; justify-content:space-between}
+  footer b{color:var(--ink); font-weight:600}
+
+  @media (prefers-reduced-motion:reduce){ .live .arrow{animation:none} .livedot{animation:none} }
+  @media (max-width:760px){ .two{grid-template-columns:1fr} }
+  @media (max-width:640px){ .wrap{padding:40px 14px 72px} .panel{padding:24px 16px} }
+</style>
+<style>
+  .wrap{max-width:900px}
+  .kicker .navsep{opacity:.45;margin:0 3px}
+  .kicker a.navhome{color:var(--ink2);border-bottom:0;text-decoration:none}
+  .kicker a.navhome:hover{color:var(--accent)}
+  .doc h2{font-family:var(--mono);font-weight:700;font-size:15px;letter-spacing:.2em;text-transform:uppercase;
+    color:var(--ink);margin:64px 0 4px;padding-bottom:12px;border-bottom:1px solid var(--line)}
+  .doc h2 .hn{color:var(--accent);margin-right:12px}
+  .doc h3{margin:34px 0 8px}
+  .doc p{font-size:15.5px;color:var(--ink);margin:0 0 15px;max-width:78ch}
+  .doc a{color:var(--accent);text-decoration:none;border-bottom:1px solid color-mix(in srgb,var(--accent) 40%,transparent)}
+  .doc a:hover{border-bottom-color:var(--accent)}
+  .doc strong{color:var(--ink);font-weight:670}
+  .doc em{color:var(--ink2);font-style:italic}
+  .doc ul,.doc ol{max-width:78ch;padding-left:1.3em;margin:0 0 15px}
+  .doc li{margin:.42em 0;font-size:15px;color:var(--ink)}
+  .doc li::marker{color:var(--accent)}
+  .doc hr{border:0;border-top:1px solid var(--line);margin:8px 0}
+  .doc blockquote{margin:18px 0;padding:14px 18px;border:1px solid var(--line);border-left:3px solid var(--accent);
+    border-radius:0 12px 12px 0;background:var(--surface);color:var(--ink2);max-width:80ch}
+  .doc blockquote p{color:var(--ink2);margin:0}
+  .doc blockquote strong{color:var(--ink)}
+  .doc pre{background:var(--surface2);border:1px solid var(--line);border-radius:10px;padding:14px 16px;
+    overflow-x:auto;font-family:var(--mono);font-size:12px;color:var(--ink);line-height:1.6;margin:16px 0;white-space:pre}
+  .doc pre code{background:none;border:0;padding:0;font-size:1em;color:inherit}
+</style>
+</head><body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><symbol id="helm" viewBox="0 0 512 512"><path fill-rule="nonzero" d="M255.406 17.75C189.313 39.42 124.536 85.124 79.03 150.344c21.238 57.44 32.72 94.314 32.72 131.375 0 36.493-11.52 73.723-32.125 129.655 49.72 36.73 100.08 58.95 150.313 64.938-5.052-60.378-9.83-120.748 1.593-181.125-30.644-3.28-61.384-13.286-92.03-30.72v-71.312c80.67 42.255 158.908 41.547 242.063 0v71.313c-30.06 14.376-60.192 24.722-90.25 29.28 8.684 60.46 7.723 120.915 2.03 181.375 46.386-7.335 92.89-28.824 139.032-64.312-33.966-112.954-34.03-145.933.594-260.47C391.162 84.844 317.924 39.89 255.405 17.75zm-75.125 212c-11.16-.13-19.646 3.174-21.25 9.156-2.33 8.7 10.778 19.76 29.282 24.72 18.505 4.957 35.388 1.92 37.72-6.782 2.33-8.7-10.775-19.76-29.282-24.72-5.783-1.55-11.396-2.315-16.47-2.374zm160.69 0c-5.074.06-10.687.825-16.47 2.375-18.507 4.96-31.613 16.018-29.28 24.72 2.33 8.7 19.213 11.738 37.717 6.78 18.505-4.958 31.613-16.018 29.282-24.72-1.604-5.98-10.09-9.286-21.25-9.155z"/></symbol></svg>
+<svg class="watermark" viewBox="0 0 512 512" aria-hidden="true"><use href="#helm"/></svg>
+<div class="wrap doc">
+<header>
+<p class="kicker"><svg class="brandmark" viewBox="0 0 512 512" aria-hidden="true"><use href="#helm"/></svg><span class="livedot"></span> Sentinel Suite · NinjaTrader 8 · living document<span class="navsep">·</span><a class="navhome" href="SENTINEL_DOCS.html">Docs home →</a></p>
+<h1>Sentinel Rail — spec</h1>
+<p class="lede"><strong>Status:</strong> Rail proposed (2026-07-09), not built. <strong>The three <code>CardLayout</code> bugs in §1 are FIXED and compiling (2026-07-09) — including scale-to-fit. Needs F5 + a live look.</strong> <strong>Companion docs:</strong> <a href="SENTINEL_DESIGN_SYSTEM.html">SENTINEL_DESIGN_SYSTEM.md</a> §4b (Painter / CardLayout) · <a href="SENTINEL_COCKPIT_SPEC.html">SENTINEL_COCKPIT_SPEC.md</a> · memory <code>sentinel-backlog</code> (the original tray seeds).</p>
+</header>
+<hr>
+<h2><span class="hn">1.</span>The problem, restated accurately</h2>
+<blockquote><p><strong>CORRECTED 2026-07-09.</strong> An earlier draft claimed cards no longer overlap. <strong>Wrong</strong> — a live NQ screenshot showed the Deck's risk card <strong>buried under GodReversal</strong>. Two further claims were wrong and are fixed below: overflow shows up as <em>overlap</em> (not only as a lost card), and the cards <strong>can</strong> be rescaled. All three <code>Place()</code> bugs were <strong>FIXED the same day</strong>; this section is now the post-mortem.</p></blockquote>
+<p>Cards cover roughly <strong>40% of the price panel</strong>, so the requirement is not <em>organize</em> — it is <strong>reclaim</strong>. A rail full of cards occupies the same column a stack of cards does. <strong>The container is not the feature; the collapse is the feature.</strong> We had this backwards, and it changes the build order (§8).</p>
+<p><strong>Three defects in <code>Place()</code> — all now fixed:</strong></p>
+<ul>
+<li><strong>Stack order was registration order</strong> (= render order). A card pruned after ~2s of not rendering was re-appended to the <strong>end</strong> of the slot list when it returned, so it migrated down the column. Order must be <strong>declared</strong>, not emergent — the same lesson as <code>Roster.conf</code> (see memory <code>declared-roster</code>). <em>Fixed:</em> a sticky per-<code>(panel, type)</code> ordinal that survives pruning.</li>
+<li><strong>No overflow handling.</strong> The stack offset <code>off</code> grew unbounded.</li>
+<li><strong>No cross-corner awareness.</strong> A corner knew nothing about the opposite corner on the <strong>same edge</strong>, so a long TopRight sensor stack grew straight through the BottomRight-anchored Deck card.</li>
+</ul>
+<p>The last two are the same defect wearing two masks: <strong>with an opposite anchor present you get OVERLAP; without one the card runs past the panel edge and is SILENTLY LOST.</strong></p>
+<h3>1.1 The chart is over-subscribed — and scale-to-fit is why that's survivable</h3>
+<p>Measured on the NQ chart: TopRight wants 583px of cards, TopLeft 624px, each column has ~625px of panel, and the Deck claims 187px of the right edge. <strong>No arrangement fits everything.</strong> Gap compression alone doesn't rescue it (the right column still runs 150px into the Deck), so something must give.</p>
+<p>The insight that avoids throwing cards away: a card <strong>draws at fixed pixel sizes with absolute offsets</strong>, so the arranger can't just hand it a smaller rect — but Direct2D can scale the <em>render target</em>. <code>Painter.Card()</code> now looks up its column's scale and pushes a transform anchored on the corner the card docks to; the card keeps drawing in its natural coordinates and <strong>text stays vector-crisp</strong>. Every sensor card funnels through <code>Painter.Card(slot.X, slot.Y, cw, ch, …)</code>, so this cost <strong>zero indicator edits</strong>.</p>
+<p>Fit runs in order of least harm: <strong>compress the gap → scale to <code>MinCardScale</code> → COLLAPSE the tail to chips.</strong> After a collapse the loop <em>recomputes</em> the scale, because the survivors may now fit at a larger size.</p>
+<p><strong>Nothing is ever hidden.</strong> This is Stage 1's collapse, delivered early: an overflowed card keeps a <strong>22px chip</strong> at its real slot carrying its name and a live dot, so the operator always sees the tool is present and rendering. <code>Painter.Card()</code> draws the chip and then <em>translates</em> everything the card draws next off-screen — the card lays out its contents exactly as always and they simply land nowhere. <strong>No card learns it was collapsed.</strong> Collapse is self-correcting: give the column room and the card re-expands by itself.</p>
+<p>Measured on the live chart, with Eye registered (§7) and its 505×346 grid included:</p>
+<div class="tblwrap"><table><thead><tr><th>Column</th><th>Result at <code>MinCardScale = 0.80</code></th></tr></thead><tbody><tr><td><strong>TopRight</strong> (needs 929px in 430px)</td><td>VolEnvelope · CompressionBase · SentinelTrend @ 85% · <strong>GodReversal + Eye → chips</strong></td></tr><tr><td><strong>TopLeft</strong> (needs 824px in 625px)</td><td>Clock · Location · Excursion @ 87% · <strong>Participation → chip</strong> · Council full</td></tr><tr><td><strong>BottomRight</strong></td><td>Deck full size, pinned</td></tr><tr><td><em>(old behaviour)</em></td><td>Deck buried under GodReversal; Eye drawn over SentinelTrend; MTF clipped off the edge</td></tr></tbody></table></div>
+<h3>1.2 The three protected surfaces</h3>
+<p><strong>Pinned cards neither scale nor collapse</strong>, and the suite protects exactly three:</p>
+<div class="tblwrap"><table><thead><tr><th>Surface</th><th>Card</th><th>Why</th></tr></thead><tbody><tr><td><strong>Decision</strong></td><td>Council</td><td>Collapse takes the bottom-most card first, and the Council sits at the bottom of the left column — without pinning, <em>the brain is the first thing chipped.</em></td></tr><tr><td><strong>Risk</strong></td><td>Deck</td><td>A P&amp;L / governor readout that is unreadable is worse than a missing sensor.</td></tr><tr><td><strong>Control</strong></td><td>Bridge</td><td>Carries <code>ARM BRIDGE</code>, hit-tested in untransformed screen coordinates.</td></tr></tbody></table></div>
+<p>A cosmetic layout pass must never shrink a control out of reach, hide a P&amp;L, or chip the verdict. Sensors may shrink; the decision may not. Pinning also makes the hit-testing hazard (§5) <em>disappear</em> rather than need solving, since a pinned card is never under a transform.</p>
+<p><strong>Verified before shipping:</strong> no card tool draws chart-space geometry after its <code>Card()</code> call (the only post-<code>Card()</code> painter call anywhere is <code>_sp.Dot(r.Left+5, r.Top+8, …)</code>, the card's own status dot), and no raw <code>RenderTarget</code> draw follows a card block — so the armed transform can never displace price-space drawing. <code>Begin()</code> resets the shared render target to identity, making a leaked transform impossible even if an <code>OnRender</code> throws between <code>Card()</code> and <code>End()</code>.</p>
+<h2><span class="hn">2.</span>Why this is SharpDX-on-chart, and why it never floats</h2>
+<p>The backlog left an architectural fork open: <em>SharpDX-on-chart (consistent, float is hard) vs. WPF-off-the-state-seams (float is free, but a parallel card renderer)?</em></p>
+<p><strong>That fork is closed.</strong> The <strong>Cockpit</strong> is already the WPF surface that re-reads every published <code>…State</code> seam, floats, and pins <code>Topmost</code>. Building a WPF card tray now would build a second Cockpit with worse ergonomics.</p>
+<p>Therefore the two surfaces get disjoint jobs, and the Rail <strong>never floats</strong>:</p>
+<div class="tblwrap"><table><thead><tr><th>Surface</th><th>Lives</th><th>Answers</th></tr></thead><tbody><tr><td><strong>Cockpit</strong></td><td>off-chart, floatable, pinnable</td><td><em>"Is my brain alive, and why isn't it trading?"</em></td></tr><tr><td><strong>Rail</strong></td><td>on-chart, beside price</td><td><em>"What is each sensor saying about THIS bar?"</em> — and gets out of the way</td></tr></tbody></table></div>
+<p>The thing you would float a rail <em>for</em> is the Cockpit. It already exists.</p>
+<h2><span class="hn">3.</span>The lever: one choke point</h2>
+<p><strong>19 tools call <code>SentinelSkin.CardLayout.Place()</code>.</strong> Exactly one card-drawing tool bypasses it (<code>Eye_v1_1_0</code> — retrofit it, §7).</p>
+<p>Every card already asks a central authority <em>"where do I draw?"</em> every frame. So the Rail is a <strong><code>CardLayout</code> feature, not 19 edits</strong> — the same central-seam move that let one <code>Palette</code> swap recolor the entire suite.</p>
+<h3>3.1 Collapse costs nothing at the call sites</h3>
+<pre><code>// collapsed → hand the card a rect OUTSIDE the panel.
+// It draws its entire card into oblivion; Direct2D clips it. No card learns what "collapsed" means.
+return new SharpDX.RectangleF(panelX - w - 64f, y, w, h);</code></pre>
+<p>A few wasted draw calls per frame. Zero indicator changes. <strong>This is the whole trick.</strong></p>
+<h2><span class="hn">4.</span>Ownership and the z-order problem (solved by scoping)</h2>
+<p><code>CardLayout</code> becomes the <strong>arranger</strong> (declared order, overflow, scroll, collapsed state). A new opt-in <code>SentinelRail_v1_0_0</code> indicator becomes the <strong>owner</strong> (chrome, mouse, persistence).</p>
+<blockquote><p><strong>If the Rail indicator is not on the chart, <code>CardLayout</code> behaves exactly as it does today.</strong> Nothing regresses; nothing is forced; it is one F5.</p></blockquote>
+<p><strong>The z-order hazard and its dissolution.</strong> NT renders indicators in add-order and <code>Painter</code> exposes no frame counter, so there is no reliable hook for "first <code>Place()</code> of the frame paints the rail backdrop." A backdrop drawn by the Rail indicator lands <em>over</em> the cards unless the user added it first — brittle.</p>
+<p><strong>So the Rail draws no backdrop at all.</strong></p>
+<ul>
+<li><strong>Expanded</strong> = exactly today's look. No chrome. The cards already <em>are</em> a rail.</li>
+<li><strong>Collapsed</strong> = the cards are off-panel, so the strip the Rail draws has nothing to fight with.</li>
+<li>The only always-visible chrome is the <strong>handle</strong>, which lives in the panel margin.</li>
+</ul>
+<p>The z-order problem doesn't get solved; it gets <strong>scoped out of existence.</strong> Chrome only exists where no card is drawing.</p>
+<h2><span class="hn">5.</span>Interactive cards are a SAFETY constraint, not a preference</h2>
+<p>The Bridge caches <code>_armBtn</code> and hit-tests it in <code>PreviewMouseLeftButtonDown</code>. Collapsing the card moves that rect off-panel, so clicks correctly miss.</p>
+<p><strong>Which means collapsing the Bridge card silently removes the only on-chart ARM / DISARM control for an automated, order-placing strategy.</strong> The Deck's ARM controls have the same shape.</p>
+<p><strong>Rule: a card that owns a control is <code>Collapsible = false</code> by default.</strong> Interactive cards stay pinned when their column collapses. There is no "clever" alternative worth the risk here — a hidden disarm button is a trap, and the Rail is cosmetic. Cosmetics never hide safety controls.</p>
+<p>A collapsed column therefore renders as: <strong>chip strip, then any pinned interactive cards below it.</strong> <code>Place()</code> must offset pinned cards by the chip-strip height, and must <strong>skip collapsed slots when summing the stack offset</strong> (§6.2).</p>
+<h2><span class="hn">6.</span>API</h2>
+<h3>6.1 <code>Place()</code> — additive, all 19 call sites unchanged</h3>
+<pre><code>public static SharpDX.RectangleF Place(
+    object key, object panelKey,
+    float panelX, float panelY, float panelW, float panelH,
+    SentinelCardCorner corner, float w, float h,
+    float margin = 12f, float gap = 8f,
+    // NEW — optional, so every existing caller compiles untouched:
+    string title = null,                    // chip label; null → derived from key.GetType().Name
+    bool collapsible = true,                // false for cards that own a control (Deck, Bridge)
+    SharpDX.Color4? chipTint = null);       // opt-in: Council tints its chip by bias</code></pre>
+<p><strong>Chip labels with zero indicator edits.</strong> The key <em>is</em> the indicator instance, so <code>key.GetType().Name</code> → <code>Council_v1_0_0</code> → strip the <code>_vX_Y_Z</code> suffix → <code>Council</code>. The <code>title</code> parameter exists so a tool can say something better later. (Note the on-chart <code>Name</code> is <strong>not</strong> usable — the label-remover blanks it; see design system §7.)</p>
+<h3>6.2 Arranger changes</h3>
+<ul>
+<li><strong>Declared order.</strong> <code>Rail.conf</code> holds an ordered list of type names per corner. Unlisted cards sort after listed ones, alphabetically — stable across prune/re-add. Kills the migration drift in §1.</li>
+<li><strong>Overflow.</strong> Clamp the column to the panel; expose <code>scrollOffset</code> per (panel, corner). When content exceeds the panel, the last visible slot is replaced by an <strong>"+N more"</strong> chip. <strong>A card must never silently fall off the panel</strong> — that is the current bug.</li>
+<li><strong>Collapse.</strong> When <code>(panel, corner)</code> is collapsed, <code>collapsible</code> slots get the off-panel rect and are <strong>excluded from the offset sum</strong>; non-collapsible slots stack below the chip strip.</li>
+</ul>
+<h3>6.3 New surface</h3>
+<pre><code>CardLayout.SetCollapsed(object panelKey, SentinelCardCorner corner, bool collapsed);
+CardLayout.IsCollapsed (object panelKey, SentinelCardCorner corner);
+CardLayout.Scroll      (object panelKey, SentinelCardCorner corner, float delta);
+CardLayout.Snapshot    (object panelKey, SentinelCardCorner corner);  // ordered chips for the Rail to draw</code></pre>
+<p><code>Snapshot</code> returns, per slot: <code>Title</code>, <code>Collapsible</code>, <code>ChipTint</code>, and <strong><code>AgeMs</code></strong> (from the existing <code>Seen</code> tick). <code>AgeMs</code> is what makes a chip honest: it reports <strong>"this card is rendering"</strong>, which is a real generic liveness signal, not a guess at the tool's semantics. Bias/conviction stay opt-in via <code>chipTint</code>.</p>
+<h2><span class="hn">7.</span>Chips</h2>
+<p>A collapsed column becomes a <strong>~22px strip</strong>: brand-hairline, then one chip per card — <code>● Council</code>, <code>● Trend</code>, <code>● MTF</code> … Each chip is <code>[freshness dot] [name]</code>, tinted by <code>chipTint</code> when the tool opted in.</p>
+<ul>
+<li>Dot color: <code>CAccent</code> when <code>AgeMs &lt; 2000</code> (live/watching — the law), <code>CMute</code> when stale. ⚠ On <strong>Amber</strong> the accent is gold, not cyan; chips read <code>CAccent</code> and inherit that for free.</li>
+<li><strong>Hover-to-peek</strong> (Stage 2): hovering a chip expands <em>that one card</em> over the chart until the pointer leaves. This is the feature that makes collapse comfortable rather than blind.</li>
+<li><strong>Click a chip</strong> → expand the whole column.</li>
+</ul>
+<p><strong>Retrofit <code>Eye_v1_1_0</code> onto <code>CardLayout</code></strong> so it participates; it is the only card-drawing bypass.</p>
+<h2><span class="hn">8.</span>Build order</h2>
+<p>Stage 1 carries most of the value and all of the substrate.</p>
+<p><strong>Stage 1 — collapse + chips + the two <code>Place()</code> bugs.</strong> Declared order · overflow scroll · <code>SetCollapsed</code> · off-panel rect · chip strip · edge handle · <code>Collapsible=false</code> on Deck + Bridge · <code>Rail.conf</code> persistence · <code>SentinelRail_v1_0_0</code>. <em>Delivers: the chart back, without losing "is it live?".</em></p>
+<p><strong>Stage 2 — hover-to-peek · scroll input (<code>e.Handled</code> only inside the rail column, never fight chart zoom) · remembered per-chart state.</strong></p>
+<p><strong>Stage 3 — drag-to-reorder · per-card opt-in UI · sub-panel rails.</strong></p>
+<h2><span class="hn">9.</span>Scope boundaries</h2>
+<ul>
+<li><strong>Price panel only</strong> in Stage 1. <code>Place</code> is keyed by <code>panelKey</code> (the <code>ChartPanel</code>), so sub-panel cards (WoodiesCCI, ADXPro, WAE) already bucket separately; a sub-panel rail needs its own Rail instance. Later.</li>
+<li><strong>No float. Ever.</strong> That is the Cockpit (§2).</li>
+<li><strong>No new <code>SentinelCore</code> seam.</strong> The Rail is decorative chrome + an arranger; the publish-a-<code>…State</code> protocol (design system §9.6) does not apply — same exemption as <code>SentinelWallpaper</code>.</li>
+<li><strong>Persistence</strong> via <code>Sentinel\Rail.conf</code> + <code>[Display]</code>-only properties (never <code>[NinjaScriptProperty]</code>), so NT's generated-region constructor signature is untouched and saved workspaces keep loading.</li>
+</ul>
+<h2><span class="hn">10.</span>Naming &amp; versioning</h2>
+<p>Federated naming law: file/class <code>SentinelRail_v1_0_0.cs</code>, display <code>Name = "Sentinel Rail"</code>, namespace <code>NinjaTrader.NinjaScript.Indicators.Sentinel</code> (indicator → picker sub-folder). Label-remover standard. <code>SentinelSkin</code> gets a changelog entry for the <code>CardLayout</code> extension.</p>
+<h2><span class="hn">11.</span>Test plan</h2>
+<p>Offline (build-time):</p>
+<ol>
+<li>Rail absent → every card lands <strong>pixel-identical</strong> to today. This is the regression gate.</li>
+<li>Collapse/expand each corner; cards return to the same slots and the <strong>declared order holds</strong> across an indicator toggle (the prune/re-append drift).</li>
+<li>Overflow: add cards until the column exceeds the panel → <strong>"+N more"</strong> appears, no card is lost.</li>
+<li>All six themes: chips legible; the dot reads as <em>live</em> on Amber (gold) as it does on cyan themes.</li>
+<li>F5 safety: <code>Place()</code>'s new params are optional → 19 call sites compile untouched.</li>
+</ol>
+<p>Live (market open):</p>
+<ol>
+<li><strong>The safety test.</strong> Collapse both columns with the Bridge armed. <strong><code>ARM BRIDGE</code> must remain visible and clickable.</strong> Then disarm from the chart. If the control is ever unreachable, Stage 1 is wrong.</li>
+<li>Hover-peek does not steal chart-zoom scroll (Stage 2).</li>
+</ol>
+<h2><span class="hn">12.</span>Open questions</h2>
+<ul>
+<li>Does a collapsed column keep the <strong>Excursion</strong> card's recording indicator visible? It has no control, but it is stateful. Probably <code>chipTint</code> is enough.</li>
+<li>Should the chip strip show <code>+N more</code> or scroll when <em>collapsed</em>? (Chips are small; likely never overflows.)</li>
+<li>Does hover-peek need a delay to avoid flicker when crossing the strip? Almost certainly yes (~250ms).</li>
+</ul>
+<footer><span>Sentinel Suite · <b>Sentinel Rail — spec</b></span><span>living document · rendered from Markdown</span></footer>
+</div></body></html>
