@@ -46,6 +46,18 @@ Plus, every Sentinel indicator:
 The full checklist is **[SENSOR_COMPLIANCE_CHECKLIST.md](SENSOR_COMPLIANCE_CHECKLIST.md)** — a PR that adds
 an indicator must satisfy it.
 
+## Building with Claude Code (optional)
+
+If you use [Claude Code](https://claude.com/claude-code), this repo ships agent **skills** in
+[`.claude/skills/`](.claude/skills/) that automate the workflows above and enforce this contract for you —
+they load automatically when you open the repo:
+
+- **`port-sentinel-indicator`** — convert a raw NT indicator into a compliant Sentinel sensor (license/provenance
+  gate first, the four-layer naming law, glass card + card-render rules, and a published `SentinelCore` state seam).
+- **`build-sentinel-skin`** — add a new theme end-to-end (the `SentinelSkin` palette + the 16-file platform skin folder).
+
+More skills land as the suite grows. They're a convenience, not a requirement — the contract above is the source of truth.
+
 ## The layering rule
 
 The runtime is layered — **L0 Skin · F Foundation · L1 Bus · L2 Safety** (see the Product Ladder §4). The one

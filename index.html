@@ -217,6 +217,25 @@
     background:linear-gradient(90deg,#3FD1E0,#25D08B);-webkit-background-clip:text;background-clip:text;color:transparent}
   .gallery figure.soon figcaption{color:var(--mute);justify-content:center}
 
+  /* skills */
+  .skills{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+  @media(max-width:760px){.skills{grid-template-columns:1fr}}
+  .skill{background:linear-gradient(var(--glass-top),var(--glass-bot));border:1px solid var(--line);
+    border-radius:14px;padding:22px;display:flex;flex-direction:column;box-shadow:var(--shadow);
+    transition:border-color .2s ease,transform .2s ease}
+  .skill:hover{border-color:var(--hair);transform:translateY(-3px)}
+  .skill .cmd{font-family:var(--font-mono);font-size:14.5px;font-weight:700;color:var(--accent);letter-spacing:.01em}
+  .skill p{color:var(--ink2);font-size:14px;margin:12px 0 16px}
+  .skill .tagr{margin-top:auto;font-family:var(--font-mono);font-size:10.5px;letter-spacing:.14em;
+    text-transform:uppercase;color:var(--void);background:var(--accent);align-self:flex-start;padding:4px 10px;border-radius:20px}
+  .skill.soon{border-style:dashed}
+  .skill.soon .cmd{color:var(--mute)}
+  .skill.soon .tagr{color:var(--mute);background:none;border:1px solid var(--line)}
+  .skhint{font-family:var(--font-mono);font-size:12.5px;margin-top:20px;color:var(--mute)}
+  .skhint code{color:var(--ink2);background:var(--card2);border:1px solid var(--line);
+    border-radius:5px;padding:2px 7px;font-size:12px}
+  .skhint a{color:var(--accent)}
+
   @media (prefers-reduced-motion: reduce){
     .dot,.helm{animation:none}
     *{scroll-behavior:auto}
@@ -232,6 +251,7 @@
     <a href="#bundles">Bundles</a>
     <a href="#ladder">The Ladder</a>
     <a href="#install">Install</a>
+    <a href="#skills">Skills</a>
     <a href="docs/SENTINEL_DOCS.html">Docs</a>
     <a href="https://github.com/silentsudo-io/sentinel-suite">GitHub</a>
   </div>
@@ -419,6 +439,40 @@
         <div><span class="g">✓</span> <span class="p">right-click a chart → Skins, Indicators, Bar Types → Sentinel</span></div>
       </div>
     </div>
+  </div>
+</section>
+
+<section id="skills">
+  <div class="wrap">
+    <div class="lead">
+      <div class="ey">For contributors · Claude Code</div>
+      <h2>An agent that already knows the house rules.</h2>
+      <p>Clone the repo and — if you use <a href="https://claude.com/claude-code" style="color:var(--accent)">Claude&nbsp;Code</a> —
+        it auto-loads <b>skills</b>: packaged workflows that build Sentinel <em>for</em> you, enforcing the naming
+        law, the glass-card render rules, and the license/provenance gate so a half-plumbed tool can never ship.
+        Two are live today; the library grows with the suite.</p>
+    </div>
+    <div class="skills">
+      <div class="skill">
+        <div class="cmd">/port-sentinel-indicator</div>
+        <p>Turn any raw NinjaTrader indicator into a compliant Sentinel sensor — named, carded, publishing a
+          clean state seam, with its license checked first.</p>
+        <div class="tagr">Live</div>
+      </div>
+      <div class="skill">
+        <div class="cmd">/build-sentinel-skin</div>
+        <p>Add a whole new theme end-to-end — palette, glass cards, wallpaper, and the 16-file platform skin —
+          in a single clean pass.</p>
+        <div class="tagr">Live</div>
+      </div>
+      <div class="skill soon">
+        <div class="cmd">more coming</div>
+        <p>The skill library climbs the ladder with the suite — recorder wiring, Council voters, data-platform
+          setup, and more.</p>
+        <div class="tagr">Soon</div>
+      </div>
+    </div>
+    <p class="skhint">Ship in <code>.claude/skills/</code> · new to it? <a href="https://claude.com/claude-code">claude.com/claude-code</a></p>
   </div>
 </section>
 
