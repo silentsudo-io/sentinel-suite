@@ -1,0 +1,30 @@
+name: bundle-deps
+
+# Bundle dependency-completeness gate. NinjaTrader builds all of bin\Custom as ONE
+# assembly, so a bundle that references a custom type it doesn't ship hands downloaders
+# a CS0246/CS0103 that breaks their whole tree. We cannot compile NinjaScript in CI
+# (NinjaTrader's assemblies aren't redistributable), so this checks references instead.
+# This is the self-scan tier; maintainers run the authoritative --universe check locally
+# before a release (see CONTRIBUTING "Build & verify").
+
+on:
+  pull_request:
+    paths:
+      - 'src/**'
+      - 'tools/check_bundle_deps.py'
+  push:
+    branches: [main]
+    paths:
+      - 'src/**'
+      - 'tools/check_bundle_deps.py'
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Check every bundle is self-contained
+        run: python tools/check_bundle_deps.py

@@ -86,6 +86,22 @@ automated gate:
 3. ⚠ **Editing a `.cs` while NT is running re-appends the generated region** → strip any duplicate
    `#region NinjaScript generated code` to zero before F5. And a recompile does **not** reload running
    indicator instances — restart NT to see new behavior live.
+4. **Bundle self-containment (automated):** each bundle must ship *every* file it compile-depends on —
+   including plain-C# dependencies that aren't a `…State` seam. NT builds all of `bin\Custom` as one
+   assembly, so a dependency you forgot compiles fine *for you* but hands a downloader a `CS0246`/`CS0103`
+   that takes their whole tree down (this happened once — `SentinelTBars` → `Shared/TbarsSudoV3Config.cs`).
+   Run the checker:
+   ```
+   python tools/check_bundle_deps.py                      # self-scan (what CI runs on every PR)
+   ```
+   **Maintainers, before cutting a release**, also run the authoritative check against your full private
+   tree — it catches a referenced type that is shipped in *no* bundle (the self-scan can't see a file that
+   isn't in the repo):
+   ```
+   python tools/check_bundle_deps.py --universe "C:/Users/…/NinjaTrader 8/bin/Custom"
+   ```
+   It reports each bundle as self-contained or names the missing type + the file that needs it. Exit code 1
+   fails the build.
 
 ## Pull requests
 
