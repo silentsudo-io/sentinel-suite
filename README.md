@@ -38,16 +38,22 @@ red are reserved for **money and direction**, nothing else. Once you see it, you
 
 ## What's inside
 
-Three bundles, each self-contained. Install what you want; ignore the rest.
+Four bundles, each self-contained. Install what you want; ignore the rest.
+
+> ⚠ **Three of them are read-only and cannot place an order. The fourth, the Deck, trades.**
+> It is a **testers' preview** — see its row below and read its guide before installing it.
 
 | Bundle | Rung | What you get |
 |---|---|---|
 | **🎨 [Sentinel Skins](src/skins/)** | 0 · Beauty | 7 platform themes (Dark · Light · Silver · Obsidian · Blueprint · Amber · Neon) · the `SentinelSkin` drawing framework (glass cards + auto-layout) · a theme-aware chart wallpaper |
 | **📡 [Sentinel Sensors](src/sensors/)** | 1 · Intelligence | **8 hero signals** (Trend, ADX, Woodies CCI, VolEnvelope, Compression, Liquidity Walls, God Reversal, WAE) · 13 more (SuperTrend, Regime, Structure, VIDYA, Parabolic SAR…) · **3 bar types** (TBars, TbarsCount, **Flux** — order-flow imbalance) |
+| **🎛️ [Sentinel Deck](src/deck/) — PREVIEW (DEV)** | 5 · Execution | **⚠ PLACES REAL ORDERS.** A manual discretionary order deck: full order types, bracket / breakeven / 7 trailing modes, chart-scoped flatten, an account risk card, and a signal reader that can **arm you or fire for you**. **Unfinished and under test** — auto-fire has never been live-validated. **Start on SIM.** **[Tester's guide](src/deck/Docs/SENTINEL_DECK_TESTING_GUIDE.md)** · **[spec](src/deck/Docs/SENTINEL_DECK_SPEC.md)** |
 | **〰️ [Sentinel Smoothers](src/smoothers/)** | 1 · Beauty × Data | 23 moving averages & filters, clean-room and rebuilt to the suite's card/color language — EMA · HMA · DEMA · TEMA · VWMA · Zero-Lag family · Ehlers · Gaussian · Butterworth · Super Smoother |
 
 Every tool is naming-law compliant, draws a glass card, and — where it's a signal — publishes a
 `…State` seam. See **[docs/](docs/)** for the full reference.
+
+**Installing the Deck also installs the Safety layer** (`src/runtime/SentinelCore.Safety.cs`) — the account-risk decision logic it gates auto-fire through: kill switch, governor, drawdown, session and sizing. That is deliberate ordering, not a bundling accident: **safety ships before autopilot.**
 
 ---
 
