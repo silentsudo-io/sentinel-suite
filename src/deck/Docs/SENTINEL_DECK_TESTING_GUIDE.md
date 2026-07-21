@@ -42,6 +42,12 @@ your runs are how it earns a green light. Treat it as unproven.
 3. Confirm the header chip reads **v0.2.5** and the band appears beneath it.
 4. Select a **simulation account** in Chart Trader.
 
+![The Sentinel Deck running on an NQ chart — the order panel on the right, the account risk card lower-centre, order lines on the chart, and Sentinel sensor cards along the top](deck-in-context.png)
+
+*A loaded Deck in context: the panel (right), its account risk card (centre), live order lines, and sensor cards
+from the wider suite. You do not need any of the sensors to test the Deck — they are shown only so you can tell
+the Deck's own surfaces apart from everything else on a busy chart.*
+
 ---
 
 ## 2. How to test anything in this guide

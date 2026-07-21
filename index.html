@@ -155,7 +155,7 @@
 
   /* ladder */
   .ladder{display:flex;flex-direction:column;gap:8px}
-  .rung{display:grid;grid-template-columns:52px 1fr auto;align-items:center;gap:18px;
+  .ladder .rung{display:grid;grid-template-columns:52px 1fr auto;align-items:center;gap:18px;
     padding:15px 20px;border:1px solid var(--line);border-radius:12px;
     background:linear-gradient(var(--glass-top),var(--glass-bot))}
   .rung.live{border-color:var(--hair)}
@@ -169,6 +169,7 @@
     padding:5px 11px;border-radius:20px;white-space:nowrap}
   .badge.on{color:var(--void);background:var(--accent)}
   .badge.dev{color:var(--mute);border:1px solid var(--line)}
+  .badge.prev{color:var(--warn);border:1px solid var(--warn)}
 
   /* install */
   .term{background:var(--card2);border:1px solid var(--line);border-radius:14px;overflow:hidden;box-shadow:var(--shadow)}
@@ -344,9 +345,10 @@
   <div class="wrap">
     <div class="lead">
       <div class="ey">Available now — zero order risk</div>
-      <h2>Three bundles. Install what you want, ignore the rest.</h2>
+      <h2>Four bundles. Install what you want, ignore the rest.</h2>
       <p>Each carries the runtime it needs and installs into NinjaTrader's one assembly cleanly. Start
-        with beauty, add sensors when you're ready.</p>
+        with beauty, add sensors when you're ready. <b>Three of them are read-only and cannot place an
+        order — the fourth, the Deck, trades.</b></p>
     </div>
     <div class="cards">
       <div class="card">
@@ -390,6 +392,22 @@
         </ul>
         <div class="foot"><span>Filters</span><b>23</b></div>
       </div>
+      <div class="card">
+        <div class="thumb"><img src="assets/screenshots/deck.png" loading="lazy" alt="The Sentinel Deck panel: header and version chip, the SIM preview safety band, signal arm reading a CompressionBase plot, then order type, quantity, buy/sell, flatten, bracket, breakeven and trailing controls"></div>
+        <div class="k" style="color:var(--warn)">Rung 5 · Execution · PREVIEW (DEV)</div>
+        <h3>Sentinel Deck</h3>
+        <div class="rung">the manual order deck &mdash; it trades</div>
+        <p style="border-left:2px solid var(--warn);padding-left:10px">
+          <b>This one places real orders, and it is not finished.</b> Published for testing, not for trading:
+          its auto-fire has never been validated live. Start on a SIM account.</p>
+        <ul>
+          <li><b>Full control</b> — order types, bracket, breakeven, 7 trailing modes, chart-scoped flatten</li>
+          <li><b>Signal arm</b> — reads any loaded indicator's plot; arms you, or fires for you</li>
+          <li><b>Fail-closed automation</b> — your click is never blocked; auto-fire is gated by the Safety layer</li>
+          <li><b>One-click diagnostics</b> — a bug report arrives already answerable</li>
+        </ul>
+        <div class="foot"><span><a href="https://github.com/silentsudo-io/sentinel-suite/releases/tag/deck-v0.2.5-preview">Preview release</a> · <a href="src/deck/Docs/SENTINEL_DECK_TESTING_GUIDE.md">tester's guide</a></span><b>v0.2.5</b></div>
+      </div>
     </div>
   </div>
 </section>
@@ -399,8 +417,9 @@
     <div class="lead">
       <div class="ey">A ladder, not a wall</div>
       <h2>Climb as far as you like.</h2>
-      <p>Every rung stands alone <em>and</em> unlocks the next. Rungs 0–1 are live today. The rest are
-        built and under active development — here's the whole map, so you can see where it goes.</p>
+      <p>Every rung stands alone <em>and</em> unlocks the next. Rungs 0–1 are live today, and <b>rung 5 — the
+        Deck — is downloadable as a testers' preview</b>. The rest are built and under active development —
+        here's the whole map, so you can see where it goes.</p>
     </div>
     <div class="ladder">
       <div class="rung live"><div class="n">0</div><div class="t"><b>Skins</b><span>make any chart beautiful</span></div><div class="badge on">Live</div></div>
@@ -408,8 +427,8 @@
       <div class="rung locked"><div class="n">2</div><div class="t"><b>Recorder &amp; Log</b><span>capture every outcome to disk</span></div><div class="badge dev">In dev</div></div>
       <div class="rung locked"><div class="n">3</div><div class="t"><b>Observatory</b><span>understand your recorded trades</span></div><div class="badge dev">In dev</div></div>
       <div class="rung locked"><div class="n">4</div><div class="t"><b>The Council</b><span>one honest verdict, fused from every sensor</span></div><div class="badge dev">In dev</div></div>
-      <div class="rung locked"><div class="n">5</div><div class="t"><b>Deck &amp; Cockpit</b><span>advanced manual command surface</span></div><div class="badge dev">In dev</div></div>
-      <div class="rung locked"><div class="n">6</div><div class="t"><b>Prop-Survival Kit</b><span>keep your funded account alive</span></div><div class="badge dev">In dev</div></div>
+      <div class="rung live"><div class="n">5</div><div class="t"><b>Deck &amp; Cockpit</b><span>advanced manual command surface — <b>the Deck places real orders</b>; testers' preview available</span></div><div class="badge prev">Preview</div></div>
+      <div class="rung locked"><div class="n">6</div><div class="t"><b>Prop-Survival Kit</b><span>keep your funded account alive — its Safety layer already ships with the Deck</span></div><div class="badge dev">In dev</div></div>
       <div class="rung locked"><div class="n">7</div><div class="t"><b>The Bridge</b><span>autopilot that consumes the Council</span></div><div class="badge dev">In dev</div></div>
       <div class="rung locked"><div class="n">8</div><div class="t"><b>The Copier</b><span>mirror one account to many</span></div><div class="badge dev">In dev</div></div>
       <div class="rung locked"><div class="n">9</div><div class="t"><b>Helm</b><span>the human hand on the tiller</span></div><div class="badge dev">In dev</div></div>
