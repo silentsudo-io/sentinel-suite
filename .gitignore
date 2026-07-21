@@ -13,3 +13,6 @@ desktop.ini
 *.pdb
 obj/
 bin/
+
+# Built release artifacts
+dist/
