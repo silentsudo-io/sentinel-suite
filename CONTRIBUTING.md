@@ -36,6 +36,13 @@ Every Sentinel **indicator** carries the "Sentinel &lt;Thing&gt;" identity on fo
 stays in the **base** `NinjaTrader.NinjaScript.Strategies` namespace and carries the tell via **class-name
 prefix + display Name only.**
 
+🔴 **This naming applies to code contributed to *this repo*, not to your own tools.** The `Sentinel*` prefix
+and the `…Indicators.Sentinel` namespaces are **reserved** — see **[RESERVED_NAMES.md](RESERVED_NAMES.md)**,
+which lists every name this project has claimed, **including tools that have not shipped yet**. Check it
+before you name anything. NinjaTrader compiles all of `bin\Custom` into one assembly, so a duplicate type
+name is a `CS0101` that stops a user's **entire** NinjaScript tree — not just Sentinel — from compiling.
+Building your own thing? Use your own prefix and namespace, and you can never collide.
+
 Plus, every Sentinel indicator:
 - draws a **glass card** via `SentinelSkin.Painter` + `SentinelSkin.CardLayout` (with a `CardCorner` property),
 - includes the **label remover** (`ShowIndicatorLabel` toggle; set `Name = string.Empty` first in `State.DataLoaded`),

@@ -38,6 +38,18 @@ file whose class name or namespace could collide with the suite's own. NinjaTrad
 `bin\Custom` into ONE assembly**, so a duplicate class name is a `CS0101` that stops the user's
 *entire* NinjaScript tree from compiling — every indicator and strategy they own, not just Sentinel.
 
+🔴 **Check every new type name against [`RESERVED_NAMES.md`](../../../RESERVED_NAMES.md) before going
+further** — it lists names claimed for tools that **have not shipped yet**, which is exactly the class of
+collision nobody can guess at. Grep it:
+
+```bash
+grep -i "<TheNameYouWantToUse>" RESERVED_NAMES.md
+```
+
+A hit means pick another name. If the contributor is in bucket 3 (their own tool), this is the most
+valuable minute of the whole process: renaming now is a find/replace, renaming after other people have
+installed it means asking every one of them to delete a file in the right order.
+
 If they are unsure which bucket they are in, ask: *"is this making Sentinel's own file better, or is it
 your own thing that uses Sentinel?"*
 
