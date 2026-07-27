@@ -52,6 +52,10 @@ If you use [Claude Code](https://claude.com/claude-code), this repo ships agent 
 [`.claude/skills/`](.claude/skills/) that automate the workflows above and enforce this contract for you —
 they load automatically when you open the repo:
 
+- **`contribute`** — turn a local change into a reviewable PR. **Start here if you have fixed something and
+  don't know what to do next.** Your edit almost certainly lives in `bin\Custom`, which is not a git clone;
+  this skill sets up the fork, maps the file onto `src/`, strips NinjaTrader's generated region (which must
+  never be committed), runs the verification below, and adds the DCO sign-off and your `AUTHORS` credit.
 - **`port-sentinel-indicator`** — convert a raw NT indicator into a compliant Sentinel sensor (license/provenance
   gate first, the four-layer naming law, glass card + card-render rules, and a published `SentinelCore` state seam).
 - **`build-sentinel-skin`** — add a new theme end-to-end (the `SentinelSkin` palette + the 16-file platform skin folder).
@@ -105,10 +109,21 @@ automated gate:
 
 ## Pull requests
 
+> **Never done this before? Run the `contribute` skill** — it does all of the below for you, including the
+> parts that are easy to get wrong (finding the right `src/` path, stripping the generated region, checking
+> your change against the *published* runtime rather than your newer local one).
+
 1. Fork, branch from `main`.
 2. Make the change; **F5-verify it compiles clean** (paste the result in the PR).
-3. If you added/changed an indicator, tick every box in the compliance checklist.
-4. Add yourself to `AUTHORS`; note in the PR that you release the work for open-source use.
-5. Keep PRs focused — one tool or one fix.
+3. **Strip NinjaTrader's generated region** from any `Indicators/*.cs` you touched — `grep -c "region
+   NinjaScript generated code"` must return **0**. NT regenerates it on compile, so a committed copy is a
+   `CS0111` for the next person to import the file.
+4. If you added/changed an indicator, tick every box in the compliance checklist.
+5. **Sign off your commit: `git commit -s`.** That adds the `Signed-off-by:` line — the
+   [DCO](https://developercertificate.org/) — certifying you wrote it (or may submit it) and release it
+   under **MPL-2.0**. Without it the change cannot be merged. If any of it came from another indicator,
+   a forum post, or a paid product, **say so** — a port is a derivative work.
+6. Add yourself to `AUTHORS`, and credit yourself in the header/changelog of the file you changed.
+7. Keep PRs focused — one tool or one fix.
 
 Questions or a design idea? Open an issue first (see the templates) so we can place it on the ladder.
