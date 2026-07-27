@@ -481,7 +481,3 @@ namespace NinjaTrader.NinjaScript.Indicators.Sentinel.Sensors
         #endregion
     }
 }
-
-#region NinjaScript generated code. Neither change nor remove.
-
-#endregion

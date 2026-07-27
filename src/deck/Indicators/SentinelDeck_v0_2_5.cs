@@ -1,3 +1,10 @@
+// ─────────────────────────────────────────────────────────────────────────────
+// This Source Code Form is subject to the terms of the Mozilla Public License,
+// v. 2.0. If a copy of the MPL was not distributed with this file, You can obtain
+// one at https://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) 2026 silentsudo-io and the Sentinel Suite contributors.
+// ─────────────────────────────────────────────────────────────────────────────
 // ============================================================================
 // Sentinel Deck  manual discretionary order deck + account-tracking risk card
 // ============================================================================
@@ -3372,60 +3379,3 @@ namespace NinjaTrader.NinjaScript.Indicators.Sentinel
         }
     }
 }
-
-#region NinjaScript generated code. Neither change nor remove.
-
-namespace NinjaTrader.NinjaScript.Indicators
-{
-	public partial class Indicator : NinjaTrader.Gui.NinjaScript.IndicatorRenderBase
-	{
-		private Sentinel.SentinelDeck_v0_2_5[] cacheSentinelDeck_v0_2_5;
-		public Sentinel.SentinelDeck_v0_2_5 SentinelDeck_v0_2_5(int defaultQty, int tickOffset, bool showIndicatorLabel)
-		{
-			return SentinelDeck_v0_2_5(Input, defaultQty, tickOffset, showIndicatorLabel);
-		}
-
-		public Sentinel.SentinelDeck_v0_2_5 SentinelDeck_v0_2_5(ISeries<double> input, int defaultQty, int tickOffset, bool showIndicatorLabel)
-		{
-			if (cacheSentinelDeck_v0_2_5 != null)
-				for (int idx = 0; idx < cacheSentinelDeck_v0_2_5.Length; idx++)
-					if (cacheSentinelDeck_v0_2_5[idx] != null && cacheSentinelDeck_v0_2_5[idx].DefaultQty == defaultQty && cacheSentinelDeck_v0_2_5[idx].TickOffset == tickOffset && cacheSentinelDeck_v0_2_5[idx].ShowIndicatorLabel == showIndicatorLabel && cacheSentinelDeck_v0_2_5[idx].EqualsInput(input))
-						return cacheSentinelDeck_v0_2_5[idx];
-			return CacheIndicator<Sentinel.SentinelDeck_v0_2_5>(new Sentinel.SentinelDeck_v0_2_5(){ DefaultQty = defaultQty, TickOffset = tickOffset, ShowIndicatorLabel = showIndicatorLabel }, input, ref cacheSentinelDeck_v0_2_5);
-		}
-	}
-}
-
-namespace NinjaTrader.NinjaScript.MarketAnalyzerColumns
-{
-	public partial class MarketAnalyzerColumn : MarketAnalyzerColumnBase
-	{
-		public Indicators.Sentinel.SentinelDeck_v0_2_5 SentinelDeck_v0_2_5(int defaultQty, int tickOffset, bool showIndicatorLabel)
-		{
-			return indicator.SentinelDeck_v0_2_5(Input, defaultQty, tickOffset, showIndicatorLabel);
-		}
-
-		public Indicators.Sentinel.SentinelDeck_v0_2_5 SentinelDeck_v0_2_5(ISeries<double> input , int defaultQty, int tickOffset, bool showIndicatorLabel)
-		{
-			return indicator.SentinelDeck_v0_2_5(input, defaultQty, tickOffset, showIndicatorLabel);
-		}
-	}
-}
-
-namespace NinjaTrader.NinjaScript.Strategies
-{
-	public partial class Strategy : NinjaTrader.Gui.NinjaScript.StrategyRenderBase
-	{
-		public Indicators.Sentinel.SentinelDeck_v0_2_5 SentinelDeck_v0_2_5(int defaultQty, int tickOffset, bool showIndicatorLabel)
-		{
-			return indicator.SentinelDeck_v0_2_5(Input, defaultQty, tickOffset, showIndicatorLabel);
-		}
-
-		public Indicators.Sentinel.SentinelDeck_v0_2_5 SentinelDeck_v0_2_5(ISeries<double> input , int defaultQty, int tickOffset, bool showIndicatorLabel)
-		{
-			return indicator.SentinelDeck_v0_2_5(input, defaultQty, tickOffset, showIndicatorLabel);
-		}
-	}
-}
-
-#endregion
