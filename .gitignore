@@ -16,3 +16,6 @@ bin/
 
 # Built release artifacts
 dist/
+
+# check_parity --since-last snapshot: per-machine state, not shared history
+.parity-state.json

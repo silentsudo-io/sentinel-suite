@@ -47,6 +47,7 @@ from __future__ import annotations
 
 import argparse
 import difflib
+import json
 import re
 import sys
 from pathlib import Path
@@ -114,11 +115,77 @@ def find_local(local_root: Path, published: Path) -> Path | None:
     return None
 
 
+def report_delta(state_path: Path, drifted, errors, orphaned, clean: int) -> int:
+    """Report only what CHANGED since the previous run, then record the new state.
+
+    WHY THIS MODE EXISTS. `bin\\Custom` is canonical and always ahead, so the absolute
+    answer is permanently "52 files differ". A check that is red every single day is a
+    check nobody reads -- the same reason this project refused to ship a linter that
+    failed on day one. The signal worth a human's attention is the DELTA: a file that
+    started drifting, or one whose drift grew. Everything else is the expected state
+    of a healthy snapshot.
+
+    Exit 0 means "nothing new", NOT "no drift".
+    """
+    now = {str(rel).replace("\\", "/"): n for rel, n, _ in drifted}
+    prev, first_run = {}, True
+    if state_path.is_file():
+        try:
+            prev = json.loads(state_path.read_text(encoding="utf-8")).get("drift", {})
+            first_run = False
+        except Exception:
+            pass  # unreadable state -> treat as first run, re-baseline below
+
+    new = sorted(k for k in now if k not in prev)
+    grew = sorted((k, prev[k], now[k]) for k in now if k in prev and now[k] > prev[k])
+    gone = sorted(k for k in prev if k not in now)
+
+    state_path.write_text(json.dumps(
+        {"drift": now, "errors": len(errors), "orphaned": len(orphaned), "clean": clean},
+        indent=2), encoding="utf-8")
+
+    if first_run:
+        print(f"PARITY baseline recorded: {len(now)} drifting, {len(errors)} errors, {clean} faithful.")
+        print("No delta to report on a first run. Subsequent runs report only what changed.")
+        return 0
+
+    if errors:
+        print(f"PARITY ERRORS ({len(errors)}) — defects in the published snapshot:")
+        for rel, why in errors:
+            print(f"    {rel}  —  {why}")
+
+    if new:
+        print(f"\nNEWLY DRIFTING ({len(new)}) — local changed and the snapshot did not:")
+        for k in new:
+            print(f"    {now[k]:>6} lines   {k}")
+    if grew:
+        print(f"\nDRIFT GREW ({len(grew)}):")
+        for k, o, n in grew:
+            print(f"    {o:>6} -> {n:<6} {k}")
+    if gone:
+        print(f"\nRESOLVED ({len(gone)}) — published caught up, or the file left the tree:")
+        for k in gone:
+            print(f"    {k}")
+
+    if not (new or grew or errors):
+        print(f"PARITY unchanged — {len(now)} files drifting (expected), {clean} faithful, 0 errors.")
+        return 0
+
+    print("\n    Review:  python tools/check_parity.py --local <bin\\Custom> --diff <File.cs>")
+    print("    Publish: copy local over the snapshot, ADD the MPL header, STRIP the region.")
+    return 1
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--local", required=True, help='path to the canonical bin\\Custom tree')
     ap.add_argument("--diff", metavar="FILE", help="print the normalised diff for one file name")
+    ap.add_argument("--since-last", action="store_true",
+                    help="report only what CHANGED since the previous run (see WHY below), "
+                         "then record the new state. This is what the daily task uses.")
+    ap.add_argument("--state", default=str(REPO / ".parity-state.json"),
+                    help="where --since-last keeps its snapshot")
     args = ap.parse_args()
 
     local_root = Path(args.local)
@@ -159,6 +226,9 @@ def main() -> int:
     if args.diff:
         print(f"error: no published file named {args.diff}", file=sys.stderr)
         return 2
+
+    if args.since_last:
+        return report_delta(Path(args.state), drifted, errors, orphaned, clean)
 
     print(f"Canonical: {local_root}")
     print(f"Snapshot:  {SRC}\n")
