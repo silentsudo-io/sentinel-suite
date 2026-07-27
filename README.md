@@ -114,7 +114,14 @@ dataset dictionary, and a spec for every tool.
 ## Contributing
 
 Sentinel is a *platform*, not just a suite — the naming law + state-seam protocol let anyone add a
-compliant tool. See **[CONTRIBUTING.md](CONTRIBUTING.md)**.
+compliant tool. See **[CONTRIBUTING.md](CONTRIBUTING.md)**. Using Claude Code? Run **`/contribute`** —
+it turns a change you made in `bin\Custom` into a clean, signed-off pull request.
+
+🔴 **Building your own tool on top of Sentinel? Read [RESERVED_NAMES.md](RESERVED_NAMES.md) first.**
+NinjaTrader compiles all of `bin\Custom` into **one assembly**, so two types sharing a name break the
+user's *entire* NinjaScript tree — not just Sentinel. That file lists every name this project claims,
+**including tools that have not shipped yet**, so you can pick a safe one before you write a line.
+Your own prefix and namespace, and we can never collide.
 
 ## License & credits
 

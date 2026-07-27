@@ -10,6 +10,33 @@ per-file `_vX_Y_Z` versions inside the source.
 ## [Unreleased] — P1 scaffolding
 The first release is being assembled: the **non-execution beachhead** (draws on charts, never places an order).
 
+### Fixed — from the first wave of public installs (2026-07-27)
+Everything in this block was found by people installing rungs 0-1 for real. That is the point of shipping.
+- **Import archives were missing a compile-time dependency.** `tools/make_ninjascript_archive.py` *silently
+  skipped* any `.cs` outside the nine NinjaScript folders, so `Shared/TbarsSudoV3Config.cs` — which
+  `SentinelTBars` needs to compile — never reached the zip. Since NinjaTrader builds all of `bin\Custom` into
+  one assembly, that is a `CS0246` that takes down the user's **entire** tree, not just Sentinel. The folder is
+  now remapped to `AddOns\`, and **a `.cs` that maps nowhere is a hard build failure** rather than a printed
+  warning. ⚠ If you previously hand-copied that file to `bin\Custom\Shared\`, **delete it before re-importing**
+  or you will have two definitions and a `CS0101`.
+  *(The dependency checker was right all along — it validates `src/`, while the archive shipped a subset of
+  `src/`, and nothing validated the archive. The bug lived in the gap between two correct tools.)*
+- **Cards collapsed to bare chips on crowded charts.** `CardLayout.MinCardScale` was `0.80`, which left so
+  little travel that a column with many stacked sub-panels skipped scale-to-fit entirely and went straight to a
+  22px chip. Now `0.60`, plus a `Sentinel\min-card-scale.txt` runtime tunable (no re-import needed).
+  **Diagnosed and first implemented by sneaky_zekey** — see AUTHORS.
+- **Bar types render Heikin-Ashi bodies, and candle colour is NOT brick direction.** `SentinelTBars` smooths
+  bodies (`(O+H+L+C)/4`) while wicks stay real, so near a turn the body and the printed brick routinely
+  disagree. The authoritative direction is `SentinelCore.BrickState.Direction`, never the pixel — and an HA
+  close is a price that never traded, so never record one as a fill. This was true since v1.0.0 and undocumented
+  until a tester hit it. Now carried in the `SentinelTBars` header.
+- **Docs: the Council fusion formula on the Field Manual was superseded.** It documented
+  `Conviction = |netScore| / activeW` — dividing by the *awake* voters, which reads **100% conviction from a
+  single attached sensor** with nothing able to disagree. The shipping Council divides by `denomW` (the
+  **declared** roster, kind-aware), so absence dilutes. A reader reimplemented the page faithfully and inherited
+  a bug we had already fixed twice; the manual now documents the current formula, the conviction/`contextMult`
+  split, and both traps explicitly.
+
 ### Added
 - **Repository scaffold** — README, NOTICE, AUTHORS, LICENSE (TBD), CONTRIBUTING (the Platform Contract),
   SENSOR_COMPLIANCE_CHECKLIST, CODE_OF_CONDUCT, SECURITY, and GitHub issue/PR templates.

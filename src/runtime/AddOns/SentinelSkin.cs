@@ -957,9 +957,45 @@ namespace NinjaTrader.NinjaScript.AddOns.Sentinel
 
         /// <summary>How small a card may be squeezed before we give up and hide something instead. Cards are drawn
         /// through a Direct2D scale transform, so text stays vector-crisp — but there is a LEGIBILITY floor, not a
-        /// rendering one. 0.80 keeps a 9px micro-label at ~7.2px. Pinned cards NEVER scale (their controls are
-        /// hit-tested in untransformed screen coords), so their height is reserved at full size.</summary>
-        public static float MinCardScale = 0.80f;
+        /// rendering one. Pinned cards NEVER scale (their controls are hit-tested in untransformed screen coords),
+        /// so their height is reserved at full size.
+        ///
+        /// v1.2 (2026-07-27) — WAS 0.80, WHICH MOSTLY DISABLED SCALE-TO-FIT. Reported by a public tester running
+        /// ~20 Sentinel indicators across many stacked sub-panels: 0.80 left so little travel that a crowded column
+        /// skipped the scale step almost entirely and went straight to a 22px chip — "just a small bar with a label,
+        /// not displaying anything". The floor was tuned on a chart with room to spare, so the failure only appeared
+        /// on the layouts that needed the feature most. 0.60 keeps a 9px micro-label at ~5.4px — smaller, but far
+        /// more readable than a name-only chip, and it lets scale-to-fit work across a much wider range of panel
+        /// heights before collapse is reached.
+        ///
+        /// TUNABLE without a re-import: write a single float (e.g. "0.5") to
+        /// &lt;Documents&gt;\NinjaTrader 8\Sentinel\min-card-scale.txt — polled ≤2s, same convention as layout.off /
+        /// cards.off / theme.txt. Delete the file to return to this default. Clamped to [0.15, 1.0].
+        ///
+        /// Diagnosed and first implemented by sneaky_zekey (with Claude) against this release.</summary>
+        public static float MinCardScale = 0.60f;
+
+        /// <summary>Picks up Sentinel\min-card-scale.txt if present. Polled on the render thread from the same
+        /// throttled path as <see cref="LayoutDisabled"/>, so a crowded chart costs one File.Exists per 2s.</summary>
+        private static int _minScaleChecked;
+        private static void ResolveMinCardScale(int now)
+        {
+            if (unchecked(now - _minScaleChecked) <= 2000) return;
+            _minScaleChecked = now;
+            try
+            {
+                string p = System.IO.Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
+                    "NinjaTrader 8", "Sentinel", "min-card-scale.txt");
+                if (!System.IO.File.Exists(p)) return;
+                float v;
+                if (float.TryParse(System.IO.File.ReadAllText(p).Trim(),
+                        System.Globalization.NumberStyles.Float,
+                        System.Globalization.CultureInfo.InvariantCulture, out v))
+                    MinCardScale = Math.Max(0.15f, Math.Min(1f, v));   // below 0.15 nothing is readable at any DPI
+            }
+            catch { }
+        }
 
         /// <summary>Reserve/refresh this card's slot and return its outer rect, auto-stacked within its
         /// corner. <paramref name="key"/> = stable per-card identity (pass <c>this</c>). <paramref name="panelKey"/>
@@ -1006,6 +1042,8 @@ namespace NinjaTrader.NinjaScript.AddOns.Sentinel
                 // KILL SWITCH: `Sentinel\layout.off` → plain stacking, exactly as before scale/collapse existed.
                 // No transform is ever armed (CardStyle can't match a slot whose Scale is 1 and Collapsed false),
                 // so nothing can flicker. Cards may overlap again; that is the price of a still chart.
+                ResolveMinCardScale(now);   // Sentinel\min-card-scale.txt, if present; throttled internally to ≤2s
+
                 if (LayoutDisabled(now))
                 {
                     float offL = 0f;
