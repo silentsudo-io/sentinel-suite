@@ -15,6 +15,14 @@ A NinjaScript archive is just a zip with two rules:
 Only NinjaScript source belongs inside — docs and images are shipped in the
 plain source zip instead, since the importer has nowhere to put them.
 
+EVERY .cs UNDER A BUNDLE MUST REACH THE ARCHIVE. NinjaTrader compiles all of
+bin\\Custom into ONE assembly, so a source file that is silently left out is not
+a missing feature — it is a CS0246 that takes the user's whole tree down. This
+script therefore has no "skip" path for .cs: a file either maps onto a real
+NinjaScript folder or the build FAILS. (It shipped `sensors/Shared/
+TbarsSudoV3Config.cs` — a compile-time dependency of SentinelTBars — into the
+void for exactly as long as that skip was a `print` instead of an error.)
+
 Usage:
     python tools/make_ninjascript_archive.py deck runtime -o dist/sentinel-deck-v0.2.5.zip
 """
@@ -44,8 +52,8 @@ INFO_XML = (
     "</NinjaTrader>"
 )
 
-# Only these map onto a real bin\Custom folder; anything else in a bundle
-# (Docs/, Shared/, themes/) is not importable NinjaScript.
+# The real bin\Custom NinjaScript folders — an archive entry under any of these
+# lands where NinjaTrader expects it.
 NT_FOLDERS = {
     "AddOns",
     "BarsTypes",
@@ -58,11 +66,29 @@ NT_FOLDERS = {
     "SuperDomColumns",
 }
 
+# Bundle folders that hold real compilable source but are NOT NinjaScript folders,
+# and where their contents must be REDIRECTED to instead.
+#
+# `Shared/` is our own convention for suite-shared plain-C# types (currently just
+# TbarsSudoV3Config, a compile-time dependency of SentinelTBars). NinjaTrader's own
+# exporter only ever emits the folders above, so the importer's behaviour on a
+# non-standard path is unverified — and a REJECTED import is worse than a misfiled
+# one. These types are namespace-scoped, not folder-scoped, so AddOns\ compiles
+# identically.
+#
+# ⚠ A user who previously hand-copied the file to bin\Custom\Shared\ and then
+# imports will hold TWO copies and get CS0101. Delete the hand-placed one.
+FOLDER_MAP = {"Shared": "AddOns"}
+
 
 def collect(bundles: list[str]) -> list[tuple[Path, str]]:
-    """Map src/<bundle>/<NTFolder>/<file>.cs -> <NTFolder>\\<file>.cs."""
+    """Map src/<bundle>/<folder>/<file>.cs -> <NTFolder>\\<file>.cs.
+
+    Every .cs is packaged or the build fails — see the module docstring.
+    """
     entries: list[tuple[Path, str]] = []
     seen: dict[str, Path] = {}
+    remapped: list[str] = []
 
     for bundle in bundles:
         root = SRC / bundle
@@ -71,18 +97,34 @@ def collect(bundles: list[str]) -> list[tuple[Path, str]]:
 
         for path in sorted(root.rglob("*.cs")):
             rel = path.relative_to(root)
-            if rel.parts[0] not in NT_FOLDERS:
-                print(f"  skip (not a NinjaScript folder): {bundle}/{rel.as_posix()}")
-                continue
+            top = rel.parts[0]
 
-            arc = "\\".join(rel.parts)
+            if top in NT_FOLDERS:
+                dest = rel.parts
+            elif top in FOLDER_MAP:
+                dest = (FOLDER_MAP[top],) + rel.parts[1:]
+                remapped.append(f"{bundle}/{rel.as_posix()} -> {chr(92).join(dest)}")
+            else:
+                sys.exit(
+                    f"error: {bundle}/{rel.as_posix()} is source, but '{top}/' is neither a\n"
+                    f"       NinjaScript folder nor in FOLDER_MAP. Leaving a .cs out of the\n"
+                    f"       archive breaks the importer's whole compile (CS0246). Either move\n"
+                    f"       it under a real folder or add a FOLDER_MAP entry."
+                )
+
+            # Flatten any nested subfolders — bin\Custom's folders are one level deep.
+            arc = "\\".join((dest[0], dest[-1]))
             if arc in seen:
-                sys.exit(f"error: {arc} supplied by two bundles: {seen[arc]} and {path}")
+                sys.exit(f"error: {arc} supplied twice: {seen[arc]} and {path}")
             seen[arc] = path
             entries.append((path, arc))
 
     if not entries:
         sys.exit("error: nothing to package")
+    if remapped:
+        print("  remapped (non-NinjaScript source folder):")
+        for r in remapped:
+            print(f"    {r}")
     return entries
 
 

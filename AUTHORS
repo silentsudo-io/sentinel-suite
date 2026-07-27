@@ -19,5 +19,10 @@ the exact code it covers. Look there for per-file attribution.
   - <name / handle> — <what they contributed>. Released for open-source use
     under this project with full permission (YYYY-MM-DD).
 -->
-- _(as of the initial release: sole work of the maintainer; no external
-  contributor grants on record yet)_
+- **sneaky_zekey** — first external contributor. Diagnosed and first implemented the
+  `CardLayout.MinCardScale` legibility-floor fix (crowded multi-panel charts skipped
+  scale-to-fit and collapsed straight to chips) plus the `min-card-scale.txt` runtime
+  tunable, in `SentinelSkin.cs`. Also reported the missing `PressureState` seam on
+  BuySellVolumePressureMountain, and that the bar types render Heikin-Ashi bodies whose
+  colour is not brick direction — a trap the docs did not carry. Work done with Claude.
+  Released for open-source use under this project with permission (2026-07-27).

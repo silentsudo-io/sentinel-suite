@@ -405,7 +405,8 @@ dedicated `EventState` news seam beyond the existing News.conf → news-lockout 
   hard-won history of managed-vs-unmanaged order-ownership.
 
 ### Deck — the manual order deck
-- **File:** `Indicators/Deck_v0_2_2.cs` (`Indicators.Sentinel`) · **Status:** ⚠ SIM-validate
+- **File:** `Indicators/SentinelDeck_v0_2_5.cs` (`Indicators.Sentinel`) · **Status:** ⚠ SIM-validate ·
+  **PUBLIC TESTERS' PREVIEW (DEV)** since 2026-07-21 — see `SENTINEL_DECK_SPEC.md` + `SENTINEL_DECK_TESTING_GUIDE.md`
 - **What it is:** a discretionary manual order deck + account risk card: all order types, all
   price-entry methods, full trade management (bracket/OCO, breakeven, 7 trail modes, scale),
   chart-scoped flatten, pop-out/dock, a $-risk sizer, and **on-chart order visuals** with
@@ -643,6 +644,11 @@ That's it. `AddVote` collapses the value to `Math.Sign(dir)`, adds `sign×weight
 adds `weight` to `activeW`, increments the fresh-voter count, and appends to `_votes` (which drives
 the agree/disagree tally, the card chip, and the `MINE▲/▼/~` token in the Reasons string).
 
+> ⚠ **`activeW` is NOT the conviction denominator** — it is the weight of the sensors currently
+> *awake*, used for the tally and breadth only. Conviction divides by **`denomW`** (the DECLARED
+> roster, kind-aware) — see *How the vote actually fuses* below. Dividing by `activeW` is the
+> single-voter-reads-100% bug.
+
 **Contract for a voter:**
 - Pass a **raw signed value** as `dir` (AddVote takes the sign; magnitude is discarded).
 - Pass **`0`** when your sensor is present-but-neutral, so it still counts toward breadth
@@ -660,22 +666,48 @@ conviction is computed, multiply it (`conviction *= myDamp;`) and add a suffix t
 ```
 per voter:   vote = sign(dir) × weight        (neutral/absent → no score contribution)
 
-netScore = Σ vote                              activeW = Σ weight (directional voters only)
+netScore = Σ vote
 
-Bias        = +1 if netScore >  deadband·activeW
-              −1 if netScore < −deadband·activeW      (else 0 = FLAT)   deadband default 0.15
+denomW   = Σ BASE weight of the DECLARED voters, KIND-AWARE:
+             STATE   voters always count   (neutral is a real reading — it dilutes)
+             TRIGGER voters count only when they FIRED, or when absent entirely
+             (a quiet trigger is absence of evidence, not evidence against)
 
-Conviction  = |netScore| / activeW             ∈ [0,1]   (1 = unanimous)
-              × breadth-damp × squeeze × clock × rvol × mtf × location   → clamp [0,1]
+Bias        = +1 if netScore >  deadband·denomW
+              −1 if netScore < −deadband·denomW       (else 0 = FLAT)   deadband default 0.15
 
-SizeMult    = (Vetoed OR Conviction < floor) ? 0 : Conviction            floor default 0.35
+Conviction  = |netScore| / denomW              ∈ [0,1]   (1 = unanimous)
+              PURE AGREEMENT — no context modulators. Nothing else multiplies it.
+
+contextMult = breadth × squeeze × clock × rvol × mtf × location          (each fail-open)
+
+SizeMult    = (Vetoed OR Bias==0 OR Conviction < floor) ? 0
+                                                        : Conviction × contextMult
+                                                                         floor default 0.20
 ```
 
-The **modulators** (all multiply conviction, all fail-open): breadth (`voters/MinVoters` if short),
-VolEnvelope squeeze (`×0.6`), Clock (`×OffSessionDamp 0.50` off-session / `×MiddayDamp 0.85`
-midday), Participation (`×min(1, max(RvolDampFloor, rvol))` — thin tape damps, never inflates), MTF
-(`×MtfCounterDamp 0.60` when higher TF disagrees), Location (`×LevelDamp 0.70` when price is heading
-into a level).
+⚠ **Two traps this formula exists to avoid — both were live bugs, both are easy to reintroduce
+if you reimplement from an older copy of this page.**
+
+**① The denominator is the DECLARED roster, not the awake one.** If you divide by "weight of the
+sensors that happen to be publishing", then a chart with ONE sensor attached scores
+`1.0 / 1.0 = 100% conviction` — maximum confidence in a single opinion with nothing capable of
+disagreeing. Absence must **dilute**. The Council builds a declared roster from `Roster.conf`, or —
+when no roster file exists, which is every fresh install — from every known voter with a non-zero
+base weight, so the denominator is right out of the box. `MinVoters` (default 3) is a second,
+partly-redundant breadth damp kept for the same reason.
+
+**② Conviction and context are separate numbers.** Conviction answers *"do my sensors agree?"*;
+`contextMult` answers *"is this a good moment?"*. They were once multiplied into one number that the
+floor then tested, so a midday counter-trend trade with genuine unanimous agreement silently became a
+*non-trade* instead of a *smaller trade* — and the only visible symptom was `size=0.00`. Each number
+now means exactly one thing.
+
+The **modulators** (all multiply `contextMult`, never `Conviction`, all fail-open): breadth
+(`voters/MinVoters` if short), VolEnvelope squeeze (`×0.6`), Clock (`×OffSessionDamp 0.50`
+off-session / `×MiddayDamp 0.85` midday), Participation (`×min(1, max(RvolDampFloor, rvol))` — thin
+tape damps, never inflates), MTF (`×MtfCounterDamp 0.60` when higher TF disagrees), Location
+(`×LevelDamp 0.70` when price is heading into a level).
 
 The **hard vetoes** (first match wins, each zeroes conviction): global kill → scoped kill →
 rollover → news lockout → clock kill-window → **liquidity wall on the intended side**
@@ -1302,7 +1334,7 @@ the weights → repeat.* Every part of this manual is one station on that loop.
 | `Indicators/SentinelExcursionRecorder_v1_4.cs` + `AddOns/SentinelExcursions_v1_0.cs` | The MAE/MFE lab (records the Council too) |
 | `Strategies/GTrader21v_0_1_7.cs` | The automated executor (auto-reads lab configs; `UseCouncilGate` decouple) |
 | `Strategies/SentinelBridge_v0_2_0.cs` | The autopilot — consumes `CouncilState`, records every fire |
-| `Indicators/Deck_v0_2_2.cs` | The manual order deck + SIGNAL ARM |
+| `Indicators/SentinelDeck_v0_2_5.cs` | The manual order deck + SIGNAL ARM |
 | `AddOns/SentinelDashboard_v1_0_0.cs` | The 12-tab control center |
 | `AddOns/Sentinel{Risk,Alert,State,Copier,LogEngine,LogService,Lens,Arc}Service*.cs` | The service layer |
 | `Docs/SENTINEL_DESIGN_SYSTEM.md` · `SENTINEL-CONTRACTS.md` · `ROADMAP.md` | The specs this manual condenses |
