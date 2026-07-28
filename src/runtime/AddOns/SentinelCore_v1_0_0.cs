@@ -36,6 +36,9 @@
 //    Bump the `Version` const + add a changelog entry on change; do NOT copy to a new file name.
 //
 //  CHANGELOG
+//    v1.37.0 — new `ConvictionState` seam (additive). The SentinelDrift bar type (id 212204) publishes a FLOW-CONFIRMED
+//             directional bias (structural brick direction, gated by whether the aggregated tape confirms it) → consumed
+//             by the Council `CVB` voter (STATE, orthogonal/order-flow). Mirrors the FluxState seam; scope-keyed SeamStore.
 //    v1.36.0 — cnclVer PROVENANCE (additive; A1 fast-follow). CouncilState gains `CouncilVersion` — the Council's OWN
 //             version that produced the verdict — carried via a TRAILING OPTIONAL param on the richest SetCouncilState
 //             overload (back-compat: every existing caller compiles unchanged, the field is null when not passed). The
@@ -453,7 +456,7 @@ namespace NinjaTrader.NinjaScript.AddOns.Sentinel
     /// </summary>
     public static partial class SentinelCore
     {
-        public const string Version = "1.36.0";   // v1.36.0 — CouncilState.CouncilVersion (cnclVer provenance) via optional SetCouncilState param; v1.35.0 bartag wrap; v1.34.0 HELM seam
+        public const string Version = "1.45.0";   // v1.45.0 PRESSURE SEAM — BuySellVolumePressureMountain was ported with a glass card but NEVER given a …State seam, so it computed an order-flow opinion nothing could consult (design system §9 item 6 miss, closed 2026-07-26). New PressureState (BuyPct/SellPct/Delta/Dir/DomRatio/Strong/Divergence/TickBacked) + Set/Get/Touch/All + BSP VoterCatalog row. Enters at defWeight 0.0 AUDITION: the 07-26 re-test killed all 19 voters and every one was PRICE-derived, so a genuine bid/ask-classified order-flow voice is the one untested family — but it is graded before it is trusted. TickBacked is load-bearing: OnMarketData is realtime-only, so a historical rebuild silently falls back to an OHLC proxy that is itself price-derived; a consumer that cannot tell them apart would grade the proxy and call it flow; v1.44.0 LANE FROM DISK - new LaneAssign (Sentinel\Lanes.conf) + ResolveLane(inst,barTag,f6Lane). The lane a chart runs in had ONE source of truth, the Council's F6 ScopeLane, while a Conductor job line's `lane=` LOOKED authoritative and was not. On 2026-07-25 that cost a run twice: once at launch (job said AUD0626, chart said TEST -> fused the SCRAPPED 7-voter roster, declaredW=5.30) and again after a crash-recovery reboot, where the workspace restored to lane TEST and an armed auto-resume would have baked contaminated rows into a lane named for a 19-voter roster. Lanes.conf now wins when it has an entry, F6 otherwise, and the override is ANNOUNCED in the log - never silent. Cascade "<inst>.<barTag>" -> "<inst>" -> F6, matching RosterIO/LaneIO. Paired with Conductor v0.2.0's fail-closed lane guard; v1.43.0 CVD SEAM — new CvdState (session cumulative volume delta + its DERIVATIVES) published by the SentinelCVD indicator, so it works on ANY bar type rather than only where SentinelFlux is the clock. Carries Slope/SlopeZ/Dir (direction), Divergence (flow vs price), and — the one nobody plots — EFFICIENCY: ticks of price per 1,000 contracts of net aggression, i.e. market IMPACT (Kyle's lambda in retail clothing). Low efficiency on rising CVD = absorption; high = a thin book. Orthogonal to every price-derived voter. NOT a duplicate of FluxState: Theta is ONE forming bar's imbalance and resets each bar, FluxState.Cvd was a bonus read nothing consumed and only exists on a Flux chart. Council gains the CVD voter (STATE) + VoterCatalog row; v1.42.0 LOG RETENTION — sentinel.log rotation kept exactly ONE generation and DELETED it on every roll, so at the rates this log actually hits (41,340 lines in 27 SECONDS on a historical rebuild) 5 MB is ~3 minutes of history at 100x replay; that permanently destroyed the 2026-07-23→24 forensic window TWICE in one night mid-investigation of the BRK/FLUX seam bug. Now keeps LOG_GENERATIONS=6 (.1...6). Rotation stays deliberately silent (Swallow→Log→WriteLogFile would recurse). Also archived SentinelExcursionRecorder_v1_4 (contaminated schema 1.3) out of the tree — two excursion recorders were loadable at once, against the one-writer invariant; v1.41.0 Swallow()/Faults() — the RECORDED empty catch: ~350 `catch (Exception _sx) { SentinelCore.Swallow("SentinelCore.anon", _sx); }` across the suite made every expensive bug invisible by construction; Swallow never rethrows (identical behaviour) but counts + rate-limits + logs. Order paths migrated first (Deck 71 · GTrader21 30 · Bridge 28 · Copier 5); v1.40.0 AppDomain GENERATION BEACON — an F5 leaves a chart's bars-type instance on the OLD assembly, publishing into an orphaned static seam store (silent; cost the 07-23 audition bake) → Beacon/BeaconForeign let a consumer say DECOUPLED-restart-NT instead of "absent"; v1.39.0 LaneIO cascade + RosterIO.Resolve (live config reload); v1.38.0 ReplayMode file-switch unblocks bars-type seam publishes in Playback; v1.36.0 CouncilState.CouncilVersion
 
         // ═════════════════════════════════════════════════════════════════════
         //  SCOPE (v1.15.0) — the coordinate every seam should be keyed by.
@@ -575,6 +578,22 @@ namespace NinjaTrader.NinjaScript.AddOns.Sentinel
             return string.IsNullOrEmpty(lane) ? bareScope : bareScope + "@" + lane;
         }
 
+        private static readonly HashSet<string> _laneAnnounced = new HashSet<string>();
+        private static readonly object _laneAnnounceGate = new object();
+
+        /// <summary>The EFFECTIVE lane for a chart.
+        ///
+        /// ⚠ PUBLISHED BUILD — lane-from-disk is NOT in this cut. The full implementation reads
+        /// Sentinel\Lanes.conf via `LaneAssign`, which lives in SentinelCore.SystemBuilder.cs, part of
+        /// the unreleased System Builder rung. Rather than ship half that substrate, this build returns
+        /// the caller's F6 value unchanged — which is EXACTLY what the full version does when there is
+        /// no Lanes.conf and no matching entry, and nothing in the released bundles writes one. The
+        /// signature is kept so the API does not move when the rung ships.</summary>
+        public static string ResolveLane(string inst, string barTag, string f6Lane)
+        {
+            return SanitizeLane(f6Lane);
+        }
+
         private static string SanitizeLane(string lane)
         {
             if (string.IsNullOrEmpty(lane)) return "";
@@ -609,7 +628,7 @@ namespace NinjaTrader.NinjaScript.AddOns.Sentinel
             string n;
             if (_bartypeNames.TryGetValue(id, out n)) return n;
             try { if (Enum.IsDefined(typeof(NinjaTrader.Data.BarsPeriodType), id)) return ((NinjaTrader.Data.BarsPeriodType)id).ToString(); }
-            catch { }
+            catch (Exception _sx) { SentinelCore.Swallow("SentinelCore.BartypeName", _sx); }
             return "Type" + id.ToString(System.Globalization.CultureInfo.InvariantCulture);
         }
 
@@ -678,10 +697,10 @@ namespace NinjaTrader.NinjaScript.AddOns.Sentinel
             _kill = engaged;
             Log("Core", "KILL-SWITCH " + (engaged ? "ENGAGED" : "released")
                 + (source != null ? " by " + source : ""));
-            try { Ledger.Action(engaged ? "kill-engaged" : "kill-released", null, source ?? ""); } catch { }
-            try { Alerts.Critical("Kill-switch " + (engaged ? "ENGAGED" : "released"), source); } catch { }
+            try { Ledger.Action(engaged ? "kill-engaged" : "kill-released", null, source ?? ""); } catch (Exception _sx) { SentinelCore.Swallow("SentinelCore.SetKillSwitch", _sx); }
+            try { Alerts.Critical("Kill-switch " + (engaged ? "ENGAGED" : "released"), source); } catch (Exception _sx) { SentinelCore.Swallow("SentinelCore.SetKillSwitch", _sx); }
             var h = KillSwitchChanged;
-            if (h != null) { try { h(engaged); } catch { } }
+            if (h != null) { try { h(engaged); } catch (Exception _sx) { SentinelCore.Swallow("SentinelCore.SetKillSwitch", _sx); } }
         }
 
         // ─────────────────────────────────────────────────────────────────────
@@ -714,7 +733,7 @@ namespace NinjaTrader.NinjaScript.AddOns.Sentinel
                 Log("Core", "INSTRUMENT-KILL " + (engaged ? "ENGAGED" : "released") + " " + root
                     + (source != null ? " (" + source + ")" : ""));
                 var h = InstrumentKillChanged;
-                if (h != null) { try { h(root, engaged); } catch { } }
+                if (h != null) { try { h(root, engaged); } catch (Exception _sx) { SentinelCore.Swallow("SentinelCore.SetInstrumentKill", _sx); } }
             }
         }
 
@@ -1312,6 +1331,130 @@ namespace NinjaTrader.NinjaScript.AddOns.Sentinel
             => _flux.Get(scopeOrInstrument, maxAgeSec);
 
         public static List<FluxState> AllFluxStates() => _flux.All();
+
+        // ─────────────────────────────────────────────────────────────────────
+        //  CVD (v1.43.0) — SentinelCVD publishes the SESSION-CUMULATIVE volume delta and, more usefully,
+        //  its DERIVATIVES. The level itself is near-meaningless (the session anchor is arbitrary); the
+        //  information is in the SLOPE, the DIVERGENCE against price, and — the one nobody plots —
+        //  EFFICIENCY: how many ticks of price each 1,000 contracts of net aggression actually bought.
+        //
+        //  Efficiency is a market-IMPACT read (Kyle's lambda in retail clothing). Low efficiency while CVD
+        //  climbs = heavy buying going nowhere = someone is filling into it (absorption). High efficiency =
+        //  a thin book where small flow moves price a long way. Neither is visible on a CVD line alone, and
+        //  it is genuinely orthogonal to every price-derived voter in the Council.
+        //
+        //  ⚠ WHY THIS IS NOT A DUPLICATE OF FluxState: FluxState.Theta is the signed imbalance of ONE
+        //  FORMING BAR (it resets every bar — it is the bar-close clock). FluxState.Cvd exists but is a
+        //  bonus read that nothing consumes, and it is only published when the Flux BARS TYPE is the chart's
+        //  clock. CvdState is session-scale, computed by an INDICATOR, and therefore available on ANY bar
+        //  type. Different horizon, different availability, different question.
+        // ─────────────────────────────────────────────────────────────────────
+        public sealed class CvdState
+        {
+            public string   Scope;
+            public string   Bartype;
+            public string   Instrument;
+            public double   Cvd;            // session cumulative signed volume delta (contracts)
+            public double   Slope;          // EMA of per-bar ΔCVD (contracts/bar) — the directional read
+            public double   SlopeZ;         // slope ÷ rolling stdev of slope (scale-free; comparable across instruments)
+            public int      Dir;            // -1/0/+1 — sign of Slope once |SlopeZ| clears the deadband
+            public int      PriceDir;       // -1/0/+1 — sign of the same window's price change (for divergence)
+            public int      Divergence;     // +1 bullish (price down, flow up) · -1 bearish (price up, flow down) · 0 none
+            public double   Efficiency;     // ticks of price per 1,000 contracts of NET delta over the window (impact)
+            public double   EfficiencyZ;    // efficiency ÷ its rolling typical — <0 = absorbing, >0 = thin/easy
+            public double   SessionHigh;    // session extremes of CVD (context for the current level)
+            public double   SessionLow;
+            public int      BarsThisSession;
+            public bool     TickBacked;     // TRUE when signing came from real tape; FALSE = degraded bar-proxy
+            public string   Source;
+            public DateTime UpdatedUtc;
+
+            public bool IsUp   => Dir > 0;
+            public bool IsDown => Dir < 0;
+            /// <summary>True when net flow agrees with a signal direction (0 = don't-care → true).</summary>
+            public bool Aligned(int dir) => dir > 0 ? Dir > 0 : (dir < 0 ? Dir < 0 : true);
+            /// <summary>Flow is pushing AGAINST this direction while price goes with it — the absorption tell.</summary>
+            public bool Absorbing(int dir) => Divergence != 0 && (dir > 0 ? Divergence < 0 : (dir < 0 ? Divergence > 0 : false));
+            /// <summary>Price is moving far on little net flow — a thin book, so a move is cheap to fade or to chase.</summary>
+            public bool Thin => EfficiencyZ > 1.0;
+        }
+
+        private static readonly SeamStore<CvdState> _cvd =
+            new SeamStore<CvdState>("Cvd", v => v.Instrument, v => v.UpdatedUtc, (v, t) => v.UpdatedUtc = t);
+
+        /// <summary>SentinelCVD publishes its session cumulative-delta read for ONE SCOPE (one chart). CVD accrues
+        /// per bar, so it IS bar-type dependent → scope-keyed, not instrument-keyed. Realtime callers should gate;
+        /// consumers freshness-gate on maxAgeSec.</summary>
+        public static void SetCvdState(string scope, string bartype, string instrument,
+                                       double cvd, double slope, double slopeZ, int dir, int priceDir,
+                                       int divergence, double efficiency, double efficiencyZ,
+                                       double sessionHigh, double sessionLow, int barsThisSession,
+                                       bool tickBacked, string source)
+        {
+            if (string.IsNullOrEmpty(scope)) return;
+            _cvd.Set(scope, new CvdState { Scope = scope, Bartype = bartype, Instrument = instrument,
+                                   Cvd = cvd, Slope = slope, SlopeZ = slopeZ, Dir = dir, PriceDir = priceDir,
+                                   Divergence = divergence, Efficiency = efficiency, EfficiencyZ = efficiencyZ,
+                                   SessionHigh = sessionHigh, SessionLow = sessionLow,
+                                   BarsThisSession = barsThisSession, TickBacked = tickBacked,
+                                   Source = source, UpdatedUtc = DateTime.UtcNow });
+        }
+
+        /// <summary>Latest CVD state for a SCOPE (or a bare instrument, resolved only when unique).</summary>
+        public static CvdState GetCvdState(string scopeOrInstrument, double maxAgeSec)
+            => _cvd.Get(scopeOrInstrument, maxAgeSec);
+
+        /// <summary>Heartbeat: re-stamp the cached read so a quiet tape does not read as a dead publisher.</summary>
+        public static void TouchCvdState(string scope) => _cvd.Touch(scope);
+
+        public static void ClearCvdScope(string scope) => _cvd.ClearScope(scope);
+
+        public static List<CvdState> AllCvdStates() => _cvd.All();
+
+        // ── ConvictionState (v1.37.0) — SentinelDrift's flow-confirmed directional bias (id 212204) ──
+        public sealed class ConvictionState
+        {
+            public string   Scope;
+            public string   Bartype;
+            public string   Instrument;
+            public int      Bias;        // -1/0/+1 — flow-CONFIRMED vote: brick direction when the tape confirms it, else 0
+            public int      FlowDir;     // -1/0/+1 — sign of the just-closed brick's net signed order-flow delta
+            public int      BrickDir;    // -1/0/+1 — the bar type's structural brick direction (for divergence)
+            public double   Conviction;  // 0..1 — |flow agreement| with the brick direction (how hard the tape backs the move)
+            public double   FlowFactor;  // ~0.6..1.4 — the reversal multiplier the flow applied (telemetry)
+            public int      Divergence;  // 1 when FlowDir opposes BrickDir with meaningful conviction (absorption), else 0
+            public int      BarsThisSession;
+            public string   Source;
+            public DateTime UpdatedUtc;
+
+            public bool IsUp   => Bias > 0;
+            public bool IsDown => Bias < 0;
+            public bool Aligned(int dir) => dir > 0 ? Bias > 0 : (dir < 0 ? Bias < 0 : true);
+            public bool Absorbing(int dir) => Divergence != 0 && (dir > 0 ? FlowDir < 0 : (dir < 0 ? FlowDir > 0 : false));
+        }
+
+        private static readonly SeamStore<ConvictionState> _conviction =
+            new SeamStore<ConvictionState>("Conviction", v => v.Instrument, v => v.UpdatedUtc, (v, t) => v.UpdatedUtc = t);
+
+        /// <summary>The SentinelDrift bars type publishes its FLOW-CONFIRMED directional bias for ONE SCOPE (one chart):
+        /// the structural brick direction, gated by whether the aggregated tape confirms it. Realtime callers only (a
+        /// historical rebuild must not stamp a stale conviction as fresh). scope = ScopeOf(bars.Instrument, bars.BarsPeriod).</summary>
+        public static void SetConvictionState(string scope, string bartype, string instrument,
+                                              int bias, int flowDir, int brickDir, double conviction,
+                                              double flowFactor, int divergence, int barsThisSession, string source)
+        {
+            if (string.IsNullOrEmpty(scope)) return;
+            _conviction.Set(scope, new ConvictionState { Scope = scope, Bartype = bartype, Instrument = instrument,
+                                    Bias = bias, FlowDir = flowDir, BrickDir = brickDir, Conviction = conviction,
+                                    FlowFactor = flowFactor, Divergence = divergence,
+                                    BarsThisSession = barsThisSession, Source = source, UpdatedUtc = DateTime.UtcNow });
+        }
+
+        /// <summary>Latest conviction-bias state for a SCOPE (or a bare instrument, resolved only when unique).</summary>
+        public static ConvictionState GetConvictionState(string scopeOrInstrument, double maxAgeSec)
+            => _conviction.Get(scopeOrInstrument, maxAgeSec);
+
+        public static List<ConvictionState> AllConvictionStates() => _conviction.All();
 
         // ─────────────────────────────────────────────────────────────────────
         //  COUNCIL (v1.7.0) — the Council (a chart CONFLUENCE ARBITER) FUSES every published sensor seam
@@ -2076,6 +2219,65 @@ namespace NinjaTrader.NinjaScript.AddOns.Sentinel
         public static List<WaeState> AllWaeStates() => _wae.All();
 
         // ─────────────────────────────────────────────────────────────────────
+        //  BUY/SELL PRESSURE (v1.45.0) — BuySellVolumePressureMountain PUBLISHES its order-flow pressure read.
+        //  This one was PORTED with a glass card but never given a seam (design system §9 item 6), so it has been
+        //  computing an opinion nothing could consult. Closed 2026-07-26.
+        //
+        //  ⚠ WHY IT IS WORTH ADDING AFTER "DIRECTION IS DEAD": the 2026-07-26 re-test killed 19 voters, and
+        //  ALL of them were price-derived — the same OHLC re-expressed 19 ways. This sensor classifies TRUE
+        //  bid/ask volume in OnMarketData, so it is ORDER FLOW: the one family the audition never tested. That
+        //  is the case for it, and it is the ONLY case for it.
+        //  ⇒ It enters at **defWeight 0.0 (AUDITION)** — recorded into the vote vector and graded, structurally
+        //  unable to move a verdict until it earns weight. Same on-ramp FLUX and CVD used.
+        //
+        //  ⚠ TickBacked IS LOAD-BEARING, not a nicety. OnMarketData only fires realtime/tick-replay, so on a
+        //  historical rebuild the indicator silently falls back to an OHLC candle-shape PROXY — which is
+        //  price-derived, i.e. exactly the family already proven worthless. A consumer that cannot tell the two
+        //  apart would grade the proxy and call it order flow. Check TickBacked before believing Dir.
+        // ─────────────────────────────────────────────────────────────────────
+        public sealed class PressureState
+        {
+            public string   Scope;
+            public string   Bartype;
+            public string   Instrument;
+            public double   BuyPct;       // 0..100  — smoothed classified buy share
+            public double   SellPct;      // 0..100
+            public double   Delta;        // BuyPct - SellPct  (-100..+100)
+            public int      Dir;          // +1 / -1 / 0 — dominant side outside the neutral band — THE VOTER
+            public double   DomRatio;     // >= 1.0 — how lopsided the smoothed volumes are
+            public bool     Strong;       // dominance cleared the BuySellDominanceRatio gate
+            public int      Divergence;   // +1 bullish / -1 bearish / 0 none recent (price vs pressure)
+            public bool     TickBacked;   // TRUE = real bid/ask classification; FALSE = OHLC proxy (see above)
+            public string   Source;
+            public DateTime UpdatedUtc;
+
+            /// <summary>True when the dominant pressure side agrees with a signal direction.</summary>
+            public bool Aligned(int dir) => dir > 0 ? Dir > 0 : (dir < 0 ? Dir < 0 : Dir == 0);
+        }
+
+        private static readonly SeamStore<PressureState> _press =
+            new SeamStore<PressureState>("Pressure", v => v.Instrument, v => v.UpdatedUtc, (v, t) => v.UpdatedUtc = t);
+
+        /// <summary>Buy/Sell pressure publish (object-passing; stamps UpdatedUtc). Keyed by scope.</summary>
+        public static void SetPressureState(PressureState s)
+        {
+            if (s == null) return;
+            string key = !string.IsNullOrEmpty(s.Scope) ? s.Scope : s.Instrument;
+            if (string.IsNullOrEmpty(key)) return;
+            s.UpdatedUtc = DateTime.UtcNow;
+            _press.Set(key, s);
+        }
+
+        /// <summary>Latest pressure state for a SCOPE (or a bare instrument, resolved only when unique).</summary>
+        public static PressureState GetPressureState(string scopeOrInstrument, double maxAgeSec)
+            => _press.Get(scopeOrInstrument, maxAgeSec);
+
+        /// <summary>Heartbeat: re-stamp so an OnBarClose sensor doesn't age out of the roster in a quiet market.</summary>
+        public static void TouchPressureState(string scope) => _press.Touch(scope);
+
+        public static List<PressureState> AllPressureStates() => _press.All();
+
+        // ─────────────────────────────────────────────────────────────────────
         //  GOD REVERSAL (v1.14.0) — SentinelGodReversal PUBLISHES the candle-grammar REVERSAL read the price
         //  trend-sensors don't carry (shaved close/open · engulfing-at-level · equal high/low · doji-cluster
         //  exhaustion · VI-fill), gated at a Bollinger-band edge (the "predictable place"). Signal = the pulse on
@@ -2697,7 +2899,7 @@ namespace NinjaTrader.NinjaScript.AddOns.Sentinel
                 catch { return; }
                 System.Threading.Tasks.Task.Run(() =>
                 {
-                    try { lock (_io) { Directory.CreateDirectory(dir); File.AppendAllText(file, line + "\r\n"); } } catch { }
+                    try { lock (_io) { Directory.CreateDirectory(dir); File.AppendAllText(file, line + "\r\n"); } } catch (Exception _sx) { SentinelCore.Swallow("SentinelCore.Append", _sx); }
                 });
             }
 
@@ -3365,7 +3567,7 @@ namespace NinjaTrader.NinjaScript.AddOns.Sentinel
                 catch { return; }
                 System.Threading.Tasks.Task.Run(() =>
                 {
-                    try { lock (_io) { Directory.CreateDirectory(dir); File.AppendAllText(file, line + "\r\n"); } } catch { }
+                    try { lock (_io) { Directory.CreateDirectory(dir); File.AppendAllText(file, line + "\r\n"); } } catch (Exception _sx) { SentinelCore.Swallow("SentinelCore.Write", _sx); }
                 });
             }
             private static string J(string s) => s == null ? "" : s.Replace("\\", "\\\\").Replace("\"", "\\\"");
@@ -3475,7 +3677,7 @@ namespace NinjaTrader.NinjaScript.AddOns.Sentinel
                         if (e != null) into.Add(e);
                     }
                 }
-                catch { }
+                catch (Exception _sx) { SentinelCore.Swallow("SentinelCore.ReadInto", _sx); }
             }
 
             // Minimal FLAT-json reader for our own single-level {"k":"v","k":n,...} lines (no nesting).
@@ -3572,7 +3774,7 @@ namespace NinjaTrader.NinjaScript.AddOns.Sentinel
                         File.Move(tmp, file);
                     }
                 }
-                catch { try { lock (_io) File.WriteAllText(file, json ?? "", Encoding.UTF8); } catch { } }
+                catch { try { lock (_io) File.WriteAllText(file, json ?? "", Encoding.UTF8); } catch (Exception _sx) { SentinelCore.Swallow("SentinelCore.Save", _sx); } }
             }
 
             /// <summary>Read a persisted blob, or null if none / unreadable.</summary>
@@ -3588,14 +3790,14 @@ namespace NinjaTrader.NinjaScript.AddOns.Sentinel
             {
                 if (string.IsNullOrEmpty(key)) return;
                 try { lock (_io) { string f = FileFor(key); if (File.Exists(f)) File.Delete(f); } }
-                catch { }
+                catch (Exception _sx) { SentinelCore.Swallow("SentinelCore.Clear", _sx); }
             }
 
             /// <summary>Age of a key's file since last write, or TimeSpan.MaxValue if none (stale-guard on restore).</summary>
             public static TimeSpan Age(string key)
             {
                 try { string f = FileFor(key); if (File.Exists(f)) return DateTime.UtcNow - File.GetLastWriteTimeUtc(f); }
-                catch { }
+                catch (Exception _sx) { SentinelCore.Swallow("SentinelCore.Age", _sx); }
                 return TimeSpan.MaxValue;
             }
 
@@ -3684,9 +3886,9 @@ namespace NinjaTrader.NinjaScript.AddOns.Sentinel
             {
                 var a = new AlertItem { TimeUtc = DateTime.UtcNow, Level = level, Title = title, Detail = detail, Account = account };
                 lock (_lock) { _recent.Insert(0, a); if (_recent.Count > 100) _recent.RemoveAt(_recent.Count - 1); }
-                try { Ledger.Action(level == AlertLevel.Critical ? "ALERT-CRIT" : "alert", account, title + (detail != null ? " — " + detail : "")); } catch { }
-                try { Log("Alert", "[" + level + "] " + title + (detail != null ? " — " + detail : "")); } catch { }
-                var h = Raised; if (h != null) { try { h(a); } catch { } }
+                try { Ledger.Action(level == AlertLevel.Critical ? "ALERT-CRIT" : "alert", account, title + (detail != null ? " — " + detail : "")); } catch (Exception _sx) { SentinelCore.Swallow("SentinelCore.Raise", _sx); }
+                try { Log("Alert", "[" + level + "] " + title + (detail != null ? " — " + detail : "")); } catch (Exception _sx) { SentinelCore.Swallow("SentinelCore.Raise", _sx); }
+                var h = Raised; if (h != null) { try { h(a); } catch (Exception _sx) { SentinelCore.Swallow("SentinelCore.Raise", _sx); } }
             }
             public static void Critical(string title, string detail = null, string account = null) => Raise(AlertLevel.Critical, title, detail, account);
             public static void Info(string title, string detail = null, string account = null)     => Raise(AlertLevel.Info, title, detail, account);

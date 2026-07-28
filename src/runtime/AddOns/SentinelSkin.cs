@@ -230,6 +230,13 @@ namespace NinjaTrader.NinjaScript.AddOns.Sentinel
         private static Palette _p = Dark;
         public static Theme Active { get; private set; } = Theme.Dark;
         public static bool IsLight => Active == Theme.Light;   // kept for existing IsLight gates
+
+        /// <summary>Global card-render kill. FALSE when <Documents>\NinjaTrader 8\Sentinel\cards.off exists —
+        /// every glass card + plot-skin primitive draws NOTHING (indicators still compute + publish their State
+        /// seams + write the corpus; only the human-facing rendering is suppressed). For headless / bake / test
+        /// charts where the render thread is a liability (see node01 UCEERR flood). Polled ≤2s in MaybeRefreshTheme
+        /// → live toggle. Mirrors the existing Sentinel\layout.off + theme.txt file switches.</summary>
+        public static volatile bool CardsEnabled = true;
         public static void SetTheme(Theme t)
         {
             Active = t;
@@ -352,19 +359,26 @@ namespace NinjaTrader.NinjaScript.AddOns.Sentinel
                     if ((now - _themeChecked).TotalSeconds < 2) return;
                     _themeChecked = now;
                 }
+                // render kill switch: drop Sentinel\cards.off to darken every glass card (bake/headless — no human eyes)
+                try {
+                    string coff = System.IO.Path.Combine(
+                        Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
+                        "NinjaTrader 8", "Sentinel", "cards.off");
+                    CardsEnabled = !System.IO.File.Exists(coff);
+                } catch (Exception _sx) { SentinelCore.Swallow("SentinelSkin.MaybeRefreshTheme", _sx); }
                 // 1) explicit manual override from theme.txt
                 string path = System.IO.Path.Combine(
                     Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
                     "NinjaTrader 8", "Sentinel", "theme.txt");
                 string s = null;
-                try { if (System.IO.File.Exists(path)) s = System.IO.File.ReadAllText(path).Trim().ToLowerInvariant(); } catch { }
+                try { if (System.IO.File.Exists(path)) s = System.IO.File.ReadAllText(path).Trim().ToLowerInvariant(); } catch (Exception _sx) { SentinelCore.Swallow("SentinelSkin.MaybeRefreshTheme", _sx); }
                 Theme pin;
                 if (TryParseTheme(s, out pin)) { if (Active != pin) SetTheme(pin); return; }
                 // 2) the glue: no explicit pin (absent / "auto") → follow the active platform skin
                 Theme t;
                 if (TryThemeFromSkin(out t) && t != Active) SetTheme(t);
             }
-            catch { }
+            catch (Exception _sx) { SentinelCore.Swallow("SentinelSkin.MaybeRefreshTheme", _sx); }
         }
 
         /// <summary>The EXACT ChartControl.ChartBackground of each Sentinel platform skin → its on-chart theme.
@@ -425,6 +439,12 @@ namespace NinjaTrader.NinjaScript.AddOns.Sentinel
             private readonly List<IDisposable> _frame = new List<IDisposable>();
             private SharpDX.Direct2D1.StrokeStyle _round;
             private bool _scaled;   // a card scale transform is active on the SHARED RenderTarget — must be undone
+            private bool _off;      // cards globally disabled this frame (Sentinel\cards.off) — every draw no-ops
+
+            /// <summary>True when rendering is suppressed for this frame (Sentinel\cards.off). Every Painter
+            /// method already honours it; this is for code that draws DIRECTLY to the RenderTarget and must
+            /// opt out itself — on a bake node, rendering is exactly what cards.off exists to prevent.</summary>
+            public bool Off { get { return _off; } }
 
             /// <summary>Call at the top of OnRender with the live RenderTarget.</summary>
             public void Begin(SharpDX.Direct2D1.RenderTarget rt)
@@ -434,17 +454,28 @@ namespace NinjaTrader.NinjaScript.AddOns.Sentinel
                 // The RenderTarget is SHARED across every indicator on the chart. If a previous OnRender threw
                 // between Card() and End(), its scale transform would still be armed and would silently corrupt
                 // everyone drawn after it. Start every frame from identity — cheap, and it makes leaks impossible.
-                try { rt.Transform = SharpDX.Matrix3x2.Identity; } catch { }
+                try { rt.Transform = SharpDX.Matrix3x2.Identity; } catch (Exception _sx) { SentinelCore.Swallow("SentinelSkin.Begin", _sx); }
                 _scaled = false;
-                if (_dw == null) _dw = new SharpDX.DirectWrite.Factory();
+                _off = !CardsEnabled;                 // headless/bake: skip ALL card drawing (indicators still compute + publish)
+
+                // v1.1 (2026-07-25) — BIND THE RENDER TARGET **BEFORE** the cards-off early-out.
+                // This used to `return` while _rt was still null, so any caller that draws DIRECTLY to the
+                // RenderTarget but sources its brush from B() got `new SolidColorBrush(null, c)` -> a
+                // NullReferenceException on every frame. MEASURED on node01 (the only box carrying
+                // Sentinel\cards.off): VolEnvelope's forward cone threw 4x within 5s of every chart load.
+                // Binding here costs nothing when cards are off (brushes are created lazily, on demand) and
+                // makes B() safe for every present and future direct-draw caller. Drawing is still fully
+                // suppressed — that is `_off`'s job, honoured by every Painter method and by Off below.
                 if (!ReferenceEquals(rt, _rt))
                 {
                     // device/target changed — brushes + stroke are RT-bound, rebuild lazily
-                    foreach (var b in _brushes.Values) { try { b.Dispose(); } catch { } }
+                    foreach (var b in _brushes.Values) { try { b.Dispose(); } catch (Exception _sx) { SentinelCore.Swallow("SentinelSkin.Begin", _sx); } }
                     _brushes.Clear();
-                    if (_round != null) { try { _round.Dispose(); } catch { } _round = null; }
+                    if (_round != null) { try { _round.Dispose(); } catch (Exception _sx) { SentinelCore.Swallow("SentinelSkin.Begin", _sx); } _round = null; }
                     _rt = rt;
                 }
+                if (_off) return;
+                if (_dw == null) _dw = new SharpDX.DirectWrite.Factory();
                 if (_round == null)
                 {
                     try { _round = new SharpDX.Direct2D1.StrokeStyle(rt.Factory,
@@ -484,7 +515,7 @@ namespace NinjaTrader.NinjaScript.AddOns.Sentinel
             public void Text(string text, float x, float y, float w, float h, SharpDX.Color4 col, float size,
                 bool semibold = false, SharpDX.DirectWrite.TextAlignment align = SharpDX.DirectWrite.TextAlignment.Leading, bool mono = false)
             {
-                if (string.IsNullOrEmpty(text) || _rt == null) return;
+                if (_off || string.IsNullOrEmpty(text) || _rt == null) return;
                 _rt.DrawText(text, Fmt(size, semibold, align, mono), new SharpDX.RectangleF(x, y, w, h), B(col));
             }
 
@@ -492,6 +523,7 @@ namespace NinjaTrader.NinjaScript.AddOns.Sentinel
             /// content rect (card inset by pad).</summary>
             public SharpDX.RectangleF Card(float x, float y, float w, float h, SharpDX.Color4 border, float radius = 13f, float pad = 15f)
             {
+                if (_off) return new SharpDX.RectangleF(x + pad, y + pad, w - pad * 2, h - pad * 2);   // cards off: no draw, keep the inner rect so caller layout math holds
                 // How should this card be drawn? CardLayout decides per column (see its doc-comment):
                 //  • COLLAPSED — draw a chip here, then TRANSLATE everything the caller draws next off-screen.
                 //    The card lays out its contents exactly as always, in its own coordinates, and they simply land
@@ -549,6 +581,7 @@ namespace NinjaTrader.NinjaScript.AddOns.Sentinel
             /// <summary>Live status dot (with optional cyan-style glow halo). Center at (cx,cy).</summary>
             public void Dot(float cx, float cy, SharpDX.Color4 col, bool glow = true, float r = 3.4f)
             {
+                if (_off) return;
                 if (glow) _rt.FillEllipse(new SharpDX.Direct2D1.Ellipse(new SharpDX.Vector2(cx, cy), r * (IsLight ? 1.6f : 2f), r * (IsLight ? 1.6f : 2f)), B(col, (IsLight ? 0.10f : 0.26f) * GlowMul));   // glow reads as fuzz on light → tighten + fade; GlowMul dims it further on Obsidian
                 _rt.FillEllipse(new SharpDX.Direct2D1.Ellipse(new SharpDX.Vector2(cx, cy), r, r), B(col));
             }
@@ -569,6 +602,7 @@ namespace NinjaTrader.NinjaScript.AddOns.Sentinel
             /// (nonzero winding), scaled Uniform to `size` and centered at (centerX,centerY). Works for any viewBox.</summary>
             public void FillSvgPath(string d, float centerX, float centerY, float size, SharpDX.Color4 col, bool glow = true)
             {
+                if (_off) return;
                 var figs = ParseSvg(d);
                 if (figs.Count == 0) return;
                 float minx = float.MaxValue, miny = float.MaxValue, maxx = float.MinValue, maxy = float.MinValue;
@@ -644,6 +678,7 @@ namespace NinjaTrader.NinjaScript.AddOns.Sentinel
             public float Pill(string label, float rightX, float y, SharpDX.Color4 col, float h = 18f)
             {
                 float w = 16f + (label == null ? 0 : label.Length) * 7.2f;
+                if (_off) return w;
                 float x = rightX - w;
                 var pill = new SharpDX.Direct2D1.RoundedRectangle { Rect = new SharpDX.RectangleF(x, y, w, h), RadiusX = h / 2f, RadiusY = h / 2f };
                 _rt.FillRoundedRectangle(pill, B(col, 0.14f));
@@ -656,6 +691,7 @@ namespace NinjaTrader.NinjaScript.AddOns.Sentinel
             /// (kills the "+$  0" kerning gap). Big number is Light-weight.</summary>
             public void Money(float x, float y, double value, SharpDX.Color4 col, float bigSize = 36f, float markSize = 15f)
             {
+                if (_off) return;
                 string mark = value >= 0 ? "+$" : "-$";
                 _rt.DrawText(mark, MoneyFmt(markSize, SharpDX.DirectWrite.TextAlignment.Trailing),
                     new SharpDX.RectangleF(x - 2f, y + (bigSize - markSize) + 1f, 24f, markSize + 5f), B(col));
@@ -678,6 +714,7 @@ namespace NinjaTrader.NinjaScript.AddOns.Sentinel
             /// <summary>Rounded progress track (bg) + fill to frac[0..1].</summary>
             public void Track(float x, float y, float w, float frac, SharpDX.Color4 fill, float h = 6f)
             {
+                if (_off) return;
                 frac = Math.Max(0f, Math.Min(1f, frac));
                 _rt.FillRoundedRectangle(new SharpDX.Direct2D1.RoundedRectangle { Rect = new SharpDX.RectangleF(x, y, w, h), RadiusX = h / 2f, RadiusY = h / 2f }, B(CFaint));
                 float fw = w * frac;
@@ -687,6 +724,7 @@ namespace NinjaTrader.NinjaScript.AddOns.Sentinel
             /// <summary>Circular gauge: 240° track arc + a fill arc to frac[0..1]. Center (cx,cy), radius r.</summary>
             public void Gauge(float cx, float cy, float r, float frac, SharpDX.Color4 track, SharpDX.Color4 fill)
             {
+                if (_off) return;
                 frac = Math.Max(0f, Math.Min(1f, frac));
                 Arc(cx, cy, r, 150f, 390f, track, 5f);
                 if (frac > 0.001f) Arc(cx, cy, r, 150f, 150f + 240f * frac, fill, 5f);
@@ -713,7 +751,7 @@ namespace NinjaTrader.NinjaScript.AddOns.Sentinel
             /// <summary>Sparkline of values across (x,y,w,h) with an emphasized endpoint dot + faint area fill.</summary>
             public void Sparkline(float x, float y, float w, float h, IList<double> vals, SharpDX.Color4 col)
             {
-                if (vals == null || vals.Count < 2) return;
+                if (_off || vals == null || vals.Count < 2) return;
                 double min = double.MaxValue, max = double.MinValue;
                 for (int i = 0; i < vals.Count; i++) { if (vals[i] < min) min = vals[i]; if (vals[i] > max) max = vals[i]; }
                 double rng = max - min; if (rng < 1e-9) rng = 1;
@@ -736,7 +774,10 @@ namespace NinjaTrader.NinjaScript.AddOns.Sentinel
 
             /// <summary>Hairline (defaults to the faint ink divider).</summary>
             public void Line(float x0, float y0, float x1, float y1, SharpDX.Color4 col, float width = 1f)
-                => _rt.DrawLine(new SharpDX.Vector2(x0, y0), new SharpDX.Vector2(x1, y1), B(col), width);
+            {
+                if (_off) return;
+                _rt.DrawLine(new SharpDX.Vector2(x0, y0), new SharpDX.Vector2(x1, y1), B(col), width);
+            }
             public void Divider(float x0, float y, float x1) => Line(x0, y, x1, y, Alpha(CInk, 0.06f), 1f);
 
             // ═══ Sentinel PLOT-SKIN primitives (chart-space; the sub-panel counterpart to the card) ═════════
@@ -747,6 +788,7 @@ namespace NinjaTrader.NinjaScript.AddOns.Sentinel
             /// Draw FIRST (after base.OnRender) so it covers the platform's flat panel + stock plots.</summary>
             public void PanelWash(float x, float y, float w, float h)
             {
+                if (_off) return;
                 var gsc = new SharpDX.Direct2D1.GradientStopCollection(_rt, new[] {
                     new SharpDX.Direct2D1.GradientStop { Color = CWashTop, Position = 0f },
                     new SharpDX.Direct2D1.GradientStop { Color = CWashBot, Position = 1f } });
@@ -759,7 +801,10 @@ namespace NinjaTrader.NinjaScript.AddOns.Sentinel
 
             /// <summary>A faint full-panel state wash (e.g. cyan when live, green/red by bias). Keep alpha low.</summary>
             public void RegimeShade(float x, float y, float w, float h, SharpDX.Color4 col, float alpha = 0.05f)
-                => _rt.FillRectangle(new SharpDX.RectangleF(x, y, w, h), B(col, alpha));
+            {
+                if (_off) return;
+                _rt.FillRectangle(new SharpDX.RectangleF(x, y, w, h), B(col, alpha));
+            }
 
             /// <summary>A themed reference/zero baseline (a touch stronger than a Divider).</summary>
             public void Baseline(float x0, float x1, float y, SharpDX.Color4 col)
@@ -769,6 +814,7 @@ namespace NinjaTrader.NinjaScript.AddOns.Sentinel
             /// vertical gradient (bright at the tip → translucent at the base), soft-rounded ends, optional glow.</summary>
             public void HistoBar(float cx, float yZero, float yVal, float halfW, SharpDX.Color4 col, bool glow = false)
             {
+                if (_off) return;
                 if (halfW < 0.6f) halfW = 0.6f;
                 float top = Math.Min(yZero, yVal), bot = Math.Max(yZero, yVal);
                 if (bot - top < 0.75f) return;
@@ -790,7 +836,7 @@ namespace NinjaTrader.NinjaScript.AddOns.Sentinel
             /// <summary>A polyline drawn as a soft glow underlay + a crisp stroke — for oscillator/reference lines.</summary>
             public void GlowLine(IList<SharpDX.Vector2> pts, SharpDX.Color4 col, float width = 1.6f, float glow = 0.18f)
             {
-                if (pts == null || pts.Count < 2) return;
+                if (_off || pts == null || pts.Count < 2) return;
                 var geo = new SharpDX.Direct2D1.PathGeometry(_rt.Factory);
                 using (var sink = geo.Open())
                 {
@@ -809,8 +855,8 @@ namespace NinjaTrader.NinjaScript.AddOns.Sentinel
             public void End()
             {
                 // undo any card scale transform BEFORE anything else draws into the shared RenderTarget
-                if (_scaled && _rt != null) { try { _rt.Transform = SharpDX.Matrix3x2.Identity; } catch { } _scaled = false; }
-                for (int i = 0; i < _frame.Count; i++) { try { _frame[i].Dispose(); } catch { } }
+                if (_scaled && _rt != null) { try { _rt.Transform = SharpDX.Matrix3x2.Identity; } catch (Exception _sx) { SentinelCore.Swallow("SentinelSkin.End", _sx); } _scaled = false; }
+                for (int i = 0; i < _frame.Count; i++) { try { _frame[i].Dispose(); } catch (Exception _sx) { SentinelCore.Swallow("SentinelSkin.End", _sx); } }
                 _frame.Clear();
             }
 
@@ -818,12 +864,12 @@ namespace NinjaTrader.NinjaScript.AddOns.Sentinel
             public void Dispose()
             {
                 End();
-                foreach (var b in _brushes.Values) { try { b.Dispose(); } catch { } }
+                foreach (var b in _brushes.Values) { try { b.Dispose(); } catch (Exception _sx) { SentinelCore.Swallow("SentinelSkin.Dispose", _sx); } }
                 _brushes.Clear();
-                foreach (var f in _fmts.Values) { try { f.Dispose(); } catch { } }
+                foreach (var f in _fmts.Values) { try { f.Dispose(); } catch (Exception _sx) { SentinelCore.Swallow("SentinelSkin.Dispose", _sx); } }
                 _fmts.Clear();
-                if (_round != null) { try { _round.Dispose(); } catch { } _round = null; }
-                if (_dw != null) { try { _dw.Dispose(); } catch { } _dw = null; }
+                if (_round != null) { try { _round.Dispose(); } catch (Exception _sx) { SentinelCore.Swallow("SentinelSkin.Dispose", _sx); } _round = null; }
+                if (_dw != null) { try { _dw.Dispose(); } catch (Exception _sx) { SentinelCore.Swallow("SentinelSkin.Dispose", _sx); } _dw = null; }
                 _rt = null;
             }
         }
@@ -937,7 +983,7 @@ namespace NinjaTrader.NinjaScript.AddOns.Sentinel
                         Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
                         "NinjaTrader 8", "Sentinel", "layout.off"));
                 }
-                catch { }
+                catch (Exception _sx) { SentinelCore.Swallow("SentinelSkin.LayoutDisabled", _sx); }
             }
             return _layoutOff;
         }
@@ -964,15 +1010,16 @@ namespace NinjaTrader.NinjaScript.AddOns.Sentinel
         /// ~20 Sentinel indicators across many stacked sub-panels: 0.80 left so little travel that a crowded column
         /// skipped the scale step almost entirely and went straight to a 22px chip — "just a small bar with a label,
         /// not displaying anything". The floor was tuned on a chart with room to spare, so the failure only appeared
-        /// on the layouts that needed the feature most. 0.60 keeps a 9px micro-label at ~5.4px — smaller, but far
+        /// on the layouts that needed the feature most. 0.60 keeps that 9px micro-label at ~5.4px — smaller, but far
         /// more readable than a name-only chip, and it lets scale-to-fit work across a much wider range of panel
         /// heights before collapse is reached.
         ///
         /// TUNABLE without a re-import: write a single float (e.g. "0.5") to
-        /// &lt;Documents&gt;\NinjaTrader 8\Sentinel\min-card-scale.txt — polled ≤2s, same convention as layout.off /
+        /// <Documents>\NinjaTrader 8\Sentinel\min-card-scale.txt — polled ≤2s, same convention as layout.off /
         /// cards.off / theme.txt. Delete the file to return to this default. Clamped to [0.15, 1.0].
         ///
-        /// Diagnosed and first implemented by sneaky_zekey (with Claude) against this release.</summary>
+        /// Diagnosed and first implemented by sneaky_zekey (with Claude) against the rung 0-1 public release;
+        /// re-implemented here to the suite's idioms (Swallow, not a bare catch).</summary>
         public static float MinCardScale = 0.60f;
 
         /// <summary>Picks up Sentinel\min-card-scale.txt if present. Polled on the render thread from the same
@@ -994,7 +1041,7 @@ namespace NinjaTrader.NinjaScript.AddOns.Sentinel
                         System.Globalization.CultureInfo.InvariantCulture, out v))
                     MinCardScale = Math.Max(0.15f, Math.Min(1f, v));   // below 0.15 nothing is readable at any DPI
             }
-            catch { }
+            catch (Exception _sx) { SentinelCore.Swallow("SentinelSkin.ResolveMinCardScale", _sx); }
         }
 
         /// <summary>Reserve/refresh this card's slot and return its outer rect, auto-stacked within its
@@ -1039,11 +1086,11 @@ namespace NinjaTrader.NinjaScript.AddOns.Sentinel
                 bool right  = corner == SentinelCardCorner.TopRight || corner == SentinelCardCorner.BottomRight;
                 bool bottom = corner == SentinelCardCorner.BottomRight || corner == SentinelCardCorner.BottomLeft;
 
+                ResolveMinCardScale(now);   // Sentinel\min-card-scale.txt, if present; throttled internally to ≤2s
+
                 // KILL SWITCH: `Sentinel\layout.off` → plain stacking, exactly as before scale/collapse existed.
                 // No transform is ever armed (CardStyle can't match a slot whose Scale is 1 and Collapsed false),
                 // so nothing can flicker. Cards may overlap again; that is the price of a still chart.
-                ResolveMinCardScale(now);   // Sentinel\min-card-scale.txt, if present; throttled internally to ≤2s
-
                 if (LayoutDisabled(now))
                 {
                     float offL = 0f;
@@ -1218,7 +1265,7 @@ namespace NinjaTrader.NinjaScript.AddOns.Sentinel
             catch (Exception ex)
             {
                 // a silent catch is exactly how this tracer hid itself the first time — SAY something
-                try { SentinelCore.Log("LayoutTrace", "TRACER FAILED: " + ex.GetType().Name + " " + ex.Message); } catch { }
+                try { SentinelCore.Log("LayoutTrace", "TRACER FAILED: " + ex.GetType().Name + " " + ex.Message); } catch (Exception _sx) { SentinelCore.Swallow("SentinelSkin.DebugTrace", _sx); }
             }
         }
 
@@ -1332,7 +1379,7 @@ namespace NinjaTrader.NinjaScript.AddOns.Sentinel
             if (stamps[(int)corner] != 0 && unchecked(now - stamps[(int)corner]) < LogThrottleMs) return;
             stamps[(int)corner] = now;
 
-            try { SentinelCore.Log("CardLayout", corner + ": panel too short — " + collapsed.Count + " card(s) collapsed to chips: " + sig); } catch { }
+            try { SentinelCore.Log("CardLayout", corner + ": panel too short — " + collapsed.Count + " card(s) collapsed to chips: " + sig); } catch (Exception _sx) { SentinelCore.Swallow("SentinelSkin.NoteOverflow", _sx); }
         }
 
         /// <summary>Drop this card from every panel bucket (call in Terminated).</summary>
