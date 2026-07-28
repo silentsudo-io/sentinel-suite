@@ -37,6 +37,43 @@ Everything in this block was found by people installing rungs 0-1 for real. That
   a bug we had already fixed twice; the manual now documents the current formula, the conviction/`contextMult`
   split, and both traps explicitly.
 
+### Added — 2026-07-28
+- **Sentinel Binds bundle** (Rung 0) — window **snapping** (exact and seamless, applied on release), named
+  **binds** whose members drag as one group, and named **layouts** you re-apply in a click. Settings live in
+  `Sentinel\Binds\`. **No market data, no orders, no `SentinelCore` seam** — the most isolated component in
+  the suite, and deliberately so: it is the easiest thing here to read, fork and extend.
+  ⚠ Two honest limits are documented rather than papered over: **layouts arrange, they do not spawn**
+  (unmatched windows are reported by name, never half-applied silently), and **snap happens on release**, not
+  during the drag, because NT re-assigns position from the mouse on every move and anything written mid-drag
+  is overwritten.
+- **`tools/check_runtime_api.py`** — a **member-level** API checker. `check_bundle_deps.py` catches a missing
+  *type*; it cannot catch a missing *member*, and the member is what kept biting: code backported verbatim
+  from the private tree called `SentinelCore.Swallow`, which existed locally (v1.41.0) but **not** in the
+  published core (v1.36.0) — a `CS0117` on every public install. That was caught by hand twice. It is now
+  mechanical: every `SentinelCore.X` / `SentinelSkin.X` a bundle references must be declared in the runtime
+  that ships beside it. Validated with a negative control (injected bogus members → detected, exit 1).
+
+### Changed — 2026-07-28
+- **Published runtime: `SentinelCore` v1.36.0 → v1.45.0.** The published core had drifted nine versions
+  behind, which meant public installs carried real defects that were already fixed privately:
+  - **v1.42.0 — log retention.** `sentinel.log` rotation kept exactly **one** generation and deleted it on
+    every roll. At the rates this log actually hits, that is minutes of history; it destroyed a forensic
+    window twice in one night. Now keeps six generations.
+  - **v1.40.0 — assembly-generation beacon.** After an F5, a chart's bars-type instance stays on the *old*
+    assembly and publishes into an orphaned seam store. Consumers can now say **"decoupled — restart NT"**
+    instead of reporting the sensor as simply absent.
+  - **v1.45.0 — `PressureState`.** `BuySellVolumePressureMountain` shipped with a card but no `…State` seam,
+    so it computed an order-flow opinion nothing could consult. *(Reported by a public installer.)*
+  - Also: `Swallow()`/`Faults()` (v1.41.0, the recorded empty catch), `CvdState` (v1.43.0), `ConvictionState`
+    (v1.37.0), and `ReplayMode` (v1.38.0).
+  - ⚠ **One deliberate publish-time difference:** `ResolveLane` returns the caller's F6 value unchanged. Its
+    full body reads `Sentinel\Lanes.conf` via `LaneAssign`, which lives in the unreleased System Builder rung;
+    rather than ship half that substrate, the published build returns exactly what the full version returns
+    when there is no `Lanes.conf` and no matching entry — and nothing in the released bundles writes one. The
+    signature is preserved so the API does not move when the rung ships.
+- **Both import archives rebuilt** against the new runtime. The Deck archive **embeds** the runtime, so a core
+  bump makes it stale even though the Deck itself did not change.
+
 ### Added
 - **Repository scaffold** — README, NOTICE, AUTHORS, LICENSE (TBD), CONTRIBUTING (the Platform Contract),
   SENSOR_COMPLIANCE_CHECKLIST, CODE_OF_CONDUCT, SECURITY, and GitHub issue/PR templates.
