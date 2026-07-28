@@ -44,6 +44,21 @@ extend.
 2. Press **F5** in the NinjaScript Editor.
 3. **Control Center ▸ New ▸ Sentinel Binds**.
 
+### ⚠ Requires `SentinelCore` v1.41.0 or newer
+
+Binds records swallowed faults through `SentinelCore.Swallow`, which arrived in **v1.41.0**. It is the
+only bundle in the suite with a runtime floor — every other one compiles against any version.
+
+That matters because **every bundle ships its own copy of `../runtime/`**. Copying an **older** bundle
+over this one downgrades `SentinelCore`, and since NinjaTrader compiles all of `bin\Custom` into **one
+assembly**, Binds then fails with `CS0117` and takes **your whole tree** down — not just Sentinel.
+
+**Install the oldest bundle first and the newest last**, or simply re-copy the newest `runtime/` after
+any install. Releases in this repo always carry the current runtime; a zip from elsewhere may not.
+
+To check what you have, open `runtime/AddOns/SentinelCore_v1_0_0.cs` and look for
+`public const string Version`.
+
 ## ⚠ For contributors — NT is multi-UI-threaded
 
 **NinjaTrader runs each window on its own dispatcher thread.** Reading `window.Left`,

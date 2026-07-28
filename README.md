@@ -88,6 +88,19 @@ git clone https://github.com/silentsudo-io/sentinel-suite
 Then right-click a chart → **Skins**, **Indicators**, or **Bar Types** → look for **Sentinel**.
 Full steps in the **[docs](docs/)**.
 
+> ### ⚠ If you install more than one bundle, the NEWEST runtime must win
+> Every bundle ships a copy of `src/runtime/` (`SentinelCore`, `SentinelSkin`). Copying an **older**
+> bundle over a newer one **downgrades the shared runtime**, and because NinjaTrader compiles all of
+> `bin\Custom` into **one assembly**, a bundle that needed the newer core then fails to compile and
+> takes **your whole tree** down with it — not just Sentinel.
+>
+> **Rule of thumb: install the oldest bundle first and the newest last**, or just re-copy the newest
+> `src/runtime/` after any install. `Sentinel Binds` requires **`SentinelCore` v1.41.0 or newer**;
+> every other bundle works with any version.
+>
+> Releases here always carry the current runtime. A zip from elsewhere — Discord, an old download —
+> may not.
+
 ---
 
 ## The Ladder
