@@ -257,6 +257,31 @@
 <li><strong>BINDS</strong> — name a set of windows, <strong>Link</strong> it, and dragging any member carries the whole group live, holding relative positions.</li>
 </ol>
 <hr>
+<h2>How to use it</h2>
+<p>Open from <strong>Control Center ▸ New ▸ Sentinel Binds</strong>. The window has four parts, top to bottom: <strong>SNAPPING</strong>, the live status line, <strong>WINDOWS (tick the members)</strong>, and <strong>BINDS</strong>.</p>
+<h3>Snapping — nothing to set up</h3>
+<div class="tblwrap"><table><thead><tr><th>control</th><th>what it does</th></tr></thead><tbody><tr><td><strong>Snap to edges on release</strong> (checkbox)</td><td>Master on/off. Drag or resize any NT window; on release it clicks to the nearest edge of any other window or of the monitor work area. Saved to <code>binds.conf</code> immediately.</td></tr><tr><td><strong>Threshold</strong> (slider, 2–40 px)</td><td>How close an edge must be before it grabs. Small = precise, large = eager. Saved on every change.</td></tr><tr><td><strong>Hold SHIFT while dragging</strong></td><td>Bypasses snapping for that gesture — for when you want a deliberate offset.</td></tr></tbody></table></div>
+<p>That is the whole feature. Nothing to save, no bind required.</p>
+<h3>Making a bind</h3>
+<ol>
+<li>Tick two or more windows in <strong>WINDOWS (tick the members)</strong>. Press <strong>Refresh</strong> if a window you just opened is not listed. A greyed row is maximized or minimized — it is still a legitimate member, it simply sits out moves until you restore it.</li>
+<li>Type a name in the box beside <strong>Save bind</strong>. Leave it blank and you get <code>bind 1</code>, <code>bind 2</code>, …</li>
+<li>Press <strong>Save bind</strong>. Fewer than two ticked windows is refused (<code>tick at least 2 windows to bind</code>). It writes <code>Sentinel\Binds\&lt;name&gt;.layout</code>, and the bind appears in the <strong>BINDS</strong> list.</li>
+</ol>
+<h3>Using a bind — select it in BINDS first</h3>
+<p>All three buttons act on the <strong>selected</strong> bind; with nothing selected they answer <code>select a bind first</code>.</p>
+<div class="tblwrap"><table><thead><tr><th>button</th><th>what it does</th></tr></thead><tbody><tr><td><strong>Link</strong></td><td>Glues the members: drag any one and the rest follow live, holding relative positions. Press it again on the same bind to <strong>unlink</strong> — it is a toggle, not a one-way switch. Reports <code>LINKED n windows</code>, or names any member that is <code>NOT OPEN</code>.</td></tr><tr><td><strong>Apply</strong></td><td>Moves the members back to the absolute positions stored in the file. Windows that are not open are <strong>reported by name</strong>, never skipped silently.</td></tr><tr><td><strong>Delete</strong></td><td>Removes the <code>.layout</code> file, unlinking first if that bind was the linked one. ⚠ <strong>No confirmation and no undo</strong> — see §8.</td></tr></tbody></table></div>
+<p>⚠ <strong>A link does not survive an F5 or an NT restart</strong>, and a member that was closed and reopened needs a re-<strong>Link</strong> even though its title still matches — the old HWND is dead. The <em>file</em> persists; the live link does not.</p>
+<h3>Reading the status line</h3>
+<p>Below SNAPPING sit two lines: a plain-English status, and a live diagnostic refreshed every 400 ms.</p>
+<pre><code>trk 9 · snap 14 · grp 0 · LINK mybind(3)
+why: snapped left→right of Chart - GC 12-26</code></pre>
+<div class="tblwrap"><table><thead><tr><th>field</th><th>meaning</th></tr></thead><tbody><tr><td><code>trk</code></td><td>windows currently tracked</td></tr><tr><td><code>snap</code></td><td>snaps performed this session</td></tr><tr><td><code>grp</code></td><td>group translations performed (i.e. linked drags)</td></tr><tr><td><code>LINK</code></td><td>the linked bind and its member count, or <code>off</code></td></tr><tr><td><code>why</code></td><td>what the last event did — <strong>or the exception text, if something threw</strong></td></tr></tbody></table></div>
+<p><strong>Read <code>why</code> first when something seems dead.</strong> It is the field that broke the original bring-up: a swallowed exception presents as "the feature does nothing", which fits a hundred design mistakes, while <code>EX InvalidOperationException: The calling thread cannot access this object…</code> fits exactly one (§7).</p>
+<p><strong>Diagnose</strong> rescans for windows that were missed and writes full state to <code>Sentinel\sentinel.log</code>. Reach for it when a window will not appear in the picker — and attach its output when reporting a bug.</p>
+<h3>If it goes wrong</h3>
+<p>A bind can throw windows off-screen. See <strong>§6 Recovery</strong> — the rescue script lives outside this tool on purpose, because the antidote must not depend on the thing that caused the problem.</p>
+<hr>
 <h2><span class="hn">0.</span>The finding that matters beyond this tool</h2>
 <blockquote><p><strong>NinjaTrader runs EACH WINDOW on its own dispatcher thread.</strong></p></blockquote>
 <p>Reading <code>window.Left</code>, <code>.ActualWidth</code>, <code>.IsVisible</code> or <code>.WindowState</code> for a window you do not own throws <code>InvalidOperationException: The calling thread cannot access this object because a different thread owns it.</code> — every time, from any central loop. <code>Mouse.LeftButton</code> and <code>Keyboard.Modifiers</code> are thread-affine for the same reason.</p>

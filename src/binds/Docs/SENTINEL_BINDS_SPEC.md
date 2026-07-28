@@ -18,6 +18,75 @@ Two things NinjaTrader does not do, in the spirit of Quantower's window binds:
 
 ---
 
+## How to use it
+
+Open from **Control Center ▸ New ▸ Sentinel Binds**. The window has four parts, top to bottom:
+**SNAPPING**, the live status line, **WINDOWS (tick the members)**, and **BINDS**.
+
+### Snapping — nothing to set up
+
+| control | what it does |
+|---|---|
+| **Snap to edges on release** (checkbox) | Master on/off. Drag or resize any NT window; on release it clicks to the nearest edge of any other window or of the monitor work area. Saved to `binds.conf` immediately. |
+| **Threshold** (slider, 2–40 px) | How close an edge must be before it grabs. Small = precise, large = eager. Saved on every change. |
+| **Hold SHIFT while dragging** | Bypasses snapping for that gesture — for when you want a deliberate offset. |
+
+That is the whole feature. Nothing to save, no bind required.
+
+### Making a bind
+
+1. Tick two or more windows in **WINDOWS (tick the members)**. Press **Refresh** if a window you just
+   opened is not listed. A greyed row is maximized or minimized — it is still a legitimate member, it
+   simply sits out moves until you restore it.
+2. Type a name in the box beside **Save bind**. Leave it blank and you get `bind 1`, `bind 2`, …
+3. Press **Save bind**. Fewer than two ticked windows is refused (`tick at least 2 windows to bind`).
+   It writes `Sentinel\Binds\<name>.layout`, and the bind appears in the **BINDS** list.
+
+### Using a bind — select it in BINDS first
+
+All three buttons act on the **selected** bind; with nothing selected they answer `select a bind first`.
+
+| button | what it does |
+|---|---|
+| **Link** | Glues the members: drag any one and the rest follow live, holding relative positions. Press it again on the same bind to **unlink** — it is a toggle, not a one-way switch. Reports `LINKED n windows`, or names any member that is `NOT OPEN`. |
+| **Apply** | Moves the members back to the absolute positions stored in the file. Windows that are not open are **reported by name**, never skipped silently. |
+| **Delete** | Removes the `.layout` file, unlinking first if that bind was the linked one. ⚠ **No confirmation and no undo** — see §8. |
+
+⚠ **A link does not survive an F5 or an NT restart**, and a member that was closed and reopened needs
+a re-**Link** even though its title still matches — the old HWND is dead. The *file* persists; the live
+link does not.
+
+### Reading the status line
+
+Below SNAPPING sit two lines: a plain-English status, and a live diagnostic refreshed every 400 ms.
+
+```
+trk 9 · snap 14 · grp 0 · LINK mybind(3)
+why: snapped left→right of Chart - GC 12-26
+```
+
+| field | meaning |
+|---|---|
+| `trk` | windows currently tracked |
+| `snap` | snaps performed this session |
+| `grp` | group translations performed (i.e. linked drags) |
+| `LINK` | the linked bind and its member count, or `off` |
+| `why` | what the last event did — **or the exception text, if something threw** |
+
+**Read `why` first when something seems dead.** It is the field that broke the original bring-up: a
+swallowed exception presents as "the feature does nothing", which fits a hundred design mistakes, while
+`EX InvalidOperationException: The calling thread cannot access this object…` fits exactly one (§7).
+
+**Diagnose** rescans for windows that were missed and writes full state to `Sentinel\sentinel.log`.
+Reach for it when a window will not appear in the picker — and attach its output when reporting a bug.
+
+### If it goes wrong
+
+A bind can throw windows off-screen. See **§6 Recovery** — the rescue script lives outside this tool on
+purpose, because the antidote must not depend on the thing that caused the problem.
+
+---
+
 ## 0. The finding that matters beyond this tool
 
 > **NinjaTrader runs EACH WINDOW on its own dispatcher thread.**
