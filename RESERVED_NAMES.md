@@ -90,6 +90,9 @@ and will appear in this repo as their rung ships.
 | `SentinelClock` · `SentinelParticipation` · `SentinelLocation` · `SentinelMtf` · `SentinelIntermarket` | orthogonal context axes |
 | `SentinelCVD` · `SentinelProfile` · `SentinelFlow` · `SentinelTapeRecorder` · `SentinelBarDump` · `SentinelLagCheck` | flow / instrumentation |
 | `SentinelDrift` · `SentinelEffort` · `SentinelLattice` · `SentinelTide` | bar types |
+| `SentinelKeel` | range-filter trend strategy — holds a course through chop, comes about on a real flip |
+| `SentinelHull` | the reusable strategy base class every Sentinel strategy sits on |
+| `SentinelPilot` | signal-source → Bridge handoff: a strategy publishes, the Bridge executes |
 | `SentinelExcursionRecorder` · `SentinelCandidateRecorder` · `SentinelAdaptivePerformanceGrid` | recorders / analytics |
 | `SentinelEye` · `SentinelTrendArchitect` | legacy / historical |
 
