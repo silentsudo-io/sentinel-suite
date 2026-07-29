@@ -118,8 +118,8 @@ namespace NinjaTrader.NinjaScript.Indicators.Sentinel.Sensors
 			}
 			else if (State == State.Terminated)
 			{
-				if (_sp != null) { try { _sp.Dispose(); } catch { } _sp = null; }
-				try { SentinelSkin.CardLayout.Release(this); } catch { }
+				if (_sp != null) { try { _sp.Dispose(); } catch (Exception _sx) { SentinelCore.Swallow("SentinelWAE.OnStateChange", _sx); } _sp = null; }
+				try { SentinelSkin.CardLayout.Release(this); } catch (Exception _sx) { SentinelCore.Swallow("SentinelWAE.OnStateChange", _sx); }
 			}
 		}
 
@@ -127,7 +127,7 @@ namespace NinjaTrader.NinjaScript.Indicators.Sentinel.Sensors
 		private string _scope;
 		private string Scope()
 		{
-		    if (_scope == null) { try { _scope = SentinelCore.ScopeOf(Instrument, BarsPeriod); } catch { } }
+		    if (_scope == null) { try { _scope = SentinelCore.ScopeOf(Instrument, BarsPeriod); } catch (Exception _sx) { SentinelCore.Swallow("SentinelWAE.Scope", _sx); } }
 		    return _scope;
 		}
 
@@ -141,7 +141,7 @@ namespace NinjaTrader.NinjaScript.Indicators.Sentinel.Sensors
 		    DateTime now = DateTime.UtcNow;
 		    if ((now - _lastHeartbeatUtc).TotalSeconds < HeartbeatSec) return;
 		    _lastHeartbeatUtc = now;
-		    try { SentinelCore.TouchWaeState(Scope()); } catch { }
+		    try { SentinelCore.TouchWaeState(Scope()); } catch (Exception _sx) { SentinelCore.Swallow("SentinelWAE.OnMarketData", _sx); }
 		}
 
 		protected override void OnBarUpdate()
@@ -200,10 +200,10 @@ namespace NinjaTrader.NinjaScript.Indicators.Sentinel.Sensors
 						Source      = "WAE"
 					});
 				}
-				catch { }
+				catch (Exception _sx) { SentinelCore.Swallow("SentinelWAE.OnBarUpdate", _sx); }
 			}
 
-			if (LogChanges && sig != _lastLoggedSig)
+			if (LogChanges && State == State.Realtime && sig != _lastLoggedSig)
 			{
 				_lastLoggedSig = sig;
 				try
@@ -213,7 +213,7 @@ namespace NinjaTrader.NinjaScript.Indicators.Sentinel.Sensors
 						(sig > 0 ? "EXPLOSION ▲ (long)" : sig < 0 ? "EXPLOSION ▼ (short)" : "quiet") +
 						" pow=" + power.ToString("0.#") + " exp=" + explosion.ToString("0.#") + " dz=" + deadzone.ToString("0.#"));
 				}
-				catch { }
+				catch (Exception _sx) { SentinelCore.Swallow("SentinelWAE.OnBarUpdate", _sx); }
 			}
 		}
 
@@ -224,9 +224,9 @@ namespace NinjaTrader.NinjaScript.Indicators.Sentinel.Sensors
 			if (RenderTarget == null || ChartPanel == null) return;
 			if (_sp == null) _sp = new SentinelSkin.Painter();
 			_sp.Begin(RenderTarget);
-			try { if (SentinelPlotSkin) RenderPlotSkin(chartControl, chartScale); } catch { }
-			try { if (ShowCard) RenderCard(); } catch { }
-			try { _sp.End(); } catch { }
+			try { if (SentinelPlotSkin) RenderPlotSkin(chartControl, chartScale); } catch (Exception _sx) { SentinelCore.Swallow("SentinelWAE.OnRender", _sx); }
+			try { if (ShowCard) RenderCard(); } catch (Exception _sx) { SentinelCore.Swallow("SentinelWAE.OnRender", _sx); }
+			try { _sp.End(); } catch (Exception _sx) { SentinelCore.Swallow("SentinelWAE.OnRender", _sx); }
 		}
 
 		private void RenderPlotSkin(NinjaTrader.Gui.Chart.ChartControl chartControl, NinjaTrader.Gui.Chart.ChartScale chartScale)
@@ -391,3 +391,4 @@ namespace NinjaTrader.NinjaScript.Indicators.Sentinel.Sensors
 		#endregion
 	}
 }
+

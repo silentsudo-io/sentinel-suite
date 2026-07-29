@@ -229,8 +229,8 @@ namespace NinjaTrader.NinjaScript.Indicators.Sentinel.Sensors
             }
             else if (State == State.Terminated)
             {
-                if (_sp != null) { try { _sp.Dispose(); } catch { } _sp = null; }
-                try { SentinelSkin.CardLayout.Release(this); } catch { }
+                if (_sp != null) { try { _sp.Dispose(); } catch (Exception _sx) { SentinelCore.Swallow("WoodiesCCIPro.OnStateChange", _sx); } _sp = null; }
+                try { SentinelSkin.CardLayout.Release(this); } catch (Exception _sx) { SentinelCore.Swallow("WoodiesCCIPro.OnStateChange", _sx); }
             }
         }
         #endregion
@@ -376,7 +376,7 @@ namespace NinjaTrader.NinjaScript.Indicators.Sentinel.Sensors
                         trendState, cciM, cciT, mainSlope,
                         lastSignal, lastWeakening, Name.Length == 0 ? "WoodiesCCIPro" : Name);
                 }
-                catch { }
+                catch (Exception _sx) { SentinelCore.Swallow("WoodiesCCIPro.OnBarUpdate", _sx); }
             }
         }
         #endregion
@@ -581,7 +581,7 @@ namespace NinjaTrader.NinjaScript.Indicators.Sentinel.Sensors
         private string _scope;
         private string Scope()
         {
-            if (_scope == null) { try { _scope = SentinelCore.ScopeOf(Instrument, BarsPeriod); } catch { } }
+            if (_scope == null) { try { _scope = SentinelCore.ScopeOf(Instrument, BarsPeriod); } catch (Exception _sx) { SentinelCore.Swallow("WoodiesCCIPro.Scope", _sx); } }
             return _scope;
         }
         #endregion
@@ -595,9 +595,9 @@ namespace NinjaTrader.NinjaScript.Indicators.Sentinel.Sensors
             if (RenderTarget == null || ChartPanel == null) return;
             if (_sp == null) _sp = new SentinelSkin.Painter();
             _sp.Begin(RenderTarget);
-            try { if (SentinelPlotSkin) RenderPlotSkin(chartControl, chartScale); } catch { }
-            try { if (ShowInfo) RenderCard(); } catch { }
-            try { _sp.End(); } catch { }
+            try { if (SentinelPlotSkin) RenderPlotSkin(chartControl, chartScale); } catch (Exception _sx) { SentinelCore.Swallow("WoodiesCCIPro.OnRender", _sx); }
+            try { if (ShowInfo) RenderCard(); } catch (Exception _sx) { SentinelCore.Swallow("WoodiesCCIPro.OnRender", _sx); }
+            try { _sp.End(); } catch (Exception _sx) { SentinelCore.Swallow("WoodiesCCIPro.OnRender", _sx); }
         }
 
         // Sentinel PLOT STANDARD for the Woodies panel: glass wash + a bottom TREND RIBBON (per-bar trend
@@ -1159,7 +1159,8 @@ namespace NinjaTrader.NinjaScript.Indicators.Sentinel.Sensors
             DateTime now = DateTime.UtcNow;
             if ((now - _lastHeartbeatUtc).TotalSeconds < HeartbeatSec) return;
             _lastHeartbeatUtc = now;
-            try { SentinelCore.TouchCciState(Scope()); } catch { }
+            try { SentinelCore.TouchCciState(Scope()); } catch (Exception _sx) { SentinelCore.Swallow("WoodiesCCIPro.OnMarketData", _sx); }
         }
     }
 }
+

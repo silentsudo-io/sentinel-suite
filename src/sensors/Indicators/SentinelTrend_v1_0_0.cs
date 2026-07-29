@@ -124,8 +124,8 @@ namespace NinjaTrader.NinjaScript.Indicators.Sentinel.Sensors
             }
             else if (State == State.Terminated)
             {
-                if (_sp != null) { try { _sp.Dispose(); } catch { } _sp = null; }
-                try { SentinelSkin.CardLayout.Release(this); } catch { }
+                if (_sp != null) { try { _sp.Dispose(); } catch (Exception _sx) { SentinelCore.Swallow("SentinelTrend.OnStateChange", _sx); } _sp = null; }
+                try { SentinelSkin.CardLayout.Release(this); } catch (Exception _sx) { SentinelCore.Swallow("SentinelTrend.OnStateChange", _sx); }
             }
         }
 
@@ -152,7 +152,7 @@ namespace NinjaTrader.NinjaScript.Indicators.Sentinel.Sensors
             DateTime now = DateTime.UtcNow;
             if ((now - _lastHeartbeatUtc).TotalSeconds < HeartbeatSec) return;
             _lastHeartbeatUtc = now;
-            try { SentinelCore.TouchTrendState(Scope()); } catch { }
+            try { SentinelCore.TouchTrendState(Scope()); } catch (Exception _sx) { SentinelCore.Swallow("SentinelTrend.OnMarketData", _sx); }
         }
 
         protected override void OnBarUpdate()
@@ -223,7 +223,7 @@ namespace NinjaTrader.NinjaScript.Indicators.Sentinel.Sensors
                     var a = SentinelCore.GetAdxState(Scope() ?? Instrument.MasterInstrument.Name, StaleSec);
                     if (a != null) { _adxConsulted = true; _adxAligned = a.TrendOn && a.Aligned(d); }
                 }
-                catch { }
+                catch (Exception _sx) { SentinelCore.Swallow("SentinelTrend.OnBarUpdate", _sx); }
             }
 
             // ── flip signal markers (optionally gated by ADX alignment) ──
@@ -247,7 +247,7 @@ namespace NinjaTrader.NinjaScript.Indicators.Sentinel.Sensors
                     SentinelCore.SetTrendState(Scope(), SentinelCore.BarTag(BarsPeriod), Instrument.MasterInstrument.Name,
                                                d, t, _distTicks, _barsInTrend, flipped, cci, _adxAligned, "SentinelTrend");
                 }
-                catch { }
+                catch (Exception _sx) { SentinelCore.Swallow("SentinelTrend.OnBarUpdate", _sx); }
             }
         }
 
@@ -257,7 +257,7 @@ namespace NinjaTrader.NinjaScript.Indicators.Sentinel.Sensors
         private string _scope;
         private string Scope()
         {
-            if (_scope == null) { try { _scope = SentinelCore.ScopeOf(Instrument, BarsPeriod); } catch { } }
+            if (_scope == null) { try { _scope = SentinelCore.ScopeOf(Instrument, BarsPeriod); } catch (Exception _sx) { SentinelCore.Swallow("SentinelTrend.Scope", _sx); } }
             return _scope;
         }
 
@@ -324,7 +324,7 @@ namespace NinjaTrader.NinjaScript.Indicators.Sentinel.Sensors
 
                 _sp.End();
             }
-            catch { }
+            catch (Exception _sx) { SentinelCore.Swallow("SentinelTrend.OnRender", _sx); }
         }
 
         #region Properties
@@ -433,3 +433,4 @@ namespace NinjaTrader.NinjaScript.Indicators.Sentinel.Sensors
         #endregion
     }
 }
+

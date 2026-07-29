@@ -129,8 +129,8 @@ namespace NinjaTrader.NinjaScript.Indicators.Sentinel.Sensors
 			}
 			else if (State == State.Terminated)
 			{
-				if (_sp != null) { try { _sp.Dispose(); } catch { } _sp = null; }
-				try { SentinelSkin.CardLayout.Release(this); } catch { }
+				if (_sp != null) { try { _sp.Dispose(); } catch (Exception _sx) { SentinelCore.Swallow("SentinelStructure.OnStateChange", _sx); } _sp = null; }
+				try { SentinelSkin.CardLayout.Release(this); } catch (Exception _sx) { SentinelCore.Swallow("SentinelStructure.OnStateChange", _sx); }
 			}
 		}
 
@@ -138,7 +138,7 @@ namespace NinjaTrader.NinjaScript.Indicators.Sentinel.Sensors
 		private string _scope;
 		private string Scope()
 		{
-			if (_scope == null) { try { _scope = SentinelCore.ScopeOf(Instrument, BarsPeriod); } catch { } }
+			if (_scope == null) { try { _scope = SentinelCore.ScopeOf(Instrument, BarsPeriod); } catch (Exception _sx) { SentinelCore.Swallow("SentinelStructure.Scope", _sx); } }
 			return _scope;
 		}
 
@@ -152,7 +152,7 @@ namespace NinjaTrader.NinjaScript.Indicators.Sentinel.Sensors
 			DateTime now = DateTime.UtcNow;
 			if ((now - _lastHeartbeatUtc).TotalSeconds < HeartbeatSec) return;
 			_lastHeartbeatUtc = now;
-			try { SentinelCore.TouchStructureState(Scope()); } catch { }
+			try { SentinelCore.TouchStructureState(Scope()); } catch (Exception _sx) { SentinelCore.Swallow("SentinelStructure.OnMarketData", _sx); }
 		}
 
 		protected override void OnBarUpdate()
@@ -237,10 +237,10 @@ namespace NinjaTrader.NinjaScript.Indicators.Sentinel.Sensors
 						Source     = "STRC"
 					});
 				}
-				catch { }
+				catch (Exception _sx) { SentinelCore.Swallow("SentinelStructure.OnBarUpdate", _sx); }
 			}
 
-			if (LogChanges && sig != _lastLoggedSig)
+			if (LogChanges && State == State.Realtime && sig != _lastLoggedSig)
 			{
 				_lastLoggedSig = sig;
 				try
@@ -251,7 +251,7 @@ namespace NinjaTrader.NinjaScript.Indicators.Sentinel.Sensors
 						" swing=" + SwingLabel(_swingType) +
 						(bos != 0 ? (bos > 0 ? " +BOS" : " -BOS") : ""));
 				}
-				catch { }
+				catch (Exception _sx) { SentinelCore.Swallow("SentinelStructure.OnBarUpdate", _sx); }
 			}
 		}
 
@@ -274,8 +274,8 @@ namespace NinjaTrader.NinjaScript.Indicators.Sentinel.Sensors
 			if (RenderTarget == null || ChartPanel == null) return;
 			if (_sp == null) _sp = new SentinelSkin.Painter();
 			_sp.Begin(RenderTarget);
-			try { if (ShowCard) RenderCard(); } catch { }
-			try { _sp.End(); } catch { }
+			try { if (ShowCard) RenderCard(); } catch (Exception _sx) { SentinelCore.Swallow("SentinelStructure.OnRender", _sx); }
+			try { _sp.End(); } catch (Exception _sx) { SentinelCore.Swallow("SentinelStructure.OnRender", _sx); }
 		}
 
 		private void RenderCard()
@@ -351,3 +351,4 @@ namespace NinjaTrader.NinjaScript.Indicators.Sentinel.Sensors
 		#endregion
 	}
 }
+

@@ -73,8 +73,8 @@ namespace NinjaTrader.NinjaScript.Indicators.Sentinel.Sensors
             }
             else if (State == State.Terminated)
             {
-                if (_sp != null) { try { _sp.Dispose(); } catch { } _sp = null; }
-                try { SentinelSkin.CardLayout.Release(this); } catch { }
+                if (_sp != null) { try { _sp.Dispose(); } catch (Exception _sx) { SentinelCore.Swallow("SentinelBrickCounter.OnStateChange", _sx); } _sp = null; }
+                try { SentinelSkin.CardLayout.Release(this); } catch (Exception _sx) { SentinelCore.Swallow("SentinelBrickCounter.OnStateChange", _sx); }
             }
         }
 
@@ -101,7 +101,7 @@ namespace NinjaTrader.NinjaScript.Indicators.Sentinel.Sensors
                 // "waiting for a Sentinel brick bars type…" card), which is the honest answer to "which chart?".
                 string inst = Instrument != null && Instrument.MasterInstrument != null ? Instrument.MasterInstrument.Name : null;
                 string skey = null;
-                try { skey = SentinelCore.ScopeOf(Instrument, BarsPeriod); } catch { }
+                try { skey = SentinelCore.ScopeOf(Instrument, BarsPeriod); } catch (Exception _sx) { SentinelCore.Swallow("SentinelBrickCounter.OnRender", _sx); }
 
                 SentinelCore.BrickState st = null;
                 if (!string.IsNullOrEmpty(skey)) st = SentinelCore.GetBrickState(skey, MaxAgeSeconds);
@@ -174,7 +174,7 @@ namespace NinjaTrader.NinjaScript.Indicators.Sentinel.Sensors
 
                 _sp.End();
             }
-            catch { }
+            catch (Exception _sx) { SentinelCore.Swallow("SentinelBrickCounter.OnRender", _sx); }
         }
 
         private static int CeilTicks(double value)
@@ -211,3 +211,4 @@ namespace NinjaTrader.NinjaScript.Indicators.Sentinel.Sensors
         #endregion
     }
 }
+

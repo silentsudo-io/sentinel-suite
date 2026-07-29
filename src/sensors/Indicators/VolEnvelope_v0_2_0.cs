@@ -152,8 +152,8 @@ namespace NinjaTrader.NinjaScript.Indicators.Sentinel.Sensors
 			}
 			else if (State == State.Terminated)
 			{
-				if (_sp != null) { try { _sp.Dispose(); } catch { } _sp = null; }
-				try { SentinelSkin.CardLayout.Release(this); } catch { }
+				if (_sp != null) { try { _sp.Dispose(); } catch (Exception _sx) { SentinelCore.Swallow("VolEnvelope.OnStateChange", _sx); } _sp = null; }
+				try { SentinelSkin.CardLayout.Release(this); } catch (Exception _sx) { SentinelCore.Swallow("VolEnvelope.OnStateChange", _sx); }
 			}
 		}
 
@@ -267,7 +267,7 @@ namespace NinjaTrader.NinjaScript.Indicators.Sentinel.Sensors
 				var v = SentinelCore.GetEyeVerdict(Instrument.MasterInstrument.Name, 0);
 				if (v != null) { lEyeHad = true; lEyeDir = v.Direction; }
 			}
-			catch { }
+			catch (Exception _sx) { SentinelCore.Swallow("VolEnvelope.OnBarUpdate", _sx); }
 
 			// ── PUBLISH regime/stretch (opt-in) so Copier/Arc/strategies can gate on it (e.g. "don't add in a squeeze") ──
 			// SentinelCore ≥ v1.18.0 — keyed by SCOPE, not instrument. NOTE the two different "bar tags" here: this
@@ -276,7 +276,7 @@ namespace NinjaTrader.NinjaScript.Indicators.Sentinel.Sensors
 			{
 				try { SentinelCore.SetEnvelopeState(Scope(), SentinelCore.BarTag(BarsPeriod), InstName(),
 				                                    (int)regime, stretch, bwPct, multUp, multDown, BarTag()); }
-				catch { }
+				catch (Exception _sx) { SentinelCore.Swallow("VolEnvelope.OnBarUpdate", _sx); }
 			}
 
 			// ── snapshot for OnRender ──
@@ -413,7 +413,7 @@ namespace NinjaTrader.NinjaScript.Indicators.Sentinel.Sensors
 		private string _scope;
 		private string Scope()
 		{
-			if (_scope == null) { try { _scope = SentinelCore.ScopeOf(Instrument, BarsPeriod); } catch { } }
+			if (_scope == null) { try { _scope = SentinelCore.ScopeOf(Instrument, BarsPeriod); } catch (Exception _sx) { SentinelCore.Swallow("VolEnvelope.Scope", _sx); } }
 			return _scope;
 		}
 
@@ -421,7 +421,7 @@ namespace NinjaTrader.NinjaScript.Indicators.Sentinel.Sensors
 		private void LogOnce(ref bool flag, string what, Exception ex)
 		{
 			if (flag) return; flag = true;
-			try { SentinelCore.Log("VOLENV", what + ": " + ex.GetType().Name + " " + ex.Message); } catch { }
+			try { SentinelCore.Log("VOLENV", what + ": " + ex.GetType().Name + " " + ex.Message); } catch (Exception _sx) { SentinelCore.Swallow("VolEnvelope.LogOnce", _sx); }
 		}
 
 		protected override void OnRender(ChartControl chartControl, ChartScale chartScale)
@@ -434,7 +434,14 @@ namespace NinjaTrader.NinjaScript.Indicators.Sentinel.Sensors
 
 			// cone + card in SEPARATE try blocks — a cone failure must never suppress the card (or vice-versa).
 			// First failure of each is logged to sentinel.log so we can diagnose without a silent swallow.
-			if (ShowCone && lValid && CurrentBar > 1 && ForecastBars > 0)
+			// v0.2.1 (2026-07-25) — honour the cards.off render kill switch. The cone draws DIRECTLY to the
+			// RenderTarget (a filled geometry, not a Painter primitive), so it does NOT inherit the Painter's
+			// per-method `_off` guard, and it was the ONE tool in the tree still drawing while cards were off.
+			// That is also why it threw a NullReferenceException every frame on node01: Begin() returned before
+			// binding _rt, so B() built a brush on a null target. Painter now binds _rt regardless, and this
+			// skips the work entirely on a bake node. RENDER PATH ONLY — the ENV vote comes from OnBarUpdate
+			// and was never affected.
+			if (ShowCone && !_sp.Off && lValid && CurrentBar > 1 && ForecastBars > 0)
 			{
 				try { RenderCone(chartControl, chartScale); }
 				catch (Exception ex) { LogOnce(ref _loggedCone, "cone", ex); }
@@ -446,7 +453,7 @@ namespace NinjaTrader.NinjaScript.Indicators.Sentinel.Sensors
 				catch (Exception ex) { LogOnce(ref _loggedCard, "card", ex); }
 			}
 
-			try { _sp.End(); } catch { }
+			try { _sp.End(); } catch (Exception _sx) { SentinelCore.Swallow("VolEnvelope.OnRender", _sx); }
 		}
 
 		private void RenderCone(ChartControl chartControl, ChartScale chartScale)
@@ -655,7 +662,8 @@ namespace NinjaTrader.NinjaScript.Indicators.Sentinel.Sensors
 		    DateTime now = DateTime.UtcNow;
 		    if ((now - _lastHeartbeatUtc).TotalSeconds < HeartbeatSec) return;
 		    _lastHeartbeatUtc = now;
-		    try { SentinelCore.TouchEnvelopeState(Scope()); } catch { }
+		    try { SentinelCore.TouchEnvelopeState(Scope()); } catch (Exception _sx) { SentinelCore.Swallow("VolEnvelope.OnMarketData", _sx); }
 		}
 	}
 }
+

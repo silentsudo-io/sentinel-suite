@@ -135,8 +135,8 @@ namespace NinjaTrader.NinjaScript.Indicators.Sentinel.Sensors
             }
             else if (State == State.Terminated)
             {
-                if (_sp != null) { try { _sp.Dispose(); } catch { } _sp = null; }
-                try { SentinelSkin.CardLayout.Release(this); } catch { }
+                if (_sp != null) { try { _sp.Dispose(); } catch (Exception _sx) { SentinelCore.Swallow("ADXPro.OnStateChange", _sx); } _sp = null; }
+                try { SentinelSkin.CardLayout.Release(this); } catch (Exception _sx) { SentinelCore.Swallow("ADXPro.OnStateChange", _sx); }
             }
         }
 
@@ -272,7 +272,7 @@ namespace NinjaTrader.NinjaScript.Indicators.Sentinel.Sensors
                     SentinelCore.SetAdxState(Scope(), SentinelCore.BarTag(BarsPeriod), Instrument.MasterInstrument.Name,
                                              adx, diPlus, diMinus, bias, slope5, strong, "ADXPro");
                 }
-                catch { }
+                catch (Exception _sx) { SentinelCore.Swallow("ADXPro.OnBarUpdate", _sx); }
             }
         }
 
@@ -283,7 +283,7 @@ namespace NinjaTrader.NinjaScript.Indicators.Sentinel.Sensors
         private string _scope;
         private string Scope()
         {
-            if (_scope == null) { try { _scope = SentinelCore.ScopeOf(Instrument, BarsPeriod); } catch { } }
+            if (_scope == null) { try { _scope = SentinelCore.ScopeOf(Instrument, BarsPeriod); } catch (Exception _sx) { SentinelCore.Swallow("ADXPro.Scope", _sx); } }
             return _scope;
         }
 
@@ -354,9 +354,9 @@ namespace NinjaTrader.NinjaScript.Indicators.Sentinel.Sensors
             if (RenderTarget == null || ChartPanel == null) return;
             if (_sp == null) _sp = new SentinelSkin.Painter();
             _sp.Begin(RenderTarget);
-            try { if (SentinelPlotSkin) RenderPlotSkin(chartControl, chartScale); } catch { }
-            try { if (ShowBiasTable) RenderCard(); } catch { }
-            try { _sp.End(); } catch { }
+            try { if (SentinelPlotSkin) RenderPlotSkin(chartControl, chartScale); } catch (Exception _sx) { SentinelCore.Swallow("ADXPro.OnRender", _sx); }
+            try { if (ShowBiasTable) RenderCard(); } catch (Exception _sx) { SentinelCore.Swallow("ADXPro.OnRender", _sx); }
+            try { _sp.End(); } catch (Exception _sx) { SentinelCore.Swallow("ADXPro.OnRender", _sx); }
         }
 
         // Sentinel PLOT STANDARD for the ADX panel: glass wash (covers stock plots) + per-bar trend-regime
@@ -628,7 +628,8 @@ namespace NinjaTrader.NinjaScript.Indicators.Sentinel.Sensors
             DateTime now = DateTime.UtcNow;
             if ((now - _lastHeartbeatUtc).TotalSeconds < HeartbeatSec) return;
             _lastHeartbeatUtc = now;
-            try { SentinelCore.TouchAdxState(Scope()); } catch { }
+            try { SentinelCore.TouchAdxState(Scope()); } catch (Exception _sx) { SentinelCore.Swallow("ADXPro.OnMarketData", _sx); }
         }
     }
 }
+

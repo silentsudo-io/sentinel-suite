@@ -245,7 +245,11 @@ namespace NinjaTrader.NinjaScript.BarsTypes
             try
             {
                 if (tickSize <= 0) return;
-                if ((NinjaTrader.Core.Globals.Now - time).TotalMinutes > RealtimePublishMinutes) return;
+                if (!SentinelCore.ReplayMode && (NinjaTrader.Core.Globals.Now - time).TotalMinutes > RealtimePublishMinutes) return;
+                // ^ v1.38.0 REPLAY MODE: Globals.Now is WALL-CLOCK even in Playback, so in a replay every bar
+                //   reads weeks stale and this guard returned on EVERY tick -> the seam never published ->
+                //   BRK/FLUX could not vote in ANY replay bake. Sentineleplay.on bypasses it on a bake node
+                //   (no live consumers there). Guard itself is unchanged for live boxes.
                 string inst = bars?.Instrument?.MasterInstrument?.Name;
                 if (string.IsNullOrEmpty(inst)) return;
 
@@ -263,9 +267,15 @@ namespace NinjaTrader.NinjaScript.BarsTypes
                                            1.0, sameDirCount, barsThisSession, false,
                                            barMax, barMin, ticksToUpper, ticksToLower, nearest, "SentinelTbarsCount");
 
-                if ((time - _lastHeartbeat).TotalSeconds >= BrickLogThrottleSeconds)
+                // v1.40.0 BEACON — see SentinelCore.Beacon. This file had NO diagnostic during the 2026-07-24
+                // hunt, which is exactly why it was a blind spot; the beacon covers every bar-type publisher.
+                SentinelCore.Beacon(scope, "BRK");
+
+                // v1.0.1 (2026-07-25) — throttle on WALL-CLOCK, not bar time (see SentinelTBars v1.0.1): a
+                // bar-time throttle does not throttle at all during a historical rebuild/replay.
+                if ((DateTime.UtcNow - _lastHeartbeat).TotalSeconds >= BrickLogThrottleSeconds)
                 {
-                    _lastHeartbeat = time;
+                    _lastHeartbeat = DateTime.UtcNow;
                     string arrow = barDirection > 0 ? "up" : "dn";
                     SentinelCore.Log("TbarsCount", string.Format(
                         "{0} {1} · trend {2:0.0}t rev {3:0.0}t · run {4} · {5} bricks · next {6:0}t",
@@ -273,7 +283,7 @@ namespace NinjaTrader.NinjaScript.BarsTypes
                         sameDirCount, barsThisSession, nearest));
                 }
             }
-            catch { }
+            catch (Exception _sx) { SentinelCore.Swallow("SentinelTbarsCount.PublishBrickTick", _sx); }
         }
 
         // ── Durable per-brick DATA log (one JSONL record per completed brick, realtime only) ──
@@ -282,7 +292,11 @@ namespace NinjaTrader.NinjaScript.BarsTypes
             try
             {
                 if (tickSize <= 0) return;
-                if ((NinjaTrader.Core.Globals.Now - time).TotalMinutes > RealtimePublishMinutes) return;
+                if (!SentinelCore.ReplayMode && (NinjaTrader.Core.Globals.Now - time).TotalMinutes > RealtimePublishMinutes) return;
+                // ^ v1.38.0 REPLAY MODE: Globals.Now is WALL-CLOCK even in Playback, so in a replay every bar
+                //   reads weeks stale and this guard returned on EVERY tick -> the seam never published ->
+                //   BRK/FLUX could not vote in ANY replay bake. Sentineleplay.on bypasses it on a bake node
+                //   (no live consumers there). Guard itself is unchanged for live boxes.
                 string inst = bars?.Instrument?.MasterInstrument?.Name;
                 if (string.IsNullOrEmpty(inst)) return;
 
@@ -299,7 +313,7 @@ namespace NinjaTrader.NinjaScript.BarsTypes
                     sameDirCount, barsThisSession, bars.GetVolume(done));
                 SentinelCore.BrickLog.Append("SentinelTbarsCount", inst, fields);
             }
-            catch { }
+            catch (Exception _sx) { SentinelCore.Swallow("SentinelTbarsCount.LogBrick", _sx); }
         }
 
         // ── Overrides ──

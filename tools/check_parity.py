@@ -55,6 +55,27 @@ from pathlib import Path
 REPO = Path(__file__).resolve().parent.parent
 SRC = REPO / "src"
 
+# Files whose divergence from the canonical tree is INTENDED and must survive. These are
+# not staleness and closing them would ship a broken build, so they are reported in their
+# own section rather than sitting in the drift list forever.
+#
+# A check that is always red is a check nobody reads -- the same principle that made the
+# daily parity task report the DELTA instead of the absolute. Keep this list SHORT, and
+# only ever add to it with the reason written out: an unexplained entry here is
+# indistinguishable from a file somebody quietly gave up on.
+# The line count is PINNED, not just the filename. Exempting a whole file would also
+# silence any NEW divergence that lands in it later -- turning a safety note into a blind
+# spot. If the count moves, something other than the known exception changed and it is
+# reported as drift again.
+DELIBERATE = {
+    "SentinelCore_v1_0_0.cs": (37,
+        "ResolveLane is gutted on purpose: the real body calls LaneAssign.Read(), and "
+        "LaneAssign lives in SentinelCore.SystemBuilder.cs — part of the UNRELEASED System "
+        "Builder rung. Publishing it would be CS0246 for every user. Returning the caller's "
+        "F6 value is EXACTLY what the full version does when there is no Lanes.conf, and "
+        "nothing published writes one. Signature preserved so the API does not move."),
+}
+
 # Anchored at line start ON PURPOSE. A bare substring search also matches a COMMENT
 # that merely mentions the region, and cutting from there deletes real code -- that
 # bug has bitten this project twice, once across ~700 files.
@@ -245,6 +266,15 @@ def main() -> int:
             print(f"    {rel}")
         print("    (renamed, archived or deleted upstream — the snapshot is stale)\n")
 
+    # Only exempt a known file at its known SIZE. A changed count means new divergence
+    # landed on top of the documented one, so it goes back into the drift list.
+    def is_deliberate(d):
+        exp = DELIBERATE.get(Path(d[0]).name)
+        return exp is not None and exp[0] == d[1]
+
+    deliberate = [d for d in drifted if is_deliberate(d)]
+    drifted = [d for d in drifted if not is_deliberate(d)]
+
     if drifted:
         print(f"DRIFT ({len(drifted)}) — local has moved ahead; decide per file whether it ships:")
         for rel, n, loc in sorted(drifted, key=lambda r: -r[1]):
@@ -253,7 +283,16 @@ def main() -> int:
         print("    To publish: copy the local file over the snapshot, ADD the MPL header,")
         print("    and STRIP the generated region. Then re-run this.\n")
 
-    print(f"{clean} of {clean + len(drifted) + len(orphaned)} published files are faithful.")
+    if deliberate:
+        print(f"DELIBERATE ({len(deliberate)}) — publish-time differences that must NOT be closed:")
+        for rel, n, loc in sorted(deliberate, key=lambda r: -r[1]):
+            print(f"    {n:>6} lines   {rel}")
+            print(f"             {DELIBERATE[Path(rel).name][1]}")
+        print()
+
+    print(f"{clean} of {clean + len(drifted) + len(deliberate) + len(orphaned)} "
+          f"published files are faithful"
+          + (f", {len(deliberate)} deliberately divergent." if deliberate else "."))
     return 1 if (drifted or errors or orphaned) else 0
 
 

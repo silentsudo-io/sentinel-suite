@@ -159,7 +159,7 @@ namespace NinjaTrader.NinjaScript.Indicators.Sentinel.Sensors
 		private double FirstTouchBarrier()
 		{
 			double atrTicks = 0;
-			try { if (CurrentBar > 14 && TickSize > 0) atrTicks = ATR(14)[0] / TickSize; } catch { }
+			try { if (CurrentBar > 14 && TickSize > 0) atrTicks = ATR(14)[0] / TickSize; } catch (Exception _sx) { SentinelCore.Swallow("CompressionBase.FirstTouchBarrier", _sx); }
 			return Math.Max(BarrierMinTicks, BarrierAtrMult * atrTicks);
 		}
 
@@ -212,8 +212,8 @@ namespace NinjaTrader.NinjaScript.Indicators.Sentinel.Sensors
 			{
 				if (RecordExcursions)
 					FlushAll("terminated");
-				if (_sp != null) { try { _sp.Dispose(); } catch { } _sp = null; }
-				try { SentinelSkin.CardLayout.Release(this); } catch { }
+				if (_sp != null) { try { _sp.Dispose(); } catch (Exception _sx) { SentinelCore.Swallow("CompressionBase.OnStateChange", _sx); } _sp = null; }
+				try { SentinelSkin.CardLayout.Release(this); } catch (Exception _sx) { SentinelCore.Swallow("CompressionBase.OnStateChange", _sx); }
 			}
 		}
 
@@ -248,7 +248,7 @@ namespace NinjaTrader.NinjaScript.Indicators.Sentinel.Sensors
 		private string _scope;
 		private string Scope()
 		{
-		    if (_scope == null) { try { _scope = SentinelCore.ScopeOf(Instrument, BarsPeriod); } catch { } }
+		    if (_scope == null) { try { _scope = SentinelCore.ScopeOf(Instrument, BarsPeriod); } catch (Exception _sx) { SentinelCore.Swallow("CompressionBase.Scope", _sx); } }
 		    return _scope;
 		}
 
@@ -267,7 +267,7 @@ namespace NinjaTrader.NinjaScript.Indicators.Sentinel.Sensors
 		    DateTime now = DateTime.UtcNow;
 		    if ((now - _lastHeartbeatUtc).TotalSeconds < HeartbeatSec) return;
 		    _lastHeartbeatUtc = now;
-		    try { SentinelCore.TouchCompressionState(Scope()); } catch { }
+		    try { SentinelCore.TouchCompressionState(Scope()); } catch (Exception _sx) { SentinelCore.Swallow("CompressionBase.OnMarketData", _sx); }
 		}
 
 		protected override void OnBarUpdate()
@@ -289,7 +289,7 @@ namespace NinjaTrader.NinjaScript.Indicators.Sentinel.Sensors
 			// v1.3.3 — gate the coil SHAPE test with the volatility-normalized TIGHTNESS test (see Tight()), so a
 			// base only forms when the window is BOTH coiled AND physically tight. Fixes the whole-chart false base
 			// on event-driven bar types (SentinelFlux). atrPrice is reused by the base run-extension gate below.
-			double atrPrice = 0; try { atrPrice = ATR(14)[0]; } catch { }
+			double atrPrice = 0; try { atrPrice = ATR(14)[0]; } catch (Exception _sx) { SentinelCore.Swallow("CompressionBase.OnBarUpdate", _sx); }
 			bool   compressed = windowCoil <= CoilThreshold && Tight(CompressionWindow, atrPrice);
 
 			if (windowCoil < minCoil) minCoil = windowCoil;
@@ -377,7 +377,7 @@ namespace NinjaTrader.NinjaScript.Indicators.Sentinel.Sensors
 						Compressed = compressed, Armed = armed, Source = "CompressionBase"
 					});
 				}
-				catch { }
+				catch (Exception _sx) { SentinelCore.Swallow("CompressionBase.OnBarUpdate", _sx); }
 			}
 		}
 
@@ -451,7 +451,7 @@ namespace NinjaTrader.NinjaScript.Indicators.Sentinel.Sensors
 					e.EyeAligned = v.Direction == dir;
 				}
 			}
-			catch { }
+			catch (Exception _sx) { SentinelCore.Swallow("CompressionBase.OpenExcursion", _sx); }
 
 			open.Add(e);
 		}
@@ -561,7 +561,7 @@ namespace NinjaTrader.NinjaScript.Indicators.Sentinel.Sensors
 			}
 			catch (Exception ex)
 			{
-				try { SentinelCore.Log("CBRK", "excursion write failed: " + ex.Message); } catch { }
+				try { SentinelCore.Log("CBRK", "excursion write failed: " + ex.Message); } catch (Exception _sx) { SentinelCore.Swallow("CompressionBase.WriteRecord", _sx); }
 			}
 		}
 
@@ -632,7 +632,7 @@ namespace NinjaTrader.NinjaScript.Indicators.Sentinel.Sensors
 
 				_sp.End();
 			}
-			catch { }
+			catch (Exception _sx) { SentinelCore.Swallow("CompressionBase.OnRender", _sx); }
 		}
 
 		#region Consumable "current" surface
@@ -715,3 +715,4 @@ namespace NinjaTrader.NinjaScript.Indicators.Sentinel.Sensors
 		#endregion
 	}
 }
+
