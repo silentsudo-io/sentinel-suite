@@ -46,8 +46,11 @@ extend.
 
 ### ⚠ Requires `SentinelCore` v1.41.0 or newer
 
-Binds records swallowed faults through `SentinelCore.Swallow`, which arrived in **v1.41.0**. It is the
-only bundle in the suite with a runtime floor — every other one compiles against any version.
+Binds records swallowed faults through `SentinelCore.Swallow`, which arrived in **v1.41.0**.
+
+> As of **2026-07-28 this floor is suite-wide.** Binds was the only bundle with one until the sensors,
+> smoothers, skins and deck bundles were brought onto `Swallow` too, so every bundle now needs
+> v1.41.0 or newer. The consequence below is unchanged — it just applies everywhere now.
 
 That matters because **every bundle ships its own copy of `../runtime/`**. Copying an **older** bundle
 over this one downgrades `SentinelCore`, and since NinjaTrader compiles all of `bin\Custom` into **one

@@ -95,8 +95,9 @@ Full steps in the **[docs](docs/)**.
 > takes **your whole tree** down with it — not just Sentinel.
 >
 > **Rule of thumb: install the oldest bundle first and the newest last**, or just re-copy the newest
-> `src/runtime/` after any install. `Sentinel Binds` requires **`SentinelCore` v1.41.0 or newer**;
-> every other bundle works with any version.
+> `src/runtime/` after any install. **Every bundle now requires `SentinelCore` v1.41.0 or newer** —
+> as of 2026-07-28 they all record swallowed faults through `SentinelCore.Swallow`, which arrived in
+> v1.41.0. (This used to be true of `Sentinel Binds` alone.)
 >
 > Releases here always carry the current runtime. A zip from elsewhere — Discord, an old download —
 > may not.
