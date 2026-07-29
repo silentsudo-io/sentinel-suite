@@ -1,7 +1,7 @@
 # Sentinel Deck — Manual Discretionary Order Deck (spec)
 
 **Status:** 🟡 **PUBLIC TESTERS' PREVIEW (DEV) — auto-fire deliberately UNVALIDATED** · **Author:** Sentinel Suite · **Date:** 2026-07-21
-**Artifact:** `Indicators\SentinelDeck_v0_2_5.cs` · class `SentinelDeck_v0_2_5` · display `"Sentinel Deck v0.2.5 (DEV)"`
+**Artifact:** `Indicators\SentinelDeck_v0_2_6.cs` · class `SentinelDeck_v0_2_6` · display `"Sentinel Deck v0.2.6 (DEV)"`
 **Namespace:** `NinjaTrader.NinjaScript.Indicators.Sentinel` (picker folder **Sentinel**)
 **Rung:** 5 (*The Deck*) · **Layer:** L2 · **Phase:** P3 Execution — see `PRODUCT_LADDER.md`
 **Hard dependencies:** `SentinelCore` **Foundation + Safety** · `SentinelSkin`
@@ -147,6 +147,17 @@ indicator's plot can be a signal.
   synthetic brick close, which quantised and biased the earlier MFE/MAE numbers.
 - **Ledger** — every submit writes a row tagged **`Deck`** (manual) or **`Deck:signal`** (auto-fire). That tag is
   what makes auto-fire gradable: it separates robot decisions from human ones without inference.
+- **Execution cost — `slip`, in ticks, adverse-signed (v0.2.6).** Every fill row carries what the fill actually cost
+  against the price you were entitled to expect: `+1` means one tick *worse* than that reference, `−1` one tick
+  better. The reference depends on the order type, and the distinction matters when you read the numbers:
+  - **limit / stop** → the limit or trigger price. This has always been recorded and is the honest measure of
+    *stop slippage* — how far past your trigger the market went before you were out.
+  - **market** (v0.2.6) → the **live quote on the side you crossed**, captured at submission: an ASK if you were
+    buying, a BID if you were selling. This is the **crossing cost** — the spread you paid to get filled now.
+  > ⚠ Before v0.2.6 market fills recorded **no `slip` at all** (the reference was 0, so the field was omitted) and
+  > market order rows logged `px:0`. Any analysis over an older Ledger is measuring exits only; it is not that
+  > entries were free. The value is captured from live market data, so it is **realtime-only** — historical and
+  > replay fills have no quote to reference and record nothing.
 - **`sentinel.log`** — `Deck` (general), `Deck:sig` (the full signal decision trail: transition, already-fired-this-bar,
   already-in-direction, no account/instrument, BLOCKED + reason), `Deck:acct` (account classification evidence),
   `Deck:trail` (per-bar trail diagnostic), `Deck:attach` (attach candidate under the cursor).

@@ -1,6 +1,6 @@
 # Sentinel Deck — Tester's Guide
 
-**Build:** `Sentinel Deck v0.2.5 (DEV)` · preview, for testing · **Date:** 2026-07-21
+**Build:** `Sentinel Deck v0.2.6 (DEV)` · preview, for testing · **Date:** 2026-07-28
 **You are testing:** a manual order deck that places **real orders**. Read §0 before you click anything.
 
 Thank you for doing this. What we need from you is not praise — it is **the thing that went wrong**, with enough
@@ -38,8 +38,14 @@ your runs are how it earns a green light. Treat it as unproven.
 
 1. Open a chart, and **open Chart Trader** (the Deck reads the account and instrument from its selectors — without
    it the Deck cannot trade, and the diagnostics file will say `chart trader: NOT FOUND`).
-2. Add the indicator: **Indicators ▸ Sentinel ▸ Sentinel Deck v0.2.5 (DEV)**.
-3. Confirm the header chip reads **v0.2.5** and the band appears beneath it.
+2. Add the indicator: **Indicators ▸ Sentinel ▸ Sentinel Deck v0.2.6 (DEV)**.
+3. Confirm the header chip reads **v0.2.6** and the band appears beneath it.
+
+> ⚠ **Upgrading from v0.2.5? You must re-add the Deck to your charts.** A NinjaScript indicator's identity is its
+> namespace + class name, so v0.2.6 is a *different* indicator to NinjaTrader: your existing v0.2.5 instances keep
+> running untouched and **do not become v0.2.6**, and v0.2.6 does not inherit their settings. Remove the old one,
+> add the new one, re-set your options. Both can sit in the tree together — they do not collide.
+> You can keep `SentinelDeck_v0_2_5.cs` installed as a fallback, or delete it once v0.2.6 is behaving.
 4. Select a **simulation account** in Chart Trader.
 
 ![The Sentinel Deck running on an NQ chart — the order panel on the right, the account risk card lower-centre, order lines on the chart, and Sentinel sensor cards along the top](deck-in-context.png)
