@@ -27,6 +27,23 @@
 //    rest of the suite (GTrader21 / Eye / strategies) can consult the live brick
 //    ATR + direction without re-deriving it.
 //
+//  ⚠⚠ READ THIS BEFORE YOU TRADE OFF THE CANDLES — **CANDLE COLOUR IS NOT BRICK
+//      DIRECTION.** Bodies are HEIKIN-ASHI (open = (prevHaOpen+prevHaClose)/2,
+//      close = (O+H+L+C)/4), so a body is coloured by the SMOOTHED average, not by
+//      the brick that actually printed. Near a turn they routinely disagree: the
+//      brick flips while the HA body is still the old colour, or the body flips a
+//      brick early. This is inherent to HA rendering and is NOT a bug.
+//        • The authoritative direction is `SentinelCore.BrickState.Direction`
+//          (what every Sentinel consumer votes on), never the pixel.
+//        • The HIGH/LOW wicks are REAL traded prices; only the BODY is synthetic.
+//        • ⚠ Corollary for anything that RECORDS: an HA close is a price that never
+//          traded (see the firePx incident — a synthetic close biased every label in
+//          the corpus). Record real prints, not the body.
+//      Reported by a public tester (sneaky_zekey), who had to write this warning into
+//      his own tool's setup output because ours did not carry it. Applies equally to
+//      SentinelDrift, which inherits the same HA rendering; SentinelLattice and
+//      SentinelEffort do not use HA bodies and are unaffected.
+//
 //  RELATION TO TbarsSudoV0003 (frozen checkpoint — NOT edited)
 //    Same feature set, but reworked for CORRECTNESS + REPRODUCIBILITY. Fixes applied
 //    (each was a defect analysed in V0003):
@@ -644,12 +661,19 @@ namespace NinjaTrader.NinjaScript.BarsTypes
         // ── SentinelCore.BrickState publish (v1.6.0/1.6.1 seam) — PER TICK so the countdown HUD is live ──
         private void PublishBrickTick(Bars bars, double close, DateTime time)
         {
+            // (BRKDBG raw-guard diagnostic removed 2026-07-24 — it did its job: it proved the guards pass and
+            //  the scope resolves, which is what pointed at the assembly-generation split. See the beacon below.)
+
             // Realtime only — a historical rebuild must not stamp a stale brick as "fresh"
             // (consumers freshness-gate on UpdatedUtc). Fail-safe: never let telemetry throw into the bar path.
             try
             {
                 if (tickSize <= 0) return;
-                if ((NinjaTrader.Core.Globals.Now - time).TotalMinutes > RealtimePublishMinutes) return;
+                if (!SentinelCore.ReplayMode && (NinjaTrader.Core.Globals.Now - time).TotalMinutes > RealtimePublishMinutes) return;
+                // ^ v1.38.0 REPLAY MODE: Globals.Now is WALL-CLOCK even in Playback, so in a replay every bar
+                //   reads weeks stale and this guard returned on EVERY tick -> the seam never published ->
+                //   BRK/FLUX could not vote in ANY replay bake. Sentineleplay.on bypasses it on a bake node
+                //   (no live consumers there). Guard itself is unchanged for live boxes.
                 string inst = bars?.Instrument?.MasterInstrument?.Name;
                 if (string.IsNullOrEmpty(inst)) return;
 
@@ -668,10 +692,21 @@ namespace NinjaTrader.NinjaScript.BarsTypes
                                            dynScale, sameDirCount, barsThisSession, pendingBreakout,
                                            barMax, barMin, ticksToUpper, ticksToLower, nearest, "SentinelTBars");
 
+                // v1.40.0 BEACON — announce THIS assembly generation into the AppDomain (survives an F5).
+                // After a compile the chart keeps this OLD bars-type instance while the Council is rebuilt
+                // NEW, so the SetBrickState above lands in the old assembly's static store and the Council
+                // sees nothing. The beacon is what lets it say "DECOUPLED, restart NT" instead of "absent".
+                SentinelCore.Beacon(scope, "BRK");
+
                 // Throttled human-readable heartbeat (Output window live + sentinel.log for audit).
-                if ((time - _lastBrickLog).TotalSeconds >= BrickLogThrottleSeconds)
+                // v1.0.1 (2026-07-25) — throttle on WALL-CLOCK, not bar time. Bar time advances days per real
+                // second during a historical rebuild/replay, so a bar-time throttle degenerates to no throttle:
+                // MEASURED 25,547 TBars lines in 27s on one chart load, which rotated the 5 MB sentinel.log and
+                // destroyed the boot's forensic window (4th time evidence was lost this way). A HUMAN heartbeat
+                // belongs on a human clock; live behaviour is unchanged because there bar time ≈ wall time.
+                if ((DateTime.UtcNow - _lastBrickLog).TotalSeconds >= BrickLogThrottleSeconds)
                 {
-                    _lastBrickLog = time;
+                    _lastBrickLog = DateTime.UtcNow;
                     string arrow = barDirection > 0 ? "up" : "dn";
                     SentinelCore.Log("TBars", string.Format(
                         "{0} {1} · ATR {2:0.0}t · trend {3:0.0}t rev {4:0.0}t · dens {5:0.00} · run {6} · {7} bricks · next {8:0}t{9}",
@@ -679,7 +714,7 @@ namespace NinjaTrader.NinjaScript.BarsTypes
                         dynScale, sameDirCount, barsThisSession, nearest, pendingBreakout ? " · pending" : ""));
                 }
             }
-            catch { }
+            catch (Exception _sx) { SentinelCore.Swallow("SentinelTBars.PublishBrickTick", _sx); }
         }
 
         // ── Durable per-brick DATA log (v1.6.1) — one JSONL record per COMPLETED brick, realtime only ──
@@ -688,7 +723,11 @@ namespace NinjaTrader.NinjaScript.BarsTypes
             try
             {
                 if (tickSize <= 0) return;
-                if ((NinjaTrader.Core.Globals.Now - time).TotalMinutes > RealtimePublishMinutes) return;
+                if (!SentinelCore.ReplayMode && (NinjaTrader.Core.Globals.Now - time).TotalMinutes > RealtimePublishMinutes) return;
+                // ^ v1.38.0 REPLAY MODE: Globals.Now is WALL-CLOCK even in Playback, so in a replay every bar
+                //   reads weeks stale and this guard returned on EVERY tick -> the seam never published ->
+                //   BRK/FLUX could not vote in ANY replay bake. Sentineleplay.on bypasses it on a bake node
+                //   (no live consumers there). Guard itself is unchanged for live boxes.
                 string inst = bars?.Instrument?.MasterInstrument?.Name;
                 if (string.IsNullOrEmpty(inst)) return;
 
@@ -705,7 +744,7 @@ namespace NinjaTrader.NinjaScript.BarsTypes
                     dynScale, sameDirCount, barsThisSession, bars.GetVolume(done));
                 SentinelCore.BrickLog.Append("SentinelTBars", inst, fields);
             }
-            catch { }
+            catch (Exception _sx) { SentinelCore.Swallow("SentinelTBars.LogBrick", _sx); }
         }
 
         // ── Overrides ──

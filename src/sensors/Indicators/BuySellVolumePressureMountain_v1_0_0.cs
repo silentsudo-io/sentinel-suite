@@ -47,6 +47,18 @@ using NinjaTrader.NinjaScript.Indicators.Sentinel.Sensors;
 //    OnMarketData only fires realtime / tick-replay, so historical load auto-uses the proxy (accumulator == 0).
 //
 //  CHANGELOG
+//    v1.0.1 (in-place 2026-07-26) — THE …State SEAM, which this tool shipped without. It has been computing an
+//             order-flow opinion that nothing in the suite could consult (design system §9 item 6 miss).
+//             Publishes SentinelCore.PressureState (Core v1.45.0): BuyPct/SellPct/Delta/Dir/DomRatio/Strong/
+//             Divergence/TickBacked, scope-keyed and BARE (sensors are shared across lanes), PublishState
+//             default ON, plus an OnMarketData heartbeat so a quiet tick/volume chart reads STALE not ABSENT.
+//             New Council voter tag BSP at **weight 0.0 (AUDITION)** — the 2026-07-26 re-test killed all 19
+//             voters and every one was PRICE-derived; this is genuine bid/ask-classified ORDER FLOW, the one
+//             untested family, so it is recorded and graded before it is allowed to move a verdict.
+//             ⚠ TickBacked is load-bearing: OnMarketData is realtime-only, so a historical rebuild falls back
+//             to the OHLC candle-shape proxy, which is itself price-derived. Never grade a proxy row as flow.
+//             KEPT IN PLACE (no v1_1_0 rename): class + namespace are an indicator's serialization identity,
+//             and renaming would silently drop it off every saved chart for a purely additive change.
 //    v1.0.0 (in-place 2026-07-07) — SENTINEL PLOT SKIN: OnRender paints a glass PanelWash (covers stock plots)
 //             + zero baseline + two-sided gradient HISTOBARS (buy = CUp above zero, sell = CDown below). Toggle
 //             SentinelPlotSkin (default ON); stock gridlines off. Design system §4c. No logic change.
@@ -88,6 +100,7 @@ namespace NinjaTrader.NinjaScript.Indicators.Sentinel.Sensors
 		private double prevHighPrice, prevHighPressure, prevLowPrice, prevLowPressure;
 		private int    prevHighBar, prevLowBar;
 		private int    lastDivBar = -1000;
+		private int    lastDivDir = 0;      // +1 bullish / -1 bearish — which way the last divergence pointed (v1.0.1 seam)
 
 		// Sentinel glass-card readout
 		private SentinelSkin.Painter _sp;
@@ -134,6 +147,7 @@ namespace NinjaTrader.NinjaScript.Indicators.Sentinel.Sensors
 				SentinelPlotSkin			= true;   // render the panel to the Sentinel plot standard
 				CardCorner					= SentinelCardCorner.TopRight;
 				ShowIndicatorLabel			= false;   // Sentinel standard: clean chart (NT name label removed)
+				PublishState				= true;    // design system §9 item 6: publish default ON
 
 				// Brushes (suite palette) — FROZEN so they're safe to touch on the calc/render thread
 				// (an unfrozen WPF SolidColorBrush throws "calling thread cannot access this object").
@@ -210,6 +224,15 @@ namespace NinjaTrader.NinjaScript.Indicators.Sentinel.Sensors
 			else { barBuyVol += v / 2; barSellVol += v - v / 2; }  // flat print → split
 
 			lastTrade = p;
+
+			// Heartbeat: this publishes on bar close, so on a tick/volume bar type in a quiet market the
+			// seam would age out and read ABSENT when the sensor is simply waiting. Re-stamp on the tape.
+			// [[state-seam-freshness-heartbeat]] — "say STALE, never ABSENT".
+			if (PublishState && State == State.Realtime)
+			{
+				try { SentinelCore.TouchPressureState(SentinelCore.ScopeOf(Instrument, BarsPeriod)); }
+				catch (Exception _sx) { SentinelCore.Swallow("BuySellVolumePressureMountain.Heartbeat", _sx); }
+			}
 		}
 
 		#endregion
@@ -306,6 +329,45 @@ namespace NinjaTrader.NinjaScript.Indicators.Sentinel.Sensors
 
 			if (ShowDivergences)
 				DetectDivergence();
+
+			PublishPressure(dominantSide, strongBuy || strongSell);
+		}
+
+		// ── the …State seam (v1.0.1) ────────────────────────────────────────────────────────────
+		//  Design system §9 item 6: every signal/regime/bias/context indicator publishes a seam and is
+		//  wired into the Council. This tool shipped with a card and no seam, so it had been computing
+		//  an order-flow opinion nothing could consult.
+		//  ⚠ TickBacked travels with the reading ON PURPOSE. OnMarketData is realtime-only, so on a
+		//  historical rebuild `barUsedTicks` is false and the numbers come from an OHLC candle-shape
+		//  PROXY — which is price-derived, the family the 2026-07-26 re-test already found worthless.
+		//  A consumer that cannot tell the two apart would grade the proxy and call it order flow.
+		private void PublishPressure(double dominantSide, bool strong)
+		{
+			if (!PublishState) return;
+			try
+			{
+				string sc = SentinelCore.ScopeOf(Instrument, BarsPeriod);   // BARE: sensors are shared across lanes
+				if (string.IsNullOrEmpty(sc)) return;
+
+				int div = (CurrentBar - lastDivBar) <= DivergenceLookbackBars ? lastDivDir : 0;
+
+				SentinelCore.SetPressureState(new SentinelCore.PressureState
+				{
+					Scope      = sc,
+					Bartype    = SentinelCore.BarTag(BarsPeriod),
+					Instrument = Instrument.MasterInstrument.Name,
+					BuyPct     = latestBuyPct,
+					SellPct    = latestSellPct,
+					Delta      = latestDelta,
+					Dir        = (int)dominantSide,
+					DomRatio   = latestDomRatio,
+					Strong     = strong,
+					Divergence = div,
+					TickBacked = barUsedTicks,
+					Source     = "BuySellVolumePressureMountain_v1_0_0"
+				});
+			}
+			catch (Exception _sx) { SentinelCore.Swallow("BuySellVolumePressureMountain.PublishPressure", _sx); }
 		}
 
 		#endregion
@@ -337,7 +399,7 @@ namespace NinjaTrader.NinjaScript.Indicators.Sentinel.Sensors
 					&& ph > prevHighPrice && pressureAtPivot < prevHighPressure)
 				{
 					Draw.TriangleDown(this, "bspDivBear" + (CurrentBar - s), false, s, MountainScale * 0.92, BearishDivBrush);
-					lastDivBar = CurrentBar;
+					lastDivBar = CurrentBar; lastDivDir = -1;
 				}
 				prevHighPrice = ph; prevHighPressure = pressureAtPivot; prevHighBar = CurrentBar - s; havePrevHigh = true;
 			}
@@ -348,7 +410,7 @@ namespace NinjaTrader.NinjaScript.Indicators.Sentinel.Sensors
 					&& pl < prevLowPrice && pressureAtPivot > prevLowPressure)
 				{
 					Draw.TriangleUp(this, "bspDivBull" + (CurrentBar - s), false, s, -MountainScale * 0.92, BullishDivBrush);
-					lastDivBar = CurrentBar;
+					lastDivBar = CurrentBar; lastDivDir = 1;
 				}
 				prevLowPrice = pl; prevLowPressure = pressureAtPivot; prevLowBar = CurrentBar - s; havePrevLow = true;
 			}
@@ -596,6 +658,11 @@ namespace NinjaTrader.NinjaScript.Indicators.Sentinel.Sensors
 		[Display(Name = "Show indicator label", Description = "Show NinjaTrader's chart name label. Sentinel default = OFF (clean chart); turn on to restore it.", Order = 100, GroupName = "04. Sentinel")]
 		public bool ShowIndicatorLabel { get; set; }
 
+		// NOT a [NinjaScriptProperty] — serializes to the workspace + shows in F6 but stays OUT of the
+		// generated constructor, so adding it causes no codegen churn on existing charts.
+		[Display(Name = "Publish state seam", Description = "Publish PressureState so the Council and other tools can consult this reading. Sentinel standard = ON.", GroupName = "Sentinel", Order = 101)]
+		public bool PublishState { get; set; }
+
 		#endregion
 
 		#region Brushes
@@ -631,3 +698,4 @@ namespace NinjaTrader.NinjaScript.Indicators.Sentinel.Sensors
 		#endregion
 	}
 }
+

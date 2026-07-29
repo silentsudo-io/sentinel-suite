@@ -132,8 +132,8 @@ namespace NinjaTrader.NinjaScript.Indicators.Sentinel.Sensors
 			}
 			else if (State == State.Terminated)
 			{
-				if (_sp != null) { try { _sp.Dispose(); } catch { } _sp = null; }
-				try { SentinelSkin.CardLayout.Release(this); } catch { }
+				if (_sp != null) { try { _sp.Dispose(); } catch (Exception _sx) { SentinelCore.Swallow("SentinelADXVMA.OnStateChange", _sx); } _sp = null; }
+				try { SentinelSkin.CardLayout.Release(this); } catch (Exception _sx) { SentinelCore.Swallow("SentinelADXVMA.OnStateChange", _sx); }
 			}
 		}
 
@@ -141,7 +141,7 @@ namespace NinjaTrader.NinjaScript.Indicators.Sentinel.Sensors
 		private string _scope;
 		private string Scope()
 		{
-			if (_scope == null) { try { _scope = SentinelCore.ScopeOf(Instrument, BarsPeriod); } catch { } }
+			if (_scope == null) { try { _scope = SentinelCore.ScopeOf(Instrument, BarsPeriod); } catch (Exception _sx) { SentinelCore.Swallow("SentinelADXVMA.Scope", _sx); } }
 			return _scope;
 		}
 
@@ -155,7 +155,7 @@ namespace NinjaTrader.NinjaScript.Indicators.Sentinel.Sensors
 			DateTime now = DateTime.UtcNow;
 			if ((now - _lastHeartbeatUtc).TotalSeconds < HeartbeatSec) return;
 			_lastHeartbeatUtc = now;
-			try { SentinelCore.TouchAdxvmaState(Scope()); } catch { }
+			try { SentinelCore.TouchAdxvmaState(Scope()); } catch (Exception _sx) { SentinelCore.Swallow("SentinelADXVMA.OnMarketData", _sx); }
 		}
 
 		private int _trendPrev;   // last emitted trinary trend (for hysteresis)
@@ -236,10 +236,10 @@ namespace NinjaTrader.NinjaScript.Indicators.Sentinel.Sensors
 						Source     = "AVMA"
 					});
 				}
-				catch { }
+				catch (Exception _sx) { SentinelCore.Swallow("SentinelADXVMA.OnBarUpdate", _sx); }
 			}
 
-			if (LogChanges && sig != _lastLoggedSig)
+			if (LogChanges && State == State.Realtime && sig != _lastLoggedSig)
 			{
 				_lastLoggedSig = sig;
 				try
@@ -249,7 +249,7 @@ namespace NinjaTrader.NinjaScript.Indicators.Sentinel.Sensors
 						(sig > 0 ? "trend ▲ (rising)" : sig < 0 ? "trend ▼ (falling)" : "chop ~") +
 						" ma=" + Adxvma[0].ToString("0.##") + " vi=" + vi.ToString("0.00"));
 				}
-				catch { }
+				catch (Exception _sx) { SentinelCore.Swallow("SentinelADXVMA.OnBarUpdate", _sx); }
 			}
 		}
 
@@ -260,8 +260,8 @@ namespace NinjaTrader.NinjaScript.Indicators.Sentinel.Sensors
 			if (RenderTarget == null || ChartPanel == null) return;
 			if (_sp == null) _sp = new SentinelSkin.Painter();
 			_sp.Begin(RenderTarget);
-			try { if (ShowCard) RenderCard(); } catch { }
-			try { _sp.End(); } catch { }
+			try { if (ShowCard) RenderCard(); } catch (Exception _sx) { SentinelCore.Swallow("SentinelADXVMA.OnRender", _sx); }
+			try { _sp.End(); } catch (Exception _sx) { SentinelCore.Swallow("SentinelADXVMA.OnRender", _sx); }
 		}
 
 		private void RenderCard()
@@ -348,3 +348,4 @@ namespace NinjaTrader.NinjaScript.Indicators.Sentinel.Sensors
 		#endregion
 	}
 }
+

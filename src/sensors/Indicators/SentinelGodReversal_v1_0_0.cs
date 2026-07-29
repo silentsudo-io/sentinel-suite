@@ -128,8 +128,8 @@ namespace NinjaTrader.NinjaScript.Indicators.Sentinel.Sensors
 			}
 			else if (State == State.Terminated)
 			{
-				if (_sp != null) { try { _sp.Dispose(); } catch { } _sp = null; }
-				try { SentinelSkin.CardLayout.Release(this); } catch { }
+				if (_sp != null) { try { _sp.Dispose(); } catch (Exception _sx) { SentinelCore.Swallow("SentinelGodReversal.OnStateChange", _sx); } _sp = null; }
+				try { SentinelSkin.CardLayout.Release(this); } catch (Exception _sx) { SentinelCore.Swallow("SentinelGodReversal.OnStateChange", _sx); }
 			}
 		}
 		#endregion
@@ -141,7 +141,7 @@ namespace NinjaTrader.NinjaScript.Indicators.Sentinel.Sensors
 		private string _scope;
 		private string Scope()
 		{
-		    if (_scope == null) { try { _scope = SentinelCore.ScopeOf(Instrument, BarsPeriod); } catch { } }
+		    if (_scope == null) { try { _scope = SentinelCore.ScopeOf(Instrument, BarsPeriod); } catch (Exception _sx) { SentinelCore.Swallow("SentinelGodReversal.Scope", _sx); } }
 		    return _scope;
 		}
 
@@ -160,7 +160,7 @@ namespace NinjaTrader.NinjaScript.Indicators.Sentinel.Sensors
 		    DateTime now = DateTime.UtcNow;
 		    if ((now - _lastHeartbeatUtc).TotalSeconds < HeartbeatSec) return;
 		    _lastHeartbeatUtc = now;
-		    try { SentinelCore.TouchGodReversalState(Scope()); } catch { }
+		    try { SentinelCore.TouchGodReversalState(Scope()); } catch (Exception _sx) { SentinelCore.Swallow("SentinelGodReversal.OnMarketData", _sx); }
 		}
 
 		protected override void OnBarUpdate()
@@ -223,7 +223,7 @@ namespace NinjaTrader.NinjaScript.Indicators.Sentinel.Sensors
 						Source     = "SentinelGodReversal"
 					});
 				}
-				catch { }
+				catch (Exception _sx) { SentinelCore.Swallow("SentinelGodReversal.OnBarUpdate", _sx); }
 			}
 		}
 		#endregion
@@ -480,7 +480,7 @@ namespace NinjaTrader.NinjaScript.Indicators.Sentinel.Sensors
 
 				_sp.End();
 			}
-			catch { }
+			catch (Exception _sx) { SentinelCore.Swallow("SentinelGodReversal.OnRender", _sx); }
 		}
 		#endregion
 
@@ -582,3 +582,4 @@ namespace NinjaTrader.NinjaScript.Indicators.Sentinel.Sensors
 		#endregion
 	}
 }
+

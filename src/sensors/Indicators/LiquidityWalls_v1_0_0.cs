@@ -176,9 +176,9 @@ namespace NinjaTrader.NinjaScript.Indicators.Sentinel.Sensors
 			}
 			else if (State == State.Terminated)
 			{
-				if (_sp != null) { try { _sp.Dispose(); } catch { } _sp = null; }
-				try { SentinelSkin.CardLayout.Release(this); } catch { }
-				if (_scope != null) { try { SentinelCore.ClearLiquidityScope(_scope); } catch { } }
+				if (_sp != null) { try { _sp.Dispose(); } catch (Exception _sx) { SentinelCore.Swallow("LiquidityWalls.OnStateChange", _sx); } _sp = null; }
+				try { SentinelSkin.CardLayout.Release(this); } catch (Exception _sx) { SentinelCore.Swallow("LiquidityWalls.OnStateChange", _sx); }
+				if (_scope != null) { try { SentinelCore.ClearLiquidityScope(_scope); } catch (Exception _sx) { SentinelCore.Swallow("LiquidityWalls.OnStateChange", _sx); } }
 			}
 		}
 
@@ -191,7 +191,7 @@ namespace NinjaTrader.NinjaScript.Indicators.Sentinel.Sensors
 		{
 			if (_scope == null)
 			{
-				try { if (Instrument != null && BarsPeriod != null) _scope = SentinelCore.ScopeOf(Instrument, BarsPeriod); } catch { }
+				try { if (Instrument != null && BarsPeriod != null) _scope = SentinelCore.ScopeOf(Instrument, BarsPeriod); } catch (Exception _sx) { SentinelCore.Swallow("LiquidityWalls.Scope", _sx); }
 			}
 			return _scope;
 		}
@@ -204,7 +204,7 @@ namespace NinjaTrader.NinjaScript.Indicators.Sentinel.Sensors
 			if ((now - _lastLiqBeatUtc).TotalSeconds < LiqBeatSec) return;
 			_lastLiqBeatUtc = now;
 			string sc = Scope();
-			if (sc != null) { try { SentinelCore.TouchLiquidityState(sc); } catch { } }
+			if (sc != null) { try { SentinelCore.TouchLiquidityState(sc); } catch (Exception _sx) { SentinelCore.Swallow("LiquidityWalls.OnMarketData", _sx); } }
 		}
 
 		protected override void OnBarUpdate()
@@ -314,7 +314,7 @@ namespace NinjaTrader.NinjaScript.Indicators.Sentinel.Sensors
 						absorbedThisBar ? absorbSide : 0,
 						wallAbove, wallBelow, distAboveTicks, distBelowTicks, walls.Count, Name.Length == 0 ? "LiquidityWalls" : Name);
 				}
-				catch { }
+				catch (Exception _sx) { SentinelCore.Swallow("LiquidityWalls.OnBarUpdate", _sx); }
 			}
 		}
 
@@ -343,7 +343,7 @@ namespace NinjaTrader.NinjaScript.Indicators.Sentinel.Sensors
 			// cap the active set — retire the oldest if we're at the ceiling
 			while (walls.Count >= MaxWalls && walls.Count > 0)
 			{
-				try { RemoveDrawObject(walls[0].Tag); } catch { }
+				try { RemoveDrawObject(walls[0].Tag); } catch (Exception _sx) { SentinelCore.Swallow("LiquidityWalls.SpawnWall", _sx); }
 				walls.RemoveAt(0);
 			}
 
@@ -436,7 +436,7 @@ namespace NinjaTrader.NinjaScript.Indicators.Sentinel.Sensors
 
 				_sp.End();
 			}
-			catch { }
+			catch (Exception _sx) { SentinelCore.Swallow("LiquidityWalls.OnRender", _sx); }
 		}
 
 		#region Consumable "current" surface
@@ -503,3 +503,4 @@ namespace NinjaTrader.NinjaScript.Indicators.Sentinel.Sensors
 		#endregion
 	}
 }
+

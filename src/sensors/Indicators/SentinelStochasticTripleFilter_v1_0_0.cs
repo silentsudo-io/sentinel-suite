@@ -166,9 +166,9 @@ namespace NinjaTrader.NinjaScript.Indicators.Sentinel.Sensors
             }
             else if (State == State.Terminated)
             {
-                if (_sp != null) { try { _sp.Dispose(); } catch { } _sp = null; }
-                try { SentinelSkin.CardLayout.Release(this); } catch { }
-                if (_scope != null) { try { SentinelCore.ClearStfScope(_scope); } catch { } }
+                if (_sp != null) { try { _sp.Dispose(); } catch (Exception _sx) { SentinelCore.Swallow("SentinelStochasticTripleFilter.OnStateChange", _sx); } _sp = null; }
+                try { SentinelSkin.CardLayout.Release(this); } catch (Exception _sx) { SentinelCore.Swallow("SentinelStochasticTripleFilter.OnStateChange", _sx); }
+                if (_scope != null) { try { SentinelCore.ClearStfScope(_scope); } catch (Exception _sx) { SentinelCore.Swallow("SentinelStochasticTripleFilter.OnStateChange", _sx); } }
             }
         }
 
@@ -211,7 +211,7 @@ namespace NinjaTrader.NinjaScript.Indicators.Sentinel.Sensors
             DateTime now = DateTime.UtcNow;
             if ((now - _lastHeartbeatUtc).TotalSeconds < HeartbeatSec) return;
             _lastHeartbeatUtc = now;
-            try { SentinelCore.TouchStfState(Scope()); } catch { }
+            try { SentinelCore.TouchStfState(Scope()); } catch (Exception _sx) { SentinelCore.Swallow("SentinelStochasticTripleFilter.OnMarketData", _sx); }
         }
 
         protected override void OnBarUpdate()
@@ -303,7 +303,7 @@ namespace NinjaTrader.NinjaScript.Indicators.Sentinel.Sensors
                     SentinelCore.SetStfState(Scope(), SentinelCore.BarTag(BarsPeriod), Instrument.MasterInstrument.Name,
                                              gcBias, trending, chop, zone, signal, "SentinelStf");
                 }
-                catch { }
+                catch (Exception _sx) { SentinelCore.Swallow("SentinelStochasticTripleFilter.OnBarUpdate", _sx); }
             }
 
             if (LogChanges && signal != _lastLoggedSignal && State != State.Historical)
@@ -317,7 +317,7 @@ namespace NinjaTrader.NinjaScript.Indicators.Sentinel.Sensors
                             (signal > 0 ? " LONG" : " SHORT") + " (gc " + (gcUp ? "▲" : gcDown ? "▼" : "─") +
                             ", chop " + chop.ToString("0") + (trending ? " trending" : " CHOPPY") + ")");
                     }
-                    catch { }
+                    catch (Exception _sx) { SentinelCore.Swallow("SentinelStochasticTripleFilter.OnBarUpdate", _sx); }
                 }
             }
         }
@@ -326,7 +326,7 @@ namespace NinjaTrader.NinjaScript.Indicators.Sentinel.Sensors
         private string _scope;
         private string Scope()
         {
-            if (_scope == null) { try { _scope = SentinelCore.ScopeOf(Instrument, BarsPeriod); } catch { } }
+            if (_scope == null) { try { _scope = SentinelCore.ScopeOf(Instrument, BarsPeriod); } catch (Exception _sx) { SentinelCore.Swallow("SentinelStochasticTripleFilter.Scope", _sx); } }
             return _scope;
         }
 
@@ -396,7 +396,7 @@ namespace NinjaTrader.NinjaScript.Indicators.Sentinel.Sensors
 
                 _sp.End();
             }
-            catch { }
+            catch (Exception _sx) { SentinelCore.Swallow("SentinelStochasticTripleFilter.OnRender", _sx); }
         }
 
         #region Plot accessors
@@ -481,3 +481,4 @@ namespace NinjaTrader.NinjaScript.Indicators.Sentinel.Sensors
         #endregion
     }
 }
+

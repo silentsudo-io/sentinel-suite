@@ -116,8 +116,8 @@ namespace NinjaTrader.NinjaScript.Indicators.Sentinel.Sensors
 			}
 			else if (State == State.Terminated)
 			{
-				if (_sp != null) { try { _sp.Dispose(); } catch { } _sp = null; }
-				try { SentinelSkin.CardLayout.Release(this); } catch { }
+				if (_sp != null) { try { _sp.Dispose(); } catch (Exception _sx) { SentinelCore.Swallow("SentinelExhaustion.OnStateChange", _sx); } _sp = null; }
+				try { SentinelSkin.CardLayout.Release(this); } catch (Exception _sx) { SentinelCore.Swallow("SentinelExhaustion.OnStateChange", _sx); }
 			}
 		}
 
@@ -125,7 +125,7 @@ namespace NinjaTrader.NinjaScript.Indicators.Sentinel.Sensors
 		private string _scope;
 		private string Scope()
 		{
-			if (_scope == null) { try { _scope = SentinelCore.ScopeOf(Instrument, BarsPeriod); } catch { } }
+			if (_scope == null) { try { _scope = SentinelCore.ScopeOf(Instrument, BarsPeriod); } catch (Exception _sx) { SentinelCore.Swallow("SentinelExhaustion.Scope", _sx); } }
 			return _scope;
 		}
 
@@ -138,7 +138,7 @@ namespace NinjaTrader.NinjaScript.Indicators.Sentinel.Sensors
 			DateTime now = DateTime.UtcNow;
 			if ((now - _lastHeartbeatUtc).TotalSeconds < HeartbeatSec) return;
 			_lastHeartbeatUtc = now;
-			try { SentinelCore.TouchExhaustionState(Scope()); } catch { }
+			try { SentinelCore.TouchExhaustionState(Scope()); } catch (Exception _sx) { SentinelCore.Swallow("SentinelExhaustion.OnMarketData", _sx); }
 		}
 
 		protected override void OnBarUpdate()
@@ -219,10 +219,10 @@ namespace NinjaTrader.NinjaScript.Indicators.Sentinel.Sensors
 						Source     = "EXH"
 					});
 				}
-				catch { }
+				catch (Exception _sx) { SentinelCore.Swallow("SentinelExhaustion.OnBarUpdate", _sx); }
 			}
 
-			if (LogChanges && signal != _lastLoggedSig)
+			if (LogChanges && State == State.Realtime && signal != _lastLoggedSig)
 			{
 				_lastLoggedSig = signal;
 				if (signal != 0)
@@ -234,7 +234,7 @@ namespace NinjaTrader.NinjaScript.Indicators.Sentinel.Sensors
 							(signal > 0 ? "exhaustion ▲ (up reversal)" : "exhaustion ▼ (down reversal)") +
 							(major ? " [major]" : " [minor]"));
 					}
-					catch { }
+					catch (Exception _sx) { SentinelCore.Swallow("SentinelExhaustion.OnBarUpdate", _sx); }
 				}
 			}
 		}
@@ -246,8 +246,8 @@ namespace NinjaTrader.NinjaScript.Indicators.Sentinel.Sensors
 			if (RenderTarget == null || ChartPanel == null) return;
 			if (_sp == null) _sp = new SentinelSkin.Painter();
 			_sp.Begin(RenderTarget);
-			try { if (ShowCard) RenderCard(); } catch { }
-			try { _sp.End(); } catch { }
+			try { if (ShowCard) RenderCard(); } catch (Exception _sx) { SentinelCore.Swallow("SentinelExhaustion.OnRender", _sx); }
+			try { _sp.End(); } catch (Exception _sx) { SentinelCore.Swallow("SentinelExhaustion.OnRender", _sx); }
 		}
 
 		private void RenderCard()
@@ -342,3 +342,4 @@ namespace NinjaTrader.NinjaScript.Indicators.Sentinel.Sensors
 		#endregion
 	}
 }
+

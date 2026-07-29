@@ -355,10 +355,17 @@ namespace NinjaTrader.NinjaScript.BarsTypes
         // ── SentinelCore.FluxState publish (v1.31.0 seam) — per tick so the countdown HUD is live, realtime only ──
         private void PublishFluxTick(Bars bars, DateTime time)
         {
+            // (FLUXDBG raw-guard diagnostic removed 2026-07-24 — proven: guards pass, scope resolves. The real
+            //  fault was the assembly-generation split; the beacon below is what reports it. See SentinelCore.)
+
             try
             {
                 if (tickSize <= 0) return;
-                if ((NinjaTrader.Core.Globals.Now - time).TotalMinutes > RealtimePublishMinutes) return;
+                if (!SentinelCore.ReplayMode && (NinjaTrader.Core.Globals.Now - time).TotalMinutes > RealtimePublishMinutes) return;
+                // ^ v1.38.0 REPLAY MODE: Globals.Now is WALL-CLOCK even in Playback, so in a replay every bar
+                //   reads weeks stale and this guard returned on EVERY tick -> the seam never published ->
+                //   BRK/FLUX could not vote in ANY replay bake. Sentineleplay.on bypasses it on a bake node
+                //   (no live consumers there). Guard itself is unchanged for live boxes.
                 string inst = bars?.Instrument?.MasterInstrument?.Name;
                 if (string.IsNullOrEmpty(inst)) return;
                 string scope = SentinelCore.ScopeOf(bars.Instrument, bars.BarsPeriod);
@@ -378,9 +385,16 @@ namespace NinjaTrader.NinjaScript.BarsTypes
                     flowDir, priceDir, pressure, theta, threshold == double.MaxValue ? 0.0 : threshold,
                     pct, cvd, atrEma, diverge, barsThisSession, "SentinelFlux");
 
-                if ((time - _lastFluxLog).TotalSeconds >= FluxLogThrottleSeconds)
+                // v1.40.0 BEACON — see SentinelCore.Beacon: after an F5 this bars-type instance survives on the
+                // OLD assembly while the Council is rebuilt NEW, so the publish above lands in an orphaned store.
+                SentinelCore.Beacon(scope, "FLUX");
+
+                // v1.0.1 (2026-07-25) — throttle on WALL-CLOCK, not bar time (same defect as SentinelTBars):
+                // bar time advances days per real second on a rebuild/replay, so this throttled nothing —
+                // MEASURED 11,164 Flux lines in 27s, together with TBars rotating the whole 5 MB log away.
+                if ((DateTime.UtcNow - _lastFluxLog).TotalSeconds >= FluxLogThrottleSeconds)
                 {
-                    _lastFluxLog = time;
+                    _lastFluxLog = DateTime.UtcNow;
                     string arrow = flowDir > 0 ? "buy" : (flowDir < 0 ? "sell" : "flat");
                     SentinelCore.Log("Flux", string.Format(
                         "{0} {1} · θ {2:0} / θ* {3:0} ({4:0%}) · pres {5:0.00} · ATR {6:0.0}t · cvd {7:0} · {8} bars{9}",
@@ -388,7 +402,7 @@ namespace NinjaTrader.NinjaScript.BarsTypes
                         atrEma / tickSize, cvd, barsThisSession, diverge != 0 ? " · absorb" : ""));
                 }
             }
-            catch { }
+            catch (Exception _sx) { SentinelCore.Swallow("SentinelFlux.PublishFluxTick", _sx); }
         }
 
         // ── Durable per-bar DATA log — one JSONL record per COMPLETED bar, realtime only ──
@@ -397,7 +411,11 @@ namespace NinjaTrader.NinjaScript.BarsTypes
             try
             {
                 if (tickSize <= 0) return;
-                if ((NinjaTrader.Core.Globals.Now - time).TotalMinutes > RealtimePublishMinutes) return;
+                if (!SentinelCore.ReplayMode && (NinjaTrader.Core.Globals.Now - time).TotalMinutes > RealtimePublishMinutes) return;
+                // ^ v1.38.0 REPLAY MODE: Globals.Now is WALL-CLOCK even in Playback, so in a replay every bar
+                //   reads weeks stale and this guard returned on EVERY tick -> the seam never published ->
+                //   BRK/FLUX could not vote in ANY replay bake. Sentineleplay.on bypasses it on a bake node
+                //   (no live consumers there). Guard itself is unchanged for live boxes.
                 string inst = bars?.Instrument?.MasterInstrument?.Name;
                 if (string.IsNullOrEmpty(inst)) return;
 
@@ -414,7 +432,7 @@ namespace NinjaTrader.NinjaScript.BarsTypes
                     (flowDir != priceDir && flowDir != 0 && priceDir != 0) ? ",\"absorb\":1" : "");
                 SentinelCore.BrickLog.Append("SentinelFlux", inst, fields);
             }
-            catch { }
+            catch (Exception _sx) { SentinelCore.Swallow("SentinelFlux.LogFluxBar", _sx); }
         }
 
         // ── Overrides ──

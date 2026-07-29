@@ -108,7 +108,7 @@ namespace NinjaTrader.NinjaScript.Indicators.Sentinel
             }
             else if (State == State.Terminated)
             {
-                if (_sp != null) { try { _sp.Dispose(); } catch { } _sp = null; }
+                if (_sp != null) { try { _sp.Dispose(); } catch (Exception _sx) { SentinelCore.Swallow("SentinelWallpaper.OnStateChange", _sx); } _sp = null; }
             }
         }
 
@@ -182,7 +182,7 @@ namespace NinjaTrader.NinjaScript.Indicators.Sentinel
 
                 _sp.End();
             }
-            catch { try { _sp.End(); } catch { } }
+            catch { try { _sp.End(); } catch (Exception _sx) { SentinelCore.Swallow("SentinelWallpaper.OnRender", _sx); } }
         }
 
         #region Properties
@@ -210,3 +210,4 @@ namespace NinjaTrader.NinjaScript.Indicators.Sentinel
         #endregion
     }
 }
+

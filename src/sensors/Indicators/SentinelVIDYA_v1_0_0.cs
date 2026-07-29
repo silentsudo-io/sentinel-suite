@@ -116,8 +116,8 @@ namespace NinjaTrader.NinjaScript.Indicators.Sentinel.Sensors
 			}
 			else if (State == State.Terminated)
 			{
-				if (_sp != null) { try { _sp.Dispose(); } catch { } _sp = null; }
-				try { SentinelSkin.CardLayout.Release(this); } catch { }
+				if (_sp != null) { try { _sp.Dispose(); } catch (Exception _sx) { SentinelCore.Swallow("SentinelVIDYA.OnStateChange", _sx); } _sp = null; }
+				try { SentinelSkin.CardLayout.Release(this); } catch (Exception _sx) { SentinelCore.Swallow("SentinelVIDYA.OnStateChange", _sx); }
 			}
 		}
 
@@ -125,7 +125,7 @@ namespace NinjaTrader.NinjaScript.Indicators.Sentinel.Sensors
 		private string _scope;
 		private string Scope()
 		{
-			if (_scope == null) { try { _scope = SentinelCore.ScopeOf(Instrument, BarsPeriod); } catch { } }
+			if (_scope == null) { try { _scope = SentinelCore.ScopeOf(Instrument, BarsPeriod); } catch (Exception _sx) { SentinelCore.Swallow("SentinelVIDYA.Scope", _sx); } }
 			return _scope;
 		}
 
@@ -139,7 +139,7 @@ namespace NinjaTrader.NinjaScript.Indicators.Sentinel.Sensors
 			DateTime now = DateTime.UtcNow;
 			if ((now - _lastHeartbeatUtc).TotalSeconds < HeartbeatSec) return;
 			_lastHeartbeatUtc = now;
-			try { SentinelCore.TouchVidyaState(Scope()); } catch { }
+			try { SentinelCore.TouchVidyaState(Scope()); } catch (Exception _sx) { SentinelCore.Swallow("SentinelVIDYA.OnMarketData", _sx); }
 		}
 
 		protected override void OnBarUpdate()
@@ -203,10 +203,10 @@ namespace NinjaTrader.NinjaScript.Indicators.Sentinel.Sensors
 						Source     = "VDYA"
 					});
 				}
-				catch { }
+				catch (Exception _sx) { SentinelCore.Swallow("SentinelVIDYA.OnBarUpdate", _sx); }
 			}
 
-			if (LogChanges && bias != _lastLoggedSig)
+			if (LogChanges && State == State.Realtime && bias != _lastLoggedSig)
 			{
 				_lastLoggedSig = bias;
 				try
@@ -216,7 +216,7 @@ namespace NinjaTrader.NinjaScript.Indicators.Sentinel.Sensors
 						(bias > 0 ? "rising ▲ (long)" : "falling ▼ (short)") +
 						" vidya=" + vidya.ToString("0.##"));
 				}
-				catch { }
+				catch (Exception _sx) { SentinelCore.Swallow("SentinelVIDYA.OnBarUpdate", _sx); }
 			}
 		}
 
@@ -227,8 +227,8 @@ namespace NinjaTrader.NinjaScript.Indicators.Sentinel.Sensors
 			if (RenderTarget == null || ChartPanel == null) return;
 			if (_sp == null) _sp = new SentinelSkin.Painter();
 			_sp.Begin(RenderTarget);
-			try { if (ShowCard) RenderCard(); } catch { }
-			try { _sp.End(); } catch { }
+			try { if (ShowCard) RenderCard(); } catch (Exception _sx) { SentinelCore.Swallow("SentinelVIDYA.OnRender", _sx); }
+			try { _sp.End(); } catch (Exception _sx) { SentinelCore.Swallow("SentinelVIDYA.OnRender", _sx); }
 		}
 
 		private void RenderCard()
@@ -308,3 +308,4 @@ namespace NinjaTrader.NinjaScript.Indicators.Sentinel.Sensors
 		#endregion
 	}
 }
+

@@ -93,8 +93,8 @@ namespace NinjaTrader.NinjaScript.Indicators.Sentinel.Smoothers
             }
             else if (State == State.Terminated)
             {
-                if (_sp != null) { try { _sp.Dispose(); } catch { } _sp = null; }
-                try { SentinelSkin.CardLayout.Release(this); } catch { }
+                if (_sp != null) { try { _sp.Dispose(); } catch (Exception _sx) { SentinelCore.Swallow("SentinelGaussianFilter.OnStateChange", _sx); } _sp = null; }
+                try { SentinelSkin.CardLayout.Release(this); } catch (Exception _sx) { SentinelCore.Swallow("SentinelGaussianFilter.OnStateChange", _sx); }
             }
         }
 
@@ -152,8 +152,8 @@ namespace NinjaTrader.NinjaScript.Indicators.Sentinel.Smoothers
             if (!ShowCard || RenderTarget == null || ChartPanel == null) return;
             if (_sp == null) _sp = new SentinelSkin.Painter();
             _sp.Begin(RenderTarget);
-            try { RenderCard(); } catch { }
-            try { _sp.End(); } catch { }   // ALWAYS runs — a skipped End() would silently kill the card
+            try { RenderCard(); } catch (Exception _sx) { SentinelCore.Swallow("SentinelGaussianFilter.OnRender", _sx); }
+            try { _sp.End(); } catch (Exception _sx) { SentinelCore.Swallow("SentinelGaussianFilter.OnRender", _sx); }   // ALWAYS runs — a skipped End() would silently kill the card
         }
 
         private void RenderCard()
@@ -214,3 +214,4 @@ namespace NinjaTrader.NinjaScript.Indicators.Sentinel.Smoothers
         #endregion
     }
 }
+
