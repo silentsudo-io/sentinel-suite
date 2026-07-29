@@ -171,7 +171,7 @@ A funded account is trusted to this system only when:
 - [B] Position-state **persist + restore** survives a mid-position restart (GTrader21 opt-in; verify **no
       duplicate stop**). *(added to the go-live gate this session.)*
 - [x] Config under **git** (`Documents\NinjaTrader 8\Sentinel\`). · [x] **runbook** covers stuck-position /
-      broker-reject / NT-hang. *(DONE — SENTINEL_RUNBOOK.md exists.)*
+      broker-reject / NT-hang. *(DONE — [SENTINEL_RUNBOOK.md](SENTINEL_RUNBOOK.md) exists.)*
 
 ---
 

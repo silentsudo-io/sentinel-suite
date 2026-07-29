@@ -1,9 +1,47 @@
+
 # Sentinel ML — Schema 1.3 Instrumentation + The Offline Lab
 
 > **Status:** SPEC (2026-07-09). Nothing in this doc changes a trading decision.
 > Phase 1 is behavior-neutral instrumentation; Phase 2 is offline Python; Phase 3 is an
 > opt-in, default-OFF consumption flag. Read alongside `Docs/SENTINEL_DESIGN_SYSTEM.md` §6
 > (SentinelCore seams) and the `council` + `backtest-fill-resolution-lesson` memories.
+>
+> **✅ Verified 2026-07-19 (Core v1.36.0).** The DESIGN + thesis are current and the shipped-vs-deferred
+> statuses still hold (vector/EpisodeId/interlock DONE per §11.5; Arc `_fleet` rekey + weight fit still open;
+> floor **0.20** interim). The dated implementation logs (§11, §11.5, changelog) and the version numbers in
+> them are **point-in-time records — do not rewrite them.** For CURRENT live versions see `memory/NOW.md`
+> (Core v1.36 · Council v1.8.x · recorder v2.1.6 / schema 1.4); the live voter count renders via `{{voter_count}}`.
+
+---
+
+## READ FIRST (2026-07-25) — where this spec stands
+
+**Most of this spec is still in use; its end goal is on hold.** It specifies how to fit the Council's weights
+and conviction floor. That fit has since been run, and the fused verdict did not clear the cost bar out of
+sample — so the *fitting* step is parked, while the *machinery* described here is exactly what produced that
+measurement and carries straight into the current work.
+
+**The measurement** (full account: [SENTINEL_THESIS.md](SENTINEL_THESIS.md) §1b): 3,777 replay fires graded
+tick-true on a 70/30 time holdout against a 0.12R cost bar (break-even p = 0.560). Neither the fused verdict nor
+any single sensor cleared it (best AVMA 0.564, Wilson lower bound 0.504; Council base rate 0.498; at n=448
+decided the interval is ±5 points, so sample size is a real part of the answer).
+
+| Section | Where it stands |
+|---|---|
+| §0 thesis · §5 phases · §7 `Model.conf` adoption · §8 build order | **On hold** — there is not yet a result solid enough to fit against |
+| §3 **the label** (ATR-scaled barrier, first-touch) | **In use, unchanged** — it is the audition's label too |
+| §6 **validation protocol** ("decide it *before* looking at results") | ⭐ **The part that made the result trustworthy.** Pre-registration + holdout is what kept an in-sample curve from being believed. Carry it into every audition |
+| §2 schema instrumentation · §9 measured-baseline method · §10 identity/roster/fleet | **Current** — corpus, vote vector, `EpisodeId`, scope/lane identity all still apply |
+
+**⚠ SCHEMA DRIFT — this doc says 1.3; live is 1.5.** `firePx` was `Close[0]`, the **synthetic Heikin-Ashi
+close — a price that never traded** — which biased every excursion and first-touch label (recorded
+"target-first" 52.3% vs **21.1% true**; labels disagreed on **44.6%** of fires). Fixed in recorder **v2.3.0**
+(row schema **1.5**, sidecar `ctick.4`). ⛔ **Schemas 1.3 and 1.4 are CONTAMINATED — never pool them with 1.5.**
+Read every "1.3" below as *the shape of the instrumentation*, not as a corpus you may train on.
+
+**What the work moved to:** audition each candidate voter **standalone and tick-true** across a bar-type matrix,
+and build up from what holds — same corpus, same labels, same holdout discipline, without assuming fusion helps.
+The binding constraint is **N**, which is what the front-month corpus bakes are buying.
 
 ---
 
@@ -17,8 +55,8 @@ suite's own recorded outcomes *is* the machine-learning project. Everything belo
 fit possible, honest, and reversible.
 
 > **⚠ Roster size (2026-07-14).** This spec was written against the original **10-voter** roster
-> (`EYE TRND CCI ADX ENV BRK CMP IMKT WAE GREV`). The Council now fuses **22 voters** (Council v1.6.3,
-> incl. the order-flow FLUX voter). The 10-tag lists below are the ORIGINAL set, not the current one; the
+> (`EYE TRND CCI ADX ENV BRK CMP IMKT WAE GREV`). The Council now fuses **25 voters** (incl. the
+> order-flow FLUX voter). The 10-tag lists below are the ORIGINAL set, not the current one; the
 > fit machinery (ridge over the signed vote vector) is unchanged and scales to whatever roster is declared.
 
 > **⚠ UPDATED 2026-07-10 — this spec predates three changes to the model. Read before trusting any number below.**
@@ -295,7 +333,7 @@ row **per bias flip**. Measured on the existing data (§9): **~150 rows/day on o
 of rows, but the median gap between fires is **0.4 minutes** against a 15-minute label window, so
 **effective N is a small fraction of row count.** Volume was never the constraint. Independence is.
 Fit 10 ridge coefficients, not 40, and quote `nEffective`, never `nSamples`. *(The roster has since grown to
-**22 voters** — Council v1.6.3; the coefficient count is whatever the declared roster holds, but the same
+**25 voters**; the coefficient count is whatever the declared roster holds, but the same
 independence caution applies, now more so.)*
 
 The one genuinely lucky property: the Recorder fires on **every** `HasEdge` flip, including verdicts
@@ -917,6 +955,23 @@ VolEnvelope first-touch baselines would be a **net-new recorder**, not an uplift
 **DEFERRED — Arc `_fleet[instanceKey]` (§10.11).** Not a mechanical rekey: Arc's fleet plan is *instrument+strategy*-scoped
 while `instanceKey` is *scope+account*-scoped, so a faithful change reworks Arc's config model **and** GTrader21's
 `SlotLive()` consult (order-adjacent). Its own focused step. The safety motive is already covered by the actor interlock.
+
+---
+
+## 11.6 Housekeeping — `train.py` fault recording (2026-07-25)
+
+No modelling change. `train.py`'s one silent handler
+(`train.recorded_baseline_weights`, a `(TypeError, ValueError)` guard around parsing recorded baseline
+weights) now calls `lab_faults.swallow()` before its `pass`, so a malformed weights value is recorded
+instead of discarded. Control flow is unchanged and the fitting path is untouched — this is listed
+only because this doc `tracks:` `Sentinel/Lab/train.py` and the docs audit correctly flagged the file
+as newer than the doc. Rationale and contract:
+[SENTINEL_DATA_PLATFORM_SPEC.md](SENTINEL_DATA_PLATFORM_SPEC.md) §14.
+
+Worth noting against §6 (the validation protocol this doc is proudest of): a silently-swallowed parse
+failure in a baseline-weights loader is precisely the class of defect that turns a pre-registered
+comparison into an accidental one, because the baseline quietly becomes something other than what was
+declared. Recording it costs nothing and removes that failure mode.
 
 ---
 

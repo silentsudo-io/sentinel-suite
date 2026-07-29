@@ -1,3 +1,4 @@
+
 # The Sentinel Thesis
 
 *What this project actually is, why it is built the way it is, and where it is going — at altitude,
@@ -39,6 +40,48 @@ open-source (MPL-2.0); the ladder is depth-of-adoption, not price.
 | **Lab** | offline Python, outside NinjaTrader — now a stood-up data platform (SQLite corpus + JSONL ingester + Streamlit + Grafana) | **learn** — fit the Council's weights + floor from the graded corpus |
 
 The rest of this document is how those pieces form a single loop, and why the order they were built in matters.
+
+---
+
+## 1b. What we measured (2026-07-22), and why the focus moved
+
+**Read this before §2–§6.** The sections below describe the fusion approach as designed. This one records what
+the first honest measurement of it showed, and the change of direction that followed. Both are kept: the
+reasoning in §2–§6 is still the clearest statement of *why* the system is shaped the way it is, and it is worth
+having beside the result.
+
+**The measurement.** 3,777 replay fires, graded **tick-true** on real fills, with a **70/30 time holdout** and a
+0.12R cost bar (break-even p = 0.560).
+
+**What it showed.**
+
+- Trading the fused verdict directly does not clear the cost bar out of sample.
+- Neither does any individual sensor on its own: best was AVMA at 0.564 with a **Wilson lower bound of 0.504**;
+  the Council's own base rate pooled to **0.498**. At n=448 decided the interval is ±5 points, so a "0.56 voter"
+  is not yet distinguishable from a coin flip **at this sample size** — the constraint is N as much as signal.
+- ⇒ The 7-voter roster is best understood as **scaffolding**: it was assembled to build and prove the fusion
+  machinery, and it did that. It was never selected as an edge.
+
+**What this changes, and what it doesn't.**
+
+| Area | Where it stands |
+|---|---|
+| Fusing many signals into one verdict | **Unproven on the sensor set we had.** Not ruled out — the inputs were mostly price-derived, so they echoed each other |
+| "Conviction = agreement, not confirmation" (the caveat this doc already carried) | **Borne out**, and it looks like the main reason the fusion added little |
+| Grading decisions against real outcomes | **Working as designed** — it is what surfaced all of the above |
+| The safety envelope (Gate, governor, kill switch) | **Unaffected** — independent of whether a signal has edge |
+
+**The durable asset is the measurement tooling**, not any particular roster: tick-true, real-fill, tick-by-tick
+outcome per decision — something a trader inside NinjaTrader cannot see. The loop was built to tell us when we
+were wrong, and the first substantial thing it did was exactly that.
+
+**So the current focus** is to audition candidate voters **standalone and tick-true across a bar-type matrix**
+and build up from whatever holds, rather than to tune the existing fusion. Same corpus, same labels, same
+holdout discipline.
+
+> **Two threads are parked as a result:** fitting the `ConvictionFloor`/weights of the current fusion (there is
+> nothing solid yet to fit against), and the **Eye** as a voter (breadth-only; its 1.4 weight never entered
+> `netScore`).
 
 ---
 
@@ -228,9 +271,10 @@ it *survivable*. Those are separate jobs and stay separate.
 
 - **①–④ built and running.** Sensors publish; the Council fuses and publishes a verdict; the Bridge can
   consume it; the Recorder grades it with first-touch labels across the full conviction range.
-- **⑤ unblocked, data-ready.** The Lab exists and runs; the clean corpus has now accumulated — the SQLite
-  DB holds ~5,300 trades, ~99% of them carrying the decision (vote) vector. Fitting the floor is the next
-  concrete result and is no longer waiting on data — it is waiting on the fit being run.
+- **⑤ ran, and told us something useful** (see §1b). The fit is no longer "the next concrete result" — it was
+  performed tick-true on a 70/30 holdout, and the fused verdict did not clear the cost bar. Tuning that fusion's
+  floor and weights is parked until there is something solid to fit against. The Lab, the corpus and the DB are
+  all intact and are now pointed at **standalone voter auditions**.
 - **⑥ is the horizon.** Feeding the fit back — dynamic management — is the point of everything upstream. The
   plumbing (scope keys, seams, the config-git repo, `Model.conf`) was built so that when the fit is
   trustworthy, adopting it is a small, safe, reversible step.
@@ -239,6 +283,10 @@ it *survivable*. Those are separate jobs and stay separate.
   roster is declared, "customize your Council" and "learn the customized Council" are the same machinery. Our
   test sensors were never the product; the fusion engine is.
 
-The one-sentence version: **Sentinel fuses many honest signals into one fitted decision, grades that decision
-against reality, and feeds the grade back into the fusion — inside a safety envelope it is never allowed to
-learn around.**
+The one-sentence version: **Sentinel fuses honest signals into one graded decision, measures that decision
+against reality, and feeds the measurement back — inside a safety envelope it is never allowed to learn
+around.**
+
+That still describes the machine. What §1b changes is the **stage**: the fusion step is not yet carrying its
+weight, so the current work is finding signals that hold up standalone before fusing them — same envelope, same
+corpus, same refusal to trust anything unmeasured.

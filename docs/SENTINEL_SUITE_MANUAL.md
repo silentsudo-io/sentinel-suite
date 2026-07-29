@@ -6,6 +6,10 @@
 > diagrams *and* this prose in one document). **Edit the HTML from now on; this `.md` is kept as the prose source of
 > record only** — do not trust its version/voter/axis details. Anything not yet carried across (the full per-tool catalog
 > prose, the exhaustive open-questions log) still lives here for reference.
+>
+> ⛔ **GTrader21 was PULLED from the suite on 2026-07-29** and archived out of the compiled tree.
+> Mentions below are HISTORY. The suite has **two order sources: the Deck (manual) and the Bridge
+> (automated)** — any "all three order paths" statement here is stale.
 
 > **STATUS: DRAFT v0.1 — for us to read and argue with.** This is the seed of the official
 > Sentinel Suite manual. It is written to take a reader from *"I have no idea what any of this
@@ -763,6 +767,14 @@ List<SentinelCore.Ledger.Entry> rows = SentinelCore.Ledger.ReadRecent(days);
 Call `Fill` from `OnExecutionUpdate` (it computes intended-vs-actual **slip ticks**, feeding the
 Slippage view). **On every FIRE, record the Council verdict** (bias/conviction/reasons) into the
 Ledger/Log context — that's what lets Lens answer *"did the confluence pay?"*
+
+> ⚠ **`intended` is a different quantity per order type, and getting it wrong is worse than logging
+> nothing** — it produces a number that *looks* like a measurement. Limit/StopLimit → `LimitPrice`;
+> StopMarket → `StopPrice`; **Market → the live quote on the side you cross, captured at submission**
+> (ASK when buying, BID when selling). Passing the fill price gives `slip ≡ 0`; passing `0` drops the
+> field entirely; passing `Close[0]` on a Heikin-Ashi bar type records a price that never traded.
+> All three shipped at some point. Full contract + the threading rules:
+> [SENTINEL_DESIGN_SYSTEM.md](SENTINEL_DESIGN_SYSTEM.md) → *"The `intended` contract"*.
 
 ## Step 5 — draw the glass card (SentinelSkin)
 

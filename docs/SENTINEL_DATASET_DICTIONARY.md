@@ -70,16 +70,24 @@ family and several are frozen/legacy):
 
 ---
 
-## 3 · The three dataset families
+## 3 · The dataset families
 
 All live under `Sentinel\Excursions\`. **One writer, one schema per folder** — the Council recorder
-(`SentinelExcursionRecorder_v2_0_0`) owns the `council\` tree; legacy per-sensor recorders default OFF.
+(`SentinelExcursionRecorder_v2_0_0`) owns the `council\` tree; the Candidate recorder
+(`SentinelCandidateRecorder_v1_0_0`) owns the `candidates\` tree; legacy per-sensor recorders default OFF.
 
 | Path | Family | Filename grammar | Written when |
 |---|---|---|---|
-| `council\1.3\` | **Labeled corpus** (schema `1.3`) | `<sessionStart>__<inst>__<bartag[@lane]>.jsonl` | One row **per fire**, streamed on 60-min window completion (`endReason="window"`). |
-| `council\ticks\` | **Raw-tick path** (schema `ctick.1`) | `<fireId>.jsonl` = `<ts_ms>_<inst>_<L\|S>_<seq>.jsonl` | One file **per fire**: a header line + the tick tape from fire to resolution. |
+| `council\1.4\` | **Labeled COUNCIL corpus** (schema `1.4`; frozen `1.3` beside it) | `<sessionStart>__<inst>__<bartag[@lane]>.jsonl` | One row **per Council fire**, streamed on 60-min window completion (`endReason="window"`). |
+| `council\ticks\` | **Raw-tick path** (`ctick.2`; `ctick.1` frozen) | `<fireId>.jsonl` = `<ts_ms>_<inst>_<L\|S>_<seq>.jsonl` | One file **per fire**: header line + tick tape, fire→resolution. |
+| `candidates\cand.1\` | **CLOCK-EDGE candidate corpus** (schema `cand.1`, signal `CONT`) — see §5b | `<sessionStart>__<inst>__<bartag[@lane]>.jsonl` | One row **per brick close** (every-brick continuation candidate), streamed on 60-min window completion. |
+| `candidates\ticks\` | **Candidate raw-tick path** (`ctick.2`, kind `candidate_tickpath`) | `<fireId>.jsonl` | One file **per candidate**: header + tick tape. |
 | `Excursions\` root | **Legacy per-sensor baselines** | `<sessionStart>__<inst>__<bartag>.jsonl` | CBRK (CompressionBase) first-touch baseline; default off elsewhere. |
+
+> **⚠ Never pool `council\` and `candidates\`.** They answer different questions: the Council corpus is a
+> *fusion-gated* sample ("the Council chose to fire"); the candidate corpus is the *unfiltered clock-native*
+> population ("every brick close") — the only one that can measure whether the CLOCK itself carries a base rate.
+> The `signal` field (`COUNCIL` vs `CONT`) and `source` (`council` vs `candidate` in the DB) keep them apart.
 
 **Filename anatomy** (corpus): `20260715T090945__GC__212201v12x48@STB24FCA.jsonl`
 - `20260715T090945` — when the **recorder instance loaded** (session), `yyyyMMddThhmmss`. *Not* per-row.
@@ -163,6 +171,37 @@ Path rows: `{"ms": <ms since fireTime>, "px": <last-trade price>}`.
 > The row's `firstTouch` (bar resolution) and the sidecar's `firstTouchTick` (tick resolution) are the
 > **same label at two fidelities**. The Lab prefers `firstTouch`; the tick path is for grading fill
 > quality and `msToFirstTouch`.
+
+---
+
+## 5b · The CLOCK-EDGE candidate corpus (`cand.1`)
+
+The **second oven** (2026-07-17; hypothesis in `SENTINEL_CLOCK_EDGE_HYPOTHESIS.md`). Tests whether the
+**sampling clock**, not the fused voters, carries the edge. `SentinelCandidateRecorder_v1_0_0` fires **one
+candidate per brick close** — direction = the brick's own direction (the simplest CONTINUATION primitive),
+no gate, no fusion. Same fidelity spine as the Council recorder (realtime-gated, provenance-stamped, tick
+sidecar, window-streamed). Derive `rule × regime × exit` labels **late**; de-overlap in the Lab (adjacent
+candidates autocorrelate — use effective-N, not raw count).
+
+**Row = schema `cand.1`, `kind:"candidate"`, `signal:"CONT"`.** Shares the Council row's IDENTITY block
+(`recVer`/`coreVer`/`barLabel`/`inst`/`bartype`/`fireTime`/`firePx`) and the entire OUTCOME/label block (§4d:
+`maxMFE`/`maxMAE`, milestones, `barrierTicks`, `barsToTargetR/StopR`, **`firstTouch`**, `endReason`). It has
+**no vote vector / conviction / episodeId** (there is no fusion). It ADDS:
+
+| Field | Meaning |
+|---|---|
+| `runLength` | Consecutive same-direction bricks incl. this one → **exhaustion is a retroactive slice** (high `runLength`). |
+| `regime` / `adx` | Computed locally by the recorder. |
+| `rvol` / `volZ` / `climax` / `dryUp` | Participation seam context at fire (`null` if Participation not on the chart). |
+| `clockPhase` / `minsToClose` | Clock seam (instrument-keyed). |
+| `mtfBias` | MTF ladder consensus `-1/0/+1`. |
+| `fluxDir` / `fluxPressure` / `fluxDiverg` | Flux seam (present on Flux charts — the Flux **bars type** publishes it; `null`/`0` on TBars). |
+
+All context is **consulted, never fused** — each field is a Lab-side retroactive *filter*, never a hardcoded gate.
+
+**Sidecar** = `candidates\ticks\<fireId>.jsonl`, `kind:"candidate_tickpath"` (schema `ctick.2`) — same shape as
+§5 but carries `runLength` and no `conviction`/`episodeId`. Row↔sidecar join on `inst`+`bartype`+`fireTime`
+(exactly one brick closes per bar time). See §9b for the DB columns; the Lab reads `source='candidate'`.
 
 ---
 
@@ -319,10 +358,13 @@ detector). First live run (2026-07-16) flagged **~7,671 stale-dated rows (~83% o
 
 ## 9b · The DB warehouse (`sentinel.db`) columns
 
-`ingest.py` reads BOTH `council\1.3\` and `council\1.4\` (+ `ctick.1`/`ctick.2` sidecars). The `trades` table
-carries provenance (`rec_ver`, `core_ver`, `bar_label`, `scope`) + the context that used to be dropped
-(`regime`, `adx`, `conv_bucket`, `agree`, `disagree`, `voters`, `end_reason`, and the milestone curves +
-`barsTo*` folded into one `milestones_json` blob). Indexed on `(inst,bartype)`, `episode_id`, `src`, `schema`,
-`bartype`, `entry_utc`. The ingester now prints a **drop tally by reason** (silent loss made visible; a
-`row_no_votes` count = legacy pre-instrumentation rows). `train.py` reads the JSONL directly (`--schema 1.4`),
-not the DB — the DB is the derived warehouse (see `SENTINEL_DB_MIGRATION_SPEC`).
+`ingest.py` reads `council\1.3\` + `council\1.4\`, **`candidates\cand.1\`**, and the `ticks`/`council\ticks\`/
+**`candidates\ticks\`** sidecars. The `trades` table carries a **`source`** discriminator (`council` |
+`candidate` | `manual`), provenance (`rec_ver`, `core_ver`, `bar_label`, `scope`) + the context that used to be
+dropped (`regime`, `adx`, `conv_bucket`, `agree`, `disagree`, `voters`, `end_reason`, milestone curves +
+`barsTo*` in one `milestones_json` blob). **Candidate columns** (`source='candidate'`; NULL for council/manual):
+`run_length`, `rvol`, `vol_z`, `climax`, `dry_up`, `clock_phase`, `mins_to_close`, `mtf_bias`, `flux_dir`,
+`flux_pressure`, `flux_diverg`. Candidate row↔sidecar reconcile on `inst`+`bartype`+`entry_utc` (mirrors the
+council row folder; no vote vector). Indexed on `(inst,bartype)`, `episode_id`, `src`, `schema`, `bartype`,
+`entry_utc`. The ingester prints a **drop tally by reason** (silent loss made visible). `train.py` reads the
+JSONL directly, not the DB — the DB is the derived warehouse (see `SENTINEL_DB_MIGRATION_SPEC`).

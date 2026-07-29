@@ -1,3 +1,4 @@
+
 # Sentinel Data Platform — Spec & Stand-Up Workflow
 
 **Status:** ✅ **BUILT & LIVE (updated 2026-07-14).** All phases below shipped; the sections that read as
@@ -149,15 +150,15 @@ Good for *shape*, not for fill-level analysis. The upgrade (separate build, trac
 ## 9. Built state (2026-07-14) — what is actually running
 
 - **DB:** `Sentinel\Lab\db\sentinel.db`, **WAL** journal + `busy_timeout=30000` (readers never block the writer; a
-  backfill and the live watch loop coexist). ~5,300 `trades`, ~300k `ticks`. **~99% of council trades carry the vote
-  vector** after the fold-in.
+  backfill and the live watch loop coexist). **~14.8k `trades`, ~6.5M `ticks` and growing** (was ~5,300 at the 07-14
+  fold-in). **~99% of council trades carry the vote vector** after the fold-in.
 - **Ingester (`Lab\ingest\ingest.py`)** — two passes per scan: (1) tick sidecars (`Excursions\ticks\` + `council\ticks\`)
   → `trades`+`ticks`; (2) **`ingest_council_rows()`** folds `council\1.3\` — the ONLY place the vote vector lives —
   enriching tick-true trades and backfilling historical no-sidecar fires (`src='row'`). Discriminator: `src='last'` =
   tick-true, `src='row'` = bar-based row; a `row` twin is deleted when its real sidecar arrives (any order). Backfill:
   `python ingest\ingest.py --reingest`. See [[ingester-vote-vector-fold-in]].
-- **Recorder** — `SentinelExcursionRecorder_v2_0_0` (v2.1.2). Writes the schema-1.3 ROW (`council\1.3\`) + a per-fire
-  tick-path sidecar (`council\ticks\`). **v2.1.2 streams each row to disk the moment its excursion window completes
+- **Recorder** — `SentinelExcursionRecorder_v2_0_0` (**v2.1.6**, schema **1.4** / `ctick.3`). Writes the schema ROW
+  (`council\1.4\`) + a per-fire tick-path sidecar (`council\ticks\`, self-describing ctick.3 header). **Streams each row to disk the moment its excursion window completes
   (~60 min post-fire)** instead of buffering to session-end, bounding crash-loss of the vote vector to the in-flight
   window.
 - **Front-ends:** Streamlit+Plotly `viz\explorer.py` → **localhost:8501** (+ the Council Paths page); Grafana →
@@ -196,6 +197,215 @@ research** ("does the edge exist"). Don't blur them.
 - **Always-on:** the probe `--watch` + a Grafana-plugin heal were added to `Lab\run\sentinel-data.bat` **before** the
   `:8501` skip-guard, so they run even when the rest of the platform is already up (the probe's `:8502` guard prevents
   dupes). Same logon-level self-heal caveat as the ingester.
+
+## 11. Corpus snapshot ladder (2026-07-17) — "a frozen, reproducible corpus + a recoverable one"
+
+The corpus is append-only and lives on one disk. Two failure modes it doesn't defend against on its own: a
+training run is **not reproducible** (you can't re-fit against "the corpus as it was three weeks ago"), and a
+contamination event (the replay-leak class, [[corpus-hygiene-and-fill-fidelity]]) has **no clean rollback point**.
+A tiered, timestamped snapshot ladder answers both. Built 2026-07-17.
+
+- **Engine:** `Lab\snapshot\snapshot.py` (subcommands `daily` / `weekly` / `verify <dir>` / `list`; flags
+  `--dry-run`, `--date`, `--week`). Wrapper `Lab\run\sentinel-snapshot.bat`. Runs under `Lab\.venv`. Every run
+  appends to `Sentinel\sentinel.log` as `[SNAPSHOT]` / `[SNAPSHOT-CRIT]`.
+
+- **Three tiers, validate-before-destruct:**
+  - **session** = the LIVE `Excursions\` tree itself. The recorder (§9, v2.1.2) already streams each row to disk
+    crash-safe the moment its window completes, so live *is* the continuous session-durable record — a discrete
+    session copy (or an NT session-close hook) was **rejected as redundant + fragile**. Live is the ground truth
+    the daily captures; there is no separate session artifact.
+  - **daily** → `Snapshots\daily\<date>\` — a point-in-time zip of the whole corpus **+ a consistent copy of the
+    ~608 MB WAL-mode `sentinel.db` via `VACUUM INTO`** (checkpoints + compacts to one clean file; a raw file-copy
+    of a WAL DB is inconsistent). ~118 MB zipped, ~25 s. Pruned only after the covering weekly validates.
+  - **weekly** → `Snapshots\weekly\<isoweek>\` — the **permanent master, kept forever**. Validates it is a
+    **row-hash superset of the union of that week's dailies**, self-heals any gap into `_healed.jsonl`, then
+    destructs the validated dailies.
+
+- **Validation = superset-of-row-content-hashes, NOT a file diff.** Corpus files grow append-only through the day,
+  so a byte-compare is useless, but "every line I had before is still present" is exact and schema-agnostic. Each
+  snapshot's manifest (per-line `sha256`) is built in the **same pass** that writes the zip → manifest ≡ zip by
+  construction, re-checkable any time with `verify`. The daily's own check is **file-presence** (a file present at
+  start but unreadable = a real miss → status `gap`); the **row-superset** check is a *weekly-only* concept because
+  the dailies are frozen there — and that check is what catches live **shedding** a file (a schema uplift moving it
+  to `_archive`, a manual delete), the ladder's real WORM payoff.
+  - ⚠ *Design bug caught by driving it:* the first cut validated a daily snapshot's rows ⊇ a **live re-read**, which
+    falsely flagged normal forward growth as a gap. A point-in-time snapshot **cannot** be validated against a
+    still-appending corpus — only against frozen lower tiers.
+
+- **⚠ Honest caveat (the same shape as §6):** the ladder guarantees **archive INTEGRITY** (no row is ever lost),
+  **not corpus CORRECTNESS**. A superset check preserves poisoned replay rows as faithfully as clean ones —
+  contamination stays `corpus_probe`'s job ([[corpus-hygiene-and-fill-fidelity]]), not this ladder's. Snapshots
+  freeze what the corpus *was*; they don't judge it.
+
+- **Schedule (box is Central; aligned to the CME daily maintenance break so the corpus is settled + the market
+  closed during a run):**
+  - `SentinelSnapshotDaily` — every day **16:30 CT** (mid-break, before the 17:00 reopen).
+  - `SentinelSnapshotWeekly` — **Sunday 16:45 CT** (after Sunday's daily, before reopen; the whole Mon–Sun iso-week
+    is closed ⇒ no orphaned dailies, zero live writes during the run).
+  - Registered via `Register-ScheduledTask`, LogonType **S4U** — runs **whether logged on or not, no stored
+    password**, keeping the Administrator identity so file ACLs / profile paths / the venv resolve exactly as the
+    logged-in run (chosen over a SYSTEM principal, which runs in a different profile context). Both verified firing
+    headless: `LastRunResult 0x0`.
+
+- **Operate:** `sentinel-snapshot.bat daily|weekly|list`; adjust times in Task Scheduler; disable via
+  `Disable-ScheduledTask SentinelSnapshot*`.
+
+- **Disk trajectory (flagged):** weekly master ≈ 118 MB × 52 ≈ **~6 GB/yr**, kept forever (deliberate: full history).
+  The DB dominates and is **regenerable** from the corpus rows via `ingest.py`, so the easy future lever if disk
+  matters is weekly = corpus-rows-only + keep just the latest DB. Full detail: [[corpus-snapshot-ladder]].
+
+## 12. Additional surfaces (2026-07-19) — more probes, more boards, one DB
+
+Built after §10–§11, all to the SAME recipe (read-only probe → `sentinel.db` → a themed Grafana board; a
+guard-port singleton; wired into `sentinel-data.bat` before the `:8501` guard):
+
+- **Corpus-integrity probe** — `Lab\health\corpus_probe.py` (guard **:8503**): reconciles the recorded corpus
+  (Ledger ↔ rows ↔ sidecars), schema hygiene, replay-leak → `corpus_integrity`/`corpus_folder`/`corpus_events`.
+- **node01 remote probe** — `Lab\health\node01_probe.py` (guard **:8504**): SSH-polls the remote bake worker
+  (Tailscale `worker1`) → `node01_health`/`node01_event` → board **`Sentinel · Node01`**
+  (localhost:3000/d/sentinel-node01). Surfaces NT render-thread death / bake stall / unreachable. [[distributed-backtest]]
+- **Docs-health audit** — `Lab\docs\audit.py` (guard **:8505**, 15-min): scans the docs for drift (broken links,
+  stale HTML, contract version-drift, dangling tokens, orphans) → `docs_health`/`docs_finding` → board
+  **`Sentinel · Docs`** (localhost:3000/d/sentinel-docs); `--errors-only` is a git pre-commit gate. [[docs-health]]
+
+**Guard-port registry:** 8501 Streamlit explorer · 8502 Health probe · 8503 Corpus probe · 8504 node01 probe · 8505 Docs-health probe · 3000 Grafana. **Four boards, one `sentinel.db`:** `sentinel-trades` · `sentinel-health`
+· `sentinel-node01` · `sentinel-docs`.
+
+---
+
+## 13. The corpus ACCEPTANCE GATE (2026-07-24) — "are the rows even usable?"
+
+§10–§12 answer *is the platform alive*. This answers a different and harder question: **is what it just recorded
+worth keeping?** A bake can run for hours at full speed, write a clean-looking corpus, and be worthless because
+one voter never reached a single row.
+
+### `Lab\verify_votes.py` — per-lane completeness
+
+Stdlib-only, so it runs on the bake worker as well as the main box. Three checks per lane:
+
+| Check | Rule |
+|---|---|
+| **SEAM** | the bar type's own voter(s) MUST be present — derived from the **bar-type id**, so it needs no config (`212201`/`212202` → `BRK` · `212203` → `FLUX` · `212204` → `BRK`+`CVB`) |
+| **DECLARED** | every `Roster.conf` voter (same cascade the Council uses) present as a KEY. Absent = **CRIT**; present on <90% of rows = **WARN** — an intermittent dropout a union-of-rows check would hide |
+| **BRK LEVELS** | brick lanes must carry `brkUpper`/`brkLower`, or limit-vs-market grading is dead (Flux exempt by construction) |
+
+**`EXIT 0` = all lanes complete · `1` = WARN (partial, or too thin to judge) · `2` = CRIT (missing data).**
+
+> **A voter recorded as `0` counts as PRESENT.** Abstention versus a missing key is the entire distinction — a
+> voter that legitimately has no opinion must not read as a broken sensor.
+
+**It windows on FILE MTIME, not `fireTime`** — and that was a defect in the gate itself, found by driving it. A
+replay bake writes rows whose `fireTime` is historical, so a `fireTime` window silently skipped the whole
+replayed corpus and would have passed the very bake it was built to catch. Written-at is the only clock that
+means *"this bake, now"* for live and replay alike.
+
+### Wiring — probe → table → board
+
+`Lab\health\corpus_probe.py` imports it directly (`import verify_votes as _votes`) and runs it every **300 s**,
+writing a per-lane **`vote_health`** row plus per-lane **`corpus_events`** with the existing change-only de-dup,
+so each lane alerts *and recovers* independently. Surfaced as the **🗃 Corpus row** on **`Sentinel · Health`**
+(localhost:3000/d/sentinel-health): lanes-missing-a-voter / partial / brick-lanes-without-levels, the per-lane
+table, and the event log.
+
+> **⚠ Nothing rendered `corpus_events` before this.** The corpus probe had been writing to a DB **no board
+> watched** — a monitor whose output nobody could see is not a monitor.
+
+The probe's `busy_timeout` was also raised **8 s → 30 s**. Measured, not guessed: it was losing the race with
+`ingest.py --watch` on the multi-GB WAL DB and skipping whole sample cycles — a monitor that silently stops.
+
+### Operator use — the preflight
+
+Start a bake, let it run **~10 minutes**, run `python Lab\verify_votes.py --days 1`, and require **`EXIT=0` with
+every lane "complete"** before committing to the long run. This is the standing procedure in
+[SENTINEL_RUNBOOK.md](SENTINEL_RUNBOOK.md) §4b ②.
+
+---
+
+## 14. Fault recording in the Lab (2026-07-25) — `lab_faults.swallow()`
+
+The Lab's counterpart to `SentinelCore.Swallow` on the C# side. Same problem, same fix: a probe, an
+ingester or a Streamlit page must never die because one malformed row failed to parse — but *don't
+propagate* had been implemented as *don't record*, so a component could fail continuously and silently.
+The cost is on the record: `ingest.py --watch` ran for three days against a schema it could not read
+(§9), and nothing said so.
+
+**`Lab\lab_faults.py`** — stdlib only, no dependencies, so `verify_votes.py` and the health probes stay
+deployable standalone to a bake node.
+
+```python
+from lab_faults import swallow
+
+try:
+    row = json.loads(line)
+except json.JSONDecodeError as _swex:
+    swallow("ingest.parse", _swex)
+    continue          # control flow is UNCHANGED -- swallow() goes before it, never instead of it
+```
+
+**Contract (deliberately identical to the C# one):** never raises · never alters control flow ·
+rate-limited **per tag** (first 3, then 1/min — the flood fear that made empty handlers attractive) ·
+counts everything including throttled occurrences, so `fault_total()` is honest.
+
+| Surface | What it gives you |
+|---|---|
+| `Lab\logs\lab-faults.log` | timestamped `tag / exception type / message / file:line / pid`, **5 generations** of rotation |
+| `faults()` / `fault_total()` | per-tag and total counts for the running process |
+| `python -m lab_faults` | tail the log; `--clear` rotates by hand |
+
+**Retention is 5 generations, not one, on purpose.** Single-generation rotation destroyed a live
+forensic window twice in one night during the BRK/FLUX investigation (see NOW.md and
+[SENTINEL_RUNBOOK.md](SENTINEL_RUNBOOK.md) §4b ⑤).
+
+**Migration state (2026-07-25):** all **53** silent handlers across **23** Lab files now record —
+`health\probe.py` 11 · `docs\audit.py` 5 · `verify_votes.py` 5 · `viz\observatory.py` 5, and the rest.
+Zero bare `except:` remain. Verified by driving, not by reading: every file imports, `verify_votes.py`
+and `docs\audit.py` produce identical output to before, and two real sites (`docs.audit._read` on a
+missing path, `sentinel_lab.bartag.bartype_name` on a bad tag) were confirmed to return their original
+fallback values *and* write a fault line.
+
+### 14b. The 🧯 Lab-faults row on the Health board (same session)
+
+`health\probe.py` now tails the fault log every cycle into a **`lab_faults`** table (per-tag rollup over
+24h) plus two columns on the always-written `health` row, and the `Sentinel · Health` board gained a
+**🧯 Lab faults — what failed quietly in the Python** row:
+**Swallowed faults · 24h · Distinct fault tags · Processes affected · Suppressed (not logged)**, over a
+per-tag table (`tag · occ · logged · procs · first · last · detail`). Amber, not red — a swallowed fault
+is something to look at, not something that stops trading, and reserving red for the safety row keeps the
+board's alarm vocabulary meaningful. `health_event` gains `labfaults` (level change) and `labfault_new`,
+which fires **once per newly-seen tag** — a brand-new silent failure is the thing worth surfacing; a
+known steady one is noise.
+
+**Three design points, each of which is the difference between a real monitor and a decorative one:**
+
+1. **The headline counts read `health`, not `lab_faults`.** `health` gets a row every cycle whether or
+   not anything failed, so **0 means "measured zero just now."** Reading an empty `lab_faults` would
+   show 0 for a *dead probe* too — reproducing, on the board built to abolish it, the exact ambiguity
+   between *nothing happened* and *nothing is watching*. (Same defect as §9's ingester liveness being
+   inferred from Streamlit's port.)
+2. **`occurrences` ≠ `lines`, and the gap is displayed.** Rate limiting suppresses *without writing a
+   line*, so 7 hits inside one 60 s window write 3 lines and no marker — anything counting lines would
+   report 3 and be confidently wrong. `swallow()` therefore writes a per-tag **exit summary**
+   (`SUMMARY n occurrences this process`) via `atexit`, which the probe treats as authoritative per pid.
+   ⚠ Still a **lower bound** by nature: a hard-killed process runs no `atexit` handler.
+3. **The roll-up is recomputed from the file every cycle — no watermark.** A probe that has to remember
+   where it got to is a probe that silently double-counts or skips after a restart.
+
+🐛 **Found by the monitor watching itself, on its first run:** `lab_faults()` tailed the `.1` rotation
+generation before it existed, `swallow()`ed the `FileNotFoundError`, and so **manufactured a fault every
+cycle** — a monitor generating the very signal it reports. Fixed with an existence check. Verified the
+fix by driving it: three consecutive runs on a clean slate produce **zero faults and no log file at
+all**, then 6 real occurrences report as `occ=6, logged=3, suppressed=3` end-to-end through the live
+daemon.
+
+🔧 **Also fixed while here:** `probe.py` bound its `:8502` single-instance guard *before* the one-shot
+branch, so `python probe.py` refused to run while the daemon was up — making the probe un-inspectable
+exactly when you most want to inspect it. The guard now binds only under `--watch`, matching
+`corpus_probe.py`, which already had it right.
+
+⚠ **Operational note:** the probes are long-lived Python processes and **Python does not reload source**.
+After editing `probe.py` you must **restart the probe** or the loop keeps running the old code — the
+same class of failure as §9's three-day-stale ingester. `sentinel-data.bat` restarts it guarded, so a
+blind re-run is safe.
 
 ---
 

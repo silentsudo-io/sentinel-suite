@@ -235,7 +235,7 @@ contributor-ready from day one.
 - **Issue / PR templates**.
 - **Third-party sensor compliance checklist** (naming law + card + State seam).
 - **Build verification** — ⚠ *not conventional CI.* NT compiles ONE assembly and **F5 is authoritative**;
-  headless builds false-clean and produce ghosts (see ../CONTRIBUTING.md build rules). So "CI"
+  headless builds false-clean and produce ghosts (see [../CONTRIBUTING.md](../CONTRIBUTING.md) build rules). So "CI"
   here = the **documented headless-verify recipe + a manual F5 checklist**, not an automated compile gate.
 
 ---
@@ -252,7 +252,7 @@ contributor-ready from day one.
 
 ### ✅ P2 ASSEMBLED (2026-07-11) — the Intelligence tier, two bundles
 Both **LAYER on Sensors** for the runtime (no re-shipped `SentinelCore`/`SentinelSkin` → no CS0101), verified
-**Safety-free**. See SENTINEL_BOUNDARY_INVENTORY.md §9 for the file lists.
+**Safety-free**. See [SENTINEL_BOUNDARY_INVENTORY.md](SENTINEL_BOUNDARY_INVENTORY.md) §9 for the file lists.
 - **Sentinel Intelligence** (Rungs 1→4): 5 orthogonal axes (Clock/Participation/Location/MTF/Intermarket) +
   **Council** + `SentinelNewsService`. Mtf/Intermarket host `SentinelTrend` (⇒ needs Sensors). **Eye DEFERRED**
   (JET engine; Council consumes its seam only, ships without it).
