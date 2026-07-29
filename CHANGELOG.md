@@ -53,6 +53,42 @@ Everything in this block was found by people installing rungs 0-1 for real. That
   mechanical: every `SentinelCore.X` / `SentinelSkin.X` a bundle references must be declared in the runtime
   that ships beside it. Validated with a negative control (injected bogus members → detected, exit 1).
 
+### Added — Sentinel Deck v0.2.6 (2026-07-28)
+- **The Deck now records what a market fill actually cost.** Until now, only *limit and stop* fills carried
+  execution-cost information; a **market** order recorded none — the reference price was `0`, so the `slip`
+  field was omitted entirely and market order rows logged `px:0`. The most common way to enter a trade was
+  the one you could not measure. v0.2.6 latches the live bid/ask and stamps the tradeable price on the side
+  being crossed (**ASK** when buying, **BID** when selling) at submission, so every fill row now carries
+  `slip` in ticks, adverse-signed:
+  - **limit / stop** → measured against the limit or trigger price (*stop slippage*). Unchanged.
+  - **market** → measured against the quote you crossed (*crossing cost*).
+- Covers all five of the Deck's market-order sites: deck Buy/Sell, Close, Reverse, Half, half-at-breakeven.
+- ⚠ **Upgrading requires re-adding the Deck to your charts.** Namespace + class name are a NinjaScript
+  indicator's serialization identity, so v0.2.6 is a *different* indicator to NinjaTrader: existing v0.2.5
+  instances keep running and do not inherit anything. Both versions can coexist. See the tester's guide §1.
+- ⚠ **Realtime-only** (the reference comes from live market data) and **forward-measuring** — it recovers
+  nothing about fills already taken.
+
+### Changed — publish drift closed (2026-07-28)
+- **48 files brought up to the canonical tree.** The published snapshot had been sitting behind the private
+  tree; most of that was the **`Swallow` migration**, which was *required* to stay behind while the published
+  core was v1.36.0 and had no `SentinelCore.Swallow` — a verbatim backport would have been `CS0117` for every
+  installer. Shipping the core at v1.45.0 retired that constraint, so:
+  - 23 smoothers + ~15 sensors move from bare `catch {}` to `SentinelCore.Swallow` — a fault in a card or a
+    seam is now counted and logged instead of vanishing. Behaviour is identical; `Swallow` never rethrows.
+  - `SentinelFlux` / `SentinelTbarsCount` gain **`ReplayMode`** (`Globals.Now` is wall-clock even in Playback,
+    so the freshness guard returned on *every* tick and the seam never published during a replay), the
+    generation beacon, and a wall-clock throttle that actually throttles during a historical rebuild.
+  - `VolEnvelope` now honours the cards-off render kill switch — it was the one tool still drawing when cards
+    were off.
+- ⚠ **Every bundle now requires `SentinelCore` v1.41.0 or newer.** This floor used to apply to `Sentinel Binds`
+  alone; it is now suite-wide. The downgrade hazard is unchanged, it just applies everywhere: copying an older
+  bundle's `runtime/` over a newer one breaks the compile for your **whole** `bin\Custom` tree, not just Sentinel.
+- `tools/check_parity.py` now separates **DELIBERATE** publish-time differences from real **DRIFT**, so the one
+  permanent exception (`ResolveLane`, below) is labelled rather than sitting in the drift list forever — a check
+  that is always red is one nobody reads. The exemption pins the expected line count, not just the filename, so
+  new divergence landing in an exempted file still surfaces.
+
 ### Changed — 2026-07-28
 - **Published runtime: `SentinelCore` v1.36.0 → v1.45.0.** The published core had drifted nine versions
   behind, which meant public installs carried real defects that were already fixed privately:
