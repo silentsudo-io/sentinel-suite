@@ -30,8 +30,42 @@
 //  v0.2.0  validate on a SIM account before going live. Live order submission.
 //
 // CHANGELOG
+//   v0.2.6 (2026-07-28, INSTRUMENTATION ONLY — the fill-cost reference price; no order-logic change)
+//     Brings the Deck to the standard set by SentinelBridge v0.3.1 the same day. The Deck could not answer
+//     "what does a fill actually cost us?" either, but it failed HONESTLY where the Bridge failed silently:
+//       • `OnDeckExecution` set `intended = 0` for a MARKET order, and Ledger.Fill writes the `slip` field only
+//         when `intended > 0` ⇒ market fills carried NO slip field at all. An absence, not a false zero — but
+//         still 75 of the Ledger's 114 order rows with zero execution-cost information.
+//       • `SubmitDeckOrder` logged `lim > 0 ? lim : stp` as the order price, which for a MARKET order is 0/0
+//         ⇒ every Deck market order row reads `px:0`, so order→fill could not be joined either.
+//     FIX (mirrors the Bridge): latch the live BID/ASK in OnMarketData — the Deck already overrides it and
+//     already learned this lesson once, in v0.2.4, for the tape — then stamp the TRADEABLE quote on the side
+//     being crossed (buy → ASK, sell → BID) at SUBMISSION, and use it as the reference for both the Ledger
+//     order row and `intended`. Stop/limit are UNCHANGED: their trigger/limit price was always correct.
+//     ⚠ WHY THE LATCH AND NOT GetCurrentBid/Ask: SubmitDeckOrder runs on the WPF UI THREAD (button click) and
+//     OnDeckExecution on the account/execution thread — neither is the data thread. The latch is written in
+//     OnMarketData and read by both, exactly as `_lastTradePx` already is.
+//     ⚠ WHY A DICTIONARY AND NOT ONE FIELD: the Deck has FIVE market sites (deck buy/sell · Close · Reverse ·
+//     Half · HalfBE). A single shared field would let a `_Half` fill consume the stamp left by an earlier
+//     entry and silently report a fabricated cost. Keyed by order name, bounded like `_seenDeckExecIds`.
+//     ⚠ NOT stamped, correctly: FlattenThisChart uses NT's atomic `Account.Flatten`, whose order the Deck does
+//     not create and whose name fails the `_tag + "_"` filter in OnDeckExecution — so it never reaches this path.
+//     ⚠ THIS IS A REAL VERSION FORK, NOT AN IN-PLACE EDIT — file, class, header chip and DeckVersion all move
+//     to v0.2.6 together, and SentinelDeck_v0_2_5.cs is left FROZEN as the fallback checkpoint. The first cut
+//     of this change kept the v0_2_5 identity to avoid dropping the Deck off saved charts; that was the wrong
+//     call and the user corrected it: WE ARE DEVELOPING, AND VERSION BUMPS ARE PART OF THE GIG. Re-attaching an
+//     indicator is a dev-box inconvenience; a build whose BEHAVIOUR changed while its VERSION did not is how a
+//     bug report becomes unanswerable — and on a production trading box that ambiguity is the expensive one.
+//     ⚠ RE-ATTACH REQUIRED: namespace+class is an indicator's serialization identity, so v0.2.6 does NOT inherit
+//     v0.2.5's saved settings — it must be added to charts/workspaces afresh. Known, accepted cost of the fork.
+//     ⚠ Realtime only (the latch fills from live market data) and FORWARD-MEASURING — recovers nothing past.
+//    (in-place, 2026-07-25) — RECORDED CATCHES: 71 empty `catch {}` migrated to SentinelCore.Swallow
+//             (Core >= v1.41.0). Behaviour IDENTICAL (Swallow never rethrows); faults are now counted +
+//             logged. The Deck had the worst ratio in the suite (71 of 107 catches silent) and is the one
+//             tool in testers' hands, where an unreportable fault is worst. Class/version deliberately
+//             UNCHANGED — namespace+class is serialization identity and this build is published.
 //   v0.2.5r (2026-07-21, RENAME to the federated naming law — ZERO logic change)  file/class/Name restored to the
-//     "Sentinel <Thing>" tell: Deck_v0_2_2.cs → SentinelDeck_v0_2_5.cs, class Deck_v0_2_2 → SentinelDeck_v0_2_5,
+//     "Sentinel <Thing>" tell: Deck_v0_2_2.cs → SentinelDeck_v0_2_6.cs, class Deck_v0_2_2 → SentinelDeck_v0_2_6,
 //     Name "Sentinel Deck v0.2.2" → "Sentinel Deck", header chip → v0.2.5. The FILENAME HAD BEEN LYING — it said
 //     v0_2_2 while the code was v0.2.5, which would have made every tester bug report ambiguous.
 //     This RESTORES the original name: the tool shipped as SentinelDeck_v0_1_0/v0_2_0, was renamed to Deck_v0_2_1
@@ -189,7 +223,7 @@ using NinjaTrader.NinjaScript.AddOns.Sentinel;   // SentinelCore advisory
 
 namespace NinjaTrader.NinjaScript.Indicators.Sentinel
 {
-    public class SentinelDeck_v0_2_5 : Indicator
+    public class SentinelDeck_v0_2_6 : Indicator
     {
         public enum DeckOrderType     { Market, Limit, Stop, StopLimit }
         public enum DeckTrailMode     { None, TrailTicks, BreakevenPlus, BarLowHigh, NBarLowHigh, TrailATR, TrendMagic, HalfPlusBE }
@@ -300,6 +334,13 @@ namespace NinjaTrader.NinjaScript.Indicators.Sentinel
         // synthetic HA/TBars brick Close[0]. Both OnMarketData + OnBarUpdate run on the same data thread → no lock.
         private double          _lastTradePx;
         private DateTime        _lastTradeTime;
+        // v0.2.6: live BID/ASK latch — the fill-cost reference. Written on the data thread (OnMarketData), read on
+        // the UI thread (SubmitDeckOrder) and the execution thread (OnDeckExecution); aligned double reads are
+        // atomic on x64 and this is a logging path, so no lock (same treatment as _lastTradePx above).
+        private double          _lastBidPx, _lastAskPx;
+        // v0.2.6: the crossing quote stamped at SUBMISSION, keyed by ORDER NAME so one market order can never
+        // consume another's reference (five market sites; see the header note).
+        private readonly Dictionary<string, double> _crossRef = new Dictionary<string, double>();
         // v0.2.1: on-chart order visuals (entry/stop/target lines) — filled on the data thread, read by OnRender
         private double          cardTargetPx, cardStopTicks, cardTargetTicks, cardTargetProfit, cardTargetR;
         // v0.2.1: bar timer / tick counter (data thread → card)
@@ -472,10 +513,10 @@ namespace NinjaTrader.NinjaScript.Indicators.Sentinel
             else if (State == State.Terminated)
             {
                 ChartControl?.Dispatcher.BeginInvoke(new Action(DisposeWPFControls));
-                try { riskTextFactory?.Dispose(); riskTextFactory = null; } catch { }
+                try { riskTextFactory?.Dispose(); riskTextFactory = null; } catch (Exception _sx) { SentinelCore.Swallow("SentinelDeck.OnStateChange", _sx); }
                 EnsureFillSubscription(null);   // drop the Ledger fill-capture subscription
                 ChartControl?.Dispatcher.BeginInvoke(new Action(StopWarnHeartbeat));
-                try { SentinelSkin.CardLayout.Release(this); } catch { }
+                try { SentinelSkin.CardLayout.Release(this); } catch (Exception _sx) { SentinelCore.Swallow("SentinelDeck.OnStateChange", _sx); }
             }
         }
 
@@ -498,8 +539,8 @@ namespace NinjaTrader.NinjaScript.Indicators.Sentinel
             if (State == State.Realtime) EnsureFillSubscription(cachedAccount);
 
             UpdateCardData();
-            try { UpdateWarnBand(cachedAccount); } catch { }   // v0.2.5: preview safety band (the 1s UI timer is the primary driver)
-            try { TapeOnTick(); } catch { }   // v0.2.3: passive tick-path capture (cardPos is fresh after UpdateCardData)
+            try { UpdateWarnBand(cachedAccount); } catch (Exception _sx) { SentinelCore.Swallow("SentinelDeck.OnBarUpdate", _sx); }   // v0.2.5: preview safety band (the 1s UI timer is the primary driver)
+            try { TapeOnTick(); } catch (Exception _sx) { SentinelCore.Swallow("SentinelDeck.OnBarUpdate", _sx); }   // v0.2.3: passive tick-path capture (cardPos is fresh after UpdateCardData)
             UpdateBarTimer();
             if (!_dragging) ApplyAttachments(false);   // v0.2.2: attached orders follow their indicator plot
             HandleAutoOnEntry();
@@ -513,10 +554,14 @@ namespace NinjaTrader.NinjaScript.Indicators.Sentinel
         // trade is recorded at its real price (the excursion/MFE-MAE fuel is only honest at raw-tick resolution).
         protected override void OnMarketData(MarketDataEventArgs e)
         {
+            // v0.2.6: latch the touch BEFORE the Last filter — the fill-cost reference needs the quote we cross,
+            // and the Bid/Ask updates are the only place it is visible.
+            if (e.MarketDataType == MarketDataType.Ask) { _lastAskPx = e.Price; return; }
+            if (e.MarketDataType == MarketDataType.Bid) { _lastBidPx = e.Price; return; }
             if (e.MarketDataType != MarketDataType.Last) return;
             _lastTradePx   = e.Price;
             _lastTradeTime = e.Time;
-            if (_tapeActive) { try { TapeAppend(e.Price); } catch { } }
+            if (_tapeActive) { try { TapeAppend(e.Price); } catch (Exception _sx) { SentinelCore.Swallow("SentinelDeck.OnMarketData", _sx); } }
         }
 
         // v0.2.1: bar-completion progress + a bar-type-aware label (tick/vol/range count, or time remaining)
@@ -617,7 +662,7 @@ namespace NinjaTrader.NinjaScript.Indicators.Sentinel
                         var g = SentinelCore.GetGovernorState(acct.Name);
                         if (g != null && g.Cap > 0) { cardGovOn = true; cardGovDay = g.DailyPnl; cardGovCap = g.Cap; }
                     }
-                    catch { }
+                    catch (Exception _sx) { SentinelCore.Swallow("SentinelDeck.UpdateCardData", _sx); }
                     try
                     {
                         string why;
@@ -689,13 +734,13 @@ namespace NinjaTrader.NinjaScript.Indicators.Sentinel
         {
             try
             {
-                try { if (ChartControl != null) ChartControl.PreviewMouseLeftButtonDown -= OnChartClickForPrice; } catch { }
-                try { if (ChartControl != null) { ChartControl.PreviewMouseLeftButtonDown -= OnChartMouseDown; ChartControl.PreviewMouseMove -= OnChartMouseMove; ChartControl.PreviewMouseLeftButtonUp -= OnChartMouseUp; ChartControl.PreviewKeyDown -= OnChartKeyDown; } } catch { }
+                try { if (ChartControl != null) ChartControl.PreviewMouseLeftButtonDown -= OnChartClickForPrice; } catch (Exception _sx) { SentinelCore.Swallow("SentinelDeck.DisposeWPFControls", _sx); }
+                try { if (ChartControl != null) { ChartControl.PreviewMouseLeftButtonDown -= OnChartMouseDown; ChartControl.PreviewMouseMove -= OnChartMouseMove; ChartControl.PreviewMouseLeftButtonUp -= OnChartMouseUp; ChartControl.PreviewKeyDown -= OnChartKeyDown; } } catch (Exception _sx) { SentinelCore.Swallow("SentinelDeck.DisposeWPFControls", _sx); }
                 // if floating, tear the window down first (the scroll viewer lives in it, not the grid)
                 if (floatWindow != null)
                 {
                     panelFloating = false;
-                    try { floatWindow.Content = null; floatWindow.Close(); } catch { }
+                    try { floatWindow.Content = null; floatWindow.Close(); } catch (Exception _sx) { SentinelCore.Swallow("SentinelDeck.DisposeWPFControls", _sx); }
                     floatWindow = null; floatHost = null;
                 }
                 if (_ctScrollViewer != null) _ctScrollViewer.Content = null;
@@ -703,7 +748,7 @@ namespace NinjaTrader.NinjaScript.Indicators.Sentinel
                 RemoveOverlay();   // v0.2.5: tear down the WPF order-line overlay
                 _ctScrollViewer = null; _ctTraderGrid = null; _ctChart = null; uiPanelActive = false;
             }
-            catch { }
+            catch (Exception _sx) { SentinelCore.Swallow("SentinelDeck.DisposeWPFControls", _sx); }
         }
 
         // -- pop-out / dock (ported from GTrader21) --
@@ -769,7 +814,7 @@ namespace NinjaTrader.NinjaScript.Indicators.Sentinel
                     panelFloating = false;                      // set before Close so the Closing handler no-ops
                     floatWindow.Content = null;
                     var w = floatWindow; floatWindow = null;
-                    try { w.Close(); } catch { }
+                    try { w.Close(); } catch (Exception _sx) { SentinelCore.Swallow("SentinelDeck.DockDeck", _sx); }
                 }
                 panelFloating = false;
                 if (floatHost != null) { floatHost.Children.Remove(_ctScrollViewer); floatHost = null; }
@@ -787,7 +832,7 @@ namespace NinjaTrader.NinjaScript.Indicators.Sentinel
                 floatLeft = floatWindow.Left; floatTop = floatWindow.Top;
                 floatWidth = floatWindow.Width; floatHeight = floatWindow.Height;
             }
-            catch { }
+            catch (Exception _sx) { SentinelCore.Swallow("SentinelDeck.SaveFloatGeometry", _sx); }
         }
 
         private void UpdateDockButton()
@@ -820,7 +865,7 @@ namespace NinjaTrader.NinjaScript.Indicators.Sentinel
                     _ctTraderGrid.RowDefinitions.Remove(_ctScrollRow);
                 _ctScrollRow = null;
             }
-            catch { }
+            catch (Exception _sx) { SentinelCore.Swallow("SentinelDeck.RemovePanel", _sx); }
         }
 
         // ── THEME toggle (header button): cycle auto → dark → light → silver → obsidian → blueprint → amber,
@@ -842,7 +887,7 @@ namespace NinjaTrader.NinjaScript.Indicators.Sentinel
         private static string CurrentThemeMode()
         {
             try { var p = ThemePath(); if (System.IO.File.Exists(p)) { var s = System.IO.File.ReadAllText(p).Trim().ToLowerInvariant();
-                if (System.Array.IndexOf(ThemeModes, s) >= 0) return s; } } catch { }
+                if (System.Array.IndexOf(ThemeModes, s) >= 0) return s; } } catch (Exception _sx) { SentinelCore.Swallow("SentinelDeck.CurrentThemeMode", _sx); }
             return "auto";
         }
         private void CycleTheme()
@@ -851,7 +896,7 @@ namespace NinjaTrader.NinjaScript.Indicators.Sentinel
             {
                 int i = System.Array.IndexOf(ThemeModes, CurrentThemeMode()); if (i < 0) i = 0;
                 string next = ThemeModes[(i + 1) % ThemeModes.Length];
-                try { System.IO.File.WriteAllText(ThemePath(), next); } catch { }
+                try { System.IO.File.WriteAllText(ThemePath(), next); } catch (Exception _sx) { SentinelCore.Swallow("SentinelDeck.CycleTheme", _sx); }
                 // One source of truth for the word→Theme map (SentinelSkin.TryParseTheme); "auto" doesn't parse,
                 // which is exactly the signal to fall back to the glue and re-resolve from the active skin.
                 SentinelSkin.Theme t;
@@ -859,9 +904,9 @@ namespace NinjaTrader.NinjaScript.Indicators.Sentinel
                 else                                         SentinelSkin.ForceThemeRecheck();
                 ForceRefresh();   // re-render the on-chart SharpDX layer (cards + risk card) now
                 // rebuild the WPF panel so ITS colors follow (colors are read at build time)
-                ChartControl?.Dispatcher.BeginInvoke(new Action(() => { try { DisposeWPFControls(); CreateWPFControls(); } catch { } }));
+                ChartControl?.Dispatcher.BeginInvoke(new Action(() => { try { DisposeWPFControls(); CreateWPFControls(); } catch (Exception _sx) { SentinelCore.Swallow("SentinelDeck.CycleTheme", _sx); } }));
             }
-            catch { }
+            catch (Exception _sx) { SentinelCore.Swallow("SentinelDeck.CycleTheme", _sx); }
         }
 
         //  deck layout
@@ -902,7 +947,7 @@ namespace NinjaTrader.NinjaScript.Indicators.Sentinel
             btnPin.Click += (s, e) =>
             {
                 DeckFloatPinned = !DeckFloatPinned;
-                if (floatWindow != null) { try { floatWindow.Topmost = DeckFloatPinned; } catch { } }
+                if (floatWindow != null) { try { floatWindow.Topmost = DeckFloatPinned; } catch (Exception _sx) { SentinelCore.Swallow("SentinelDeck.BuildDeck", _sx); } }
                 btnPin.Foreground = new SolidColorBrush(DeckFloatPinned ? C_ACCENT : C_MUTED);
                 btnPin.BorderBrush = new SolidColorBrush(DeckFloatPinned ? C_ACCENT : C_BORDER);
             };
@@ -919,7 +964,7 @@ namespace NinjaTrader.NinjaScript.Indicators.Sentinel
             var chip = new Border { Background = new SolidColorBrush(Tint(C_ACCENT, 0.10)),
                 BorderBrush = new SolidColorBrush(Color.FromArgb(90, C_ACCENT.R, C_ACCENT.G, C_ACCENT.B)), BorderThickness = new Thickness(1),
                 CornerRadius = new CornerRadius(5), Padding = new Thickness(6, 3, 6, 3), VerticalAlignment = VerticalAlignment.Center,
-                Child = Tx("v0.2.5", 10, C_ACCENT) };
+                Child = Tx("v0.2.6", 10, C_ACCENT) };
             Grid.SetColumn(chip, 4); hg.Children.Add(chip);
             hudStack.Children.Add(hg);
             hudStack.Children.Add(HRule());
@@ -1171,7 +1216,7 @@ namespace NinjaTrader.NinjaScript.Indicators.Sentinel
                 tbPrice.Text = px.ToString("0.#####");
                 Status("price set " + tbPrice.Text);
             }
-            catch { }
+            catch (Exception _sx) { SentinelCore.Swallow("SentinelDeck.OnChartClickForPrice", _sx); }
             finally { clickArm = false; ToggleClickArmVisualOff(); }
         }
 
@@ -1206,7 +1251,7 @@ namespace NinjaTrader.NinjaScript.Indicators.Sentinel
                 if (h != _hoverLine) { _hoverLine = h; ChartControl?.InvalidateVisual(); }
                 if (ChartControl != null) ChartControl.Cursor = h != 0 ? Cursors.SizeNS : null;
             }
-            catch { }
+            catch (Exception _sx) { SentinelCore.Swallow("SentinelDeck.OnChartMouseMove", _sx); }
         }
 
         private void OnChartMouseDown(object sender, MouseButtonEventArgs e)
@@ -1221,15 +1266,15 @@ namespace NinjaTrader.NinjaScript.Indicators.Sentinel
                 try { SentinelCore.Log("Deck:drag", "down drag=" + EnableOrderDrag + " clickArm=" + clickArm
                     + " myDev=" + my.ToString("0") + " hit=" + h + " dpi=" + DpiScale().ToString("0.##")
                     + " tgtY=" + (cardTargetPx > 0 ? LineY(cardTargetPx).ToString("0") : "-")
-                    + " stpY=" + (cardStopPx > 0 ? LineY(cardStopPx).ToString("0") : "-")); } catch { }
+                    + " stpY=" + (cardStopPx > 0 ? LineY(cardStopPx).ToString("0") : "-")); } catch (Exception _sx) { SentinelCore.Swallow("SentinelDeck.OnChartMouseDown", _sx); }
                 if (h == 0) return;
                 _dragging = true; _dragLine = h;
                 _dragPrice = _lastScale != null ? _lastScale.GetValueByY((float)my) : 0;
                 _attachCand = null; _attachCandPlot = -1; _attachCandName = null;
-                try { ChartControl.CaptureMouse(); } catch { }
+                try { ChartControl.CaptureMouse(); } catch (Exception _sx) { SentinelCore.Swallow("SentinelDeck.OnChartMouseDown", _sx); }
                 e.Handled = true;                          // stop NT pan/select while dragging
             }
-            catch { }
+            catch (Exception _sx) { SentinelCore.Swallow("SentinelDeck.OnChartMouseDown", _sx); }
         }
 
         private void OnChartMouseUp(object sender, MouseButtonEventArgs e)
@@ -1237,7 +1282,7 @@ namespace NinjaTrader.NinjaScript.Indicators.Sentinel
             if (!_dragging) return;
             try
             {
-                try { ChartControl.ReleaseMouseCapture(); } catch { }
+                try { ChartControl.ReleaseMouseCapture(); } catch (Exception _sx) { SentinelCore.Swallow("SentinelDeck.OnChartMouseUp", _sx); }
                 int line = _dragLine; double px = _dragPrice;
                 var cand = _attachCand; int candPlot = _attachCandPlot; string candName = _attachCandName;
                 _dragging = false; _dragLine = 0; _attachCand = null; _attachCandPlot = -1;
@@ -1261,7 +1306,7 @@ namespace NinjaTrader.NinjaScript.Indicators.Sentinel
         {
             if (!_dragging || e.Key != Key.Escape) return;
             _dragging = false; _dragLine = 0; _attachCand = null; _attachCandPlot = -1;
-            try { ChartControl.ReleaseMouseCapture(); } catch { }
+            try { ChartControl.ReleaseMouseCapture(); } catch (Exception _sx) { SentinelCore.Swallow("SentinelDeck.OnChartKeyDown", _sx); }
             if (ChartControl != null) { ChartControl.Cursor = null; ChartControl.InvalidateVisual(); }
             Status("drag cancelled");
             e.Handled = true;
@@ -1337,10 +1382,10 @@ namespace NinjaTrader.NinjaScript.Indicators.Sentinel
                     try { SentinelCore.Log("Deck:attach", "no snap · overlays=" + nOverlay
                         + " nearest=" + (bestName ?? "none") + (double.IsNaN(bestV) ? "" : " v=" + bestV.ToString("0.##"))
                         + " dist=" + (bestDist == double.MaxValue ? "n/a" : bestDist.ToString("0")) + "px tol=" + tol.ToString("0")
-                        + " dpi=" + DpiScale().ToString("0.##") + " · scan: " + scanned.ToString().Trim()); } catch { }
+                        + " dpi=" + DpiScale().ToString("0.##") + " · scan: " + scanned.ToString().Trim()); } catch (Exception _sx) { SentinelCore.Swallow("SentinelDeck.FindAttachCandidate", _sx); }
                 }
             }
-            catch { }
+            catch (Exception _sx) { SentinelCore.Swallow("SentinelDeck.FindAttachCandidate", _sx); }
         }
 
         private double PlotVal(NinjaTrader.Gui.NinjaScript.IndicatorRenderBase ind, int plot)
@@ -1500,11 +1545,16 @@ namespace NinjaTrader.NinjaScript.Indicators.Sentinel
 
             try
             {
+                string oname = _tag + (automated ? "_SIG_" : "_") + action;
                 var o = acct.CreateOrder(instr, action, ot, OrderEntry.Manual, TimeInForce.Day, q, lim, stp, "",
-                    _tag + (automated ? "_SIG_" : "_") + action, Core.Globals.MaxDate, null);
+                    oname, Core.Globals.MaxDate, null);
+                if (ot == OrderType.Market) StampCross(oname, action);   // v0.2.6 — reference price BEFORE the cross
                 acct.Submit(new[] { o });
-                try { SentinelCore.NoteOrderSubmitted(acct.Name); } catch { }   // feed the rate guard
-                try { SentinelCore.Ledger.Order(acct.Name, instr.FullName, action.ToString(), ot.ToString(), q, lim > 0 ? lim : stp, automated ? "Deck:signal" : "Deck"); } catch { }
+                try { SentinelCore.NoteOrderSubmitted(acct.Name); } catch (Exception _sx) { SentinelCore.Swallow("SentinelDeck.SubmitDeckOrder", _sx); }   // feed the rate guard
+                // v0.2.6: a MARKET order has no limit/stop, so this logged px:0 and order→fill could never be
+                // joined. Log the crossing quote instead; lim/stp stay authoritative for the priced types.
+                double logPx = lim > 0 ? lim : (stp > 0 ? stp : TakeCross(oname));
+                try { SentinelCore.Ledger.Order(acct.Name, instr.FullName, action.ToString(), ot.ToString(), q, logPx, automated ? "Deck:signal" : "Deck"); } catch (Exception _sx) { SentinelCore.Swallow("SentinelDeck.SubmitDeckOrder", _sx); }
                 Status((automated ? "SIGNAL " : "") + (action == OrderAction.Buy ? "BUY " : "SELL ") + q + " " + ot
                     + (ot == OrderType.Market ? "" : " @ " + (deckType == DeckOrderType.StopLimit ? stp + "/" + lim : (lim > 0 ? lim : stp).ToString())));
             }
@@ -1530,17 +1580,17 @@ namespace NinjaTrader.NinjaScript.Indicators.Sentinel
                     int ord = byType.TryGetValue(tn, out int c) ? c : 0; byType[tn] = ord + 1;
                     string disp = SafeIndName(ind); if (string.IsNullOrEmpty(disp)) disp = tn;
                     if (ord > 0) disp = disp + " #" + (ord + 1);   // disambiguate a 2nd+ instance of the same indicator
-                    int nPlots = 0; try { nPlots = ind.Values != null ? ind.Values.Length : 0; } catch { }
+                    int nPlots = 0; try { nPlots = ind.Values != null ? ind.Values.Length : 0; } catch (Exception _sx) { SentinelCore.Swallow("SentinelDeck.RescanSignalSources", _sx); }
                     for (int p = 0; p < nPlots; p++)
                         _sigSources.Add(new SigSrc { Key = tn + "#" + ord + "|" + p, Display = disp + " > " + PlotName(ind, p) });
                 }
             }
-            catch { }
+            catch (Exception _sx) { SentinelCore.Swallow("SentinelDeck.RescanSignalSources", _sx); }
         }
 
         private string PlotName(NinjaTrader.Gui.NinjaScript.IndicatorRenderBase ind, int p)
         {
-            try { var pl = ind.Plots[p]; if (pl != null && !string.IsNullOrEmpty(pl.Name)) return pl.Name; } catch { }   // indexer + try/catch (avoid .Count: method group on NT's plot collection → CS0019)
+            try { var pl = ind.Plots[p]; if (pl != null && !string.IsNullOrEmpty(pl.Name)) return pl.Name; } catch (Exception _sx) { SentinelCore.Swallow("SentinelDeck.PlotName", _sx); }   // indexer + try/catch (avoid .Count: method group on NT's plot collection → CS0019)
             return "plot " + p;
         }
 
@@ -1565,7 +1615,7 @@ namespace NinjaTrader.NinjaScript.Indicators.Sentinel
                     seen++;
                 }
             }
-            catch { }
+            catch (Exception _sx) { SentinelCore.Swallow("SentinelDeck.ResolveSigSrc", _sx); }
             return false;
         }
 
@@ -1634,7 +1684,7 @@ namespace NinjaTrader.NinjaScript.Indicators.Sentinel
             _sigLastDir = dir;
             if (!transition) return;
 
-            try { SentinelCore.Log("Deck:sig", "transition dir=" + dir + " A=" + _sigDbgA.ToString("0.###") + " autofire=" + sigAutoFire + " first=" + firstEval + " bar=" + CurrentBar); } catch { }
+            try { SentinelCore.Log("Deck:sig", "transition dir=" + dir + " A=" + _sigDbgA.ToString("0.###") + " autofire=" + sigAutoFire + " first=" + firstEval + " bar=" + CurrentBar); } catch (Exception _sx) { SentinelCore.Swallow("SentinelDeck.EvaluateSignal", _sx); }
             _armedDir = dir;
             if (sigAutoFire)
             {
@@ -1654,12 +1704,12 @@ namespace NinjaTrader.NinjaScript.Indicators.Sentinel
         // AUTO-FIRE: fail-closed, flat-only, opposite signal = reverse (never stacks / adds)
         private void TryAutoFire(int dir)
         {
-            if (_sigFiredBar == CurrentBar) { try { SentinelCore.Log("Deck:sig", "autofire skip: already fired this bar"); } catch { } return; }
+            if (_sigFiredBar == CurrentBar) { try { SentinelCore.Log("Deck:sig", "autofire skip: already fired this bar"); } catch (Exception _sx) { SentinelCore.Swallow("SentinelDeck.TryAutoFire", _sx); } return; }
             var acct = cachedAccount; var instr = cachedInstrument;
-            if (acct == null || instr == null) { Status("auto-fire: no account/instrument"); try { SentinelCore.Log("Deck:sig", "autofire abort: no acct/instr"); } catch { } return; }
+            if (acct == null || instr == null) { Status("auto-fire: no account/instrument"); try { SentinelCore.Log("Deck:sig", "autofire abort: no acct/instr"); } catch (Exception _sx) { SentinelCore.Swallow("SentinelDeck.TryAutoFire", _sx); } return; }
             var pos = acct.Positions.FirstOrDefault(p => p.Instrument != null && p.Instrument.FullName == instr.FullName && p.Quantity != 0);
             int curDir = pos == null ? 0 : (pos.MarketPosition == MarketPosition.Long ? 1 : -1);
-            if (curDir == dir) { try { SentinelCore.Log("Deck:sig", "autofire skip: already " + Dir(dir)); } catch { } return; }
+            if (curDir == dir) { try { SentinelCore.Log("Deck:sig", "autofire skip: already " + Dir(dir)); } catch (Exception _sx) { SentinelCore.Swallow("SentinelDeck.TryAutoFire", _sx); } return; }
 
             // fail-closed gate pre-check (covers both the reverse and the flat-entry branch)
             if (ConsultSentinel)
@@ -1667,13 +1717,13 @@ namespace NinjaTrader.NinjaScript.Indicators.Sentinel
                 try
                 {
                     var g = SentinelCore.GateEntry(acct, instr.FullName, Math.Max(1, deckQty), riskMode ? pStop : 0, riskMode ? pRisk : 0, instr);
-                    if (g.Level == SentinelCore.GateLevel.Hard) { Status("auto-fire BLOCKED: " + g.Reason); try { SentinelCore.Log("Deck:sig", "autofire BLOCKED: " + g.Reason); } catch { } return; }
+                    if (g.Level == SentinelCore.GateLevel.Hard) { Status("auto-fire BLOCKED: " + g.Reason); try { SentinelCore.Log("Deck:sig", "autofire BLOCKED: " + g.Reason); } catch (Exception _sx) { SentinelCore.Swallow("SentinelDeck.TryAutoFire", _sx); } return; }
                 }
-                catch (Exception gex) { Status("auto-fire BLOCKED: gate error"); try { SentinelCore.Log("Deck:sig", "autofire gate error: " + gex.Message); } catch { } return; }
+                catch (Exception gex) { Status("auto-fire BLOCKED: gate error"); try { SentinelCore.Log("Deck:sig", "autofire gate error: " + gex.Message); } catch (Exception _sx) { SentinelCore.Swallow("SentinelDeck.TryAutoFire", _sx); } return; }
             }
 
             _sigFiredBar = CurrentBar;
-            try { SentinelCore.Log("Deck:sig", "autofire FIRE dir=" + dir + " curDir=" + curDir + " qty=" + deckQty + " acct=" + acct.Name); } catch { }
+            try { SentinelCore.Log("Deck:sig", "autofire FIRE dir=" + dir + " curDir=" + curDir + " qty=" + deckQty + " acct=" + acct.Name); } catch (Exception _sx) { SentinelCore.Swallow("SentinelDeck.TryAutoFire", _sx); }
             if (curDir != 0) { Status("SIGNAL REVERSE -> " + Dir(dir)); ReversePosition(); }
             else             { SubmitDeckOrder(dir > 0 ? OrderAction.Buy : OrderAction.SellShort, true); }
         }
@@ -1696,7 +1746,7 @@ namespace NinjaTrader.NinjaScript.Indicators.Sentinel
             if (buyBtnRef  != null) { buyBtnRef.Background  = new SolidColorBrush(Tint(C_GREEN, 0.30)); buyBtnRef.BorderBrush  = new SolidColorBrush(C_GREEN); buyBtnRef.BorderThickness  = new Thickness(1.5); }
             if (sellBtnRef != null) { sellBtnRef.Background = new SolidColorBrush(Tint(C_RED, 0.30));   sellBtnRef.BorderBrush = new SolidColorBrush(C_RED);   sellBtnRef.BorderThickness = new Thickness(1.5); }
         }
-        private void Ui(Action a) { try { ChartControl?.Dispatcher.InvokeAsync(a); } catch { } }
+        private void Ui(Action a) { try { ChartControl?.Dispatcher.InvokeAsync(a); } catch (Exception _sx) { SentinelCore.Swallow("SentinelDeck.Ui", _sx); } }
 
         // ── section controls (UI-thread click handlers) ──
         // v0.2.2: DROPDOWN source pickers (replaced the cycle buttons — full plot names, no truncation) ──────
@@ -1742,7 +1792,7 @@ namespace NinjaTrader.NinjaScript.Indicators.Sentinel
                 foreach (ComboBoxItem it in cb.Items) if ((it.Tag as string) == cur) { match = it; break; }
                 cb.SelectedItem = match;   // null → nothing selected (fresh)
             }
-            catch { }
+            catch (Exception _sx) { SentinelCore.Swallow("SentinelDeck.PopulateOneCombo", _sx); }
             finally { _sigComboUpdating = false; }
         }
 
@@ -1795,6 +1845,7 @@ namespace NinjaTrader.NinjaScript.Indicators.Sentinel
             var act = pos.MarketPosition == MarketPosition.Long ? OrderAction.Sell : OrderAction.BuyToCover;
             try
             {
+                StampCross(_tag + "_Close", act);                        // v0.2.6 — reference price BEFORE the cross
                 var o = acct.CreateOrder(instr, act, OrderType.Market, OrderEntry.Manual, TimeInForce.Day,
                     Math.Abs(pos.Quantity), 0, 0, "", _tag + "_Close", Core.Globals.MaxDate, null);
                 acct.Submit(new[] { o });
@@ -1818,6 +1869,7 @@ namespace NinjaTrader.NinjaScript.Indicators.Sentinel
                 var work = acct.Orders.Where(o => o.Instrument != null && o.Instrument.FullName == instr.FullName
                     && (o.OrderState == OrderState.Working || o.OrderState == OrderState.Accepted)).ToArray();
                 if (work.Length > 0) acct.Cancel(work);
+                StampCross(_tag + "_Reverse", act);                      // v0.2.6 — reference price BEFORE the cross
                 var o = acct.CreateOrder(instr, act, OrderType.Market, OrderEntry.Manual, TimeInForce.Day, flip, 0, 0, "",
                     _tag + "_Reverse", Core.Globals.MaxDate, null);
                 acct.Submit(new[] { o });
@@ -1873,7 +1925,7 @@ namespace NinjaTrader.NinjaScript.Indicators.Sentinel
         //  (Sentinel standard), so Name is empty by the time anything reads it at runtime -- which is
         //  exactly how the first diagnostics export shipped with a blank version field, in the tool
         //  built to stop ambiguous bug reports. Drop " (DEV)" here as the freeze step (naming law S9).
-        private const string DeckVersion = "Sentinel Deck v0.2.5 (DEV)";
+        private const string DeckVersion = "Sentinel Deck v0.2.6 (DEV)";
         private Border    warnBand;
         private Button    btnDiag;
         private TextBlock warnText;
@@ -1915,7 +1967,7 @@ namespace NinjaTrader.NinjaScript.Indicators.Sentinel
                         ? acct.Connection.Options.Provider.ToString() : "n/a")
                     + " => " + (IsSimulatedAccount(acct) ? "SIMULATED" : "REAL-ORDER"));
             }
-            catch { }
+            catch (Exception _sx) { SentinelCore.Swallow("SentinelDeck.LogAccountClass", _sx); }
         }
 
         //  ⚠ THE BAND MUST NOT DEPEND ON ORDER FLOW (found live 2026-07-21, and it is the worst bug of the three).
@@ -1945,15 +1997,15 @@ namespace NinjaTrader.NinjaScript.Indicators.Sentinel
                 if (_warnTimer != null) return;
                 _warnTimer = new System.Windows.Threading.DispatcherTimer(System.Windows.Threading.DispatcherPriority.Background)
                     { Interval = TimeSpan.FromSeconds(1) };
-                _warnTimer.Tick += (s, e) => { try { UpdateWarnBand(ResolveAccountUi()); } catch { } };
+                _warnTimer.Tick += (s, e) => { try { UpdateWarnBand(ResolveAccountUi()); } catch (Exception _sx) { SentinelCore.Swallow("SentinelDeck.StartWarnHeartbeat", _sx); } };
                 _warnTimer.Start();
             }
-            catch { }
+            catch (Exception _sx) { SentinelCore.Swallow("SentinelDeck.StartWarnHeartbeat", _sx); }
         }
 
         private void StopWarnHeartbeat()
         {
-            try { if (_warnTimer != null) { _warnTimer.Stop(); _warnTimer = null; } } catch { }
+            try { if (_warnTimer != null) { _warnTimer.Stop(); _warnTimer = null; } } catch (Exception _sx) { SentinelCore.Swallow("SentinelDeck.StopWarnHeartbeat", _sx); }
         }
 
         private void UpdateWarnBand(Account acct)
@@ -1985,7 +2037,7 @@ namespace NinjaTrader.NinjaScript.Indicators.Sentinel
                     warnBand.Background  = new SolidColorBrush(Tint(fg, live ? 0.16 : 0.08));
                     warnBand.BorderBrush = new SolidColorBrush(Color.FromArgb(live ? (byte)160 : (byte)70, fg.R, fg.G, fg.B));
                 }
-                catch { }
+                catch (Exception _sx) { SentinelCore.Swallow("SentinelDeck.UpdateWarnBand", _sx); }
             });
         }
 
@@ -2086,7 +2138,7 @@ namespace NinjaTrader.NinjaScript.Indicators.Sentinel
                             if (ind == null || ReferenceEquals(ind, this)) continue;
                             string tn = ind.GetType().Name;
                             int ord = seen.TryGetValue(tn, out int c) ? c : 0; seen[tn] = ord + 1;
-                            int nPlots = 0; try { nPlots = ind.Values != null ? ind.Values.Length : 0; } catch { }
+                            int nPlots = 0; try { nPlots = ind.Values != null ? ind.Values.Length : 0; } catch (Exception _sx) { SentinelCore.Swallow("SentinelDeck.ExportDiagnostics", _sx); }
                             sb.Append("  " + tn + "#" + ord + "  plots=" + nPlots + "  [");
                             for (int q = 0; q < nPlots; q++) sb.Append((q > 0 ? ", " : "") + q + ":" + PlotName(ind, q));
                             sb.AppendLine("]");
@@ -2104,13 +2156,13 @@ namespace NinjaTrader.NinjaScript.Indicators.Sentinel
 
                 System.IO.File.WriteAllText(path, sb.ToString(), new System.Text.UTF8Encoding(false));
                 Status("diagnostics written -> " + path);
-                try { SentinelCore.Log("Deck", "diagnostics exported -> " + path); } catch { }
+                try { SentinelCore.Log("Deck", "diagnostics exported -> " + path); } catch (Exception _sx) { SentinelCore.Swallow("SentinelDeck.ExportDiagnostics", _sx); }
 
                 //  Open Explorer with the file SELECTED. A tester should never have to hunt for the artefact we
                 //  just asked them to send -- and NT's user folder is not always under Documents (it can be
                 //  relocated, or redirected by OneDrive), so "it's in Documents\NinjaTrader 8" is not reliable
                 //  guidance. Best-effort only: a failure here must never look like an export failure.
-                try { System.Diagnostics.Process.Start("explorer.exe", "/select,\"" + path + "\""); } catch { }
+                try { System.Diagnostics.Process.Start("explorer.exe", "/select,\"" + path + "\""); } catch (Exception _sx) { SentinelCore.Swallow("SentinelDeck.ExportDiagnostics", _sx); }
             }
             catch (Exception ex) { Status("diag export FAILED: " + ex.Message); }
         }
@@ -2166,9 +2218,45 @@ namespace NinjaTrader.NinjaScript.Indicators.Sentinel
         private void EnsureFillSubscription(Account acct)
         {
             if (ReferenceEquals(acct, _fillAccount)) return;
-            if (_fillAccount != null) { try { _fillAccount.ExecutionUpdate -= OnDeckExecution; } catch { } }
+            if (_fillAccount != null) { try { _fillAccount.ExecutionUpdate -= OnDeckExecution; } catch (Exception _sx) { SentinelCore.Swallow("SentinelDeck.EnsureFillSubscription", _sx); } }
             _fillAccount = acct;
-            if (_fillAccount != null) { try { _fillAccount.ExecutionUpdate += OnDeckExecution; } catch { } }
+            if (_fillAccount != null) { try { _fillAccount.ExecutionUpdate += OnDeckExecution; } catch (Exception _sx) { SentinelCore.Swallow("SentinelDeck.EnsureFillSubscription", _sx); } }
+        }
+
+        // v0.2.6 — THE FILL-COST REFERENCE. The tradeable price on the side we are about to cross:
+        //   buying  (Buy / BuyToCover) lifts the ASK · selling (Sell / SellShort) hits the BID
+        // Returns 0 when the latch has not filled yet (no live quote), which every caller treats as
+        // "record nothing" rather than record a number it cannot defend.
+        private double CrossQuote(OrderAction a)
+        {
+            bool buying = a == OrderAction.Buy || a == OrderAction.BuyToCover;
+            double q = buying ? _lastAskPx : _lastBidPx;
+            return q > 0 ? q : 0.0;
+        }
+
+        // Stamp the crossing quote for THIS order, at submission. Keyed by order name so a later market order
+        // cannot consume an earlier one's reference. Bounded like _seenDeckExecIds so a long session can't grow it.
+        private void StampCross(string orderName, OrderAction a)
+        {
+            if (string.IsNullOrEmpty(orderName)) return;
+            double q = CrossQuote(a);
+            if (q <= 0) return;
+            try
+            {
+                lock (_crossRef)
+                {
+                    if (_crossRef.Count > 500) _crossRef.Clear();
+                    _crossRef[orderName] = q;
+                }
+            }
+            catch (Exception _sx) { SentinelCore.Swallow("SentinelDeck.StampCross", _sx); }
+        }
+
+        private double TakeCross(string orderName)
+        {
+            if (string.IsNullOrEmpty(orderName)) return 0.0;
+            try { lock (_crossRef) { double q; return _crossRef.TryGetValue(orderName, out q) ? q : 0.0; } }
+            catch (Exception _sx) { SentinelCore.Swallow("SentinelDeck.TakeCross", _sx); return 0.0; }
         }
 
         private void OnDeckExecution(object sender, ExecutionEventArgs e)
@@ -2194,14 +2282,17 @@ namespace NinjaTrader.NinjaScript.Indicators.Sentinel
                     if (!_seenDeckExecIds.Add(exec.ExecutionId)) return;
                 }
 
+                // v0.2.6: a MARKET fill used to fall through to intended = 0, and Ledger.Fill only writes `slip`
+                // when intended > 0 — so market fills carried NO execution-cost information at all. Use the quote
+                // stamped on the side we crossed, at submission. Stop/limit unchanged (their price was correct).
                 double intended = (exec.Order.OrderType == OrderType.Limit || exec.Order.OrderType == OrderType.StopLimit) ? exec.Order.LimitPrice
-                                : (exec.Order.OrderType == OrderType.StopMarket ? exec.Order.StopPrice : 0);
+                                : (exec.Order.OrderType == OrderType.StopMarket ? exec.Order.StopPrice : TakeCross(on));
                 double tick = exec.Instrument.MasterInstrument != null ? exec.Instrument.MasterInstrument.TickSize : 0;
                 SentinelCore.Ledger.Fill(
                     exec.Account != null ? exec.Account.Name : (_fillAccount != null ? _fillAccount.Name : "?"),
                     exec.Instrument.FullName, exec.Order.OrderAction.ToString(), qty, intended, exec.Price, tick, "Deck:" + on);
             }
-            catch { }
+            catch (Exception _sx) { SentinelCore.Swallow("SentinelDeck.OnDeckExecution", _sx); }
         }
 
         private Instrument ResolveInstrument()
@@ -2227,14 +2318,14 @@ namespace NinjaTrader.NinjaScript.Indicators.Sentinel
         // 
         protected override void OnRender(ChartControl chartControl, ChartScale chartScale)
         {
-            try { base.OnRender(chartControl, chartScale); } catch { }
+            try { base.OnRender(chartControl, chartScale); } catch (Exception _sx) { SentinelCore.Swallow("SentinelDeck.OnRender", _sx); }
             _lastScale = chartScale;
             SentinelSkin.MaybeRefreshTheme();   // theme-aware risk card (this render path doesn't go through Painter.Begin)
             // v0.2.5: WPF overlay handled here (before any early-return), so it also HIDES when lines shouldn't show.
             if (OrderLineOverlay && chartScale != null)
                 UpdateOrderOverlay(chartScale, ShowOrderLines && cardPos != MarketPosition.Flat);
             else if (_olCanvas != null)
-                try { ChartControl?.Dispatcher?.InvokeAsync(RemoveOverlay); } catch { }   // toggled off → tear the overlay down
+                try { ChartControl?.Dispatcher?.InvokeAsync(RemoveOverlay); } catch (Exception _sx) { SentinelCore.Swallow("SentinelDeck.OnRender", _sx); }   // toggled off → tear the overlay down
             if (RenderTarget == null || chartControl == null || (!ShowRiskCard && !ShowOrderLines)) return;
             ChartControl?.Dispatcher.InvokeAsync(RefreshAdvisory);
 
@@ -2361,7 +2452,7 @@ namespace NinjaTrader.NinjaScript.Indicators.Sentinel
                 DT(rt, dwf, cardAdvisory ?? "clear", ix + 60f, iy + 6f, iw - 60f, 14f, B(advC), 10f, false, SharpDX.DirectWrite.TextAlignment.Trailing);
             }
             catch (Exception ex) { Print("[Sentinel Deck] OnRender: " + ex.Message); }
-            finally { foreach (var d in pool) { try { d.Dispose(); } catch { } } }
+            finally { foreach (var d in pool) { try { d.Dispose(); } catch (Exception _sx) { SentinelCore.Swallow("SentinelDeck.OnRender", _sx); } } }
         }
 
         // v0.2.1: draw the live position's ENTRY / STOP / TARGET as horizontal chart lines with R / $ / tick labels.
@@ -2426,7 +2517,7 @@ namespace NinjaTrader.NinjaScript.Indicators.Sentinel
             if (!_dpiDone)
             {
                 try { var s = System.Windows.PresentationSource.FromVisual(ChartControl);
-                      if (s != null) { _olDpi = s.CompositionTarget.TransformToDevice.M11; _dpiDone = true; } } catch { }
+                      if (s != null) { _olDpi = s.CompositionTarget.TransformToDevice.M11; _dpiDone = true; } } catch (Exception _sx) { SentinelCore.Swallow("SentinelDeck.DpiScale", _sx); }
             }
             return _olDpi > 0 ? _olDpi : 1.0;
         }
@@ -2460,7 +2551,7 @@ namespace NinjaTrader.NinjaScript.Indicators.Sentinel
                 }
             }
             try { ChartControl?.Dispatcher?.InvokeAsync(() =>
-                ApplyOverlay(vis, ys, texts, roles, hovers, lineX0, lineX1, pyTop, rightSide)); } catch { }
+                ApplyOverlay(vis, ys, texts, roles, hovers, lineX0, lineX1, pyTop, rightSide)); } catch (Exception _sx) { SentinelCore.Swallow("SentinelDeck.UpdateOrderOverlay", _sx); }
         }
 
         // UI thread: lazily build the hit-transparent Canvas + 3 reusable line/pill slots, above all SharpDX rendering.
@@ -2520,7 +2611,7 @@ namespace NinjaTrader.NinjaScript.Indicators.Sentinel
                     bd.Visibility = System.Windows.Visibility.Visible;
                 }
             }
-            catch { }
+            catch (Exception _sx) { SentinelCore.Swallow("SentinelDeck.ApplyOverlay", _sx); }
         }
 
         private void RemoveOverlay()
@@ -2531,7 +2622,7 @@ namespace NinjaTrader.NinjaScript.Indicators.Sentinel
                     && host.Children.Contains(_olCanvas))
                     host.Children.Remove(_olCanvas);
             }
-            catch { }
+            catch (Exception _sx) { SentinelCore.Swallow("SentinelDeck.RemoveOverlay", _sx); }
             _olCanvas = null; _olLines = null; _olPills = null; _olTxts = null;
         }
 
@@ -2749,7 +2840,7 @@ namespace NinjaTrader.NinjaScript.Indicators.Sentinel
             {
                 sigEnabled = !sigEnabled;
                 if (sigEnabled) { RescanSignalSources(); ReresolveSigRefs(); PopulateSourceCombos();
-                    try { SentinelCore.Log("Deck:sig", "watch ON srcA=" + sigSrcA + " indA=" + (_sigIndA != null) + " plotA=" + _sigPlotA + " rule=" + sigRule + " cadence=" + sigCadence + " autofire=" + sigAutoFire); } catch { } }
+                    try { SentinelCore.Log("Deck:sig", "watch ON srcA=" + sigSrcA + " indA=" + (_sigIndA != null) + " plotA=" + _sigPlotA + " rule=" + sigRule + " cadence=" + sigCadence + " autofire=" + sigAutoFire); } catch (Exception _sx) { SentinelCore.Swallow("SentinelDeck.BuildSignalSection", _sx); } }
                 StyleToggle(btnSigEnable, sigEnabled, "Signal watch");
                 _sigLastDir = 0; _sigPrimed = false; ClearArmVisual();
                 UpdateSigStatusText(sigEnabled ? "watching" : "off");
@@ -2834,7 +2925,7 @@ namespace NinjaTrader.NinjaScript.Indicators.Sentinel
                     });
                 }
             }
-            catch { }
+            catch (Exception _sx) { SentinelCore.Swallow("SentinelDeck.DecodePresets", _sx); }
         }
 
         private SigPreset CaptureCurrent(string name) => new SigPreset
@@ -2903,7 +2994,7 @@ namespace NinjaTrader.NinjaScript.Indicators.Sentinel
                     cbPreset.Items.Add(new ComboBoxItem { Content = p.Name, Tag = p.Name, FontFamily = new FontFamily("Consolas"), FontSize = 10, Background = new SolidColorBrush(C_DIM), Foreground = new SolidColorBrush(C_TEXT) });
                 cbPreset.SelectedIndex = 0;
             }
-            catch { }
+            catch (Exception _sx) { SentinelCore.Swallow("SentinelDeck.RefreshPresetCombo", _sx); }
             finally { _presetUpdating = false; }
         }
 
@@ -2912,7 +3003,7 @@ namespace NinjaTrader.NinjaScript.Indicators.Sentinel
             if (cbPreset == null) return;
             _presetUpdating = true;
             try { foreach (ComboBoxItem it in cbPreset.Items) if ((it.Tag as string) == name) { cbPreset.SelectedItem = it; break; } }
-            catch { }
+            catch (Exception _sx) { SentinelCore.Swallow("SentinelDeck.SelectPresetInCombo", _sx); }
             finally { _presetUpdating = false; }
         }
 
@@ -3043,7 +3134,7 @@ namespace NinjaTrader.NinjaScript.Indicators.Sentinel
         }
 
         // TapeBegin/End run on the DATA thread; WPF throws if you repaint a control off the UI thread → marshal it.
-        private void UiRefreshTape() { try { ChartControl?.Dispatcher?.InvokeAsync(StyleTapeBtn); } catch { } }
+        private void UiRefreshTape() { try { ChartControl?.Dispatcher?.InvokeAsync(StyleTapeBtn); } catch (Exception _sx) { SentinelCore.Swallow("SentinelDeck.UiRefreshTape", _sx); } }
 
         // Called each tick from OnBarUpdate (Realtime only). Begin whenever ON+in-position (no gap; partial if armed
         // mid-trade), append every tick, end on →Flat, and SPLIT on a reversal so each leg is its own path.
@@ -3075,7 +3166,7 @@ namespace NinjaTrader.NinjaScript.Indicators.Sentinel
             _tapeMaxFav = 0; _tapeMaxAdv = 0; _tapeTicks = 0;
             Status("tick path: capturing " + (_tapeDir > 0 ? "long" : "short") + (_tapePartial ? " (partial)" : ""));
             // AUDIT TRAIL — every capture is logged so you never have to trust the button. Grep sentinel.log for Deck:tape.
-            try { NinjaTrader.NinjaScript.AddOns.Sentinel.SentinelCore.Log("Deck:tape", "capturing " + (_tapeDir > 0 ? "long" : "short") + " @ " + _tapeEntryPx.ToString("0.#####", CultureInfo.InvariantCulture) + " id=" + _tapeId + (_tapePartial ? " ⚠PARTIAL (armed mid-trade — entry not seen)" : "")); } catch { }
+            try { NinjaTrader.NinjaScript.AddOns.Sentinel.SentinelCore.Log("Deck:tape", "capturing " + (_tapeDir > 0 ? "long" : "short") + " @ " + _tapeEntryPx.ToString("0.#####", CultureInfo.InvariantCulture) + " id=" + _tapeId + (_tapePartial ? " ⚠PARTIAL (armed mid-trade — entry not seen)" : "")); } catch (Exception _sx) { SentinelCore.Swallow("SentinelDeck.TapeBegin", _sx); }
             UiRefreshTape();
         }
 
@@ -3101,7 +3192,7 @@ namespace NinjaTrader.NinjaScript.Indicators.Sentinel
                 double exitPx = _lastTradePx > 0 ? _lastTradePx : lastClose;   // v0.2.4: raw last-trade, not brick close
                 string dir    = System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "NinjaTrader 8", "Sentinel", "Excursions", "ticks");
                 System.IO.Directory.CreateDirectory(dir);
-                string bartag = ""; try { bartag = NinjaTrader.NinjaScript.AddOns.Sentinel.SentinelCore.BarTag(BarsPeriod); } catch { }
+                string bartag = ""; try { bartag = NinjaTrader.NinjaScript.AddOns.Sentinel.SentinelCore.BarTag(BarsPeriod); } catch (Exception _sx) { SentinelCore.Swallow("SentinelDeck.TapeEnd", _sx); }
                 string inst   = cachedInstrument != null && cachedInstrument.MasterInstrument != null ? cachedInstrument.MasterInstrument.Name : "X";
                 var sb = new System.Text.StringBuilder();
                 sb.Append("{\"schema\":\"tick.2\",\"kind\":\"manual_tickpath\",\"src\":\"last\"")
@@ -3122,9 +3213,9 @@ namespace NinjaTrader.NinjaScript.Indicators.Sentinel
                 if (_tapeBuf != null) sb.Append(_tapeBuf);
                 System.IO.File.AppendAllText(System.IO.Path.Combine(dir, _tapeId + ".jsonl"), sb.ToString());
                 Status("tick path saved: " + _tapeId + " (" + _tapeTicks + "t)");
-                try { NinjaTrader.NinjaScript.AddOns.Sentinel.SentinelCore.Log("Deck:tape", "saved " + _tapeId + " · " + _tapeTicks + " ticks · MFE " + _tapeMaxFav.ToString("0.#", CultureInfo.InvariantCulture) + "t MAE " + _tapeMaxAdv.ToString("0.#", CultureInfo.InvariantCulture) + "t" + (_tapePartial ? " ⚠PARTIAL" : "")); } catch { }
+                try { NinjaTrader.NinjaScript.AddOns.Sentinel.SentinelCore.Log("Deck:tape", "saved " + _tapeId + " · " + _tapeTicks + " ticks · MFE " + _tapeMaxFav.ToString("0.#", CultureInfo.InvariantCulture) + "t MAE " + _tapeMaxAdv.ToString("0.#", CultureInfo.InvariantCulture) + "t" + (_tapePartial ? " ⚠PARTIAL" : "")); } catch (Exception _sx) { SentinelCore.Swallow("SentinelDeck.TapeEnd", _sx); }
             }
-            catch (Exception ex) { Status("tick save failed: " + ex.Message); try { NinjaTrader.NinjaScript.AddOns.Sentinel.SentinelCore.Log("Deck:tape", "SAVE FAILED " + _tapeId + ": " + ex.Message); } catch { } }
+            catch (Exception ex) { Status("tick save failed: " + ex.Message); try { NinjaTrader.NinjaScript.AddOns.Sentinel.SentinelCore.Log("Deck:tape", "SAVE FAILED " + _tapeId + ": " + ex.Message); } catch (Exception _sx) { SentinelCore.Swallow("SentinelDeck.TapeEnd", _sx); } }
             _tapeBuf = null; _tapeTicks = 0;
             UiRefreshTape();
         }
@@ -3227,6 +3318,7 @@ namespace NinjaTrader.NinjaScript.Indicators.Sentinel
             if (pos == null) { Status("no position"); return; }
             int half = Math.Max(1, Math.Abs(pos.Quantity) / 2);
             var act = pos.MarketPosition == MarketPosition.Long ? OrderAction.Sell : OrderAction.BuyToCover;
+            StampCross(_tag + "_Half", act);                             // v0.2.6 — reference price BEFORE the cross
             try { acct.Submit(new[] { acct.CreateOrder(instr, act, OrderType.Market, OrderEntry.Manual, TimeInForce.Day, half, 0, 0, "", _tag + "_Half", Core.Globals.MaxDate, null) }); Status("closing half (" + half + ")"); }
             catch (Exception ex) { Status("half failed: " + ex.Message); }
         }
@@ -3301,7 +3393,7 @@ namespace NinjaTrader.NinjaScript.Indicators.Sentinel
                           try { SentinelCore.Log("Deck:trail", "Magic cci=" + cci.ToString("0") + " atr=" + atr.ToString("0.##")
                                 + (frozen ? " FROZEN(regime: cci not aligned)"
                                           : " cand=" + cand.ToString("0.##") + " curStop=" + cardStopPx.ToString("0.##")
-                                            + ((isLong ? cand > cardStopPx : cand < cardStopPx) ? " -> MOVE" : " HELD(cand not past lock)"))); } catch { }
+                                            + ((isLong ? cand > cardStopPx : cand < cardStopPx) ? " -> MOVE" : " HELD(cand not past lock)"))); } catch (Exception _sx) { SentinelCore.Swallow("SentinelDeck.ExecuteTrail", _sx); }
                       }
                       if (frozen) return;
                       newStop = cand; } break;
@@ -3312,7 +3404,8 @@ namespace NinjaTrader.NinjaScript.Indicators.Sentinel
                           halfTriggered = true;
                           int halfQty = Math.Max(1, pos.Quantity / 2);
                           var closeHalf = isLong ? OrderAction.Sell : OrderAction.BuyToCover;
-                          try { acct.Submit(new[] { acct.CreateOrder(instr, closeHalf, OrderType.Market, OrderEntry.Manual, TimeInForce.Day, halfQty, 0, 0, "", _tag + "_HalfBE", Core.Globals.MaxDate, null) }); } catch { }
+                          StampCross(_tag + "_HalfBE", closeHalf);       // v0.2.6 — reference price BEFORE the cross
+                          try { acct.Submit(new[] { acct.CreateOrder(instr, closeHalf, OrderType.Market, OrderEntry.Manual, TimeInForce.Day, halfQty, 0, 0, "", _tag + "_HalfBE", Core.Globals.MaxDate, null) }); } catch (Exception _sx) { SentinelCore.Swallow("SentinelDeck.ExecuteTrail", _sx); }
                           newStop = isLong ? entry + pHalfOff * tick : entry - pHalfOff * tick;
                       }
                       else return; }
@@ -3379,3 +3472,4 @@ namespace NinjaTrader.NinjaScript.Indicators.Sentinel
         }
     }
 }
+

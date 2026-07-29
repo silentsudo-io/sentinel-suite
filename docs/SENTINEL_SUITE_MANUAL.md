@@ -405,7 +405,7 @@ dedicated `EventState` news seam beyond the existing News.conf → news-lockout 
   hard-won history of managed-vs-unmanaged order-ownership.
 
 ### Deck — the manual order deck
-- **File:** `Indicators/SentinelDeck_v0_2_5.cs` (`Indicators.Sentinel`) · **Status:** ⚠ SIM-validate ·
+- **File:** `Indicators/SentinelDeck_v0_2_6.cs` (`Indicators.Sentinel`) · **Status:** ⚠ SIM-validate ·
   **PUBLIC TESTERS' PREVIEW (DEV)** since 2026-07-21 — see `SENTINEL_DECK_SPEC.md` + `SENTINEL_DECK_TESTING_GUIDE.md`
 - **What it is:** a discretionary manual order deck + account risk card: all order types, all
   price-entry methods, full trade management (bracket/OCO, breakeven, 7 trail modes, scale),
@@ -1334,7 +1334,7 @@ the weights → repeat.* Every part of this manual is one station on that loop.
 | `Indicators/SentinelExcursionRecorder_v1_4.cs` + `AddOns/SentinelExcursions_v1_0.cs` | The MAE/MFE lab (records the Council too) |
 | `Strategies/GTrader21v_0_1_7.cs` | The automated executor (auto-reads lab configs; `UseCouncilGate` decouple) |
 | `Strategies/SentinelBridge_v0_2_0.cs` | The autopilot — consumes `CouncilState`, records every fire |
-| `Indicators/SentinelDeck_v0_2_5.cs` | The manual order deck + SIGNAL ARM |
+| `Indicators/SentinelDeck_v0_2_6.cs` | The manual order deck + SIGNAL ARM |
 | `AddOns/SentinelDashboard_v1_0_0.cs` | The 12-tab control center |
 | `AddOns/Sentinel{Risk,Alert,State,Copier,LogEngine,LogService,Lens,Arc}Service*.cs` | The service layer |
 | `Docs/SENTINEL_DESIGN_SYSTEM.md` · `SENTINEL-CONTRACTS.md` · `ROADMAP.md` | The specs this manual condenses |
