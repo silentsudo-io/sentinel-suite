@@ -124,6 +124,63 @@ def normalise(text: str) -> list[str]:
     return [ln.rstrip() for ln in text.rstrip().split("\n")]
 
 
+# ── DOCS ────────────────────────────────────────────────────────────────────────
+# `docs/` is published prose, and it drifts exactly like `src/` does -- but nothing was
+# watching it. That gap is the same shape as two failures already on the record: the
+# dependency checker validated `src/` while the builder shipped a subset of `src/` and
+# nobody validated the archive; and the Field Manual documented a superseded conviction
+# formula until a stranger implemented it faithfully and inherited the bug. A published
+# doc is an API, so it gets the same monitor the code gets.
+#
+# Docs carry their OWN publish-time transforms, and normalising them away is what makes
+# the report readable (a naive diff calls every doc "drifted" forever):
+#   1. YAML frontmatter  -- the docs-health block (`tracks:`, `verified-against:`) is
+#      tooling metadata, stripped on the way out.
+#   2. {{tokens}}        -- substituted from Docs/_generated/facts.json so volatile
+#      numbers cannot drift. PROSE ONLY: fenced and inline code are protected, so a doc
+#      can document a literal {{token}}.
+#   3. CLAUDE.md         -- the private project map; the public equivalent is
+#      CONTRIBUTING.md. A published doc pointing at CLAUDE.md would dangle.
+# 1 and 2 are lifted from Sentinel\tools\md2atlas.py DELIBERATELY: if this normaliser and
+# that renderer disagree, this tool reports drift that does not exist.
+FRONTMATTER_RE = re.compile(r'^﻿?---\r?\n.*?\r?\n---\r?\n', re.S)
+TOKEN_RE = re.compile(r'\{\{([a-z0-9_]+)\}\}')
+CODE_RE = re.compile(r'```.*?```|`[^`\n]*`', re.S)
+CLAUDEMD_RE = re.compile(r'`?CLAUDE\.md`?')
+
+
+def _load_facts(local_root: Path) -> dict:
+    try:
+        import json as _json
+        p = local_root / "Docs" / "_generated" / "facts.json"
+        return _json.loads(p.read_text(encoding="utf-8"))
+    except Exception:
+        return {}
+
+
+def normalise_doc(text: str, facts: dict) -> list[str]:
+    text = text.replace("\r\n", "\n").replace("\r", "\n")
+    text = FRONTMATTER_RE.sub("", text, count=1)
+
+    stash: list[str] = []
+
+    def hide(m):
+        stash.append(m.group(0))
+        return "\x00%d\x00" % (len(stash) - 1)
+
+    text = CODE_RE.sub(hide, text)
+    text = TOKEN_RE.sub(lambda m: str(facts.get(m.group(1), m.group(0))), text)
+    text = re.sub(r"\x00(\d+)\x00", lambda m: stash[int(m.group(1))], text)
+    # AFTER restoring code spans, and backtick-preserving. `CLAUDE.md` is usually written as
+    # INLINE CODE, so running this while code is stashed would silently miss every backticked
+    # reference -- which is exactly what the first cut did, and the tool caught it as 2 lines of
+    # phantom drift on a file that had just been published.
+    text = CLAUDEMD_RE.sub(
+        lambda m: "`CONTRIBUTING.md`" if m.group(0).startswith("`") else "CONTRIBUTING.md", text)
+    # prose reflows freely; compare on content, not on where a line happened to wrap
+    return [ln.rstrip() for ln in text.rstrip().split("\n") if ln.strip()]
+
+
 def find_local(local_root: Path, published: Path) -> Path | None:
     """src/<bundle>/<Folder>/<f>.cs -> <local>/<Folder>/<f>.cs, else search the tree."""
     folder, name = published.parent.name, published.name
@@ -215,6 +272,32 @@ def main() -> int:
         return 2
 
     drifted, errors, orphaned, clean = [], [], [], 0
+
+    # ── docs/ ── published prose, same canonical-ahead model as src/, own transforms.
+    facts = _load_facts(local_root)
+    doc_dir = REPO / "docs"
+    local_docs = local_root / "Docs"
+    if doc_dir.is_dir() and local_docs.is_dir():
+        for pub in sorted(doc_dir.glob("*.md")):
+            rel = pub.relative_to(REPO)
+            loc = local_docs / pub.name
+            if not loc.exists():
+                # NOT orphaned: plenty of published docs are written for the public tree
+                # and have no private counterpart. Silence beats a false alarm here.
+                continue
+            a = normalise_doc(pub.read_text(encoding="utf-8", errors="replace"), facts)
+            b = normalise_doc(loc.read_text(encoding="utf-8", errors="replace"), facts)
+            if args.diff and pub.name == args.diff:
+                print("\n".join(difflib.unified_diff(
+                    a, b, fromfile=f"published/{pub.name}", tofile=f"local/{pub.name}",
+                    lineterm="")))
+                return 0
+            if a == b:
+                clean += 1
+            else:
+                n = sum(1 for l in difflib.unified_diff(a, b, n=0, lineterm="")
+                        if l[:1] in "+-" and l[:3] not in ("+++", "---"))
+                drifted.append((rel, n, loc))
 
     for pub in sorted(SRC.rglob("*.cs")):
         rel = pub.relative_to(REPO)

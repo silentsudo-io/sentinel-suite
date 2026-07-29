@@ -3,8 +3,8 @@
 
 > **BUILT (2026-07-03):** phases 1-4 shipped. SentinelCore v1.0.7 `GovernorState` registry +
 > `TradingAllowedToday`/`RecommendedSize`; **Risk v1.0.5/1.0.6 hosts it** (per-account daily realized-P&L
-> tracking, baseline reset at session rollover, DayComplete@cap / DayHalted@loss). Consumers: **GTrader21
-> gets it free via `CanEnter`**; **Copier** blocks a flat follower's new entry. Dashboard **Risk-tab governor
+> tracking, baseline reset at session rollover, DayComplete@cap / DayHalted@loss). Consumers: any strategy
+> **gets it free via `CanEnter`** (`SentinelBridge` does); **Copier** blocks a flat follower's new entry. Dashboard **Risk-tab governor
 > section** + **state.json `governor` block**.
 >
 > **EVOLVED into ACCOUNT PROFILES (SentinelCore v1.0.8, Risk v1.0.6):** the governor's config source is now
@@ -66,7 +66,7 @@ answer: **trade SMALLER, longer — never MORE to fix a ratio.**
 ## Integration (publish/consult — same pattern as the whole suite)
 - **SentinelCore:** per-account governor state — `SetGovernorState(account, allowed, reason, dailyPnl, cap)`
   + consult `TradingAllowedToday(account)` + `RecommendedSize(account)`.
-- **Consumers:** GTrader21 (Direct-EA) adds `&& TradingAllowedToday(acct)` to its entry gate; the copier's
+- **Consumers:** a strategy adds `&& TradingAllowedToday(acct)` to its entry gate; the copier's
   `MirrorToFollower` checks it per follower; manual-assist suppresses tickets; dashboard shows a Governor row.
 - **Host (recommended): the Risk service** — it already reads account P&L and drives the kill-switch, so
   extend it to per-account daily caps. (Or a standalone service.) Publishes to SentinelCore; all consult.
@@ -87,6 +87,6 @@ account=<name>|firm=lucid|ratio=0.20|target=9000|dailyLossStop=1500|manualDailyT
 ## Build phases
 1. SentinelCore governor registry + `TradingAllowedToday` / `RecommendedSize` consults.
 2. Risk-hosted per-account daily P&L tracking + cap/loss triggers + session reset + publish.
-3. Consumers: GTrader21 entry gate, copier per-follower check, manual-assist ticket suppression.
+3. Consumers: the strategy entry gate, copier per-follower check, manual-assist ticket suppression.
 4. Dashboard **Governor** row (per account: dailyPnl / cap / status / recommended size).
 5. Big-day SizeScale / dilution logic.

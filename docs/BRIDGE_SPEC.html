@@ -250,7 +250,7 @@
 <p class="kicker"><svg class="brandmark" viewBox="0 0 512 512" aria-hidden="true"><use href="#helm"/></svg><span class="livedot"></span> Sentinel Suite · NinjaTrader 8 · living document<span class="navsep">·</span><a class="navhome" href="SENTINEL_DOCS.html">Docs home →</a></p>
 <h1>Bridge — Design Spec</h1>
 </header>
-<blockquote><p><strong>STATUS: ✅ BUILT — spec retained as design record (SentinelBridge, internal v0.2.3).</strong> The Bridge is the execution surface that <em>consumes</em> the Council's fused verdict and <em>records</em> it on every fire, closing the suite's loop (see the manual, Part VIII). Written 2026-07-07. Companion to <code>bridge-plan</code> + <code>naming-council-bridge</code> memories, <code>SENTINEL-CONTRACTS.md §6</code> (the Council consumer contract), and the hardening framework. <strong>✅ BUILT — spec retained as design record (SentinelBridge, internal v0.2.3; </strong>v0.3.0<strong> adds the Helm-consumer role — see §10).</strong> The design below shipped.</p></blockquote>
+<blockquote><p><strong>STATUS: ✅ BUILT — spec retained as design record (SentinelBridge, internal v0.2.3).</strong> The Bridge is the execution surface that <em>consumes</em> the Council's fused verdict and <em>records</em> it on every fire, closing the suite's loop (see the manual, Part VIII). Written 2026-07-07. Companion to <code>bridge-plan</code> + <code>naming-council-bridge</code> memories, <code>SENTINEL-CONTRACTS.md §6</code> (the Council consumer contract), and the hardening framework. <strong>✅ BUILT — spec retained as design record (SentinelBridge, internal v0.3.1; </strong>v0.3.0<strong> adds the Helm-consumer role — see §10; </strong>v0.3.1<strong> adds the fill-cost reference price — see §7).</strong> The design below shipped.  ⚠ <strong>GTrader21 was PULLED from the suite on 2026-07-29 and is no longer part of it.</strong> This spec is a DESIGN RECORD, so the comparisons to it below are left intact as the historical reasoning that shaped the Bridge — but nothing here should be read as describing a current tool. <strong>The suite has two order sources: the Deck (manual) and the Bridge (automated).</strong></p></blockquote>
 <hr>
 <h2><span class="hn">1.</span>Purpose — close the loop</h2>
 <p>Today the Council <em>advises</em> (publishes <code>CouncilState</code>) but nothing <em>acts</em> on it, and — critically — nothing <strong>records</strong> the verdict at the moment of a trade so we can later ask <em>"did agreement actually pay?"</em> The weights are hunches until that record exists. The Bridge is the piece that:</p>
@@ -340,9 +340,16 @@ SentinelCore.NoteOrderSubmitted(Account.Name)     // fat-finger rate guard</code
 <h3>4.6 The RECORD-on-fire — the whole point</h3>
 <p>On every fire, capture a <strong>verdict snapshot</strong> and persist it so <strong>Lens</strong> can compute conditional performance ("when <code>Conviction ≥ 0.7</code> and MTF aligned, what was the PF?"). Two writes:</p>
 <pre><code>// 1) the daily event stream (audit / journal / slippage):
+//    v0.3.1 — `price` here MUST be a tradeable price. StampCross() captures the quote on the side
+//    being crossed (buy → ASK, sell → BID) at SUBMISSION. It was Close[0], which on SentinelTBars is
+//    the Heikin-Ashi (O+H+L+C)/4 average — a price that never traded, wrong by a direction-symmetric
+//    ~11 ticks. See SENTINEL_DESIGN_SYSTEM.md "The `intended` contract".
 SentinelCore.Ledger.Order(Account.Name, Instrument.FullName, dir&gt;0?"Buy":"Sell", "Market",
-                          qty, price, "SentinelBridge:council");
+                          qty, crossRefPx, "SentinelBridge:council");
 // on fill (OnExecutionUpdate):
+//    v0.3.1 — for a MARKET fill `intended` is that same stamped quote, so slip = the real CROSSING
+//    COST. It used to be `price` (the fill itself), making slip identically 0 — a tautology, not a
+//    measurement, and the reason entry cost had never once been recorded.
 SentinelCore.Ledger.Fill(Account.Name, Instrument.FullName, action, qty, intended, fill, tickSize,
                          "SentinelBridge:council");
 

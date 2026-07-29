@@ -1,3 +1,4 @@
+
 # Sentinel Suite — Design System & Build Framework
 
 **The single source of truth for building any Sentinel tool so it stays visually seamless and
@@ -5,7 +6,7 @@ architecturally consistent.** Read this before creating or restyling a Sentinel 
 strategy, AddOn, or dashboard tab. Update it whenever a convention changes — it is a *living*
 spec, not a snapshot.
 
-> Proven across: `SentinelDashboard`, `GTrader21` panel + on-chart risk card, `SentinelDeck`.
+> Proven across: `SentinelDashboard`, `SentinelDeck`, `SentinelBridge`, `SentinelCockpit`.
 > When a fourth tool needs something new, add the pattern here first, then build to it.
 
 ---
@@ -181,7 +182,8 @@ Translucent colored pill: bg `Color.FromArgb(28,c)`, border `Color.FromArgb(120,
 
 ## 4. On-chart risk card (SharpDX / Direct2D)
 
-The signature "glass instrument card." Reference: `GTrader21Panel.OnRenderRiskCard`, `SentinelDeck.OnRender`.
+The signature "glass instrument card." Reference: `SentinelDeck.OnRender` (with `UpdateCardData` for the
+cached display values — never read `Value[]` in `OnRender`).
 
 - **Glass fill:** vertical `LinearGradientBrush` `#1720324F..EE` → `#0A0E17..EF` (≈0.94 alpha), `RoundedRectangle` radius 13–14.
 - **Border:** `line` normally; `warn`/`down` when an advisory/lock state is active.
@@ -362,7 +364,7 @@ SignalExcursionRecorder_v1_3, ADXPro_v1_2_0, Eye_v1_1_0, Deck_v0_2_1; **required
 
 ### Which type?
 - **Indicator** — anything that lives on a chart (order decks, risk cards, scanners, drawing). Manual/discretionary order entry belongs here (`SentinelDeck`).
-- **Strategy** — automated entry/exit logic (`GTrader21`). Strategies CAN `OnRender` (verified).
+- **Strategy** — automated entry/exit logic (`SentinelBridge`). Strategies CAN `OnRender` (verified).
 - **AddOn** (`AddOnBase` singleton) — headless cross-tool services + the control-center dashboard (`SentinelCore`, `SentinelRiskService`, `SentinelDashboard`). Namespace `NinjaTrader.NinjaScript.AddOns.Sentinel`.
 
 ### Hosting a panel in the ChartTrader sidebar (the proven recipe)
@@ -421,19 +423,52 @@ paths route through it instead of raw `CanEnter`.
 | `SizeForRisk(acct, instr, stopTicks, riskDollars)` | int | contracts for a $-risk (0 = can't afford a 1-lot) |
 | `TickValue(instr)` | double | $ per tick (PointValue×TickSize) |
 | `NoteOrderSubmitted(account)` · `SetOrderGuards(maxQty, perWindow, sec)` | — | feed / tune the fat-finger rate guard (call NoteOrderSubmitted after every submit) |
-| `Ledger.Order(acct, instr, action, type, qty, px, tag)` · `Ledger.Action(kind, acct, detail)` · `Ledger.Fill(acct, instr, action, qty, intended, fill, tickSize, tag)` | — | WRITE (async) to the daily event stream. `Fill` carries intended-vs-actual price → adverse slip ticks (feeds the Slippage view); call it from `OnExecutionUpdate` (realtime only). |
+| `Ledger.Order(acct, instr, action, type, qty, px, tag)` · `Ledger.Action(kind, acct, detail)` · `Ledger.Fill(acct, instr, action, qty, intended, fill, tickSize, tag)` | — | WRITE (async) to the daily event stream. `Fill` carries intended-vs-actual price → adverse slip ticks (feeds the Slippage view); call it from `OnExecutionUpdate` (realtime only). **See the `intended` contract below — getting it wrong produces a number that looks like a measurement and is not.** |
 | `Ledger.ReadRecent(days)` · `Ledger.ReadDay(date)` · `Ledger.Parse(line)` | `List<Ledger.Entry>` / `Entry` | READ the stream → typed rows (`Evt`/`Account`/order:`Instrument,Action,Type,Qty,Price,Tag`/action:`Kind,Detail`; `TimeLocal`,`IsOrder`,`IsAlert`,`IsCritical`). The Dashboard **Journal** tab + future audit/slippage are VIEWS of this — never build a 2nd journal. |
 | `Ledger.Dir` · `Ledger.FileFor(date)` | string | ledger folder / a day's JSONL path |
 | `State.Save(key,json)` · `State.Load(key)` · `State.Clear(key)` · `State.Age(key)` · `State.SaveMap(key,map)` · `State.LoadMap(key)` | — / string / `Dictionary` | **intended-state store**: keyed atomic blob (`<SettingsDir>\State\<key>.json`) so a tool's arm-state (trail high-water / BE-armed / active stop) survives a restart. Save on change, Clear on flat, Load+**reconcile** on restart. Key by tool identity, e.g. `"GTrader21|<acct>|<instr>"`. |
 | `Alerts.Critical(title, detail)` · `Alerts.Info(...)` · `Alerts.Recent(n)` · `Alerts.Raised` event | — | 2-tier alerts (Critical rare by design). Consumers: dashboard Risk tab (Recent), **SentinelAlertService** (sound + optional push shell command, config `Sentinel\Alerts.conf`). |
 | `HardEnforceArmed(acct)` · `GovernorResetHour` / `GovernorResetLabel` | bool/int/string | opt-in hard auto-flatten flag · daily reset clock |
 
+#### ⚠ The `intended` contract — what you MUST pass for `slip` to mean anything (2026-07-28)
+
+`Ledger.Fill` computes `slip = (fill − intended)`, adverse-signed. `intended` is therefore **the price you
+were entitled to expect**, and it is a *different quantity per order type*:
+
+| order type | `intended` | what `slip` then measures |
+|---|---|---|
+| `Limit` / `StopLimit` | `order.LimitPrice` | price improvement / none — a limit fills at or better |
+| `StopMarket` | `order.StopPrice` | **stop slippage** — how far past your trigger the market went |
+| **`Market`** | **the live quote on the side you are crossing**, captured at **submission**: `GetCurrentAsk()` when buying, `GetCurrentBid()` when selling | **crossing cost** — the spread you paid to fill now |
+
+**Two anti-patterns, both of which shipped and both of which produced unusable data:**
+
+- ⛔ **`intended = price`** (the fill price). `slip = fill − fill ≡ 0`. This is a tautology wearing the
+  costume of a measurement, and a column full of zeros reads as *excellent execution* rather than
+  *no data*. It hid the fact that entry cost had never once been recorded. (`SentinelBridge` ≤ v0.3.0.)
+- ⛔ **`intended = 0`** for market orders. `Fill` only emits the `slip` field when `intended > 0`, so the
+  field is silently **absent**. More honest than a false zero, but still no data. (`SentinelDeck` ≤ v0.2.5;
+  `GTrader21` also did this, and was PULLED from the suite 2026-07-29 rather than fixed.)
+- ⛔ **`Close[0]` as a decision price.** On any Heikin-Ashi bar type (`SentinelTBars`) `Close[0]` is the
+  `(O+H+L+C)/4` average — **a price that never traded**. Joining order→fill over 39 live entries showed the
+  signature exactly: longs "filled" a median **+11 ticks** above and shorts **−11** below the recorded price,
+  symmetric by direction. Same defect as the excursion recorder's *9-tick bleed*
+  ([[firepx-is-synthetic-ha-close]]). **Never record an HA close as a price anything transacted at.**
+
+**Threading:** capture the quote where it is legal to read it. A `Strategy` can call `GetCurrentBid/Ask()`
+on the data thread; an `Indicator` whose order path runs on the **WPF UI thread** (the Deck) must instead
+**latch bid/ask in `OnMarketData`** and read the latch. **Key the stamp per order** when a tool has several
+market-order sites, or one fill will consume another's reference and report a fabricated cost.
+
+**Scope:** the reference comes from live market data ⇒ **realtime only**, and **forward-measuring** — it
+recovers nothing about fills already taken.
+
 **Fail-open vs fail-closed on the Gate (the core policy split):**
 - *Manual* tools (SentinelDeck) = **fail OPEN** — surface a Hard reason loudly but never block a human (they must always be able to exit). `if (gate.IsHard) StatusLoud(reason); submit anyway;`
-- *Automated* tools (GTrader21, Copier) = **fail CLOSED** — enter only on `gate.IsClear`. A code *exception* still fails open (resilience ≠ gate bypass).
+- *Automated* tools (`SentinelBridge`, Copier) = **fail CLOSED** — enter only on `gate.IsClear`. A code *exception* still fails open (resilience ≠ gate bypass).
 - **Exits never gate** — always allow flatten/close.
 
-Publish/consult registries exist for kill-switch, feed-watch (ref-counted), Eye verdicts, VolEnvelope regime, **ADX regime (v1.2.0 — `SetAdxState`/`GetAdxState`/`AllAdxStates` + `AdxState`; ADXPro publishes trend strength + bias as INT `-1/0/1`, `.TrendOn`/`.Building`/`.Aligned(dir)`)**, **trend line (v1.3.0 — `SetTrendState`/`GetTrendState`/`AllTrendStates` + `TrendState`; SentinelTrend publishes trailing direction INT `-1/0/1` + line price + signed distance ticks + bars-in-trend + `.Flipped`, `.IsUp`/`.IsDown`/`.Aligned(dir)`)**, **liquidity walls (v1.4.0 — `SetLiquidityState`/`GetLiquidityState`/`AllLiquidityStates` + `LiquidityState`; LiquidityWalls publishes absorption z-score + side INT `-1` support-below/`0`/`1` resistance-above + nearest wall above/below price + distances, with `.ResistanceAbove`/`.SupportBelow`/`.NearWall(ticks)`/`.BlocksEntry(dir,ticks)` so a consumer can veto entries into a wall)**, **CCI trend (v1.5.0 — `SetCciState`/`GetCciState`/`AllCciStates` + `CciState`; WoodiesCCIPro publishes persisted Woodies trend state INT `-2..+2` + Main/Turbo CCI + slope + last entry signal, with `.Bias`/`.Strong`/`.TrendOn`/`.Aligned(dir)`)**, **brick/bar-state (v1.6.0 — `SetBrickState`/`GetBrickState`/`AllBrickStates` + `BrickState`; the Sentinel bartypes publish adaptive ATR + brick direction INT `-1/1` + offsets + live tick-countdown, with `.IsUp`/`.AtrTicks(ts)`/`.Aligned(dir)`)**, **the Council verdict (v1.7.0 — `SetCouncilState`/`GetCouncilState`/`AllCouncilStates` + `CouncilState`; see §6c)**, **session clock (v1.8.0 — `SetClockState`/`GetClockState`/`AllClockStates` + `ClockState`; Clock publishes session phase INT `0/1/2/3` + mins-since-open/to-close + kill-window)**, **participation (v1.9.0 — `SetParticipationState`/`GetParticipationState`/`AllParticipationStates` + `ParticipationState`; Participation publishes relative volume + z-score + climax/dry-up)**, **structural levels (v1.10.0 — `SetLevelState`(object)/`GetLevelState` + `LevelState`; Location publishes VWAP+bands/PDH-PDL/OR/IB/session H-L + nearest level, `.InPath(dir,atr)`)**, **MTF alignment (v1.10.0 — `SetMtfState`(object)/`GetMtfState` + `MtfState`; MTF publishes higher-TF consensus Bias/AlignmentScore/AllAgree)**, **compression breakout (v1.11.0 — `SetCompressionState`(object)/`GetCompressionState` + `CompressionState`; CompressionBase publishes breakout pulse + held BreakDir + coil)**, **intermarket (v1.12.0 — `SetIntermarketState`(object)/`GetIntermarketState` + `IntermarketState`; Intermarket publishes a configurable correlated-instrument Lean)**, **WAE momentum (v1.13.0 — `SetWaeState`/`GetWaeState` + `WaeState`; SentinelWAE publishes a Waddah-Attar momentum-breakout vote)**, **god-reversal (v1.14.0 — `SetGodReversalState`/`GetGodReversalState` + `GodReversalState`; SentinelGodReversal publishes a candle-grammar reversal trigger)**, **flux order-flow (v1.31.0 — `SetFluxState`/`GetFluxState` + `FluxState`; the `SentinelFlux` order-flow-imbalance BAR TYPE publishes a signed tape-imbalance vote — the first genuinely ORTHOGONAL axis)**, fleet plan (Arc), config-use, governor, profiles — see `SentinelCore` (internal v1.31.0) for the setters when a tool should broadcast state.
+Publish/consult registries exist for kill-switch, feed-watch (ref-counted), Eye verdicts, VolEnvelope regime, **ADX regime (v1.2.0 — `SetAdxState`/`GetAdxState`/`AllAdxStates` + `AdxState`; ADXPro publishes trend strength + bias as INT `-1/0/1`, `.TrendOn`/`.Building`/`.Aligned(dir)`)**, **trend line (v1.3.0 — `SetTrendState`/`GetTrendState`/`AllTrendStates` + `TrendState`; SentinelTrend publishes trailing direction INT `-1/0/1` + line price + signed distance ticks + bars-in-trend + `.Flipped`, `.IsUp`/`.IsDown`/`.Aligned(dir)`)**, **liquidity walls (v1.4.0 — `SetLiquidityState`/`GetLiquidityState`/`AllLiquidityStates` + `LiquidityState`; LiquidityWalls publishes absorption z-score + side INT `-1` support-below/`0`/`1` resistance-above + nearest wall above/below price + distances, with `.ResistanceAbove`/`.SupportBelow`/`.NearWall(ticks)`/`.BlocksEntry(dir,ticks)` so a consumer can veto entries into a wall)**, **CCI trend (v1.5.0 — `SetCciState`/`GetCciState`/`AllCciStates` + `CciState`; WoodiesCCIPro publishes persisted Woodies trend state INT `-2..+2` + Main/Turbo CCI + slope + last entry signal, with `.Bias`/`.Strong`/`.TrendOn`/`.Aligned(dir)`)**, **brick/bar-state (v1.6.0 — `SetBrickState`/`GetBrickState`/`AllBrickStates` + `BrickState`; the Sentinel bartypes publish adaptive ATR + brick direction INT `-1/1` + offsets + live tick-countdown, with `.IsUp`/`.AtrTicks(ts)`/`.Aligned(dir)`)**, **the Council verdict (v1.7.0 — `SetCouncilState`/`GetCouncilState`/`AllCouncilStates` + `CouncilState`; see §6c)**, **session clock (v1.8.0 — `SetClockState`/`GetClockState`/`AllClockStates` + `ClockState`; Clock publishes session phase INT `0/1/2/3` + mins-since-open/to-close + kill-window)**, **participation (v1.9.0 — `SetParticipationState`/`GetParticipationState`/`AllParticipationStates` + `ParticipationState`; Participation publishes relative volume + z-score + climax/dry-up)**, **structural levels (v1.10.0 — `SetLevelState`(object)/`GetLevelState` + `LevelState`; Location publishes VWAP+bands/PDH-PDL/OR/IB/session H-L + nearest level, `.InPath(dir,atr)`)**, **MTF alignment (v1.10.0 — `SetMtfState`(object)/`GetMtfState` + `MtfState`; MTF publishes higher-TF consensus Bias/AlignmentScore/AllAgree)**, **compression breakout (v1.11.0 — `SetCompressionState`(object)/`GetCompressionState` + `CompressionState`; CompressionBase publishes breakout pulse + held BreakDir + coil)**, **intermarket (v1.12.0 — `SetIntermarketState`(object)/`GetIntermarketState` + `IntermarketState`; Intermarket publishes a configurable correlated-instrument Lean)**, **WAE momentum (v1.13.0 — `SetWaeState`/`GetWaeState` + `WaeState`; SentinelWAE publishes a Waddah-Attar momentum-breakout vote)**, **god-reversal (v1.14.0 — `SetGodReversalState`/`GetGodReversalState` + `GodReversalState`; SentinelGodReversal publishes a candle-grammar reversal trigger)**, **flux order-flow (v1.31.0 — `SetFluxState`/`GetFluxState` + `FluxState`; the `SentinelFlux` order-flow-imbalance BAR TYPE publishes a signed tape-imbalance vote — the first genuinely ORTHOGONAL axis)**, fleet plan (Arc), config-use, governor, profiles — see `SentinelCore` (internal v1.45.0) for the setters when a tool should broadcast state.
 New Profiles.conf keys: `resetHour=17` (governor daily reset hour, local) · `hardEnforce=true` (arm auto-flatten at the loss stop).
 
 ### 6b. Signals as PLOTS — the generic consumer seam (Deck SIGNAL ARM)
@@ -472,7 +507,7 @@ top of the consult chain: sensors publish → **Council fuses** → strategies/B
   Envelope/Brick echo the same OHLC) — `Conviction` is *agreement*, not *confirmation*. The verdict only gets independent as
   the **orthogonal axes** below publish their own seams. **Now partly addressed:** the **FLUX** voter (the `SentinelFlux`
   order-flow-imbalance bar type, §6d) is the first genuinely orthogonal axis — a tape-sourced vote, not the same OHLC.
-  The Council (v1.6.3) now fuses **22 voters**; interim `ConvictionFloor = 0.20`.
+  The Council now fuses **25 voters**; interim `ConvictionFloor = 0.20`.
 
 ### 6d. Signal collection — the orthogonal axes (planned seams, build in dependency order)
 The Council is built to pick these up automatically as each publishes a `…State` seam. **Rule for every new axis: publish a
@@ -536,6 +571,86 @@ touches an order; it publishes an `HelmIntent` and the actor stays the sole owne
   + an `OnBarUpdate` backstop), execute with your OWN order handles, and **publish `HelmState` back** each pass.
   Reference consumer: `SentinelBridge` v0.3.0 (`Docs/BRIDGE_SPEC.md`); reference surface (writer of intents):
   `SentinelCockpit` v0.5.0 ⑤ Helm (`Docs/SENTINEL_COCKPIT_SPEC.md`). Punch list: `Docs/HELM_TEST_PUNCHLIST.md`.
+
+### 6f. The runtime layer — faults, generations, replay, config cascade   *(SentinelCore v1.37.0 → v1.41.0)*
+
+Five Core releases added infrastructure that every tool is expected to use. None of it changes what a tool
+*does*; all of it changes what a tool can *tell you* when something goes wrong.
+
+#### `Swallow` — the mandatory catch idiom   *(v1.41.0, `SentinelCore.Foundation.cs`)*
+
+**⛔ `catch { }` is no longer acceptable anywhere in the suite.** A 2026-07-25 audit found ~350 empty catches
+and identified them as the proven mechanism behind most expensive bugs here — the BRK/FLUX hunt, 160 false
+`NAKED POSITION` criticals, the Eye never loading, the Deck plot race. The intent was always right (*never
+throw into a bar or order path*); the defect was that **"don't propagate" had been built as "don't record."**
+
+| Call | Returns | Use |
+|---|---|---|
+| `Swallow(tag, ex)` | — | record a swallowed exception. **Never rethrows**, so a migrated `catch { }` keeps its exact runtime behaviour |
+| `Faults()` | `Dictionary<string,long>` | per-tag counts — for the Cockpit / health board |
+| `FaultTotal()` | long | one number for a stat tile |
+
+```csharp
+catch { }                                   // ⛔ never
+catch (Exception _sx) { SentinelCore.Swallow("Deck.Fill", _sx); }   // ✅ always
+```
+
+- **Tag convention `"<Tool>.<site>"`** — stable, greppable, and it is what the counter is keyed by.
+- **Rate-limited per tag: first 3, then 1/min.** This is what makes it safe on a per-tick path, and it
+  directly answers the flood fear that made empty catches attractive.
+- **The legitimate empty catches are the LOGGING PATH itself** — `Swallow` → `Log` → `WriteLogFile` form a
+  cycle, so a fault recorded inside any of them recurses until the stack dies. `Swallow`'s own catch and
+  **`WriteLogFile`'s rotation catches** (v1.42.0) are therefore deliberately silent. Do not cite them as
+  precedent, and do not "migrate" them — in the Foundation logging path, recording the fault *is* the fault.
+- Migrated across **726 call sites / 86 files**. Remaining bare catches are frozen/superseded or vendor code.
+- **Log retention is `LOG_GENERATIONS = 6`** (v1.42.0). It was effectively **1**, which destroyed two forensic
+  windows mid-investigation; see `Docs/SENTINEL_RUNBOOK.md` §4b ⑤ for the operator rule that still applies.
+
+#### Generation beacon — telling DECOUPLED apart from ABSENT   *(v1.40.0)*
+
+An F5 recompile **orphans bars-type instances**: the chart keeps executing the pre-F5 assembly and publishes
+into *that* assembly's static seam store, while post-F5 consumers read the new one. The write succeeds into an
+orphaned store, every guard reads healthy, and the consumer just sees the seam missing. Only an **NT restart**
+fixes it — a chart reload does not. See `[[f5-decouples-bartype-seams]]`.
+
+| Call | Returns | Use |
+|---|---|---|
+| `Generation` | string | this assembly generation's id; changes on every compile/reload |
+| `Beacon(scope, kind)` | — | publisher heartbeat, called where the seam is published. Throttled 1 write / 5 s / key — safe per-tick |
+| `BeaconForeign(scope, kind, maxAgeSec = 120)` | string \| null | consumer check: **"gen ab12, 3s ago"** when a *different* generation is publishing this seam, else `null` |
+
+**Read the return value carefully — the distinction is the entire point.** A non-null answer means the sensor
+is **alive but decoupled** ⇒ restart NT. `null` means **genuinely absent / not loaded** ⇒ a different problem
+with a different fix. It survives the reload because it lives in an `AppDomain` data slot, not a static field.
+
+#### `ReplayMode` — the replay-only guard bypass   *(v1.38.0)*
+
+`ReplayMode` is true when **`Sentinel\replay.on`** exists. `Globals.Now` is wall-clock during Playback, so the
+bars-type freshness guard would otherwise reject every replayed bar — meaning **`BRK` could never vote in any
+replay bake.** With the flag on, those guards stand down.
+
+> **⚠ NEVER leave `replay.on` on a box that trades live** — replayed bars will stamp as fresh.
+
+#### `ConvictionState` — the flow-confirmed bias seam   *(v1.37.0)*
+
+`SetConvictionState(...)` / `GetConvictionState(scopeOrInstrument, maxAgeSec)`. Published by `SentinelDrift`,
+consumed by the Council's **CVB** voter. Carries `Bias` (voted only when the per-brick signed tape delta
+*confirms* the brick direction, `|agree| ≥ 0.15`, else abstains), plus `FlowDir` / `BrickDir` / `Conviction` /
+`Divergence`. It is the suite's order-flow-confirmed direction, as distinct from price-derived direction.
+
+#### Config cascade — `RosterIO` / `LaneIO`   *(v1.39.0, `SentinelCore.SystemBuilder.cs`)*
+
+Both resolve **scope ▸ instrument ▸ global, first match wins**:
+
+```
+Models\<INST>\<barTag>\Roster.conf     most specific
+Models\<INST>\Roster.conf              every bar type for that instrument
+Models\Roster.conf                     global fallback
+```
+
+`Lane.conf` used to be most-specific-**only**, so a chart on an unused bar type found no file, silently kept
+its F6 `ConvictionFloor`, and recorded almost nothing — indistinguishable from every sensor being dead. Making
+the two files behave identically is what made *new chart ▸ pick a bar type ▸ load ▸ run* possible.
 
 ---
 
@@ -624,7 +739,12 @@ Suite indicators/strategies live in a sub-namespace so they cohere in code AND c
 
 NT compiles **every `.cs` under `bin\Custom` into one `NinjaTrader.Custom.dll`** — one broken file blocks the whole compile. **NT's F5 is authoritative.**
 
-Headless sanity-check (flaky; produces GHOST errors NT does not hit):
+**↳ PREFERRED headless verify (supersedes the `dotnet build` recipe below):** the installed `cli-nt-bridge`
+AddOn drives NT's OWN Roslyn compiler — `C:\ntbv\Scripts\python.exe -m nt8bridge compile --type <Class>`
+returns real `{file,line,code}` diagnostics in ~15s with **none** of the ghost errors below (NT must be
+running; first load needs one manual F5). F5 stays the final authority. See `nt8-bridge-compile-loop` memory.
+
+Headless sanity-check (the older fallback; flaky; produces GHOST errors NT does not hit):
 ```bash
 dotnet build NinjaTrader.Custom.csproj -t:Rebuild -p:UseWPF=false \
   -p:ImportWindowsDesktopTargets=false -nologo -clp:ErrorsOnly 2>&1 \
