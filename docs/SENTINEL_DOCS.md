@@ -14,7 +14,7 @@ audience, all in one house style. Start with the reading path that fits why you'
 - **Writing code for it?** → the [Design System](SENTINEL_DESIGN_SYSTEM.html) (palette, components, build),
   the [ML Spec](SENTINEL_ML_SPEC.html) (schema + the offline Lab), the
   [Dataset Dictionary](SENTINEL_DATASET_DICTIONARY.html) (corpus syntax, nomenclature & how the Lab reads
-  it).
+  it), and the [Boundary Inventory](SENTINEL_BOUNDARY_INVENTORY.html) (every file → rung → bundle).
 
 ## The chapters
 
@@ -28,30 +28,14 @@ audience, all in one house style. Start with the reading path that fits why you'
 | **Reference** | [ML Spec](SENTINEL_ML_SPEC.html) | schema 1.3 instrumentation + the offline Lab | coder |
 | **Reference** | [Dataset Dictionary](SENTINEL_DATASET_DICTIONARY.html) | corpus syntax · nomenclature · bar-type & voter registries · how the Lab reads it | coder |
 | **Reference** | [Replay Spec](SENTINEL_REPLAY_SPEC.html) | run the loop on historical data · the fusion core | coder |
+| **Reference** | [Replay Validation](SENTINEL_REPLAY_VALIDATION.html) | proof the replay corpus is trustworthy (fidelity · continuity · determinism) | coder |
+| **Reference** | [Boundary Inventory](SENTINEL_BOUNDARY_INVENTORY.html) | every Sentinel file → rung → layer → bundle | coder |
 | **Reference** | [Data Platform Spec](SENTINEL_DATA_PLATFORM_SPEC.html) | the built SQLite corpus + ingester + Streamlit/Grafana (where the graded data lives) | coder |
 | **Reference** | [SentinelFlux Bars Spec](SENTINEL_FLUXBARS_SPEC.html) | the order-flow-imbalance bar type — the first genuinely orthogonal axis | coder |
+| **Reference** | [Helm Test Punchlist](HELM_TEST_PUNCHLIST.html) | the Helm interdiction-layer test checklist (plumbing vs position tier) | coder |
 
-## Specs & references
-
-Every published spec in this set — the specs, the doctrines, and the operator references.
-
-| Document | What it is | For |
-|---|---|---|
-| [Suite Manual](SENTINEL_SUITE_MANUAL.md) | the prose, zero-to-fluent manual (trader + coder) | anyone |
-| [Quick Reference Guide](QuickReferenceGuide.md) | the one-page cheat sheet | anyone |
-| [Naming Federation](SENTINEL_NAMING_FEDERATION.md) | the "Sentinel &lt;Thing&gt;" naming law | coder |
-| [Ship Manifest](SENTINEL_SHIP_MANIFEST.md) | every tool → its dependencies | coder |
-| [Rail Spec](SENTINEL_RAIL_SPEC.md) | the on-chart card rail + CardLayout | coder |
-| [Bridge Spec](BRIDGE_SPEC.md) | the automated Council-consumer strategy | coder |
-| [Cockpit Spec](SENTINEL_COCKPIT_SPEC.md) | the suite command surface | coder |
-| [System Builder Spec](SENTINEL_SYSTEM_BUILDER_SPEC.md) | per-lane roster & profile authoring | coder |
-| [Hardening Framework](SENTINEL_HARDENING_FRAMEWORK.md) | the safety substrate (Gate · Ledger · Alerts) | coder |
-| [Consistency Governor Spec](CONSISTENCY_GOVERNOR_SPEC.md) | the prop-account daily/trailing governor | coder |
-| [Candidate Library](SENTINEL_CANDIDATE_LIBRARY.md) | the indicator candidate catalog | coder |
-| [VolEnvelope Spec](SENTINEL_VOLENVELOPE_SPEC.md) | the "honest Bollinger" edge sensor | coder |
-| [God Reversal Doctrine](SENTINEL_GOD_REVERSAL_DOCTRINE.md) | the candle-grammar reversal sensor | coder |
-
-*Each document is an `.md` + its rendered `.html`. This is the curated front door to the published set.*
+*More specs sit beside these in `Docs\` (Bridge · Cockpit · **Helm** · System Builder · Design System · Contracts · Runbook · Replay …) —
+each an `.md` + its rendered `.html`. This table is the curated front door, not the full list.*
 
 ## The system in one line
 

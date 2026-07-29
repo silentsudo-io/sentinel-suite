@@ -249,7 +249,7 @@
 <header>
 <p class="kicker"><svg class="brandmark" viewBox="0 0 512 512" aria-hidden="true"><use href="#helm"/></svg><span class="livedot"></span> Sentinel Suite · NinjaTrader 8 · living document<span class="navsep">·</span><a class="navhome" href="SENTINEL_DOCS.html">Docs home →</a></p>
 <h1>Sentinel — Product Ladder &amp; Open-Source Packaging</h1>
-<p class="lede"><strong>Living document (started 2026-07-10).</strong> This is the <strong>product map</strong> — <em>what a user adopts, how deep they go, and how the pieces are packaged.</em> It is deliberately distinct from <a href="ROADMAP.html">ROADMAP.md</a>, the <strong>pipeline map</strong> (how data flows: sense → decide → act → record → learn). Same system, two lenses. When they disagree, the ROADMAP owns <em>engineering sequence</em>; this doc owns <em>packaging &amp; product shape</em>.</p>
+<p class="lede"><strong>Living document (started 2026-07-10).</strong> This is the <strong>product map</strong> — <em>what a user adopts, how deep they go, and how the pieces are packaged.</em> It is deliberately distinct from <a href="ROADMAP.md">ROADMAP.md</a>, the <strong>pipeline map</strong> (how data flows: sense → decide → act → record → learn). Same system, two lenses. When they disagree, the ROADMAP owns <em>engineering sequence</em>; this doc owns <em>packaging &amp; product shape</em>.</p>
 </header>
 <blockquote><p><strong>North star:</strong> open-source <strong>all of Sentinel</strong>, designed so the plumbing works <strong>no matter which rung a user is standing on.</strong> Open source and modularity are the <em>same cut</em> — if every rung must stand alone as its own bundle over a shared runtime, you cannot accidentally build a monolith.</p></blockquote>
 <blockquote><p><strong>Adoption tiers, not price tiers.</strong> Everything is free, so the ladder is a <em>depth-of-adoption</em> path — how far a user chooses to climb — <strong>not</strong> a pricing menu. "Focus" therefore means <em>what we release first and point newcomers at</em>, not <em>what we sell first</em> (see §7).</p></blockquote>
@@ -360,7 +360,7 @@
 <li><strong>CONTRIBUTING</strong> → the Platform Contract + the <code>port-sentinel-indicator</code> skill (how to add a compliant tool).</li>
 <li><strong>Issue / PR templates</strong>.</li>
 <li><strong>Third-party sensor compliance checklist</strong> (naming law + card + State seam).</li>
-<li><strong>Build verification</strong> — ⚠ <em>not conventional CI.</em> NT compiles ONE assembly and <strong>F5 is authoritative</strong>; headless builds false-clean and produce ghosts (see ../CONTRIBUTING.md build rules). So "CI" here = the <strong>documented headless-verify recipe + a manual F5 checklist</strong>, not an automated compile gate.</li>
+<li><strong>Build verification</strong> — ⚠ <em>not conventional CI.</em> NT compiles ONE assembly and <strong>F5 is authoritative</strong>; headless builds false-clean and produce ghosts (see <a href="../CONTRIBUTING.md">../CONTRIBUTING.md</a> build rules). So "CI" here = the <strong>documented headless-verify recipe + a manual F5 checklist</strong>, not an automated compile gate.</li>
 </ul>
 <hr>
 <h2><span class="hn">8.</span>Next steps</h2>
@@ -372,7 +372,7 @@
 <li>✅ <strong>License chosen — MPL-2.0</strong> (§6). Paste the full canonical MPL-2.0 text into <code>LICENSE</code> before publish.</li>
 </ol>
 <h3>✅ P2 ASSEMBLED (2026-07-11) — the Intelligence tier, two bundles</h3>
-<p>Both <strong>LAYER on Sensors</strong> for the runtime (no re-shipped <code>SentinelCore</code>/<code>SentinelSkin</code> → no CS0101), verified <strong>Safety-free</strong>. See SENTINEL_BOUNDARY_INVENTORY.md §9 for the file lists.</p>
+<p>Both <strong>LAYER on Sensors</strong> for the runtime (no re-shipped <code>SentinelCore</code>/<code>SentinelSkin</code> → no CS0101), verified <strong>Safety-free</strong>. See <a href="SENTINEL_BOUNDARY_INVENTORY.md">SENTINEL_BOUNDARY_INVENTORY.md</a> §9 for the file lists.</p>
 <ul>
 <li><strong>Sentinel Intelligence</strong> (Rungs 1→4): 5 orthogonal axes (Clock/Participation/Location/MTF/Intermarket) + <strong>Council</strong> + <code>SentinelNewsService</code>. Mtf/Intermarket host <code>SentinelTrend</code> (⇒ needs Sensors). <strong>Eye DEFERRED</strong> (JET engine; Council consumes its seam only, ships without it).</li>
 <li><strong>Sentinel Observatory</strong> (Rungs 2–3): <strong><code>SentinelExcursionRecorder_v2_0_0</code></strong> (clean-room — the private v1_4 with GodTrades21 hosting stripped; Council-only; schema 1.3 unchanged; <strong>headless-verified clean</strong>, awaits an F5) + LogEngine/LogService + Lens + Excursions.</li>
@@ -382,10 +382,10 @@
 <hr>
 <h2><span class="hn">9.</span>Relationship to other docs</h2>
 <ul>
-<li><a href="ROADMAP.html">ROADMAP.md</a> — the pipeline map (engineering sequence). This doc is the product map.</li>
-<li><a href="SENTINEL_SHIP_MANIFEST.html">SENTINEL_SHIP_MANIFEST.md</a> — every indicator's hard-deps (SentinelCore + SentinelSkin); the raw material for the boundary inventory.</li>
-<li><a href="SENTINEL_NAMING_FEDERATION.html">SENTINEL_NAMING_FEDERATION.md</a> — the 4-layer naming tell; the heart of the Platform Contract.</li>
-<li><a href="SENTINEL_DESIGN_SYSTEM.html">SENTINEL_DESIGN_SYSTEM.md</a> — the palette/component/State-seam spec (L0 + the publish protocol).</li>
+<li><a href="ROADMAP.md">ROADMAP.md</a> — the pipeline map (engineering sequence). This doc is the product map.</li>
+<li><a href="SENTINEL_SHIP_MANIFEST.md">SENTINEL_SHIP_MANIFEST.md</a> — every indicator's hard-deps (SentinelCore + SentinelSkin); the raw material for the boundary inventory.</li>
+<li><a href="SENTINEL_NAMING_FEDERATION.md">SENTINEL_NAMING_FEDERATION.md</a> — the 4-layer naming tell; the heart of the Platform Contract.</li>
+<li><a href="SENTINEL_DESIGN_SYSTEM.md">SENTINEL_DESIGN_SYSTEM.md</a> — the palette/component/State-seam spec (L0 + the publish protocol).</li>
 <li><a href="SENTINEL_PROCESS_ATLAS.html">SENTINEL_PROCESS_ATLAS.html</a> — the Field Manual (the education foundation).</li>
 </ul>
 <footer><span>Sentinel Suite · <b>Sentinel — Product Ladder &amp; Open-Source Packaging</b></span><span>living document · rendered from Markdown</span></footer>

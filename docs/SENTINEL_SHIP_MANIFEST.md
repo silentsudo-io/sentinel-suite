@@ -1,7 +1,7 @@
 # Sentinel Suite — SHIP MANIFEST
 
 > **⚠ Dated snapshot (2026-07-06).** The current ship set is larger than what's listed below — see
-> **SENTINEL_BOUNDARY_INVENTORY.md** for the authoritative file→rung→bundle map
+> **[SENTINEL_BOUNDARY_INVENTORY.md](SENTINEL_BOUNDARY_INVENTORY.md)** for the authoritative file→rung→bundle map
 > (it adds Council, Bridge, Cockpit, WAE, GodReversal, SentinelFlux, the 5 orthogonal axes, and the data platform).
 > The dependency-graph *principles* here (one-assembly compile, 2 shared runtime files, collision defense) still hold.
 
@@ -36,8 +36,8 @@ Every subscribed indicator hard-references exactly **two AddOn files**. Both are
 
 | File | Provides | Depends on |
 |---|---|---|
-| `AddOns/SentinelCore_v1_0_0.cs` | `SentinelCore` static seam — publish/consult state (`Get*`/`Set*`), `Log`, `SettingsDir`, `Ledger`, `State`, `Alerts` | static state + file I/O only |
-| `AddOns/SentinelSkin.cs` | `SentinelSkin` painter (glass cards), `CardLayout`, `enum SentinelCardCorner` | `System` + WPF only |
+| [`AddOns/SentinelCore_v1_0_0.cs`](../AddOns/SentinelCore_v1_0_0.cs) | `SentinelCore` static seam — publish/consult state (`Get*`/`Set*`), `Log`, `SettingsDir`, `Ledger`, `State`, `Alerts` | static state + file I/O only |
+| [`AddOns/SentinelSkin.cs`](../AddOns/SentinelSkin.cs) | `SentinelSkin` painter (glass cards), `CardLayout`, `enum SentinelCardCorner` | `System` + WPF only |
 
 **These two files are the Sentinel shared runtime.** Ship them with anything. They do NOT pull in
 the Dashboard, Copier, Risk, Alert, State-service, Log, Arc, or Lens — those are optional runtime
@@ -68,7 +68,7 @@ Each row = the complete export set. "Runtime" column = the 2 shared files from �
 | **SignalExcursionRecorder** | `Indicators/SignalExcursionRecorder_v1_3.cs` | Core + Skin | — |
 | **TBars (bars type)** | `BarsTypes/SentinelTBars_v1_0_0.cs` | Core (+ Skin if it draws) | Publishes `BrickState`. Verify exact filename before ship. |
 
-**Special case — Deck** (`Indicators/Deck_v0_2_2.cs`): the manual trader. Hard-deps Core + Skin
+**Special case — Deck** (`Indicators/SentinelDeck_v0_2_5.cs`): the manual trader. Hard-deps Core + Skin
 like the rest, but is functionally tied to live account/order infrastructure and the SIGNAL ARM
 plot-reader. **Not a "drop-in indicator" — ship as part of the full suite, not standalone.**
 

@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Sentinel · Sentinel Documentation</title>
+<title>Sentinel · Quick Reference Guide - NinjaTrader Advanced Suite</title>
 <style>
   :root{
     --void:#e7edf1; --panel:#f3f7f9; --surface:#ffffff; --surface2:#eaf0f3;
@@ -247,23 +247,305 @@
 <svg class="watermark" viewBox="0 0 512 512" aria-hidden="true"><use href="#helm"/></svg>
 <div class="wrap doc">
 <header>
-<p class="kicker"><svg class="brandmark" viewBox="0 0 512 512" aria-hidden="true"><use href="#helm"/></svg><span class="livedot"></span> Sentinel Suite · NinjaTrader 8 · living document</p>
-<h1>Sentinel Documentation</h1>
-<p class="lede">The one door into the Sentinel Suite's documentation — a bound set of living documents, four chapters by audience, all in one house style. Start with the reading path that fits why you're here.</p>
+<p class="kicker"><svg class="brandmark" viewBox="0 0 512 512" aria-hidden="true"><use href="#helm"/></svg><span class="livedot"></span> Sentinel Suite · NinjaTrader 8 · living document<span class="navsep">·</span><a class="navhome" href="SENTINEL_DOCS.html">Docs home →</a></p>
+<h1>Quick Reference Guide - NinjaTrader Advanced Suite</h1>
 </header>
-<h2>Start here — pick your path</h2>
-<ul>
-<li><strong>Just want the idea?</strong> → the <a href="SENTINEL_THESIS.html">Thesis</a>. What Sentinel is and why, in one read: fuse many honest signals into one fitted decision, grade it against reality, feed the grade back.</li>
-<li><strong>Want to run or extend it?</strong> → the <a href="SENTINEL_PROCESS_ATLAS.html">Field Manual</a>. The illustrated, end-to-end manual — from "I have no idea what this is" to "I can run it, extend it, and trust it."</li>
-<li><strong>Here to contribute or plan?</strong> → the <a href="ROADMAP.html">Roadmap</a> (the engineering pipeline) and the <a href="PRODUCT_LADDER.html">Product Ladder</a> (the open-source product/packaging map).</li>
-<li><strong>Writing code for it?</strong> → the <a href="SENTINEL_DESIGN_SYSTEM.html">Design System</a> (palette, components, build), the <a href="SENTINEL_ML_SPEC.html">ML Spec</a> (schema + the offline Lab), the <a href="SENTINEL_DATASET_DICTIONARY.html">Dataset Dictionary</a> (corpus syntax, nomenclature &amp; how the Lab reads it), and the <a href="SENTINEL_BOUNDARY_INVENTORY.html">Boundary Inventory</a> (every file → rung → bundle).</li>
-</ul>
-<h2>The chapters</h2>
-<div class="tblwrap"><table><thead><tr><th>Chapter</th><th>Document</th><th>What it is</th><th>For</th></tr></thead><tbody><tr><td><strong>Why</strong></td><td><a href="SENTINEL_THESIS.html">The Sentinel Thesis</a></td><td>the at-altitude argument — fuse · grade · feed back</td><td>anyone</td></tr><tr><td><strong>How / What</strong></td><td><a href="SENTINEL_PROCESS_ATLAS.html">Field Manual</a></td><td>the illustrated, end-to-end manual</td><td>trader + coder</td></tr><tr><td><strong>The plan</strong></td><td><a href="ROADMAP.html">Roadmap</a></td><td>the engineering pipeline &amp; forward vision</td><td>contributor</td></tr><tr><td><strong>The plan</strong></td><td><a href="PRODUCT_LADDER.html">Product Ladder</a></td><td>the open-source product &amp; packaging map</td><td>contributor</td></tr><tr><td><strong>Reference</strong></td><td><a href="SENTINEL_DESIGN_SYSTEM.html">Design System</a></td><td>palette · components · build/verify workflow</td><td>coder</td></tr><tr><td><strong>Reference</strong></td><td><a href="SENTINEL_ML_SPEC.html">ML Spec</a></td><td>schema 1.3 instrumentation + the offline Lab</td><td>coder</td></tr><tr><td><strong>Reference</strong></td><td><a href="SENTINEL_DATASET_DICTIONARY.html">Dataset Dictionary</a></td><td>corpus syntax · nomenclature · bar-type &amp; voter registries · how the Lab reads it</td><td>coder</td></tr><tr><td><strong>Reference</strong></td><td><a href="SENTINEL_REPLAY_SPEC.html">Replay Spec</a></td><td>run the loop on historical data · the fusion core</td><td>coder</td></tr><tr><td><strong>Reference</strong></td><td><a href="SENTINEL_REPLAY_VALIDATION.html">Replay Validation</a></td><td>proof the replay corpus is trustworthy (fidelity · continuity · determinism)</td><td>coder</td></tr><tr><td><strong>Reference</strong></td><td><a href="SENTINEL_BOUNDARY_INVENTORY.html">Boundary Inventory</a></td><td>every Sentinel file → rung → layer → bundle</td><td>coder</td></tr><tr><td><strong>Reference</strong></td><td><a href="SENTINEL_DATA_PLATFORM_SPEC.html">Data Platform Spec</a></td><td>the built SQLite corpus + ingester + Streamlit/Grafana (where the graded data lives)</td><td>coder</td></tr><tr><td><strong>Reference</strong></td><td><a href="SENTINEL_FLUXBARS_SPEC.html">SentinelFlux Bars Spec</a></td><td>the order-flow-imbalance bar type — the first genuinely orthogonal axis</td><td>coder</td></tr><tr><td><strong>Reference</strong></td><td><a href="HELM_TEST_PUNCHLIST.html">Helm Test Punchlist</a></td><td>the Helm interdiction-layer test checklist (plumbing vs position tier)</td><td>coder</td></tr></tbody></table></div>
-<p><em>More specs sit beside these in <code>Docs\</code> (Bridge · Cockpit · <strong>Helm</strong> · System Builder · Design System · Contracts · Runbook · Replay …) — each an <code>.md</code> + its rendered <code>.html</code>. This table is the curated front door, not the full list.</em></p>
-<h2>The system in one line</h2>
-<p>SENSORS watch (incl. the <strong>order-flow FLUX</strong> axis) → CORE carries → COUNCIL decides → BRIDGE / DECK act → GATE guards → LEDGER remembers → LENS grades → <strong>LAB learns</strong> (the built SQLite data platform fits the ConvictionFloor + per-bar-type weights) — and the grade feeds back into the decision.</p>
+<h2>📌 INDICATORS AT A GLANCE</h2>
+<div class="tblwrap"><table><thead><tr><th>Indicator</th><th>Purpose</th><th>Output</th><th>Best Used For</th></tr></thead><tbody><tr><td><strong>AdaptiveRegimeDetector</strong></td><td>Market regime classification</td><td>0-3 (Ranging/Trending/Breakout/Exhaustion)</td><td>Strategy filters, position sizing</td></tr><tr><td><strong>OrderFlowDivergence</strong></td><td>Price vs Delta divergences</td><td>±1 or 0 (Bullish/Bearish/None)</td><td>Reversal signals, trend exhaustion</td></tr><tr><td><strong>LiquidityPoolMapper</strong></td><td>Unmitigated S/R zones</td><td>Visual zones on chart</td><td>Target areas, stop placement</td></tr><tr><td><strong>MTFConfluenceOscillator</strong></td><td>Multi-timeframe strength</td><td>-100 to +100</td><td>Trade bias, entry filters</td></tr></tbody></table></div>
 <hr>
-<p><em>Every document here is a living document, rendered from Markdown into the shared Field Manual house style. The Markdown source (<code>.md</code>) sits beside each <code>.html</code>, so the words are versioned as plain text and the look is applied by one shared template.</em></p>
-<footer><span>Sentinel Suite · <b>Sentinel Documentation</b></span><span>living document · rendered from Markdown</span></footer>
+<h2>🎯 STRATEGIES AT A GLANCE</h2>
+<div class="tblwrap"><table><thead><tr><th>Strategy</th><th>Entry Style</th><th>Best Markets</th><th>Avg Holding Time</th><th>Risk Profile</th></tr></thead><tbody><tr><td><strong>RegimeAdaptiveStrategy</strong></td><td>Fractals + Breakouts</td><td>All conditions</td><td>Variable (regime-based)</td><td>Medium</td></tr><tr><td><strong>DeltaBreakoutStrategy</strong></td><td>Consolidation breakouts</td><td>Liquid futures (ES/NQ)</td><td>10-30 minutes</td><td>Medium-High</td></tr><tr><td><strong>RenkoMeanReversionScalper</strong></td><td>Oversold/Overbought</td><td>Renko charts only</td><td>5-15 Renko bars</td><td>Low-Medium</td></tr><tr><td><strong>WiseManV0002</strong></td><td>Fractal reversals</td><td>All (enhanced filters)</td><td>Variable</td><td>Medium</td></tr></tbody></table></div>
+<hr>
+<h2>🔥 QUICK SETUP GUIDE</h2>
+<h3>Setup 1: Trend Trader</h3>
+<pre><code>Chart: 5-minute ES
+Indicators:
+  - AdaptiveRegimeDetector (background colors ON)
+  - MTFConfluenceOscillator (panel below)
+  
+Strategy: RegimeAdaptiveStrategy
+Settings:
+  - FractalStrength: 5
+  - TrendingMultiplier: 1.5
+  - BreakoutMultiplier: 2.0</code></pre>
+<h3>Setup 2: Breakout Hunter</h3>
+<pre><code>Chart: 3-minute NQ
+Indicators:
+  - LiquidityPoolMapper (show swept zones)
+  - OrderFlowDivergence (enable alerts)
+  
+Strategy: DeltaBreakoutStrategy
+Settings:
+  - ConsolidationBars: 12
+  - MinDeltaChange: 1500
+  - Enable Tick Replay!</code></pre>
+<h3>Setup 3: Renko Scalper</h3>
+<pre><code>Chart: 4-tick Renko ES
+Indicators:
+  - AdaptiveRegimeDetector (labels OFF, just background)
+  - VWAP (built-in)
+  
+Strategy: RenkoMeanReversionScalper
+Settings:
+  - MaxADX: 22
+  - ScalpTarget: 6 ticks
+  - UseDynamicBands: true</code></pre>
+<hr>
+<h2>⚙️ DEFAULT PARAMETERS CHEAT SHEET</h2>
+<h3>AdaptiveRegimeDetector</h3>
+<pre><code>ADX Period: 14
+ATR Period: 14
+RSI Period: 14
+Lookback: 50
+Background Colors: ON</code></pre>
+<h3>OrderFlowDivergence</h3>
+<pre><code>Swing Strength: 5
+Lookback Bars: 50
+Min Swing Size: 10 ticks
+Show Lines: ON
+Enable Alerts: OFF (turn ON for live trading)</code></pre>
+<h3>LiquidityPoolMapper</h3>
+<pre><code>Swing Strength: 5
+Min Volume Multiplier: 1.5
+Max Zones: 50
+Extension Bars: 100
+Show Unmitigated: ON
+Show Swept: ON</code></pre>
+<h3>MTFConfluenceOscillator</h3>
+<pre><code>TF2 Multiplier: 3
+TF3 Multiplier: 9
+RSI Period: 14
+MACD: 12/26/9
+Weights: 50/30/20
+Strong Threshold: 60
+Moderate Threshold: 30</code></pre>
+<h3>RegimeAdaptiveStrategy</h3>
+<pre><code>Fractal Strength: 5
+Base Position: 1
+Multipliers: 0.5/1.0/1.5/0.25
+ATR Stop: 2.0x
+Trailing Stop: 10 ticks
+Breakeven: 8 ticks</code></pre>
+<h3>DeltaBreakoutStrategy</h3>
+<pre><code>Consolidation Bars: 10
+Range Contraction: 30%
+Min Delta: 1000
+Volume Spike: 1.5x
+ATR Stop: 2.0x
+Targets: 2.0x/3.5x/5.0x
+Partial Exits: 33/33/34%</code></pre>
+<h3>RenkoMeanReversionScalper</h3>
+<pre><code>RSI Period: 14
+RSI OB/OS: 70/30
+Max ADX: 25
+Min ADX: 10
+Band Deviation: 1.5
+Scalp Target: 8 ticks
+Extended Target: 15 ticks
+Stop Loss: 12 ticks
+Max Hold: 20 bars</code></pre>
+<hr>
+<h2>🚨 COMMON ISSUES &amp; FIXES</h2>
+<h3>Issue: Indicator not appearing in list</h3>
+<p><strong>Fix:</strong> Compile all scripts (F5 in NinjaScript Editor)</p>
+<h3>Issue: Strategy won't place orders</h3>
+<p><strong>Fix:</strong> </p>
+<ul>
+<li>Check BarsRequiredToTrade value</li>
+<li>Ensure EnableHistorical is ON for backtests</li>
+<li>Verify EnableLongTrades/EnableShortTrades</li>
+</ul>
+<h3>Issue: OrderFlowDivergence showing no signals</h3>
+<p><strong>Fix:</strong></p>
+<ul>
+<li>Reduce SwingStrength (try 3)</li>
+<li>Reduce MinimumSwingSize (try 5)</li>
+<li>Enable tick replay for accurate delta</li>
+</ul>
+<h3>Issue: DeltaBreakoutStrategy no entries</h3>
+<p><strong>Fix:</strong></p>
+<ul>
+<li>Reduce ConsolidationBars (try 8)</li>
+<li>Reduce MinDeltaChange (try 500)</li>
+<li>Check if RequireDeltaAlignment is too strict</li>
+</ul>
+<h3>Issue: RenkoMeanReversionScalper too many trades</h3>
+<p><strong>Fix:</strong></p>
+<ul>
+<li>Increase MaxADX (try 20)</li>
+<li>Tighten RSI levels (75/25 instead of 70/30)</li>
+<li>Increase MinVolumeMultiplier</li>
+</ul>
+<h3>Issue: MTFConfluenceOscillator always neutral</h3>
+<p><strong>Fix:</strong></p>
+<ul>
+<li>Check timeframe multipliers match chart type</li>
+<li>Adjust weights to favor primary timeframe</li>
+<li>Enable/disable components to find best mix</li>
+</ul>
+<hr>
+<h2>📊 OPTIMIZATION TIPS</h2>
+<h3>What to Optimize:</h3>
+<p>✅ Entry thresholds (RSI levels, ADX values) ✅ Stop loss and target multipliers ✅ Position size multipliers by regime ✅ Timeframe multipliers</p>
+<h3>What NOT to Optimize:</h3>
+<p>❌ Indicator periods (use standard 14, 20, etc.) ❌ Too many parameters at once ❌ Over-fitting to specific date ranges ❌ Rare edge cases</p>
+<h3>Optimization Process:</h3>
+<ol>
+<li><strong>Choose 2-3 parameters</strong> to optimize</li>
+<li><strong>Set reasonable ranges</strong> (±30% of default)</li>
+<li><strong>Use walk-forward analysis</strong> (in-sample vs out-sample)</li>
+<li><strong>Check multiple metrics:</strong></li>
+<li>Profit factor &gt; 1.5</li>
+<li>Win rate &gt; 50% (or high win-to-loss ratio)</li>
+<li>Max drawdown &lt; 20% of profit</li>
+<li>Minimum trades &gt; 50</li>
+</ol>
+<hr>
+<h2>💡 TRADING TIPS</h2>
+<h3>Best Practices:</h3>
+<ol>
+<li><strong>Start with ONE strategy</strong> and master it</li>
+<li><strong>Trade during liquid hours</strong> (9:30-16:00 ET for US indices)</li>
+<li><strong>Avoid major news events</strong> initially</li>
+<li><strong>Monitor regime changes</strong> - be ready to stop trading in unsuitable conditions</li>
+<li><strong>Use sim mode for 2+ weeks</strong> before live trading</li>
+<li><strong>Review trades daily</strong> - what worked, what didn't</li>
+<li><strong>Keep a trading journal</strong> with screenshots</li>
+</ol>
+<h3>When to Use Each Strategy:</h3>
+<p><strong>RegimeAdaptiveStrategy:</strong></p>
+<ul>
+<li>✅ All market conditions (adapts automatically)</li>
+<li>✅ When you want "set and forget"</li>
+<li>❌ Avoid during major events (manual override)</li>
+</ul>
+<p><strong>DeltaBreakoutStrategy:</strong></p>
+<ul>
+<li>✅ Liquid markets with good tick data</li>
+<li>✅ During RTH (Regular Trading Hours)</li>
+<li>❌ Low volume periods</li>
+<li>❌ Without tick replay enabled</li>
+</ul>
+<p><strong>RenkoMeanReversionScalper:</strong></p>
+<ul>
+<li>✅ Ranging/choppy markets (low ADX)</li>
+<li>✅ On properly configured Renko charts</li>
+<li>❌ Strong trending days</li>
+<li>❌ During breakout conditions</li>
+</ul>
+<hr>
+<h2>📈 PERFORMANCE EXPECTATIONS</h2>
+<h3>Realistic Targets (per 100 trades):</h3>
+<p><strong>RegimeAdaptiveStrategy:</strong></p>
+<ul>
+<li>Win Rate: 45-55%</li>
+<li>Profit Factor: 1.4-1.8</li>
+<li>Avg Win/Loss: 1.5:1</li>
+<li>Max Drawdown: 15-25% of profit</li>
+</ul>
+<p><strong>DeltaBreakoutStrategy:</strong></p>
+<ul>
+<li>Win Rate: 40-50%</li>
+<li>Profit Factor: 1.6-2.2</li>
+<li>Avg Win/Loss: 2:1</li>
+<li>Max Drawdown: 20-30% of profit</li>
+</ul>
+<p><strong>RenkoMeanReversionScalper:</strong></p>
+<ul>
+<li>Win Rate: 55-65%</li>
+<li>Profit Factor: 1.3-1.6</li>
+<li>Avg Win/Loss: 1:1.2</li>
+<li>Max Drawdown: 10-20% of profit</li>
+</ul>
+<p><strong>Note:</strong> These are rough guidelines. Actual performance varies by market, timeframe, and parameters.</p>
+<hr>
+<h2>🎓 LEARNING PATH</h2>
+<h3>Week 1: Understanding</h3>
+<ul>
+<li>Read full documentation</li>
+<li>Add all indicators to charts</li>
+<li>Observe behavior in different market conditions</li>
+<li>Take notes on regime changes</li>
+</ul>
+<h3>Week 2: Backtesting</h3>
+<ul>
+<li>Run Strategy Analyzer on each strategy</li>
+<li>Test different parameter sets</li>
+<li>Compare results across instruments</li>
+<li>Identify best setup for your trading style</li>
+</ul>
+<h3>Week 3: Sim Trading</h3>
+<ul>
+<li>Enable ONE strategy in simulation</li>
+<li>Monitor real-time performance</li>
+<li>Track actual fills vs backtest expectations</li>
+<li>Adjust parameters if needed</li>
+</ul>
+<h3>Week 4: Refinement</h3>
+<ul>
+<li>Review sim trading results</li>
+<li>Identify weaknesses (time of day, market conditions)</li>
+<li>Add custom filters if needed</li>
+<li>Final parameter optimization</li>
+</ul>
+<h3>Week 5+: Live Trading</h3>
+<ul>
+<li>Start with minimum position size</li>
+<li>Trade only during YOUR optimal hours</li>
+<li>Keep risk per trade at 1% max</li>
+<li>Scale up gradually as confidence builds</li>
+</ul>
+<hr>
+<h2>🔗 QUICK LINKS</h2>
+<p><strong>NinjaTrader Resources:</strong></p>
+<ul>
+<li>Support Forum: https://ninjatrader.com/support/forum/</li>
+<li>NinjaScript Documentation: https://ninjatrader.com/support/helpGuides/nt8/</li>
+<li>Video Tutorials: https://ninjatrader.com/support/videos/</li>
+</ul>
+<p><strong>Trading Education:</strong></p>
+<ul>
+<li>Market regime concepts</li>
+<li>Order flow analysis</li>
+<li>Multi-timeframe analysis</li>
+<li>Mean reversion vs momentum</li>
+</ul>
+<hr>
+<h2>✅ PRE-LIVE CHECKLIST</h2>
+<p>Before trading live with any strategy:</p>
+<ul>
+<li>[ ] Backtested 3+ months of data</li>
+<li>[ ] Sim traded 2+ weeks</li>
+<li>[ ] Win rate meets expectations</li>
+<li>[ ] Max drawdown is acceptable</li>
+<li>[ ] Understand every parameter</li>
+<li>[ ] Can explain why each trade was taken</li>
+<li>[ ] Risk management is programmed correctly</li>
+<li>[ ] Stops and targets execute properly</li>
+<li>[ ] Commission/slippage included in tests</li>
+<li>[ ] Emergency stop procedure in place</li>
+</ul>
+<hr>
+<h2>🆘 EMERGENCY PROCEDURES</h2>
+<h3>If Strategy Goes Haywire:</h3>
+<ol>
+<li><strong>IMMEDIATELY:</strong> Click "Disable" on strategy</li>
+<li><strong>Flatten all positions</strong> manually if needed</li>
+<li><strong>Check Strategy Analyzer</strong> logs</li>
+<li><strong>Review last trades</strong> in Trade Performance</li>
+<li><strong>Identify root cause</strong> before re-enabling</li>
+</ol>
+<h3>If Indicators Malfunction:</h3>
+<ol>
+<li><strong>Remove from chart</strong></li>
+<li><strong>Check for error messages</strong> in Output Window</li>
+<li><strong>Recompile</strong> NinjaScript (F5)</li>
+<li><strong>Re-add to chart</strong></li>
+<li><strong>If persists:</strong> Check parameters for invalid values</li>
+</ol>
+<hr>
+<p><em>Keep this guide handy for quick reference during trading hours!</em></p>
+<hr>
+<p><strong>Last Updated:</strong> January 8, 2026 <strong>Version:</strong> 1.0</p>
+<footer><span>Sentinel Suite · <b>Quick Reference Guide - NinjaTrader Advanced Suite</b></span><span>living document · rendered from Markdown</span></footer>
 </div></body></html>

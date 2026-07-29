@@ -10,10 +10,17 @@
 
 ## 1. The law (one-line recap)
 
-A Sentinel tool carries the tell on **4 layers**: ① display `Name = "Sentinel <Thing>"` · ② namespace
+A Sentinel tool carries the tell on **4 layers**: ① display `Name = "Sentinel <Thing> vX.Y.Z"` · ② namespace
 `…{Indicators|Strategies}.Sentinel` · ③ class/file `Sentinel<Thing>_vX_Y_Z` · ④ cyan card + label
 remover (+ a `…State` seam wired to the Council, for sensors). Full detail + rationale: design
 system §7.
+
+> ⚠ **Layer ① CARRIES THE VERSION — see [§9](#9-amendment--the-display-name-carries-the-version-ratified-2026-07-10),
+> which AMENDED this rule on 2026-07-10.** Frozen: `Name = "Sentinel <Thing> vX.Y.Z"`. In development:
+> `Name = "Sentinel <Thing> vX.Y.Z (DEV)"`. The pre-amendment wording (`Name = "Sentinel <Thing>"`, no version)
+> survives below **only inside the 2026-07-07 audit snapshot**, which is a historical record — do not apply it.
+> *(This pointer exists because the un-amended §1 recap was read as current and the version was stripped off a
+> display Name on 2026-07-21, re-creating the exact two-identical-picker-rows bug §9 was ratified to kill.)*
 
 **The migration split (why this is painless):**
 - **① display `Name` is display-only → retrofit NOW, safely, on everything** (no chart/workspace loss).
@@ -28,7 +35,7 @@ system §7.
 |---|---|---|
 | ② namespace `.Sentinel` | 31/42 | Strategies 0/7 · `SentinelCopierService` (`.SentinelCopier`) · `GTrader_v1_0_0` (flat) · BarsTypes 0/2 |
 | ③ class `Sentinel<Thing>` | 18/42 | most **chart indicators** are bare (`Council_v1_0_0`, `Eye_v1_1_0`, the axes, CompressionBase…) |
-| ① display `Name = "Sentinel <Thing>"` | **0/42** | every indicator's Name is the raw class-token (`"Council_v1_0_0"`); services use one-word `"SentinelRiskService"` |
+| ① display `Name = "Sentinel <Thing>"` *(pre-§9 wording — snapshot as taken)* | **0/42** | every indicator's Name is the raw class-token (`"Council_v1_0_0"`); services use one-word `"SentinelRiskService"` |
 | ④ label remover | 19/19 indicators | (only indicators; the sole miss is `GTrader_v1_0_0`) |
 
 **Headline:** the AddOns are basically compliant (class+namespace already `Sentinel*`), the **chart
@@ -63,7 +70,7 @@ carry the "Sentinel" tell via the class prefix + display Name only; only INDICAT
 | CompressionBase_v1_3_0 | "CompressionBase_v1_3_0" | **Sentinel Compression** ✅ | SentinelCompression_vX_Y_Z |
 | LiquidityWalls_v1_0_0 | "LiquidityWalls_v1_0_0" | **Sentinel Liquidity Walls** | SentinelLiquidityWalls_vX_Y_Z |
 | SignalExcursionRecorder_v1_3 | "SignalExcursionRecorder_v1_3" | **Sentinel Excursion Recorder** | SentinelExcursionRecorder_vX_Y_Z |
-| Deck_v0_2_2 | "Deck_v0_2_2" | **Sentinel Deck** | SentinelDeck_vX_Y_Z |
+| ~~Deck_v0_2_2~~ ✅ **DONE 2026-07-21** | "Deck_v0_2_2" | **Sentinel Deck v0.2.5 (DEV)** | `SentinelDeck_v0_2_5` |
 | SentinelBrickCounter_v1_0_0 | "SentinelBrickCounter v1.0.0" | **Sentinel Brick Counter** | *(class already compliant)* |
 | BuySellVolumePressureMountain_v1_0_0 | "BuySellVolumePressureMountain_v1_0_0" | **Sentinel BSVPMountain** ✅ | SentinelBSVPMountain_vX_Y_Z |
 | SentinelWAE_v1_0_0 | "Sentinel WAE" ✅ | *(already compliant — born under the law)* | *(class already compliant)* |
@@ -103,10 +110,12 @@ Files done: Council · Clock · Participation · Location · Mtf · Intermarket 
 WoodiesCCIPro · ADXPro(v1_2_0) · VolEnvelope · CompressionBase · LiquidityWalls · SignalExcursionRecorder ·
 Deck(v0_2_2) · SentinelBrickCounter.
 
-**⚠ Deck caveat (order-path):** `Deck_v0_2_2` couples its order tag to `Name` (`_tag = Name` in
-DataLoaded), so its live order tag changed `Deck_v0_2_2` → `"Sentinel Deck"` (now contains a space).
-**Decision pending** — recommend a stable space-free `_tag = "SentinelDeck"` (a true tag/Name decouple);
-one-time continuity note: flatten/re-arm any live Deck position across the change. Services/AddOns +
+**⚠ Deck caveat (order-path) — ✅ RESOLVED, and this paragraph was WRONG.** The Deck does **not** couple its
+order tag to `Name`: `_tag` is the hardcoded literal `"SentinelDeck"`, and both order naming and fill matching
+(`on.StartsWith(_tag + "_")`) key off that constant. **Verified in source 2026-07-21** during the
+`SentinelDeck_v0_2_5` rename, which was therefore order-path-safe with no flatten/re-arm needed.
+⚠ Left in place only as a warning: the stale wording would tell a maintainer that editing `Name` has
+order-path consequences — which would either paralyse a rename or invite someone to *re-create* the coupling. Services/AddOns +
 BarsTypes were NOT part of this pass (no chart `Name`; cosmetic display strings only).
 
 ### AT EACH TOOL'S NEXT VERSION BUMP (layers ②③ — identity)
@@ -255,7 +264,7 @@ verifies before any order:**
 
 ### 7.5 Live and prop accounts
 
-Broker-assigned names cannot be renamed and are **exempt**: `TAKEPROFIT935519372`, `LTD15081874790001`.
+Broker-assigned names cannot be renamed and are **exempt**: `TAKEPROFIT<account#>`, `LTD<account#>`.
 They are identified by their `Profiles.conf` `firm=` field, never by a prefix. The `PROP` lane is for **SIM
 rehearsal of a firm's rules**, not for the firm's real account.
 
@@ -269,7 +278,7 @@ rehearsal of a firm's rules**, not for the firm's real account.
 | — | `SIM-BURN-1` | new: destructive proofs |
 | — | `SIM-HAND-1` | new: Deck / discretionary |
 | — | `SIM-COPY-LEAD` · `SIM-COPY-F1` | new: copier fleet |
-| `TAKEPROFIT935519372` · `LTD15081874790001` | *(unchanged)* | broker-assigned, exempt |
+| `TAKEPROFIT<account#>` · `LTD<account#>` | *(unchanged)* | broker-assigned, exempt |
 
 **A rename is not a rewrite.** Historical Ledger rows keep their literal `acct` string and stay joinable.
 Nothing breaks retroactively.
@@ -418,7 +427,7 @@ Fidelity renames: WoodiesCCIPro→**Sentinel Woodies CCI Pro v1.0.0** · ADXPro�
 VolEnvelope→**Sentinel Vol Envelope v0.2.0** · CompressionBase→**Sentinel Compression Base v1.3.0** ·
 BuySellVolumePressureMountain→**Sentinel Buy Sell Volume Pressure Mountain v1.0.0** · SentinelWAE→**Sentinel
 Waddah Attar Explosion v1.0.0**. Version-only: Council/Clock/Eye/Trend/MTF/Location/Participation/Intermarket/
-LiquidityWalls/GodReversal/BrickCounter/Wallpaper/ExcursionRecorder. Deck→**Sentinel Deck v0.2.2** (its `_tag`
+LiquidityWalls/GodReversal/BrickCounter/Wallpaper/ExcursionRecorder. Deck→**Sentinel Deck v0.2.5 (DEV)** (its `_tag`
 was already the stable literal `"SentinelDeck"` — the §4 decouple caveat is RESOLVED; rename is order-path-safe).
 
 **Class/file/namespace renames remain deferred to each tool's next version bump** (identity). **EXCLUDED:**

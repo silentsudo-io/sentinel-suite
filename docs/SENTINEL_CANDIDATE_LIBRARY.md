@@ -2,7 +2,7 @@
 
 > A curated catalog of the `Downloads\` + Au/ama sources, scored for **value to the Council/Replay-Lab test surface**
 > and **license portability**. Built 2026-07-12b from a 6-agent survey of 90 `.cs` files. Companion to
-> Docs/ReplayLab and the [Product Ladder](PRODUCT_LADDER.md).
+> [Docs/ReplayLab](ReplayLab/) and the [Product Ladder](PRODUCT_LADDER.md).
 >
 > **UPDATE (2026-07-14): "nothing ported yet" is no longer true — the PORT MARATHON happened.** Many shortlist items
 > shipped (SentinelFlow, Structure, ADXVMA, SuperTrend, PSAR, Z-Score, VIDYA, Harmonic, TrendArchitect…). Read this as
