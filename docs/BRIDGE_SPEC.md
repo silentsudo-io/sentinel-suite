@@ -4,8 +4,13 @@
 > that *consumes* the Council's fused verdict and *records* it on every fire, closing the suite's loop
 > (see the manual, Part VIII). Written 2026-07-07. Companion to `bridge-plan` + `naming-council-bridge`
 > memories, `SENTINEL-CONTRACTS.md §6` (the Council consumer contract), and the hardening framework.
-> **✅ BUILT — spec retained as design record (SentinelBridge, internal v0.2.3; **v0.3.0** adds the Helm-consumer
-> role — see §10).** The design below shipped.
+> **✅ BUILT — spec retained as design record (SentinelBridge, internal v0.3.1; **v0.3.0** adds the Helm-consumer
+> role — see §10; **v0.3.1** adds the fill-cost reference price — see §7).** The design below shipped.
+>
+> ⚠ **GTrader21 was PULLED from the suite on 2026-07-29 and is no longer part of it.** This spec is a
+> DESIGN RECORD, so the comparisons to it below are left intact as the historical reasoning that shaped the
+> Bridge — but nothing here should be read as describing a current tool. **The suite has two order sources:
+> the Deck (manual) and the Bridge (automated).**
 
 ---
 
@@ -159,9 +164,16 @@ performance ("when `Conviction ≥ 0.7` and MTF aligned, what was the PF?"). Two
 
 ```
 // 1) the daily event stream (audit / journal / slippage):
+//    v0.3.1 — `price` here MUST be a tradeable price. StampCross() captures the quote on the side
+//    being crossed (buy → ASK, sell → BID) at SUBMISSION. It was Close[0], which on SentinelTBars is
+//    the Heikin-Ashi (O+H+L+C)/4 average — a price that never traded, wrong by a direction-symmetric
+//    ~11 ticks. See SENTINEL_DESIGN_SYSTEM.md "The `intended` contract".
 SentinelCore.Ledger.Order(Account.Name, Instrument.FullName, dir>0?"Buy":"Sell", "Market",
-                          qty, price, "SentinelBridge:council");
+                          qty, crossRefPx, "SentinelBridge:council");
 // on fill (OnExecutionUpdate):
+//    v0.3.1 — for a MARKET fill `intended` is that same stamped quote, so slip = the real CROSSING
+//    COST. It used to be `price` (the fill itself), making slip identically 0 — a tautology, not a
+//    measurement, and the reason entry cost had never once been recorded.
 SentinelCore.Ledger.Fill(Account.Name, Instrument.FullName, action, qty, intended, fill, tickSize,
                          "SentinelBridge:council");
 
