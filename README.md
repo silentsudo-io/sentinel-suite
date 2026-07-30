@@ -12,11 +12,29 @@ and a family of sensors that read the tape. Free, forever, and yours to extend.
 ![Themes: 7](https://img.shields.io/badge/themes-7-3FD1E0?style=flat-square)
 ![Order risk: none](https://img.shields.io/badge/order%20risk-none-25D08B?style=flat-square)
 
-**[Live site »](https://silentsudo-io.github.io/sentinel-suite/)** · [Documentation](docs/) · [The Ladder](#the-ladder)
+**[Live site »](https://silentsudo-io.github.io/sentinel-suite/)** ·
+**[Architecture Map](https://silentsudo-io.github.io/sentinel-suite/docs/SENTINEL_ARCHITECTURE_MAP.html)** ·
+**[Runtime Topology](https://silentsudo-io.github.io/sentinel-suite/docs/SENTINEL_RUNTIME_TOPOLOGY.html)** ·
+[Documentation](docs/) · [The Ladder](#the-ladder)
 
 ![The Sentinel suite on a GC futures chart](assets/screenshots/cohesion.png)
 
 </div>
+
+---
+
+## 📐 The whole system, on one page
+
+Two visual guides. If you read nothing else here, read these — they exist so nobody has to reverse-engineer
+the shape of the suite from a file tree.
+
+| Guide | What it answers |
+|---|---|
+| **[Architecture Map »](https://silentsudo-io.github.io/sentinel-suite/docs/SENTINEL_ARCHITECTURE_MAP.html)** | *What is all of this?* — 12 layers, from the bar clocks that decide when a bar exists, through the sensors and the fusion arbiter, to the order sources, the recorded corpus and the offline lab. **Every tool carries an honest status**, so you can tell what is live from what merely compiles. |
+| **[Runtime Topology »](https://silentsudo-io.github.io/sentinel-suite/docs/SENTINEL_RUNTIME_TOPOLOGY.html)** | *What actually runs, and who owns what?* — in-process vs out-of-process, a one-writer table for every artifact on disk, the thread and lifecycle rules, and the six invariants the design exists to protect. |
+
+Self-contained single files, light and dark, no external assets. *(They are HTML — the links above go to the
+rendered pages; opening them from the file list on GitHub shows source, not a page.)*
 
 ---
 
@@ -122,6 +140,12 @@ can see where it goes.
 ---
 
 ## Documentation
+
+Start with the two visual guides — the
+**[Architecture Map](https://silentsudo-io.github.io/sentinel-suite/docs/SENTINEL_ARCHITECTURE_MAP.html)**
+(every layer and tool, with per-tool status) and the
+**[Runtime Topology](https://silentsudo-io.github.io/sentinel-suite/docs/SENTINEL_RUNTIME_TOPOLOGY.html)**
+(what runs, and who owns each artifact).
 
 The full canon lives in **[docs/](docs/)** — the design system, the naming law, the field manual, the
 dataset dictionary, and a spec for every tool.

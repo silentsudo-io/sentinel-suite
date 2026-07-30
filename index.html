@@ -248,6 +248,7 @@
 <nav><div class="wrap">
   <div class="brand"><svg class="helm" aria-hidden="true"><use href="#helm"></use></svg>SENTINEL</div>
   <div class="links">
+    <a href="#architecture">Architecture</a>
     <a href="#axes">The Two Axes</a>
     <a href="#bundles">Bundles</a>
     <a href="#ladder">The Ladder</a>
@@ -271,6 +272,7 @@
       tool stands alone. Free, forever, and yours to extend.</p>
     <div class="cta">
       <a class="btn p" href="#install">▸ Install the Suite</a>
+      <a class="btn s" href="docs/SENTINEL_ARCHITECTURE_MAP.html">◱ See the Architecture</a>
       <a class="btn s" href="https://github.com/silentsudo-io/sentinel-suite">View on GitHub</a>
     </div>
     <div class="stats">
@@ -290,6 +292,50 @@
       <figcaption>One GC chart, the whole suite — sensors, an order-flow bar type, and the Deck.
         <span class="tag">Sentinel Dark</span></figcaption>
     </figure>
+  </div>
+</section>
+
+<section id="architecture" style="background:var(--panel);border-block:1px solid var(--line)">
+  <div class="wrap">
+    <div class="lead">
+      <div class="ey">Start here — one page each</div>
+      <h2>Two guides. The whole system at a glance.</h2>
+      <p>You shouldn't have to reverse-engineer the shape of a suite from its file tree. One page for what
+        Sentinel <b>is</b>, one for what actually <b>runs</b> — and both are honest about status, so you can
+        tell a tool that's live from one that merely compiles.</p>
+    </div>
+    <div class="cards" style="grid-template-columns:repeat(2,1fr)">
+      <div class="card">
+        <div class="k">Guide 1 · What it is</div>
+        <h3><a href="docs/SENTINEL_ARCHITECTURE_MAP.html" style="color:inherit;text-decoration:none">Architecture Map</a></h3>
+        <div class="rung">12 layers · every tool · per-tool status</div>
+        <p>From the bar clocks that decide when a bar exists, through the sensors and the fusion arbiter, to
+          the order sources, the recorded corpus and the offline lab.</p>
+        <ul>
+          <li>Seven <b>bar clocks</b> with their period ids — distance, signed flow, cost of movement</li>
+          <li>Every <b>sensor</b> grouped by family, so you can see what's correlated with what</li>
+          <li>The <b>offline Python lab</b> — the half whose job is to grade the other half</li>
+          <li><b>Status on every box:</b> live · built-not-loaded · audition · spec · withdrawn</li>
+        </ul>
+        <a class="btn s" href="docs/SENTINEL_ARCHITECTURE_MAP.html">◱ Open the Architecture Map</a>
+        <div class="foot"><span>Layers</span><b>12</b></div>
+      </div>
+      <div class="card">
+        <div class="k">Guide 2 · What runs</div>
+        <h3><a href="docs/SENTINEL_RUNTIME_TOPOLOGY.html" style="color:inherit;text-decoration:none">Runtime Topology</a></h3>
+        <div class="rung">processes · ownership · the boundaries that bite</div>
+        <p>Most expensive bugs here were boundary bugs. This is the map that makes a boundary visible before
+          it costs you a day.</p>
+        <ul>
+          <li><b>In-process vs out-of-process</b> — what shares NinjaTrader's one assembly, and what doesn't</li>
+          <li>A <b>one-writer table</b> for every artifact on disk — two writers is how a corpus rots</li>
+          <li><b>Thread and lifecycle rules</b> — UI vs data thread, and when an F5 isn't enough</li>
+          <li>The <b>six invariants</b> the whole design exists to protect</li>
+        </ul>
+        <a class="btn s" href="docs/SENTINEL_RUNTIME_TOPOLOGY.html">◱ Open the Runtime Topology</a>
+        <div class="foot"><span>Invariants</span><b>6</b></div>
+      </div>
+    </div>
   </div>
 </section>
 
@@ -532,6 +578,8 @@
         <a class="fl" href="https://github.com/silentsudo-io/sentinel-suite">→ github.com/silentsudo-io/sentinel-suite</a>
         <a class="fl" href="#bundles">→ Bundles &amp; install</a>
         <a class="fl" href="#ladder">→ The full ladder</a>
+        <a class="fl" href="docs/SENTINEL_ARCHITECTURE_MAP.html">→ Architecture map</a>
+        <a class="fl" href="docs/SENTINEL_RUNTIME_TOPOLOGY.html">→ Runtime topology</a>
         <a class="fl" href="docs/SENTINEL_DOCS.html">→ Field manual &amp; docs</a>
       </div>
     </div>
