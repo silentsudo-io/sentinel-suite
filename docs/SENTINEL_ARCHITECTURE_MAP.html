@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Sentinel · Architecture Map</title>
+<!--
+  SENTINEL ARCHITECTURE MAP — visual guide 1 of 2 (sibling: SENTINEL_RUNTIME_TOPOLOGY.html).
+  Hand-authored HTML (like SENTINEL_PROCESS_ATLAS.html) because md2atlas ESCAPES raw HTML and
+  these pages are diagrams, not prose. Palette tokens below are copied VERBATIM from the Atlas
+  <style> :root blocks — that file is the single source of truth for the house style. If you
+  restyle the Atlas, re-copy the three :root blocks here and in the sibling.
+  Built 2026-07-29 against SentinelCore v1.45.0 / Council v1.11.0.
+-->
+<style>
+  /* ── house-style tokens: VERBATIM from SENTINEL_PROCESS_ATLAS.html ─────────────── */
+  :root{
+    --void:#e7edf1; --panel:#f3f7f9; --surface:#ffffff; --surface2:#eaf0f3;
+    --ink:#16222c; --ink2:#586873; --line:#cdd8de; --grid:#dde5ea;
+    --accent:#0b8ea1; --flow:#0d8fa2;
+    --up:#12a56f; --down:#e0424f; --warn:#c9861a;
+    --mono:ui-monospace,"Cascadia Code","SF Mono",Consolas,Menlo,monospace;
+    --sans:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  }
+  @media (prefers-color-scheme:dark){
+    :root{
+      --void:#0a0e13; --panel:#0d131a; --surface:#141c25; --surface2:#0f161e;
+      --ink:#e2e9ee; --ink2:#8a9ba8; --line:#26333f; --grid:#131c25;
+      --accent:#4ad6e8; --flow:#3fb6c9; --up:#25d08b; --down:#ff5c6a; --warn:#f2b23c;
+    }
+  }
+  :root[data-theme="light"]{
+    --void:#e7edf1; --panel:#f3f7f9; --surface:#ffffff; --surface2:#eaf0f3;
+    --ink:#16222c; --ink2:#586873; --line:#cdd8de; --grid:#dde5ea;
+    --accent:#0b8ea1; --flow:#0d8fa2; --up:#12a56f; --down:#e0424f; --warn:#c9861a;
+  }
+  :root[data-theme="dark"]{
+    --void:#0a0e13; --panel:#0d131a; --surface:#141c25; --surface2:#0f161e;
+    --ink:#e2e9ee; --ink2:#8a9ba8; --line:#26333f; --grid:#131c25;
+    --accent:#4ad6e8; --flow:#3fb6c9; --up:#25d08b; --down:#ff5c6a; --warn:#f2b23c;
+  }
+
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--void);color:var(--ink);font-family:var(--sans);line-height:1.5;
+       -webkit-font-smoothing:antialiased}
+  .wrap{max-width:1180px;margin:0 auto;padding:48px 22px 96px}
+
+  /* ── header ───────────────────────────────────────────────────────────────────── */
+  .kicker{font-family:var(--mono);font-size:11px;letter-spacing:.34em;text-transform:uppercase;
+          color:var(--accent);display:flex;align-items:center;gap:9px;margin:0 0 14px;flex-wrap:wrap}
+  .livedot{width:8px;height:8px;border-radius:50%;background:var(--accent)}
+  h1{font-family:var(--mono);font-weight:700;font-size:clamp(28px,4.6vw,44px);letter-spacing:-.015em;margin:0 0 12px}
+  h1 .g{color:var(--accent)}
+  .lede{font-size:17px;color:var(--ink2);max-width:74ch;margin:0 0 22px}
+  .lede b{color:var(--ink);font-weight:620}
+  .meta{display:flex;flex-wrap:wrap;gap:7px;margin:0 0 26px}
+  .meta .s{font-family:var(--mono);font-size:11.5px;color:var(--ink2);background:var(--surface);
+           border:1px solid var(--line);border-radius:999px;padding:5px 12px}
+  .meta .s b{color:var(--accent);font-weight:700}
+
+  /* ── legend ───────────────────────────────────────────────────────────────────── */
+  .legend{display:flex;flex-wrap:wrap;gap:9px 20px;margin:0 0 30px;padding:13px 16px;
+          border:1px solid var(--line);border-radius:12px;background:var(--panel)}
+  .legend .k{display:flex;align-items:center;gap:8px;font-family:var(--mono);font-size:11.5px;color:var(--ink2)}
+  .legend .k b{color:var(--ink);font-weight:620}
+
+  /* ── status chips ─────────────────────────────────────────────────────────────── */
+  .chip{font-family:var(--mono);font-size:9.5px;letter-spacing:.09em;text-transform:uppercase;
+        font-weight:700;padding:2px 6px;border-radius:4px;white-space:nowrap;vertical-align:1px}
+  .chip.live{color:var(--up);   background:color-mix(in srgb,var(--up) 14%,transparent);   border:1px solid color-mix(in srgb,var(--up) 38%,transparent)}
+  .chip.built{color:var(--accent);background:color-mix(in srgb,var(--accent) 14%,transparent);border:1px solid color-mix(in srgb,var(--accent) 38%,transparent)}
+  .chip.spec{color:var(--ink2);background:color-mix(in srgb,var(--ink2) 12%,transparent); border:1px solid var(--line)}
+  .chip.aud{color:var(--warn); background:color-mix(in srgb,var(--warn) 15%,transparent); border:1px solid color-mix(in srgb,var(--warn) 40%,transparent)}
+  .chip.dead{color:var(--down); background:color-mix(in srgb,var(--down) 13%,transparent); border:1px solid color-mix(in srgb,var(--down) 38%,transparent)}
+
+  /* ── layer stack ──────────────────────────────────────────────────────────────── */
+  .layer{border:1px solid var(--line);border-radius:15px;background:var(--panel);padding:16px 17px 18px;
+         position:relative;overflow:hidden}
+  .layer::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--flow);opacity:.75}
+  .layer.money::before{background:var(--up)}
+  .layer.guard::before{background:var(--warn)}
+  .layer.py::before{background:var(--accent)}
+  .lhead{display:flex;align-items:baseline;gap:12px;margin:0 0 4px;flex-wrap:wrap}
+  .ln{font-family:var(--mono);font-size:12px;font-weight:700;color:var(--void);background:var(--flow);
+      min-width:23px;height:23px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;
+      flex:0 0 auto;position:relative;top:2px}
+  .layer.money .ln{background:var(--up)} .layer.guard .ln{background:var(--warn)} .layer.py .ln{background:var(--accent)}
+  .lt{font-family:var(--mono);font-size:15.5px;font-weight:700;color:var(--ink);letter-spacing:-.01em}
+  .lsub{font-size:12.5px;color:var(--ink2);margin:0 0 13px 35px;max-width:96ch}
+  .lsub code{font-family:var(--mono);font-size:11.5px;color:var(--ink);background:var(--surface2);
+             padding:1px 5px;border-radius:4px}
+  .lsub b{color:var(--ink);font-weight:620}
+
+  .grid{display:grid;gap:9px;grid-template-columns:repeat(auto-fit,minmax(215px,1fr))}
+  .grid.tight{grid-template-columns:repeat(auto-fit,minmax(158px,1fr))}
+  .grid.wide{grid-template-columns:repeat(auto-fit,minmax(300px,1fr))}
+  .box{border:1px solid var(--line);border-radius:10px;background:var(--surface);padding:9px 11px 10px}
+  .box .bt{font-family:var(--mono);font-size:12.5px;font-weight:700;color:var(--ink);
+           display:flex;gap:6px;align-items:baseline;flex-wrap:wrap;line-height:1.35}
+  .box .bs{font-size:11.5px;color:var(--ink2);margin-top:3px;line-height:1.45}
+  .box .bs code{font-family:var(--mono);font-size:10.5px;background:var(--surface2);padding:0 4px;border-radius:3px}
+  .box.acc{border-color:color-mix(in srgb,var(--accent) 45%,var(--line))}
+  .box.acc .bt{color:var(--accent)}
+  .box.up{border-color:color-mix(in srgb,var(--up) 42%,var(--line))}
+  .box.warnb{border-color:color-mix(in srgb,var(--warn) 42%,var(--line))}
+  .box.gone{opacity:.5;border-style:dashed}
+  .box.gone .bt{text-decoration:line-through;text-decoration-thickness:1px}
+  .box.ghost{border-style:dashed;background:transparent}
+
+  /* voter pills */
+  .pills{display:flex;flex-wrap:wrap;gap:5px;margin-top:7px}
+  .pill{font-family:var(--mono);font-size:11px;font-weight:700;color:var(--ink);background:var(--surface2);
+        border:1px solid var(--line);border-radius:5px;padding:2px 7px}
+  .pill i{font-style:normal;color:var(--ink2);font-weight:400;margin-left:5px;font-size:10px}
+  .pill.flowv{border-color:color-mix(in srgb,var(--accent) 55%,var(--line));color:var(--accent)}
+  .pill.z{border-style:dashed;color:var(--warn);border-color:color-mix(in srgb,var(--warn) 45%,var(--line))}
+  .pill.x{opacity:.45;text-decoration:line-through}
+
+  .flowarrow{display:flex;align-items:center;justify-content:center;gap:10px;margin:11px 0;
+             font-family:var(--mono);font-size:10.5px;letter-spacing:.22em;text-transform:uppercase;color:var(--ink2)}
+  .flowarrow::before,.flowarrow::after{content:"";height:1px;flex:1;max-width:280px;
+             background:linear-gradient(90deg,transparent,var(--line),transparent)}
+  .stack{display:flex;flex-direction:column}
+
+  /* callouts */
+  .note{margin:26px 0;padding:14px 17px;border:1px solid var(--line);border-left:3px solid var(--accent);
+        border-radius:0 11px 11px 0;background:var(--panel);font-size:13.5px;color:var(--ink)}
+  .note.warnc{border-left-color:var(--warn)}
+  .note.deadc{border-left-color:var(--down)}
+  .note .nt{font-family:var(--mono);font-size:10.5px;letter-spacing:.2em;text-transform:uppercase;
+            color:var(--accent);display:block;margin-bottom:6px;font-weight:700}
+  .note.warnc .nt{color:var(--warn)} .note.deadc .nt{color:var(--down)}
+  .note code{font-family:var(--mono);font-size:12px;background:var(--surface2);padding:1px 5px;border-radius:4px}
+  .note b{font-weight:650}
+
+  h2{font-family:var(--mono);font-weight:700;font-size:14px;letter-spacing:.2em;text-transform:uppercase;
+     color:var(--ink);margin:56px 0 6px;padding-bottom:11px;border-bottom:1px solid var(--line)}
+  h2 .hn{color:var(--accent);margin-right:11px}
+  .h2sub{font-size:13.5px;color:var(--ink2);margin:0 0 20px;max-width:88ch}
+
+  /* the closed loop */
+  .loop{display:flex;flex-wrap:wrap;align-items:stretch;gap:7px;margin-top:4px}
+  .lstep{flex:1 1 118px;border:1px solid var(--line);border-radius:10px;background:var(--surface);
+         padding:9px 10px;position:relative}
+  .lstep .n{font-family:var(--mono);font-size:9.5px;color:var(--accent);font-weight:700;letter-spacing:.14em}
+  .lstep .t{font-family:var(--mono);font-size:12.5px;font-weight:700;color:var(--ink);margin-top:2px}
+  .lstep .d{font-size:11px;color:var(--ink2);margin-top:3px;line-height:1.4}
+  .loopback{font-family:var(--mono);font-size:11px;color:var(--ink2);text-align:center;margin-top:11px;
+            padding-top:11px;border-top:1px dashed var(--line)}
+  .loopback b{color:var(--accent)}
+
+  footer{margin-top:74px;padding-top:20px;border-top:1px solid var(--line);display:flex;flex-wrap:wrap;
+         gap:10px;justify-content:space-between;font-family:var(--mono);font-size:11px;color:var(--ink2)}
+  footer b{color:var(--ink)}
+  a{color:var(--accent);text-decoration:none;border-bottom:1px solid color-mix(in srgb,var(--accent) 40%,transparent)}
+  @media (max-width:640px){.lsub{margin-left:0}}
+</style>
+</head><body>
+<div class="wrap">
+
+<div class="kicker"><span class="livedot"></span>Sentinel Suite · Visual guide 1 of 2</div>
+<h1>Sentinel <span class="g">Architecture Map</span></h1>
+<p class="lede">A <b>NinjaTrader-native trading OS</b>: bar clocks that decide when a bar exists, sensors that
+publish opinions into typed seams, a fusion arbiter that turns them into one verdict, two order sources under a
+shared safety gate, a recorded corpus, and a <b>53-file offline Python lab</b> whose whole job is to grade the
+other half honestly. Companion page: <a href="SENTINEL_RUNTIME_TOPOLOGY.html">Runtime Topology →</a></p>
+
+<div class="meta">
+  <span class="s"><b>Core</b> v1.45.0</span>
+  <span class="s"><b>Council</b> v1.11.0</span>
+  <span class="s"><b>Bar clocks</b> 7</span>
+  <span class="s"><b>Declared voters</b> 25</span>
+  <span class="s"><b>Context axes</b> 5</span>
+  <span class="s"><b>AddOn services</b> 22</span>
+  <span class="s"><b>Python tools</b> 53</span>
+  <span class="s"><b>Order sources</b> 2</span>
+  <span class="s">2026-07-29</span>
+</div>
+
+<div class="legend">
+  <span class="k"><span class="chip live">live</span><b>running / proven on real data</b></span>
+  <span class="k"><span class="chip built">built</span><b>compiles clean, not yet loaded or validated</b></span>
+  <span class="k"><span class="chip aud">audition</span><b>recorded at weight&nbsp;0 — graded, not trusted</b></span>
+  <span class="k"><span class="chip spec">spec</span><b>designed, nothing built</b></span>
+  <span class="k"><span class="chip dead">pulled</span><b>removed by decision — do not revive</b></span>
+</div>
+
+<div class="note">
+  <span class="nt">How to read the colour</span>
+  The palette is load-bearing, not decorative. <b>Cyan is the only accent</b> and means <i>live / watching</i>;
+  <b>green</b> is money and direction; <b>amber</b> is caution; <b>red</b> is loss or a closed door. There is no
+  rainbow of per-layer hues here on purpose — see <code>Docs/SENTINEL_DESIGN_SYSTEM.md</code> §0.
+</div>
+
+<div class="stack">
+
+  <!-- ① ACCESS -->
+  <div class="layer">
+    <div class="lhead"><span class="ln">1</span><span class="lt">Operator &amp; Agent Access</span></div>
+    <p class="lsub">Every surface is <b>Sentinel-owned</b> — a Sentinel control never lives in an NT dialog, so there
+      is exactly one source of truth per setting.</p>
+    <div class="grid">
+      <div class="box acc"><div class="bt">NT8 Charts <span class="chip live">live</span></div>
+        <div class="bs">The real substrate. A chart = one bar clock + its sensors + a Council + optionally the Deck.</div></div>
+      <div class="box"><div class="bt">Cockpit <span class="chip live">live</span></div>
+        <div class="bs">Command surface — re-reads every <code>…State</code> seam: “is my brain alive, and why isn’t it trading?” 5 tabs incl. Helm.</div></div>
+      <div class="box"><div class="bt">Dashboard <span class="chip live">live</span></div>
+        <div class="bs">Account/app-level board: risk, governor, Copy tab, audit rows.</div></div>
+      <div class="box"><div class="bt">Deck <span class="chip live">live</span></div>
+        <div class="bs">On-chart manual trader + SIGNAL ARM. Public testers’ preview shipped.</div></div>
+      <div class="box"><div class="bt">Grafana · <code>:3000</code> <span class="chip live">live</span></div>
+        <div class="bs">4 boards — trades · health · docs · node01. Ops, not research.</div></div>
+      <div class="box"><div class="bt">Streamlit · <code>:8501</code> <span class="chip live">live</span></div>
+        <div class="bs">Observatory + Explorer + Tick-Paths + Council-Paths. Research, not ops.</div></div>
+      <div class="box acc"><div class="bt">Claude Code + <code>nt8bridge</code> <span class="chip live">live</span></div>
+        <div class="bs">NT’s <b>own</b> compiler, headless, in ~15&nbsp;s with real Roslyn errors. <code>deploy</code> hot-reloads running instances.</div></div>
+      <div class="box"><div class="bt">SSH / Tailscale → node01 <span class="chip live">live</span></div>
+        <div class="bs">Remote bake worker driven over PowerShell; lights-out replay baking.</div></div>
+    </div>
+  </div>
+
+  <div class="flowarrow">the chart decides when a bar exists</div>
+
+  <!-- ② CLOCKS -->
+  <div class="layer">
+    <div class="lhead"><span class="ln">2</span><span class="lt">Bar Clocks — <code>BarsTypes\</code></span></div>
+    <p class="lsub">Sentinel’s first-class idea: <b>the clock is a hypothesis</b>. Each bar type answers “what unit of
+      market activity deserves one bar?” — and each publishes its own seam under its own scope, so the chart <i>is</i>
+      the bar type. Three axes are represented: <b>distance</b>, <b>signed flow</b>, <b>unsigned cost of movement</b>.</p>
+    <div class="grid tight">
+      <div class="box acc"><div class="bt">TBars <i>212201</i> <span class="chip live">live</span></div>
+        <div class="bs">Adaptive HA/Renko. Publishes <code>BrickState</code> → <b>BRK</b>. One “Speed Settings” knob.</div></div>
+      <div class="box"><div class="bt">TbarsCount <i>212202</i> <span class="chip live">live</span></div>
+        <div class="bs">Unsigned-activity clock — flow-clocked <i>without</i> direction.</div></div>
+      <div class="box acc"><div class="bt">Flux <i>212203</i> <span class="chip live">live</span></div>
+        <div class="bs">Order-flow <b>imbalance</b> bars. Publishes <code>FluxState</code> → <b>FLUX</b> + absorption damp.</div></div>
+      <div class="box"><div class="bt">Drift <i>212204</i> <span class="chip live">live</span></div>
+        <div class="bs">Asymmetric brick, flow-adaptive reversal edge. Publishes <code>ConvictionState</code> → <b>CVB</b>.</div></div>
+      <div class="box"><div class="bt">Lattice <i>212205</i> <span class="chip built">built</span></div>
+        <div class="bs"><b>Path-independent</b> Renko — every boundary is an exact lattice line, so determinism is provable. Needs F5 + NT restart.</div></div>
+      <div class="box"><div class="bt">Effort <i>212206</i> <span class="chip built">built</span></div>
+        <div class="bs">Closes on displacement <i>or</i> effort — <b>which one fired is the signal</b> (sweep vs absorption). Path-dependent by design.</div></div>
+      <div class="box up"><div class="bt">Tide <i>212207</i> <span class="chip live">live</span></div>
+        <div class="bs">Cumulative-order-flow clock. Bar height ≈ price impact per unit of aggression (Kyle’s λ). <b>The clock the live range-filter result came in on</b> — which is why the flow-clock hypothesis is being tested first.</div></div>
+    </div>
+  </div>
+
+  <div class="flowarrow">sensors read the bars and publish opinions</div>
+
+  <!-- ③ SENSORS -->
+  <div class="layer">
+    <div class="lhead"><span class="ln">3</span><span class="lt">Sensors &amp; Voters — 25 declared</span></div>
+    <p class="lsub">A voter never calls the Council. It <b>publishes a typed seam</b> (<code>SetXState</code>) and the
+      Council reads it. That inversion is why a voter can be auditioned at <code>w=0</code>, replaced, or graded
+      standalone without touching fusion. Seams are keyed by <b>scope</b> = <code>&lt;instrument&gt;.&lt;barTag&gt;</code>
+      — one chart’s worth of context.</p>
+    <div class="grid wide">
+      <div class="box"><div class="bt">Price / trend bloc <span class="chip live">live</span></div>
+        <div class="bs">Ten voices, all derived from price — and therefore all correlated. This bloc is the one the
+          07-26 re-test killed.</div>
+        <div class="pills">
+          <span class="pill">TRND<i>1.0</i></span><span class="pill">CCI<i>0.8</i></span><span class="pill">ADX<i>0.6</i></span>
+          <span class="pill">ENV<i>0.6</i></span><span class="pill">STRC<i>0.7</i></span><span class="pill">AVMA<i>0.6</i></span>
+          <span class="pill">SPRT<i>0.7</i></span><span class="pill">PSAR<i>0.5</i></span><span class="pill">ARCH<i>0.7</i></span>
+          <span class="pill">VDYA<i>0.5</i></span>
+        </div></div>
+      <div class="box"><div class="bt">Triggers &amp; mean-reversion <span class="chip live">live</span></div>
+        <div class="bs">One-shot voices. <b>Kind is load-bearing</b> — the conviction denominator counts a TRIGGER
+          differently from a STATE.</div>
+        <div class="pills">
+          <span class="pill">CMP<i>0.7</i></span><span class="pill">WAE<i>0.7</i></span><span class="pill">GREV<i>0.9</i></span>
+          <span class="pill">EXH<i>0.5</i></span><span class="pill">ZSC<i>0.4</i></span><span class="pill">HARM<i>0.4</i></span>
+        </div></div>
+      <div class="box acc"><div class="bt">Order-flow family <span class="chip aud">the untested family</span></div>
+        <div class="bs">The only bloc <b>not</b> derived from price. Three of these are published by a
+          <i>bar type</i>, not a study — the clock itself is the sensor.</div>
+        <div class="pills">
+          <span class="pill flowv">FLUX<i>bar type</i></span><span class="pill flowv">CVB<i>bar type</i></span>
+          <span class="pill flowv">CVD<i>0.?</i></span><span class="pill z">BSP<i>w=0</i></span>
+          <span class="pill flowv">FLOW<i>0.9</i></span>
+        </div></div>
+      <div class="box"><div class="bt">Structural &amp; macro <span class="chip live">live</span></div>
+        <div class="bs"><b>BRK</b> comes from the TBars clock; <b>IMKT</b> is instrument-keyed by design (a
+          correlated-market lean does not vary with your bar type).</div>
+        <div class="pills"><span class="pill">BRK<i>0.5</i></span><span class="pill">IMKT<i>0.6</i></span></div></div>
+      <div class="box warnb"><div class="bt">Exploration primitives <span class="chip aud">w = 0</span></div>
+        <div class="bs"><code>w=0</code> is a first-class state: <b>recorded in the corpus, zero fusion impact</b>.
+          It is how a voice earns promotion instead of being assumed.</div>
+        <div class="pills"><span class="pill z">STF<i>also drives the chop veto</i></span><span class="pill z">BSP</span></div></div>
+      <div class="box gone"><div class="bt">EYE <span class="chip dead">dead</span></div>
+        <div class="bs">Settled 2026-07-23. Not a voter, not in the audition, never synced. All four audition rosters
+          carry a DO-NOT-RE-ADD block — the decision is enforced in the artifact, not just remembered.</div></div>
+    </div>
+    <p class="lsub" style="margin-top:13px;margin-bottom:0">Alongside the voters: <b>~30 ported smoother / filter
+      primitives</b> (SMA…ZLEMA, Laguerre, Butterworth, Gaussian, SuperSmoother, Tillson T3, DSMA, LLMA…) that voters
+      build on, plus <code>SentinelWallpaper</code>, <code>SentinelBrickCounter</code>, <code>SentinelBarDump</code> and
+      <code>SentinelTapeRecorder</code> as instrumentation.</p>
+  </div>
+
+  <!-- ④ AXES -->
+  <div class="layer">
+    <div class="lhead"><span class="ln">4</span><span class="lt">Orthogonal Context Axes</span></div>
+    <p class="lsub">Not voters — <b>modulators and vetoes</b>. They do not add direction; they change how much the
+      direction is worth, or shut the door. Toggled via the Council’s <code>Consult*</code> settings, not
+      <code>Roster.conf</code> lines.</p>
+    <div class="grid tight">
+      <div class="box"><div class="bt">CLOCK <span class="chip live">live</span></div><div class="bs">Session phase · mins-to-close · kill window. <b>Instrument-keyed by design.</b></div></div>
+      <div class="box"><div class="bt">PARTIC <span class="chip live">live</span></div><div class="bs">Time-normalised RVOL + climax/dry-up. ⚠ scope-keyed — <b>load on every Council chart</b>.</div></div>
+      <div class="box"><div class="bt">MTF <span class="chip live">live</span></div><div class="bs">Higher-timeframe consensus ladder; counter-HTF penalty.</div></div>
+      <div class="box warnb"><div class="bt">LOC <span class="chip live">veto</span></div><div class="bs">VWAP / PDH-PDL / OR / IB levels sitting in the trade’s path.</div></div>
+      <div class="box warnb"><div class="bt">LIQ <span class="chip live">veto</span></div><div class="bs">Order-flow absorption walls — vetoes an entry <i>into</i> a wall.</div></div>
+      <div class="box ghost"><div class="bt">Profile · Regime</div><div class="bs">Volume-profile location and K-means volatility regime feed the conviction/size damps rather than the direction.</div></div>
+    </div>
+  </div>
+
+  <div class="flowarrow">one verdict per scope</div>
+
+  <!-- ⑤ FUSION -->
+  <div class="layer">
+    <div class="lhead"><span class="ln">5</span><span class="lt">Fusion — the Council</span></div>
+    <p class="lsub">The arbiter reads seams and emits <b>one</b> <code>CouncilState</code> per scope. It is an
+      <b>unfitted linear model</b> — hand weights, a conviction floor — and saying so out loud is the point: the
+      Lab exists to fit it, and the 07-26 re-test says the fused direction is currently a coin flip gross.</p>
+    <div class="grid">
+      <div class="box acc"><div class="bt">Council v1.11.0 <span class="chip live">live</span></div>
+        <div class="bs"><b>Real fork</b> — remove the old Council from a chart before adding this, or two Councils collide on one scope.</div></div>
+      <div class="box"><div class="bt">CouncilFusion <span class="chip live">live</span></div>
+        <div class="bs">The one shared fuse core, delegated to by the live Council so the offline harness and NT cannot drift.</div></div>
+      <div class="box"><div class="bt">Declared roster <span class="chip live">live</span></div>
+        <div class="bs"><code>Roster.conf</code> + <code>RosterComplete</code>. A roster is <b>declared, not emergent</b> — which is what makes a crashed sensor distinguishable from a quiet one.</div></div>
+      <div class="box"><div class="bt">Vetoes &amp; damps <span class="chip live">live</span></div>
+        <div class="bs">Chop · wall · kill-window vetoes; squeeze / absorption / regime / profile damps. All hang off <b>one seam read</b> — null the read and all three close.</div></div>
+      <div class="box"><div class="bt">Scope + lane keying <span class="chip live">live</span></div>
+        <div class="bs"><code>GC.212201v6x24</code>. Same instrument + bar type on two charts is <b>detected and logged as SCOPE CONTENTION</b>, never silently permitted. <code>Lanes.conf</code> wins over F6.</div></div>
+      <div class="box warnb"><div class="bt">Chart-derived vs instrument-level <span class="chip live">enforced</span></div>
+        <div class="bs">A shared seam is not a licence to influence a chart you are not on. Chart-derived sensors must be <b>attached</b>; instrument-level ones may sit off-chart.</div></div>
+    </div>
+  </div>
+
+  <div class="flowarrow">core runtime · every path goes through the gate</div>
+
+  <!-- ⑥ CORE -->
+  <div class="layer guard">
+    <div class="lhead"><span class="ln">6</span><span class="lt">Core Runtime &amp; Safety — <code>SentinelCore</code> v1.45.0</span></div>
+    <p class="lsub">One <code>partial class</code> split across three files <b>for distribution tiering, not for
+      tidiness</b>: the public bundles can ship Foundation without Safety. 22 Sentinel AddOn files in total.</p>
+    <div class="grid">
+      <div class="box"><div class="bt"><code>SentinelCore.Foundation</code> <span class="chip live">live</span></div>
+        <div class="bs">Settings dir · <code>Log</code> (6 rotation generations) · <b>Ledger</b> · State · the seam stores · <code>Swallow()</code> — the <i>recorded</i> empty catch.</div></div>
+      <div class="box warnb"><div class="bt"><code>SentinelCore.Safety</code> — L2 <span class="chip live">live</span></div>
+        <div class="bs">Feed health · <code>CanEnter</code> · governor · trailing drawdown · profiles · session · sizing · order guards · <b><code>GateEntry</code></b>. <i>“The one place sizing math lives.”</i></div></div>
+      <div class="box"><div class="bt"><code>SentinelCore.SystemBuilder</code> <span class="chip live">live</span></div>
+        <div class="bs"><b>VoterCatalog</b> (tag → class → seam → default weight+kind) · <code>RosterIO</code> · <code>LaneIO</code> — one reader/writer so writer and reader can never drift on format.</div></div>
+      <div class="box"><div class="bt">Services <span class="chip live">live</span></div>
+        <div class="bs">State · Log · LogEngine · Alert · News · Risk · Arc (fleet) · Binds · Lens (analytics) · Skin.</div></div>
+      <div class="box"><div class="bt">SentinelSkin + drawing framework <span class="chip live">live</span></div>
+        <div class="bs">Six themes behind one switch; glass cards; the label remover; the <code>cards.off</code> render kill switch that ended the node01 UCEERR floods.</div></div>
+      <div class="box acc"><div class="bt">Beacon / generation guard <span class="chip live">live</span></div>
+        <div class="bs">An F5 orphans a bar-type seam onto a dead AppDomain. <code>Beacon</code>/<code>BeaconForeign</code> let a consumer say <b>DECOUPLED — restart NT</b> instead of “absent”.</div></div>
+    </div>
+  </div>
+
+  <div class="flowarrow">two order sources · one gate</div>
+
+  <!-- ⑦ EXECUTION -->
+  <div class="layer money">
+    <div class="lhead"><span class="ln">7</span><span class="lt">Execution &amp; Output</span></div>
+    <p class="lsub">The suite has <b>exactly two order sources</b>. Any statement about “all three order paths” is
+      stale — GTrader21 was pulled 2026-07-29.</p>
+    <div class="grid">
+      <div class="box up"><div class="bt">Deck v0.2.6 — manual <span class="chip live">live</span></div>
+        <div class="bs">On-chart trader: brackets, breakeven, trailing, order-line overlay, SIGNAL ARM auto-fire, preview safety band, diagnostics export. Market fills now record <code>slip</code>.</div></div>
+      <div class="box up"><div class="bt">Bridge v0.3.1 — automated <span class="chip live">live</span></div>
+        <div class="bs">Consumes <code>CouncilState</code>, records to Ledger, stamps the crossing quote. ⚠ known gap: it sizes itself instead of routing through <code>SizedQuantity()</code>.</div></div>
+      <div class="box"><div class="bt">Helm — interdiction <span class="chip live">plumbing</span></div>
+        <div class="bs">Grab the wheel of a running Bridge without disabling the strategy. <b>Never touches an order.</b> Position verbs not yet exercised live.</div></div>
+      <div class="box"><div class="bt">Copier v0.1.0h <span class="chip live">built</span></div>
+        <div class="bs">Headless fill mirror: Primary→Followers, same-provider prop rule, GC→MGC cross-trading, kill/governor/session/Eye gates, manual-assist tickets.</div></div>
+      <div class="box ghost"><div class="bt">Keel · Hull · Pilot <span class="chip spec">spec</span></div>
+        <div class="bs">The next rung: <b>Keel</b> = instrumented strategy (must reproduce the frozen control’s trade list exactly), <b>Hull</b> = reusable base, <b>Pilot</b> = strategy publishes a signal, Bridge executes.</div></div>
+      <div class="box gone"><div class="bt">GTrader21 <span class="chip dead">pulled</span></div>
+        <div class="bs">Archived 2026-07-29. Its order-ownership lessons live in memory; the tool does not come back.</div></div>
+    </div>
+  </div>
+
+  <div class="flowarrow">everything that happened gets written down</div>
+
+  <!-- ⑧ RECORDING -->
+  <div class="layer">
+    <div class="lhead"><span class="ln">8</span><span class="lt">Recording — the corpus</span></div>
+    <p class="lsub"><b>One writer, one schema, per artifact.</b> Two loadable recorders once meant a workspace could
+      quietly start a second writer emitting contaminated rows — which is why v1_4 was archived rather than left
+      “harmlessly” in the tree.</p>
+    <div class="grid">
+      <div class="box acc"><div class="bt">ExcursionRecorder v2.3.0 <span class="chip live">live</span></div>
+        <div class="bs">Schema <b>1.5</b> (honest <code>firePx</code>) → <code>Excursions\council\</code>. ⚠ <b>opens only on <code>COUNCIL</code></b> — so any strategy is currently invisible to the corpus.</div></div>
+      <div class="box"><div class="bt">CandidateRecorder v1.1.0 <span class="chip live">live</span></div>
+        <div class="bs"><code>cand.*</code> + <code>ctick.3</code> self-describing tick-path headers, so context needs no join.</div></div>
+      <div class="box"><div class="bt">Ledger <span class="chip live">live</span></div>
+        <div class="bs">Orders · actions · fills, with episode + instance context so a fill can be joined to the verdict that caused it.</div></div>
+      <div class="box"><div class="bt">Tick sidecars <span class="chip live">live</span></div>
+        <div class="bs">Tick-true excursion paths. Two independent trackers: <code>MaxFav/AdvTick</code> (5-min window) and <code>MaxMFE/MAE</code> (60-min, uncapped).</div></div>
+      <div class="box"><div class="bt">BarDump · TapeRecorder · BrickLog <span class="chip live">live</span></div>
+        <div class="bs">Raw bar/tape/brick exports — the input side the offline harness needs to prove itself equal to NT.</div></div>
+      <div class="box warnb"><div class="bt">Replay honesty gate <span class="chip live">enforced</span></div>
+        <div class="bs">A seam has no as-of semantics: <code>UpdatedUtc</code> stamps wall-clock even mid-replay. Anything that <b>records</b> must gate on <code>State.Realtime</code> / <code>IsHistorical</code>.</div></div>
+    </div>
+  </div>
+
+  <div class="flowarrow">out of NinjaTrader, into Python</div>
+
+  <!-- ⑨ PYTHON LAB -->
+  <div class="layer py">
+    <div class="lhead"><span class="ln">9</span><span class="lt">The Python Lab — 53 tools</span></div>
+    <p class="lsub"><b>Never imported by NinjaTrader, never compiled into <code>NinjaTrader.Custom.dll</code>.</b>
+      This is the half that grades the other half. Its governing rule: a measurement you cannot falsify is not a
+      measurement — so the harness ships a test that proves its own gate can <i>fail</i>.</p>
+
+    <div class="grid wide">
+      <div class="box acc"><div class="bt">Offline harness — <code>Lab\harness\</code> <span class="chip live">13 files</span></div>
+        <div class="bs">Run bar types + sensors + fusion <b>outside NT</b> from exported ticks. Nothing here may import
+          NinjaScript.<br>
+          <code>nrdcsv</code> tick reader · <code>tide</code> (Tide re-implemented in Python) ·
+          <code>equivalence</code> the gate the whole harness stands on · <code>selftest_equivalence</code>
+          <i>proves the gate can fail before it is trusted</i> · <code>selfdiff</code> is NT deterministic? ·
+          <code>cvddrift</code> localise harness-vs-NT disagreement to the print · <code>l2book</code> ·
+          <code>noise_floor</code> <i>measure precision before interpreting a difference</i> ·
+          <code>flowscale</code> · <code>pairing_study</code> · <code>regime_study</code> ·
+          <code>retest_direction</code> · <code>exp0005</code> (pre-registered).</div></div>
+
+      <div class="box"><div class="bt">Grading &amp; analysis <span class="chip live">9 files</span></div>
+        <div class="bs"><code>pathlab</code> tick-true path &amp; exit-policy analysis with a cost model ·
+          <code>sensor_truth</code> grade every voter <b>standalone</b> per bar type · <code>voter_edge</code>
+          confirming or contrarian, and on how much data · <code>council_paths</code> does conviction buy
+          better-shaped trades? · <code>compare_bartypes</code> how much does the clock matter? ·
+          <code>limitlab</code> resting limit vs market at the fire · <code>news_overlap</code> ·
+          <code>verify_votes</code> + <code>verify_firepx</code> acceptance tests.</div></div>
+
+      <div class="box"><div class="bt">ML core — <code>Lab\sentinel_lab\</code> + <code>train.py</code> <span class="chip live">6 files</span></div>
+        <div class="bs"><code>dataset</code> schema-tolerant JSONL loader · <code>labels</code> barrier labels,
+          censoring, uniqueness weights · <code>cv</code> <b>purged walk-forward with an embargo — never random
+          k-fold</b> · <code>bartag</code> the Python mirror of <code>FriendlyBartag</code> (display only) ·
+          <code>train.py</code> the offline trainer.</div></div>
+
+      <div class="box"><div class="bt">Data plane <span class="chip live">6 files</span></div>
+        <div class="bs"><code>ingest\ingest.py</code> JSONL → SQLite (the canon path; the analyzer reads the
+          <b>DB</b>, never the files) · <code>snapshot\snapshot.py</code> tiered WORM snapshot ladder ·
+          <code>quartermaster\</code> <code>.nrd</code> catalog/verify/coverage-holes (filenames only — a 100&nbsp;GB
+          scan is a stat sweep) · <code>sync\replay_sync.py</code> rule-based bake-node sync that auto-includes new
+          Sentinel files.</div></div>
+
+      <div class="box"><div class="bt">Visualisation — <code>Lab\viz\</code> <span class="chip live">4 files</span></div>
+        <div class="bs"><code>observatory.py</code> the analyzer — tree data-group picker + the <b>3-panel honesty
+          ladder</b> (firePx ceiling → bracket → tick-true real entry, which goes negative) ·
+          <code>explorer.py</code> filterable Plotly over the tick corpus · <code>tickpaths.py</code> ·
+          <code>pages\1_Council_Paths.py</code> (imports the CLI so the numbers cannot drift).</div></div>
+
+      <div class="box"><div class="bt">Health, docs &amp; faults <span class="chip live">8 files</span></div>
+        <div class="bs"><code>health\probe.py</code> NT + suite health · <code>corpus_probe.py</code> is the
+          <i>corpus</i> trustworthy · <code>node01_probe.py</code> read-only over SSH ·
+          <code>docs\audit.py</code> drift/link/version audit · <code>docs\facts.py</code> single-sources volatile
+          numbers as <code>{{tokens}}</code> · <code>ident_check.py</code> does every identifier a doc names still
+          exist · <code>grafana\build_*_dashboard.py</code> boards are <b>generated, not hand-edited JSON</b> ·
+          <code>lab_faults.py</code> the Lab’s <code>Swallow()</code>.</div></div>
+
+      <div class="box"><div class="bt">Outside <code>Lab\</code> <span class="chip live">4 files</span></div>
+        <div class="bs"><code>tools\md2atlas.py</code> renders every doc into the Field-Manual house style ·
+          <code>News\ff_scrape.py</code> + <code>sentinel_newsconf.py</code> economic calendar →
+          <code>News.conf</code> event veto · <code>suite-oss\tools\lint_suite.py</code>.</div></div>
+    </div>
+
+    <div class="note warnc" style="margin:15px 0 0">
+      <span class="nt">Why the Lab is not optional</span>
+      Every honest negative this project owns came out of here — <b>the fused direction is a coin flip gross</b>,
+      <b>0/19 voters beat 50%</b>, <b>the whole loss is the crossing cost</b>, <b>conviction is inverted on Flux</b>.
+      A pre-registered holdout is the reason those results are trustworthy rather than a curve someone believed.
+    </div>
+  </div>
+
+  <div class="flowarrow">measured, then watched</div>
+
+  <!-- ⑩ OBSERVABILITY -->
+  <div class="layer">
+    <div class="lhead"><span class="ln">10</span><span class="lt">Observability &amp; Data Plane</span></div>
+    <p class="lsub">Canon pipeline: <b>tools → JSONL → ingester → DB → analyzer</b>. Reading the JSONL directly is an
+      expedient, never the architecture.</p>
+    <div class="grid tight">
+      <div class="box"><div class="bt"><code>sentinel.log</code> <span class="chip live">live</span></div><div class="bs">6 rotation generations. Read the log, not a screenshot.</div></div>
+      <div class="box acc"><div class="bt"><code>sentinel.db</code> <span class="chip live">live</span></div><div class="bs">SQLite, WAL, 30&nbsp;s busy timeout. ⏭ single-node → Postgres.</div></div>
+      <div class="box"><div class="bt">Grafana <code>:3000</code> <span class="chip live">4 boards</span></div><div class="bs">trades · health · docs · node01. Tron chrome via native <code>extraThemes</code>.</div></div>
+      <div class="box"><div class="bt">Streamlit <code>:8501</code> <span class="chip live">live</span></div><div class="bs">The research surface.</div></div>
+      <div class="box"><div class="bt">Probes <code>:8502</code> <code>:8504</code> <code>:8505</code> <span class="chip live">live</span></div><div class="bs">health · node01 · docs-audit, each single-instance-guarded.</div></div>
+      <div class="box warnb"><div class="bt">Zero vs dead <span class="chip live">enforced</span></div><div class="bs">Headline counts read the <i>heartbeat</i> table, so <b>0 means “measured zero just now”</b> — an empty findings table would read 0 for a dead probe.</div></div>
+    </div>
+  </div>
+
+  <!-- ⑪ FOUNDATION -->
+  <div class="layer">
+    <div class="lhead"><span class="ln">11</span><span class="lt">Foundation &amp; Infrastructure</span></div>
+    <div class="grid tight">
+      <div class="box"><div class="bt">NinjaTrader 8.1.7.2 <span class="chip live">live</span></div><div class="bs">One assembly, whole-tree compile — one broken file blocks everything.</div></div>
+      <div class="box acc"><div class="bt"><code>cli-nt-bridge</code> <span class="chip live">v1.1.1</span></div><div class="bs">NT’s own compiler headless. Our upstream PR merged.</div></div>
+      <div class="box"><div class="bt">node01 bake worker <span class="chip live">live</span></div><div class="bs">Tailscale · Tradovate replay feed · lights-out via <code>ConnectOnStartup</code> + autorun + autologin.</div></div>
+      <div class="box"><div class="bt">Conductor v0.1.0h <span class="chip live">live</span></div><div class="bs">Replay <b>transport</b>: seek · queue · checkpoint-resume · autorun. Seven NT/logic bugs found by driving it.</div></div>
+      <div class="box"><div class="bt">Quartermaster <span class="chip live">live</span></div><div class="bs"><code>.nrd</code> supply: procure → verify → catalog → provision. 90-day rolling feed floor; deep history from the extracted archive.</div></div>
+      <div class="box"><div class="bt">Snapshot ladder <span class="chip live">live</span></div><div class="bs">Tiered WORM snapshots + scheduled tasks. Guarantees integrity, not correctness.</div></div>
+    </div>
+  </div>
+
+</div><!-- /stack -->
+
+<h2><span class="hn">12</span>The closed loop</h2>
+<p class="h2sub">The suite is not a signal generator with reporting bolted on — it is a <b>grading loop</b>, and the
+first thing it graded honestly was its own thesis.</p>
+<div class="loop">
+  <div class="lstep"><div class="n">01</div><div class="t">Clock</div><div class="d">Choose the unit of activity that gets one bar.</div></div>
+  <div class="lstep"><div class="n">02</div><div class="t">Sense</div><div class="d">Voters publish typed seams under a scope.</div></div>
+  <div class="lstep"><div class="n">03</div><div class="t">Fuse</div><div class="d">Council → one verdict + a decision vector.</div></div>
+  <div class="lstep"><div class="n">04</div><div class="t">Gate</div><div class="d">Size, then validate: kill · limits · session · feed.</div></div>
+  <div class="lstep"><div class="n">05</div><div class="t">Execute</div><div class="d">Deck or Bridge. Record the crossing quote.</div></div>
+  <div class="lstep"><div class="n">06</div><div class="t">Record</div><div class="d">Row + tick sidecar + Ledger, realtime-gated.</div></div>
+  <div class="lstep"><div class="n">07</div><div class="t">Ingest</div><div class="d">JSONL → SQLite. One writer, one schema.</div></div>
+  <div class="lstep"><div class="n">08</div><div class="t">Grade</div><div class="d">Tick-true, cost-aware, on a pre-registered holdout.</div></div>
+  <div class="lstep"><div class="n">09</div><div class="t">Decide</div><div class="d">Promote from <code>w=0</code>, or retire the tool.</div></div>
+</div>
+<p class="loopback">↺ <b>The feedback edge is the whole product.</b> A negative result that survives the holdout
+retires a tool — that is the loop working, not the loop failing.</p>
+
+<h2><span class="hn">13</span>What this map deliberately does not claim</h2>
+<div class="note deadc">
+  <span class="nt">Honest status</span>
+  <b>Nothing is running right now and nothing is broken</b> (<code>nt8bridge compile → errors: []</code>).
+  Lattice and Effort compile clean but have <b>never been loaded</b>. Keel/Hull/Pilot are specs with no code.
+  The fused Council carries no measured directional edge today; the assets that <i>are</i> proven are the
+  <b>risk container</b> and the <b>grading tooling</b>. Before any bake or live run: <b>F5 + full NT restart</b>,
+  remove the old Council before adding v1.11.0, and re-add Deck v0.2.6 — both are real version forks.
+</div>
+<div class="note warnc">
+  <span class="nt">One drift found while drawing this</span>
+  <code>Council_v1_11_0.KnownVoters</code> declares <b>25</b> voters including <code>CVD</code>, but
+  <code>SentinelCore.SystemBuilder.VoterCatalog</code> holds <b>24</b> rows — <b>the <code>CVD</code> row is
+  missing</b>, even though Core’s v1.43.0 header says it was added. The Cockpit and System Builder both read the
+  catalog, so CVD is invisible to them. Cheap fix, and worth doing before the next roster edit.
+</div>
+
+<footer>
+  <span>Sentinel Suite · <b>Architecture Map</b> · guide 1 of 2</span>
+  <span>built against Core v1.45.0 / Council v1.11.0 · 2026-07-29</span>
+</footer>
+</div></body></html>
