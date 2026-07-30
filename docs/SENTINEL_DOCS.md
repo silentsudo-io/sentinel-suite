@@ -7,6 +7,10 @@ audience, all in one house style. Start with the reading path that fits why you'
 
 - **Just want the idea?** → the [Thesis](SENTINEL_THESIS.html). What Sentinel is and why, in one read: fuse
   many honest signals into one fitted decision, grade it against reality, feed the grade back.
+- **Want the whole thing on one page?** → the two visual guides: the
+  [Architecture Map](SENTINEL_ARCHITECTURE_MAP.html) (every layer and tool, including the offline Python lab,
+  with honest per-tool status) and the [Runtime Topology](SENTINEL_RUNTIME_TOPOLOGY.html) (what actually runs,
+  who owns each artifact, and the boundaries that bite).
 - **Want to run or extend it?** → the [Field Manual](SENTINEL_PROCESS_ATLAS.html). The illustrated,
   end-to-end manual — from "I have no idea what this is" to "I can run it, extend it, and trust it."
 - **Here to contribute or plan?** → the [Roadmap](ROADMAP.html) (the engineering pipeline) and the
@@ -22,6 +26,8 @@ audience, all in one house style. Start with the reading path that fits why you'
 |---|---|---|---|
 | **Why** | [The Sentinel Thesis](SENTINEL_THESIS.html) | the at-altitude argument — fuse · grade · feed back | anyone |
 | **How / What** | [Field Manual](SENTINEL_PROCESS_ATLAS.html) | the illustrated, end-to-end manual | trader + coder |
+| **The picture** | [Architecture Map](SENTINEL_ARCHITECTURE_MAP.html) | all 12 layers + every tool (bar clocks · voters · services · order sources · the offline lab) with per-tool status | anyone |
+| **The picture** | [Runtime Topology](SENTINEL_RUNTIME_TOPOLOGY.html) | in-process vs out-of-process ownership · one-writer artifact table · thread/lifecycle rules · the six invariants | coder |
 | **The plan** | [Roadmap](ROADMAP.html) | the engineering pipeline & forward vision | contributor |
 | **The plan** | [Product Ladder](PRODUCT_LADDER.html) | the open-source product & packaging map | contributor |
 | **Reference** | [Design System](SENTINEL_DESIGN_SYSTEM.html) | palette · components · build/verify workflow | coder |

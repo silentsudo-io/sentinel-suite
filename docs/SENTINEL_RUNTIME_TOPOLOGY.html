@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Sentinel · Runtime Topology</title>
+<!--
+  SENTINEL RUNTIME TOPOLOGY — visual guide 2 of 2 (sibling: SENTINEL_ARCHITECTURE_MAP.html).
+  Hand-authored HTML: md2atlas escapes raw HTML, and this page is diagrams + ownership tables.
+  Palette tokens below are copied VERBATIM from SENTINEL_PROCESS_ATLAS.html's <style> :root blocks
+  (the single source of truth for the house style). Re-copy them if the Atlas is restyled.
+  Built 2026-07-30 against SentinelCore v1.45.0 / Council v1.11.0.
+-->
+<style>
+  /* ── house-style tokens: VERBATIM from SENTINEL_PROCESS_ATLAS.html ─────────────── */
+  :root{
+    --void:#e7edf1; --panel:#f3f7f9; --surface:#ffffff; --surface2:#eaf0f3;
+    --ink:#16222c; --ink2:#586873; --line:#cdd8de; --grid:#dde5ea;
+    --accent:#0b8ea1; --flow:#0d8fa2;
+    --up:#12a56f; --down:#e0424f; --warn:#c9861a;
+    --mono:ui-monospace,"Cascadia Code","SF Mono",Consolas,Menlo,monospace;
+    --sans:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  }
+  @media (prefers-color-scheme:dark){
+    :root{
+      --void:#0a0e13; --panel:#0d131a; --surface:#141c25; --surface2:#0f161e;
+      --ink:#e2e9ee; --ink2:#8a9ba8; --line:#26333f; --grid:#131c25;
+      --accent:#4ad6e8; --flow:#3fb6c9; --up:#25d08b; --down:#ff5c6a; --warn:#f2b23c;
+    }
+  }
+  :root[data-theme="light"]{
+    --void:#e7edf1; --panel:#f3f7f9; --surface:#ffffff; --surface2:#eaf0f3;
+    --ink:#16222c; --ink2:#586873; --line:#cdd8de; --grid:#dde5ea;
+    --accent:#0b8ea1; --flow:#0d8fa2; --up:#12a56f; --down:#e0424f; --warn:#c9861a;
+  }
+  :root[data-theme="dark"]{
+    --void:#0a0e13; --panel:#0d131a; --surface:#141c25; --surface2:#0f161e;
+    --ink:#e2e9ee; --ink2:#8a9ba8; --line:#26333f; --grid:#131c25;
+    --accent:#4ad6e8; --flow:#3fb6c9; --up:#25d08b; --down:#ff5c6a; --warn:#f2b23c;
+  }
+
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--void);color:var(--ink);font-family:var(--sans);line-height:1.5;
+       -webkit-font-smoothing:antialiased}
+  .wrap{max-width:1180px;margin:0 auto;padding:48px 22px 96px}
+
+  .kicker{font-family:var(--mono);font-size:11px;letter-spacing:.34em;text-transform:uppercase;
+          color:var(--accent);display:flex;align-items:center;gap:9px;margin:0 0 14px;flex-wrap:wrap}
+  .livedot{width:8px;height:8px;border-radius:50%;background:var(--accent)}
+  h1{font-family:var(--mono);font-weight:700;font-size:clamp(28px,4.6vw,44px);letter-spacing:-.015em;margin:0 0 12px}
+  h1 .g{color:var(--accent)}
+  .lede{font-size:17px;color:var(--ink2);max-width:74ch;margin:0 0 22px}
+  .lede b{color:var(--ink);font-weight:620}
+  .meta{display:flex;flex-wrap:wrap;gap:7px;margin:0 0 30px}
+  .meta .s{font-family:var(--mono);font-size:11.5px;color:var(--ink2);background:var(--surface);
+           border:1px solid var(--line);border-radius:999px;padding:5px 12px}
+  .meta .s b{color:var(--accent);font-weight:700}
+
+  h2{font-family:var(--mono);font-weight:700;font-size:14px;letter-spacing:.2em;text-transform:uppercase;
+     color:var(--ink);margin:60px 0 6px;padding-bottom:11px;border-bottom:1px solid var(--line)}
+  h2 .hn{color:var(--accent);margin-right:11px}
+  .h2sub{font-size:13.5px;color:var(--ink2);margin:0 0 22px;max-width:90ch}
+  .h2sub b{color:var(--ink);font-weight:620}
+  .h2sub code,.note code,td code,th code{font-family:var(--mono);font-size:12px;background:var(--surface2);
+     padding:1px 5px;border-radius:4px}
+
+  /* diagram frame */
+  .diag{border:1px solid var(--line);border-radius:14px;background:var(--panel);padding:14px 12px 8px;
+        overflow-x:auto}
+  .diag svg{display:block;min-width:900px;width:100%;height:auto}
+  .dcap{font-family:var(--mono);font-size:11px;color:var(--ink2);padding:6px 8px 4px;letter-spacing:.04em}
+  .dcap b{color:var(--ink)}
+
+  /* svg node styling */
+  svg text{font-family:var(--mono)}
+  .n rect{fill:var(--surface);stroke:var(--line);stroke-width:1}
+  .n .t{font-size:12px;font-weight:700;fill:var(--ink)}
+  .n .s{font-size:10px;fill:var(--ink2)}
+  .n.acc rect{stroke:var(--accent);stroke-width:1.4} .n.acc .t{fill:var(--accent)}
+  .n.up  rect{stroke:var(--up);stroke-width:1.4}     .n.up  .t{fill:var(--up)}
+  .n.wa  rect{stroke:var(--warn);stroke-width:1.4}   .n.wa  .t{fill:var(--warn)}
+  .n.db  rect{fill:var(--surface2);stroke:var(--accent);stroke-width:1.4} .n.db .t{fill:var(--accent)}
+  .grp rect{fill:none;stroke:var(--line);stroke-dasharray:5 4}
+  .grp .gt{font-size:10.5px;letter-spacing:.17em;fill:var(--ink2)}
+  .col .ct{font-size:10px;letter-spacing:.16em;fill:var(--accent);font-weight:700}
+  .e{fill:none;stroke:var(--ink2);stroke-width:1.3;marker-end:url(#ah)}
+  .e.a{stroke:var(--accent);marker-end:url(#aha)}
+  .e.u{stroke:var(--up);marker-end:url(#ahu)}
+  .e.d{stroke-dasharray:5 4}
+  .el{font-size:9.5px;fill:var(--ink2)}
+  .el.a{fill:var(--accent)}
+  #ah path{fill:var(--ink2)} #aha path{fill:var(--accent)} #ahu path{fill:var(--up)}
+
+  /* tables */
+  .tblwrap{overflow-x:auto;border:1px solid var(--line);border-radius:12px;background:var(--panel)}
+  table{border-collapse:collapse;width:100%;min-width:720px;font-size:13px}
+  th{font-family:var(--mono);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);
+     text-align:left;padding:11px 13px;border-bottom:1px solid var(--line);white-space:nowrap;font-weight:700}
+  td{padding:10px 13px;border-bottom:1px solid var(--line);color:var(--ink);vertical-align:top;line-height:1.45}
+  tr:last-child td{border-bottom:0}
+  td:first-child{font-family:var(--mono);font-size:12px;font-weight:700;white-space:nowrap}
+  td b{font-weight:650}
+  td.mono,th.mono{font-family:var(--mono);font-size:11.5px}
+  .tag{font-family:var(--mono);font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;font-weight:700;
+       padding:2px 6px;border-radius:4px;white-space:nowrap}
+  .tag.nt{color:var(--accent);background:color-mix(in srgb,var(--accent) 13%,transparent);border:1px solid color-mix(in srgb,var(--accent) 36%,transparent)}
+  .tag.py{color:var(--up);background:color-mix(in srgb,var(--up) 13%,transparent);border:1px solid color-mix(in srgb,var(--up) 36%,transparent)}
+  .tag.ex{color:var(--ink2);background:color-mix(in srgb,var(--ink2) 12%,transparent);border:1px solid var(--line)}
+
+  .note{margin:24px 0;padding:14px 17px;border:1px solid var(--line);border-left:3px solid var(--accent);
+        border-radius:0 11px 11px 0;background:var(--panel);font-size:13.5px}
+  .note.warnc{border-left-color:var(--warn)} .note.deadc{border-left-color:var(--down)}
+  .note .nt{font-family:var(--mono);font-size:10.5px;letter-spacing:.2em;text-transform:uppercase;
+            color:var(--accent);display:block;margin-bottom:6px;font-weight:700}
+  .note.warnc .nt{color:var(--warn)} .note.deadc .nt{color:var(--down)}
+  .note b{font-weight:650}
+  ol.inv{counter-reset:i;list-style:none;padding:0;margin:0}
+  ol.inv li{counter-increment:i;position:relative;padding:0 0 0 42px;margin:0 0 16px;font-size:13.5px;max-width:92ch}
+  ol.inv li::before{content:counter(i);position:absolute;left:0;top:1px;font-family:var(--mono);font-size:11px;
+    font-weight:700;color:var(--void);background:var(--accent);width:24px;height:24px;border-radius:50%;
+    display:flex;align-items:center;justify-content:center}
+  ol.inv li b{color:var(--ink);font-weight:650}
+
+  footer{margin-top:74px;padding-top:20px;border-top:1px solid var(--line);display:flex;flex-wrap:wrap;
+         gap:10px;justify-content:space-between;font-family:var(--mono);font-size:11px;color:var(--ink2)}
+  footer b{color:var(--ink)}
+  a{color:var(--accent);text-decoration:none;border-bottom:1px solid color-mix(in srgb,var(--accent) 40%,transparent)}
+</style>
+</head><body>
+<div class="wrap">
+
+<div class="kicker"><span class="livedot"></span>Sentinel Suite · Visual guide 2 of 2</div>
+<h1>Sentinel <span class="g">Runtime Topology</span></h1>
+<p class="lede">Guide 1 showed <b>what the suite is</b>. This one shows <b>what actually runs, who owns each
+artifact, and how data crosses a process boundary</b> — because most of the expensive bugs in this project were
+boundary bugs: a seam orphaned by an F5, a probe reading a rotation generation that did not exist, a second writer
+on a one-writer file. Companion page: <a href="SENTINEL_ARCHITECTURE_MAP.html">← Architecture Map</a></p>
+
+<div class="meta">
+  <span class="s"><b>Processes</b> 1 NT + 6 daemons</span>
+  <span class="s"><b>Ports</b> 5</span>
+  <span class="s"><b>Boxes</b> 2 (main + node01)</span>
+  <span class="s"><b>Persistence</b> files → SQLite</span>
+  <span class="s">Core v1.45.0 · Council v1.11.0</span>
+</div>
+
+<h2><span class="hn">A</span>In-process — inside <code>NinjaTrader.exe</code></h2>
+<p class="h2sub">Everything in this diagram shares <b>one AppDomain and one compiled assembly</b>
+(<code>NinjaTrader.Custom.dll</code>). That is why one broken <code>.cs</code> blocks the whole suite, and why an F5
+that swaps the assembly can leave a chart's bar type publishing into an <b>orphaned</b> static seam store.</p>
+
+<div class="diag">
+<svg viewBox="0 0 1100 580" role="img" aria-label="In-process topology inside NinjaTrader.exe">
+  <defs>
+    <marker id="ah"  viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z"/></marker>
+    <marker id="aha" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z"/></marker>
+    <marker id="ahu" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z"/></marker>
+  </defs>
+
+  <g class="grp">
+    <rect x="16" y="34" width="1068" height="498" rx="15"/>
+    <text class="gt" x="34" y="26">NINJATRADER.EXE · ONE APPDOMAIN · ONE NINJATRADER.CUSTOM.DLL · UI THREAD + PER-SERIES DATA THREADS</text>
+  </g>
+
+  <!-- column headers -->
+  <g class="col">
+    <text class="ct" x="46"  y="62">① PER-CHART PIPELINE (ONE PER SCOPE)</text>
+    <text class="ct" x="326" y="62">② IN-PROCESS SEAM STORE</text>
+    <text class="ct" x="590" y="62">③ PROCESS-WIDE ADDONS</text>
+  </g>
+
+  <!-- col 1 -->
+  <g class="n acc" transform="translate(46,74)"><rect width="236" height="62" rx="9"/>
+    <text class="t" x="13" y="21">Bar clock — BarsType</text>
+    <text class="s" x="13" y="38">TBars · Flux · Drift · Tide</text>
+    <text class="s" x="13" y="52">Lattice · Effort · TbarsCount</text></g>
+  <g class="n" transform="translate(46,152)"><rect width="236" height="54" rx="9"/>
+    <text class="t" x="13" y="22">Sensors / voters</text>
+    <text class="s" x="13" y="39">publish a seam · never call up</text></g>
+  <g class="n acc" transform="translate(46,230)"><rect width="236" height="54" rx="9"/>
+    <text class="t" x="13" y="22">Council v1.11.0</text>
+    <text class="s" x="13" y="39">reads seams → one CouncilState</text></g>
+  <g class="n up" transform="translate(46,320)"><rect width="236" height="54" rx="9"/>
+    <text class="t" x="13" y="22">Deck  |  Bridge</text>
+    <text class="s" x="13" y="39">the only two order sources</text></g>
+  <g class="n" transform="translate(46,404)"><rect width="236" height="54" rx="9"/>
+    <text class="t" x="13" y="22">Recorders</text>
+    <text class="s" x="13" y="39">row + tick sidecar · realtime-gated</text></g>
+
+  <path class="e" d="M164,136 L164,150"/>
+  <path class="e" d="M164,206 L164,228"/>
+  <path class="e u" d="M164,284 L164,318"/>
+  <path class="e" d="M164,374 L164,402"/>
+  <text class="el" x="172" y="303">verdict</text>
+
+  <!-- col 2 seam store -->
+  <g class="n db" transform="translate(326,74)"><rect width="214" height="226" rx="9"/>
+    <text class="t" x="14" y="24">SentinelCore</text>
+    <text class="t" x="14" y="42">seam stores</text>
+    <text class="s" x="14" y="66">static · in memory only</text>
+    <text class="s" x="14" y="84">key = &lt;inst&gt;.&lt;barTag&gt;</text>
+    <text class="s" x="14" y="102">auto-expiring</text>
+    <text class="s" x="14" y="126">NO history</text>
+    <text class="s" x="14" y="144">NO as-of semantics</text>
+    <text class="s" x="14" y="168">Beacon detects an</text>
+    <text class="s" x="14" y="186">F5-orphaned publisher</text>
+    <text class="s" x="14" y="210">25 voter + 5 axis seams</text></g>
+
+  <path class="e a" d="M282,101 L324,101"/>
+  <text class="el a" x="286" y="95">write</text>
+  <path class="e a" d="M282,179 L324,179"/>
+  <text class="el a" x="286" y="173">write</text>
+  <path class="e a" d="M324,257 L284,257"/>
+  <text class="el a" x="290" y="251">read</text>
+
+  <!-- col 3 -->
+  <g class="n" transform="translate(590,74)"><rect width="478" height="60" rx="9"/>
+    <text class="t" x="14" y="23">SentinelCore.SystemBuilder</text>
+    <text class="s" x="14" y="41">VoterCatalog · RosterIO · LaneIO — one reader/writer per config file,</text>
+    <text class="s" x="14" y="54">so the Council (reader) and Cockpit (writer) cannot drift on format</text></g>
+  <g class="n" transform="translate(590,150)"><rect width="478" height="60" rx="9"/>
+    <text class="t" x="14" y="23">Services</text>
+    <text class="s" x="14" y="41">State · Log · LogEngine · Alert · News · Risk · Arc (fleet) · Binds ·</text>
+    <text class="s" x="14" y="54">Lens (analytics) · Skin (themes, cards, cards.off render gate)</text></g>
+  <g class="n" transform="translate(590,226)"><rect width="478" height="60" rx="9"/>
+    <text class="t" x="14" y="23">Surfaces &amp; tools</text>
+    <text class="s" x="14" y="41">Cockpit · Dashboard · Copier · Conductor (replay transport) ·</text>
+    <text class="s" x="14" y="54">Quartermaster · NT8BridgeServer (headless compile / deploy)</text></g>
+  <g class="n wa" transform="translate(590,320)"><rect width="478" height="66" rx="9"/>
+    <text class="t" x="14" y="22">SentinelCore.Safety — L2</text>
+    <text class="s" x="14" y="40">SizedQuantity() → GateEntry() · governor · trailing DD · kill</text>
+    <text class="s" x="14" y="55">session · feed health · riskDollars = 0 ⇒ VALIDATE ONLY, never re-size</text></g>
+  <g class="n" transform="translate(590,404)"><rect width="478" height="54" rx="9"/>
+    <text class="t" x="14" y="22">SentinelCore.Foundation</text>
+    <text class="s" x="14" y="39">Log (6 generations) · Ledger · State · Swallow() — the recorded empty catch</text></g>
+
+  <path class="e u" d="M282,347 L586,347"/>
+  <text class="el" x="300" y="341">size, then validate</text>
+
+  <path class="e a" d="M540,110 L586,110"/>
+  <path class="e" d="M540,257 L586,257"/>
+  <text class="el a" x="548" y="104">reads</text>
+
+  <!-- out of process -->
+  <path class="e" d="M164,458 L164,502"/>
+  <text class="el" x="174" y="484">rows + ticks</text>
+  <path class="e" d="M829,458 L829,502"/>
+  <text class="el" x="700" y="484">log · ledger · state</text>
+  <text class="gt" x="330" y="524" style="fill:var(--ink2);font-size:10.5px;letter-spacing:.17em">
+    ↓ ALL PERSISTENCE LEAVES THE PROCESS AS FILES — CONTINUES IN DIAGRAM B ↓</text>
+</svg>
+<div class="dcap"><b>Read it as an inversion:</b> nothing upstream knows a consumer exists. A sensor writes a seam;
+the Council reads it; the Cockpit reads all of them. That is what makes <code>w=0</code> auditioning, sensor
+replacement and standalone grading possible without touching fusion.</div>
+</div>
+
+<div class="note warnc">
+  <span class="nt">The boundary that bites</span>
+  <b>The seam store is static and lives in the AppDomain — not on disk.</b> An F5 recompile leaves a chart's
+  existing bar-type instance bound to the <i>old</i> assembly, still publishing into a store nobody reads. Symptom:
+  a voter that is silently, permanently absent. Detection: <code>Beacon</code>/<code>BeaconForeign</code>, so a
+  consumer can say <b>DECOUPLED — restart NT</b> rather than “absent”. <b>A chart reload does not fix it. Restart
+  NinjaTrader.</b>
+</div>
+
+<h2><span class="hn">B</span>Out-of-process — files, database, daemons, boards</h2>
+<p class="h2sub">The canon pipeline is <b>tools → JSONL → ingester → DB → analyzer</b>. Everything downstream of NT
+is plain Python over plain files; there is no service mesh and no message broker, which is deliberate — a bake node
+that loses power resumes from a checkpoint file.</p>
+
+<div class="diag">
+<svg viewBox="0 0 1100 560" role="img" aria-label="Out-of-process topology: files, SQLite, daemons and boards">
+  <!-- arrow markers are defined once in diagram A above; same document, so url(#ah) resolves here -->
+  <text class="ct" x="40" y="20" style="font-size:10px;letter-spacing:.16em;fill:var(--accent);font-weight:700">
+    ① ON-DISK ARTIFACTS — ONE WRITER EACH</text>
+
+  <g class="n" transform="translate(40,30)"><rect width="195" height="62" rx="9"/>
+    <text class="t" x="12" y="21">Sentinel\*.conf</text>
+    <text class="s" x="12" y="38">Roster · Profiles · Lanes ·</text>
+    <text class="s" x="12" y="52">News · Copy · Cockpit · Run</text></g>
+  <g class="n acc" transform="translate(251,30)"><rect width="195" height="62" rx="9"/>
+    <text class="t" x="12" y="21">Excursions\</text>
+    <text class="s" x="12" y="38">council\1.5\*.jsonl (rows)</text>
+    <text class="s" x="12" y="52">ticks\*.jsonl (sidecars)</text></g>
+  <g class="n" transform="translate(462,30)"><rect width="195" height="62" rx="9"/>
+    <text class="t" x="12" y="21">Ledger\ · State\</text>
+    <text class="s" x="12" y="38">BrickLog\ · Snapshots\</text>
+    <text class="s" x="12" y="52">Support\ · Conductor\run-log</text></g>
+  <g class="n" transform="translate(673,30)"><rect width="195" height="62" rx="9"/>
+    <text class="t" x="12" y="21">sentinel.log</text>
+    <text class="s" x="12" y="38">6 generations (.1 … .6)</text>
+    <text class="s" x="12" y="52">the live truth — read it</text></g>
+  <g class="n" transform="translate(884,30)"><rect width="196" height="62" rx="9"/>
+    <text class="t" x="12" y="21">CSV tick exports</text>
+    <text class="s" x="12" y="38">gbNRDtoCSV · BarDump</text>
+    <text class="s" x="12" y="52">⚠ stamps are CHICAGO</text></g>
+
+  <!-- daemons -->
+  <text class="ct" x="40" y="126" style="font-size:10px;letter-spacing:.16em;fill:var(--accent);font-weight:700">
+    ② PYTHON DAEMONS — EACH SINGLE-INSTANCE-GUARDED ON A PORT</text>
+
+  <g class="n up" transform="translate(884,142)"><rect width="196" height="58" rx="9"/>
+    <text class="t" x="12" y="21">Lab\harness\</text>
+    <text class="s" x="12" y="38">bar types + fusion, no NT</text>
+    <text class="s" x="12" y="52">behind the equivalence gate</text></g>
+  <g class="n up" transform="translate(251,142)"><rect width="195" height="58" rx="9"/>
+    <text class="t" x="12" y="21">ingest.py --watch</text>
+    <text class="s" x="12" y="38">JSONL → SQLite</text>
+    <text class="s" x="12" y="52">the ONLY DB writer for rows</text></g>
+  <g class="n up" transform="translate(462,142)"><rect width="195" height="58" rx="9"/>
+    <text class="t" x="12" y="21">health probes</text>
+    <text class="s" x="12" y="38">probe.py · corpus_probe.py</text>
+    <text class="s" x="12" y="52">:8502 · heartbeat row/cycle</text></g>
+  <g class="n up" transform="translate(673,142)"><rect width="195" height="58" rx="9"/>
+    <text class="t" x="12" y="21">docs\audit.py</text>
+    <text class="s" x="12" y="38">drift · links · contracts</text>
+    <text class="s" x="12" y="52">:8505 · every 15 min</text></g>
+
+  <path class="e" d="M348,92 L348,140"/><text class="el" x="355" y="124">tail</text>
+  <path class="e" d="M770,92 L770,106 L580,106 L580,140"/><text class="el" x="600" y="126">tail + live NT</text>
+  <path class="e" d="M982,92 L982,140"/>
+
+  <!-- db -->
+  <g class="n db" transform="translate(300,250)"><rect width="520" height="58" rx="9"/>
+    <text class="t" x="16" y="24">Lab\db\sentinel.db</text>
+    <text class="s" x="16" y="42">SQLite · WAL · busy_timeout 30 s · single node ⏭ Postgres is the standing debt</text></g>
+
+  <path class="e" d="M348,200 L348,248"/>
+  <path class="e" d="M560,200 L560,248"/>
+  <path class="e" d="M770,200 L770,248"/>
+
+  <!-- consumers -->
+  <g class="n" transform="translate(300,366)"><rect width="245" height="58" rx="9"/>
+    <text class="t" x="12" y="21">Grafana · :3000</text>
+    <text class="s" x="12" y="38">trades · health · docs · node01</text>
+    <text class="s" x="12" y="52">OPS — dashboards are generated</text></g>
+  <g class="n" transform="translate(575,366)"><rect width="245" height="58" rx="9"/>
+    <text class="t" x="12" y="21">Streamlit · :8501</text>
+    <text class="s" x="12" y="38">Observatory · Explorer · Paths</text>
+    <text class="s" x="12" y="52">RESEARCH — reads the DB</text></g>
+  <g class="n up" transform="translate(884,366)"><rect width="196" height="58" rx="9"/>
+    <text class="t" x="12" y="21">Analysis CLIs</text>
+    <text class="s" x="12" y="38">pathlab · sensor_truth ·</text>
+    <text class="s" x="12" y="52">voter_edge · train.py</text></g>
+
+  <path class="e" d="M420,308 L420,364"/>
+  <path class="e" d="M700,308 L700,364"/>
+  <path class="e d" d="M820,279 L880,279 L880,364"/>
+  <text class="el" x="886" y="312">reads</text>
+  <path class="e d" d="M982,200 L982,364"/>
+  <text class="el" x="988" y="250">bypasses the DB</text>
+
+  <!-- node01 -->
+  <g class="grp"><rect x="40" y="452" width="1040" height="86" rx="13"/>
+    <text class="gt" x="56" y="444">③ NODE01 — REMOTE BAKE WORKER (TAILSCALE)</text></g>
+  <g class="n" transform="translate(58,468)"><rect width="240" height="54" rx="9"/>
+    <text class="t" x="12" y="21">NT + Conductor + recorders</text>
+    <text class="s" x="12" y="38">autologin → autorun → resume</text></g>
+  <g class="n" transform="translate(318,468)"><rect width="220" height="54" rx="9"/>
+    <text class="t" x="12" y="21">its own corpus + log</text>
+    <text class="s" x="12" y="38">cards.off — render gate ON</text></g>
+  <g class="n up" transform="translate(558,468)"><rect width="230" height="54" rx="9"/>
+    <text class="t" x="12" y="21">replay_sync.py</text>
+    <text class="s" x="12" y="38">rule-based bake-set sync → compile</text></g>
+  <g class="n up" transform="translate(808,468)"><rect width="254" height="54" rx="9"/>
+    <text class="t" x="12" y="21">node01_probe.py · :8504</text>
+    <text class="s" x="12" y="38">READ-ONLY over SSH → the same DB</text></g>
+
+  <path class="e" d="M298,495 L316,495"/>
+  <path class="e d" d="M600,466 L600,459 L240,459 L240,466"/>
+</svg>
+<div class="dcap"><b>Solid arrow = a write or a tail.</b> <b>Dashed = a read that crosses a machine or skips the
+DB.</b> Note the two deliberate DB bypasses: the <b>harness</b> works from raw CSV so it can never inherit NT's
+mistakes, and the <b>analysis CLIs</b> can read sidecars directly — an expedient, explicitly not the architecture.
+<b>One edge is omitted for legibility:</b> <code>node01_probe.py</code> writes into the <i>same</i>
+<code>sentinel.db</code> as the local probes — that is the only thing crossing back from the remote box.</div>
+</div>
+
+<h2><span class="hn">C</span>Process responsibility</h2>
+<p class="h2sub">One row per thing that is separately startable, killable, or crashable.</p>
+<div class="tblwrap"><table>
+  <thead><tr><th>Process</th><th>Where</th><th>Responsibility</th></tr></thead>
+  <tbody>
+    <tr><td>NinjaTrader.exe</td><td><span class="tag nt">NT</span></td><td>Hosts <b>everything</b> NinjaScript: charts, bar clocks, sensors, Council, order sources, AddOn services. One AppDomain, one assembly — so one bad file is a total outage, and an F5 is a code-swap event with consequences.</td></tr>
+    <tr><td>Chart pipeline</td><td><span class="tag nt">NT</span></td><td>Per scope: build bars → publish sensor seams → fuse a verdict → optionally place and record an order. The unit of everything; a scope is one chart's worth of context.</td></tr>
+    <tr><td>AddOn services</td><td><span class="tag nt">NT</span></td><td>Process-wide, chart-independent: safety gate, governor, kill switch, alerts, news, fleet identity, config IO, theming, copier, replay transport.</td></tr>
+    <tr><td>NT8BridgeServer</td><td><span class="tag nt">NT</span></td><td>Third-party AddOn (<code>cli-nt-bridge</code>) exposing NT's <b>own</b> compiler headlessly: real Roslyn errors in ~15 s, plus <code>deploy</code> which recompiles <i>and hot-reloads under whatever is running</i>.</td></tr>
+    <tr><td>Conductor</td><td><span class="tag nt">NT</span></td><td>Replay <b>transport</b> — seek, queue, per-session checkpoint, crash-resume, autorun. Holds no account reference and calls no order method, by design.</td></tr>
+    <tr><td><code>ingest.py --watch</code></td><td><span class="tag py">daemon</span></td><td>Tails the JSONL corpus into SQLite. <b>The only writer of corpus rows to the DB</b>; folds the council vote-vector in.</td></tr>
+    <tr><td><code>probe.py --watch</code></td><td><span class="tag py">daemon</span> :8502</td><td>Samples NT + suite health (incl. swallowed Lab faults) into the DB every cycle. Writes a heartbeat row so <b>0 means “measured zero just now”</b>, never “dead probe”.</td></tr>
+    <tr><td><code>corpus_probe.py</code></td><td><span class="tag py">daemon</span></td><td>Audits whether the recorded corpus is <i>trustworthy</i> — completeness, schema, vote coverage — as opposed to merely present.</td></tr>
+    <tr><td><code>docs\audit.py</code></td><td><span class="tag py">daemon</span> :8505</td><td>Docs drift: broken links, stale HTML siblings, contract-version drift, dangling <code>{{tokens}}</code>, orphans. Gates commits via a pre-commit hook.</td></tr>
+    <tr><td><code>node01_probe.py</code></td><td><span class="tag py">daemon</span> :8504</td><td>One read-only PowerShell metrics snapshot per cycle over SSH. Never touches NT on the remote box.</td></tr>
+    <tr><td>Streamlit</td><td><span class="tag py">server</span> :8501</td><td>The research surface — Observatory (honesty ladder), Explorer, Tick-Paths, Council-Paths. Pages import the CLIs so numbers cannot drift between the two.</td></tr>
+    <tr><td>Grafana</td><td><span class="tag ex">server</span> :3000</td><td>Ops boards over the SQLite datasource. Dashboard JSON is <b>generated</b> by <code>build_*_dashboard.py</code>, never hand-edited.</td></tr>
+    <tr><td><code>snapshot.py</code></td><td><span class="tag py">task</span></td><td>Tiered WORM corpus snapshots, validate-before-destruct. Two scheduled tasks. Guarantees integrity — not correctness.</td></tr>
+    <tr><td><code>replay_sync.py</code></td><td><span class="tag py">tool</span></td><td>Classifies the bake set by rule (so new Sentinel files are auto-included), tars, applies, compiles on the remote node.</td></tr>
+    <tr><td>Harness CLIs</td><td><span class="tag py">tool</span></td><td>Bar types + sensors + fusion outside NT from raw CSV. Trusted only behind <code>equivalence</code>, which itself is trusted only behind <code>selftest_equivalence</code>.</td></tr>
+  </tbody>
+</table></div>
+
+<h2><span class="hn">D</span>Artifact ownership — the one-writer rule</h2>
+<p class="h2sub">Two loadable recorders once meant a workspace load could <b>silently start a second writer</b>
+emitting contaminated rows into the training corpus. Ownership is therefore explicit, and “harmlessly present in
+the tree” is not a category that exists here.</p>
+<div class="tblwrap"><table>
+  <thead><tr><th>Artifact</th><th>Writer (exactly one)</th><th>Readers</th><th>Format / note</th></tr></thead>
+  <tbody>
+    <tr><td>Seam stores</td><td>each sensor / bar clock, for its own seam</td><td>Council · Cockpit · Bridge · Helm</td><td>In-memory statics. Scope-keyed, auto-expiring, <b>no history</b>.</td></tr>
+    <tr><td><code>Excursions\council\</code></td><td>ExcursionRecorder v2.3.0</td><td><code>ingest.py</code> · pathlab · train.py</td><td>Schema <b>1.5</b>. ⚠ 1.3/1.4 are contaminated — never train on them.</td></tr>
+    <tr><td><code>Excursions\ticks\</code></td><td>the recorders</td><td>pathlab · tickpaths · limitlab</td><td><code>ctick.3</code> — self-describing header, so context needs no join.</td></tr>
+    <tr><td><code>Excursions\candidates\</code></td><td>CandidateRecorder v1.1.0</td><td>pathlab <code>--kind candidates</code></td><td>Joins at 97% on <code>(inst,bartype,dir,fireTime)</code>.</td></tr>
+    <tr><td><code>Ledger\</code></td><td><code>SentinelCore</code> Foundation</td><td>Lens · Dashboard · diagnostics export</td><td>Orders/actions/fills + episode &amp; instance context.</td></tr>
+    <tr><td><code>sentinel.log</code></td><td><code>SentinelCore.Log</code></td><td>humans · probes · forensics</td><td>6 generations. Rotation is <b>deliberately silent</b> — logging it would recurse.</td></tr>
+    <tr><td><code>Roster.conf</code></td><td>Cockpit ⑤ / System Builder via <code>RosterIO</code></td><td>Council via the same <code>RosterIO</code></td><td>One reader/writer type ⇒ format cannot drift.</td></tr>
+    <tr><td><code>Lanes.conf</code></td><td>operator</td><td><code>LaneIO</code> → Council</td><td>Wins over the F6 setting, and the override is <b>announced in the log</b>.</td></tr>
+    <tr><td><code>sentinel.db</code></td><td><code>ingest.py</code> + the probes (own tables)</td><td>Grafana · Streamlit · analysis CLIs</td><td>WAL + 30 s busy timeout, because concurrent writers were real.</td></tr>
+    <tr><td><code>catalog.db</code></td><td><code>quartermaster\catalog.py</code></td><td>Quartermaster CLI · bake planning</td><td>Dates live in the filename ⇒ a 100 GB scan never opens a <code>.nrd</code>.</td></tr>
+    <tr><td><code>run-log.jsonl</code></td><td>Conductor</td><td>Conductor resume</td><td>Session-boundary checkpoints. ⚠ a polluted log misdirects resume.</td></tr>
+    <tr><td><code>cards.off</code> / <code>theme.txt</code></td><td>operator (file presence)</td><td><code>SentinelSkin</code>, polled ≤2 s</td><td>Presence = render gate off. Seams still publish; only drawing no-ops.</td></tr>
+  </tbody>
+</table></div>
+
+<h2><span class="hn">E</span>Threads, lifecycle and ports</h2>
+<div class="tblwrap"><table>
+  <thead><tr><th>Rule</th><th>Why it exists</th></tr></thead>
+  <tbody>
+    <tr><td>UI thread only</td><td>Enumerating <code>ChartControl.Indicators</code> or touching a window throws off the data thread. <b>NT is multi-UI-threaded</b> — each window has its own dispatcher, so cross-window property access throws every time and needs Win32 HWND calls instead.</td></tr>
+    <tr><td>Data thread only</td><td>Reading <code>ind.Values[i][barsAgo]</code>. Resolve the reference on the UI thread, read values on the data thread.</td></tr>
+    <tr><td>Never in <code>OnRender</code></td><td>Reading <code>Value[]</code>. Cache display values in <code>OnBarUpdate</code>; a render pass must not touch series state.</td></tr>
+    <tr><td>1 s timer, not the tape</td><td>A safety readout that refreshes on ticks displays a stale account in a quiet market. The Deck's account band is timer-driven for exactly this reason.</td></tr>
+    <tr><td>F5 vs restart</td><td>F5 recompiles and reloads. It does <b>not</b> reload a chart's sticky bar type, and it orphans bar-type seams. <b>Bars-type work ⇒ full NT restart.</b> <code>deploy</code> hot-reloads under a running instance; a plain file write does not.</td></tr>
+    <tr><td>Version forks</td><td>Namespace + class name are an indicator's serialization identity. A new version is a <i>different tool</i>: remove the old instance from the chart first, or two of them collide on one scope.</td></tr>
+    <tr><td>Realtime gate</td><td><code>UpdatedUtc</code> stamps wall-clock even during replay, so a freshness check cannot tell replay from live. Anything that records gates on <code>State.Realtime</code>.</td></tr>
+    <tr><td class="mono">:3000 · :8501 · :8502 · :8504 · :8505</td><td>Grafana · Streamlit · health probe · node01 probe · docs audit. Each daemon binds its port as its own single-instance guard.</td></tr>
+  </tbody>
+</table></div>
+
+<h2><span class="hn">F</span>The six invariants this topology exists to protect</h2>
+<ol class="inv">
+  <li><b>One writer per artifact.</b> A second writer does not corrupt loudly — it emits plausible rows in a
+    slightly different schema, and you find out months later when a model trained on both disagrees with itself.</li>
+  <li><b>A crashed sensor must be distinguishable from a quiet one.</b> Fail-open abstention means an indicator that
+    throws in <code>OnStateChange</code> simply never votes, forever, and nothing says so. That is what the
+    <i>declared</i> roster and <code>RosterComplete</code> exist to surface.</li>
+  <li><b>Zero is a measurement; absent is not.</b> Every board headline reads a heartbeat table, so an empty
+    findings table can never be mistaken for a healthy zero.</li>
+  <li><b>A value that resolves is not a value you can trust.</b> NT reported <code>MaxSpeedValue =
+    int.MaxValue</code> — a resolved-but-implausible number that silently disabled a clamp <i>and</i> reported
+    success. Measure the outcome; do not believe the flag.</li>
+  <li><b>Replay must equal live, and that is a measurement.</b> Hence the equivalence gate, its own self-test, the
+    determinism diff, and the realtime recording gate. A harness not yet proven equal to NT is just a faster way to
+    be wrong.</li>
+  <li><b>Instrumentation that changes behaviour is not instrumentation.</b> The frozen control strategy is never
+    modified; its instrumented sibling must reproduce its trade list exactly before anything it reports is believed.</li>
+</ol>
+
+<div class="note deadc">
+  <span class="nt">Current runtime state</span>
+  <b>Nothing is running and nothing is broken</b> — <code>nt8bridge compile → errors: []</code>. Before any bake or
+  live run: <b>F5 + full NT restart</b> (Core v1.45.0 / Council v1.11.0), remove the old Council from each chart
+  before adding v1.11.0, and re-add Deck v0.2.6. Lattice (212205) and Effort (212206) compile clean but have never
+  been loaded — loading them also needs the restart, because bar types are sticky.
+</div>
+
+<footer>
+  <span>Sentinel Suite · <b>Runtime Topology</b> · guide 2 of 2</span>
+  <span>built against Core v1.45.0 / Council v1.11.0 · 2026-07-30</span>
+</footer>
+</div></body></html>
