@@ -247,24 +247,277 @@
 <svg class="watermark" viewBox="0 0 512 512" aria-hidden="true"><use href="#helm"/></svg>
 <div class="wrap doc">
 <header>
-<p class="kicker"><svg class="brandmark" viewBox="0 0 512 512" aria-hidden="true"><use href="#helm"/></svg><span class="livedot"></span> Sentinel Suite · NinjaTrader 8 · living document</p>
-<h1>Sentinel Documentation</h1>
-<p class="lede">The one door into the Sentinel Suite's documentation — a bound set of living documents, four chapters by audience, all in one house style. Start with the reading path that fits why you're here.</p>
-</header>
-<h2>Start here — pick your path</h2>
+<p class="kicker"><svg class="brandmark" viewBox="0 0 512 512" aria-hidden="true"><use href="#helm"/></svg><span class="livedot"></span> Sentinel Suite · NinjaTrader 8 · living document<span class="navsep">·</span><a class="navhome" href="SENTINEL_DOCS.html">Docs home →</a></p>
+<h1 id="sentinel-documentation">Sentinel Documentation</h1>
+<p>The one door into the Sentinel Suite's documentation — a bound set of living documents, four chapters by
+audience, all in one house style. Start with the reading path that fits why you're here.</p>
+<h2 id="start-here-pick-your-path">Start here — pick your path</h2>
 <ul>
-<li><strong>Just want the idea?</strong> → the <a href="SENTINEL_THESIS.html">Thesis</a>. What Sentinel is and why, in one read: fuse many honest signals into one fitted decision, grade it against reality, feed the grade back.</li>
-<li><strong>Want the whole thing on one page?</strong> → the two visual guides: the <a href="SENTINEL_ARCHITECTURE_MAP.html">Architecture Map</a> (every layer and tool, including the 53-file Python Lab, with honest per-tool status) and the <a href="SENTINEL_RUNTIME_TOPOLOGY.html">Runtime Topology</a> (what actually runs, who owns each artifact, and the boundaries that bite).</li>
-<li><strong>Want to run or extend it?</strong> → the <a href="SENTINEL_PROCESS_ATLAS.html">Field Manual</a>. The illustrated, end-to-end manual — from "I have no idea what this is" to "I can run it, extend it, and trust it."</li>
-<li><strong>Here to contribute or plan?</strong> → the <a href="ROADMAP.html">Roadmap</a> (the engineering pipeline) and the <a href="PRODUCT_LADDER.html">Product Ladder</a> (the open-source product/packaging map).</li>
-<li><strong>Writing code for it?</strong> → the <a href="SENTINEL_DESIGN_SYSTEM.html">Design System</a> (palette, components, build), the <a href="SENTINEL_ML_SPEC.html">ML Spec</a> (schema + the offline Lab), the <a href="SENTINEL_DATASET_DICTIONARY.html">Dataset Dictionary</a> (corpus syntax, nomenclature &amp; how the Lab reads it), and the <a href="SENTINEL_BOUNDARY_INVENTORY.html">Boundary Inventory</a> (every file → rung → bundle).</li>
+<li><strong>Just want the idea?</strong> → the <a href="SENTINEL_THESIS.html">Thesis</a>. What Sentinel is and why, in one read: fuse
+  many honest signals into one fitted decision, grade it against reality, feed the grade back.</li>
+<li><strong>Want the whole thing on one page?</strong> → the two visual guides: the
+  <a href="SENTINEL_ARCHITECTURE_MAP.html">Architecture Map</a> (every layer and tool, including the 53-file Python Lab,
+  with honest per-tool status) and the <a href="SENTINEL_RUNTIME_TOPOLOGY.html">Runtime Topology</a> (what actually runs,
+  who owns each artifact, and the boundaries that bite).</li>
+<li><strong>Want to run or extend it?</strong> → the <a href="SENTINEL_PROCESS_ATLAS.html">Field Manual</a>. The illustrated,
+  end-to-end manual — from "I have no idea what this is" to "I can run it, extend it, and trust it."</li>
+<li><strong>Here to contribute or plan?</strong> → the <a href="ROADMAP.html">Roadmap</a> (the engineering pipeline) and the
+  <a href="PRODUCT_LADDER.html">Product Ladder</a> (the open-source product/packaging map).</li>
+<li><strong>Writing code for it?</strong> → the <a href="SENTINEL_DESIGN_SYSTEM.html">Design System</a> (palette, components, build),
+  the <a href="SENTINEL_ML_SPEC.html">ML Spec</a> (schema + the offline Lab), the
+  <a href="SENTINEL_DATASET_DICTIONARY.html">Dataset Dictionary</a> (corpus syntax, nomenclature &amp; how the Lab reads
+  it).</li>
 </ul>
-<h2>The chapters</h2>
-<div class="tblwrap"><table><thead><tr><th>Chapter</th><th>Document</th><th>What it is</th><th>For</th></tr></thead><tbody><tr><td><strong>Why</strong></td><td><a href="SENTINEL_THESIS.html">The Sentinel Thesis</a></td><td>the at-altitude argument — fuse · grade · feed back</td><td>anyone</td></tr><tr><td><strong>How / What</strong></td><td><a href="SENTINEL_PROCESS_ATLAS.html">Field Manual</a></td><td>the illustrated, end-to-end manual</td><td>trader + coder</td></tr><tr><td><strong>The picture</strong></td><td><a href="SENTINEL_ARCHITECTURE_MAP.html">Architecture Map</a></td><td>all 12 layers + every tool (bar clocks · 25 voters · services · order sources · the Python Lab) with per-tool status</td><td>anyone</td></tr><tr><td><strong>The picture</strong></td><td><a href="SENTINEL_RUNTIME_TOPOLOGY.html">Runtime Topology</a></td><td>in-process vs out-of-process ownership · one-writer artifact table · thread/lifecycle rules · the six invariants</td><td>coder</td></tr><tr><td><strong>The plan</strong></td><td><a href="ROADMAP.html">Roadmap</a></td><td>the engineering pipeline &amp; forward vision</td><td>contributor</td></tr><tr><td><strong>The plan</strong></td><td><a href="PRODUCT_LADDER.html">Product Ladder</a></td><td>the open-source product &amp; packaging map</td><td>contributor</td></tr><tr><td><strong>Reference</strong></td><td><a href="SENTINEL_DESIGN_SYSTEM.html">Design System</a></td><td>palette · components · build/verify workflow</td><td>coder</td></tr><tr><td><strong>Reference</strong></td><td><a href="SENTINEL_ML_SPEC.html">ML Spec</a></td><td>schema 1.3 instrumentation + the offline Lab</td><td>coder</td></tr><tr><td><strong>Reference</strong></td><td><a href="SENTINEL_DATASET_DICTIONARY.html">Dataset Dictionary</a></td><td>corpus syntax · nomenclature · bar-type &amp; voter registries · how the Lab reads it</td><td>coder</td></tr><tr><td><strong>Reference</strong></td><td><a href="SENTINEL_REPLAY_SPEC.html">Replay Spec</a></td><td>run the loop on historical data · the fusion core</td><td>coder</td></tr><tr><td><strong>Reference</strong></td><td><a href="SENTINEL_REPLAY_VALIDATION.html">Replay Validation</a></td><td>proof the replay corpus is trustworthy (fidelity · continuity · determinism)</td><td>coder</td></tr><tr><td><strong>Reference</strong></td><td><a href="SENTINEL_BOUNDARY_INVENTORY.html">Boundary Inventory</a></td><td>every Sentinel file → rung → layer → bundle</td><td>coder</td></tr><tr><td><strong>Reference</strong></td><td><a href="SENTINEL_DATA_PLATFORM_SPEC.html">Data Platform Spec</a></td><td>the built SQLite corpus + ingester + Streamlit/Grafana (where the graded data lives)</td><td>coder</td></tr><tr><td><strong>Reference</strong></td><td><a href="SENTINEL_FLUXBARS_SPEC.html">SentinelFlux Bars Spec</a></td><td>the order-flow-imbalance bar type — the first genuinely orthogonal axis</td><td>coder</td></tr><tr><td><strong>Reference</strong></td><td><a href="HELM_TEST_PUNCHLIST.html">Helm Test Punchlist</a></td><td>the Helm interdiction-layer test checklist (plumbing vs position tier)</td><td>coder</td></tr></tbody></table></div>
-<p><em>More specs sit beside these in <code>Docs\</code> (Bridge · Cockpit · <strong>Helm</strong> · System Builder · Design System · Contracts · Runbook · Replay …) — each an <code>.md</code> + its rendered <code>.html</code>. This table is the curated front door, not the full list.</em></p>
-<h2>The system in one line</h2>
-<p>SENSORS watch (incl. the <strong>order-flow FLUX</strong> axis) → CORE carries → COUNCIL decides → BRIDGE / DECK act → GATE guards → LEDGER remembers → LENS grades → <strong>LAB learns</strong> (the built SQLite data platform fits the ConvictionFloor + per-bar-type weights) — and the grade feeds back into the decision.</p>
-<hr>
-<p><em>Every document here is a living document, rendered from Markdown into the shared Field Manual house style. The Markdown source (<code>.md</code>) sits beside each <code>.html</code>, so the words are versioned as plain text and the look is applied by one shared template.</em></p>
+<h2 id="the-chapters">The chapters</h2>
+<table>
+<thead>
+<tr>
+<th>Chapter</th>
+<th>Document</th>
+<th>What it is</th>
+<th>For</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Why</strong></td>
+<td><a href="SENTINEL_THESIS.html">The Sentinel Thesis</a></td>
+<td>the at-altitude argument — fuse · grade · feed back</td>
+<td>anyone</td>
+</tr>
+<tr>
+<td><strong>How / What</strong></td>
+<td><a href="SENTINEL_PROCESS_ATLAS.html">Field Manual</a></td>
+<td>the illustrated, end-to-end manual</td>
+<td>trader + coder</td>
+</tr>
+<tr>
+<td><strong>The picture</strong></td>
+<td><a href="SENTINEL_ARCHITECTURE_MAP.html">Architecture Map</a></td>
+<td>all 12 layers + every tool (bar clocks · 25 voters · services · order sources · the Python Lab) with per-tool status</td>
+<td>anyone</td>
+</tr>
+<tr>
+<td><strong>The picture</strong></td>
+<td><a href="SENTINEL_RUNTIME_TOPOLOGY.html">Runtime Topology</a></td>
+<td>in-process vs out-of-process ownership · one-writer artifact table · thread/lifecycle rules · the six invariants</td>
+<td>coder</td>
+</tr>
+<tr>
+<td><strong>The plan</strong></td>
+<td><a href="ROADMAP.html">Roadmap</a></td>
+<td>the engineering pipeline &amp; forward vision</td>
+<td>contributor</td>
+</tr>
+<tr>
+<td><strong>The plan</strong></td>
+<td><a href="PRODUCT_LADDER.html">Product Ladder</a></td>
+<td>the open-source product &amp; packaging map</td>
+<td>contributor</td>
+</tr>
+<tr>
+<td><strong>Reference</strong></td>
+<td><a href="SENTINEL_DESIGN_SYSTEM.html">Design System</a></td>
+<td>palette · components · build/verify workflow</td>
+<td>coder</td>
+</tr>
+<tr>
+<td><strong>Reference</strong></td>
+<td><a href="SENTINEL_ML_SPEC.html">ML Spec</a></td>
+<td>schema 1.3 instrumentation + the offline Lab</td>
+<td>coder</td>
+</tr>
+<tr>
+<td><strong>Reference</strong></td>
+<td><a href="SENTINEL_DATASET_DICTIONARY.html">Dataset Dictionary</a></td>
+<td>corpus syntax · nomenclature · bar-type &amp; voter registries · how the Lab reads it</td>
+<td>coder</td>
+</tr>
+<tr>
+<td><strong>Reference</strong></td>
+<td><a href="SENTINEL_REPLAY_SPEC.html">Replay Spec</a></td>
+<td>run the loop on historical data · the fusion core</td>
+<td>coder</td>
+</tr>
+<tr>
+<td><strong>Reference</strong></td>
+<td><a href="SENTINEL_DATA_PLATFORM_SPEC.html">Data Platform Spec</a></td>
+<td>the built SQLite corpus + ingester + Streamlit/Grafana (where the graded data lives)</td>
+<td>coder</td>
+</tr>
+<tr>
+<td><strong>Reference</strong></td>
+<td><a href="SENTINEL_FLUXBARS_SPEC.html">SentinelFlux Bars Spec</a></td>
+<td>the order-flow-imbalance bar type — the first genuinely orthogonal axis</td>
+<td>coder</td>
+</tr>
+</tbody>
+</table>
+<p><em>The table above is the </em><em>curated front door</em><em> — the reading path, not the inventory. Every document in
+<code>Docs\</code> is listed in §Complete registry below.</em></p>
+<hr />
+<h2 id="complete-registry-every-document-in-docs">Complete registry — every document in <code>Docs\</code></h2>
+<p><strong>This section is the INDEX OF RECORD (2026-08-03).</strong> Before it existed, 41 of 72 documents had nothing
+linking to them, so <code>Lab\docs\audit.py</code>'s orphan check was firing on two thirds of the corpus and meant
+nothing. ⇒ <strong>"Orphan" now means "missing from this registry."</strong> A doc not listed here is either new and
+unregistered, or it should be in <code>_archive\</code>.</p>
+<blockquote>
+<p><strong>Rule for adding a doc:</strong> a new <code>.md</code> in <code>Docs\</code> gets a row here in the same commit. One line, honest
+status. If you cannot state its status in a line, that is a signal about the document, not about the rule.</p>
+</blockquote>
+<h3 id="data-platform-corpus">Data platform &amp; corpus</h3>
+<table>
+<thead>
+<tr>
+<th>doc</th>
+<th>status</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a href="SENTINEL_DATA_PLATFORM_SPEC.md">Data Platform Spec</a></td>
+<td>✅ BUILT &amp; LIVE — SQLite + ingester + Streamlit + Grafana + health layer</td>
+</tr>
+<tr>
+<td><a href="SENTINEL_DATASET_DICTIONARY.md">Dataset Dictionary</a></td>
+<td>the authoritative corpus reference · ⚠ no status line</td>
+</tr>
+<tr>
+<td><a href="SENTINEL_ML_SPEC.md">ML Spec</a></td>
+<td>SPEC (2026-07-09) — schema + the offline Lab</td>
+</tr>
+</tbody>
+</table>
+<h3 id="replay-the-conductor">Replay &amp; the Conductor</h3>
+<table>
+<thead>
+<tr>
+<th>doc</th>
+<th>status</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a href="SENTINEL_REPLAY_SPEC.md">Replay Spec</a></td>
+<td>run the loop on historical data · ⚠ no status line</td>
+</tr>
+</tbody>
+</table>
+<h3 id="strategy-signal">Strategy &amp; signal</h3>
+<table>
+<thead>
+<tr>
+<th>doc</th>
+<th>status</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a href="BRIDGE_SPEC.md">Bridge Spec</a></td>
+<td>✅ BUILT — retained as design record (internal v0.2.3)</td>
+</tr>
+<tr>
+<td><a href="CONSISTENCY_GOVERNOR_SPEC.md">Consistency Governor Spec</a></td>
+<td>✅ BUILT 2026-07-03, pending live validation</td>
+</tr>
+<tr>
+<td><a href="SENTINEL_THESIS.md">Thesis</a></td>
+<td>the at-altitude argument · ⚠ no status line</td>
+</tr>
+<tr>
+<td><a href="SENTINEL_GOD_REVERSAL_DOCTRINE.md">God Reversal Doctrine</a></td>
+<td>⚠ no status line</td>
+</tr>
+<tr>
+<td><a href="SENTINEL_CANDIDATE_LIBRARY.md">Candidate Library</a></td>
+<td>⚠ no status line</td>
+</tr>
+</tbody>
+</table>
+<h3 id="bar-types">Bar types</h3>
+<table>
+<thead>
+<tr>
+<th>doc</th>
+<th>status</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a href="SENTINEL_FLUXBARS_SPEC.md">FluxBars Spec</a></td>
+<td>✅ BUILT &amp; LIVE-VALIDATED (2026-07-14)</td>
+</tr>
+</tbody>
+</table>
+<h3 id="ui-suite-naming">UI, suite &amp; naming</h3>
+<table>
+<thead>
+<tr>
+<th>doc</th>
+<th>status</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a href="SENTINEL_DESIGN_SYSTEM.md">Design System</a></td>
+<td>the exacting living spec — read before building any tool · ⚠ no status line</td>
+</tr>
+<tr>
+<td><a href="SENTINEL_NAMING_FEDERATION.md">Naming Federation</a></td>
+<td>RATIFIED LAW + migration ledger</td>
+</tr>
+<tr>
+<td><a href="SENTINEL_COCKPIT_SPEC.md">Cockpit Spec</a></td>
+<td>✅ BUILT — <code>SentinelCockpit_v0_1_0</code></td>
+</tr>
+<tr>
+<td><a href="SENTINEL_RAIL_SPEC.md">Rail Spec</a></td>
+<td>proposed, <strong>not built</strong>; the three CardLayout bugs are fixed</td>
+</tr>
+<tr>
+<td><a href="SENTINEL_HARDENING_FRAMEWORK.md">Hardening Framework</a></td>
+<td>the safety substrate · ⚠ no status line</td>
+</tr>
+<tr>
+<td><a href="SENTINEL_SYSTEM_BUILDER_SPEC.md">System Builder Spec</a></td>
+<td>Phases 0 + 1 BUILT</td>
+</tr>
+<tr>
+<td><a href="SENTINEL_VOLENVELOPE_SPEC.md">VolEnvelope Spec</a></td>
+<td>⚠ no status line</td>
+</tr>
+</tbody>
+</table>
+<h3 id="reference-meta">Reference &amp; meta</h3>
+<table>
+<thead>
+<tr>
+<th>doc</th>
+<th>status</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a href="ROADMAP.md">Roadmap</a> · <a href="PRODUCT_LADDER.md">Product Ladder</a></td>
+<td>the pipeline and the packaging map</td>
+</tr>
+<tr>
+<td><a href="SENTINEL_SUITE_MANUAL.md">Suite Manual</a> · <a href="../README.md">README</a></td>
+<td>zero-to-fluent manual · repo front page</td>
+</tr>
+<tr>
+<td><a href="SENTINEL_SHIP_MANIFEST.md">Ship Manifest</a></td>
+<td>what ships</td>
+</tr>
+</tbody>
+</table>
+<h2 id="the-system-in-one-line">The system in one line</h2>
+<p>SENSORS watch (incl. the <strong>order-flow FLUX</strong> axis) → CORE carries → COUNCIL decides → BRIDGE / DECK act → GATE guards →
+LEDGER remembers → LENS grades → <strong>LAB learns</strong> (the built SQLite data platform fits the ConvictionFloor + per-bar-type
+weights) — and the grade feeds back into the decision.</p>
+<hr />
+<p><em>Every document here is a living document, rendered from Markdown into the shared Field Manual house style.
+The Markdown source (<code>.md</code>) sits beside each <code>.html</code>, so the words are versioned as plain text and the look is
+applied by one shared template.</em></p>
 <footer><span>Sentinel Suite · <b>Sentinel Documentation</b></span><span>living document · rendered from Markdown</span></footer>
 </div></body></html>

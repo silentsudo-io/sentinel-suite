@@ -19,3 +19,7 @@ dist/
 
 # check_parity --since-last snapshot: per-machine state, not shared history
 .parity-state.json
+
+# Python bytecode from tools/
+__pycache__/
+*.pyc

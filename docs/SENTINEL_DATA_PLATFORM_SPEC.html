@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Sentinel · Sentinel Data Platform — Spec &amp; Stand-Up Workflow</title>
+<title>Sentinel · Sentinel Data Platform — Spec & Stand-Up Workflow</title>
 <style>
   :root{
     --void:#e7edf1; --panel:#f3f7f9; --surface:#ffffff; --surface2:#eaf0f3;
@@ -248,60 +248,255 @@
 <div class="wrap doc">
 <header>
 <p class="kicker"><svg class="brandmark" viewBox="0 0 512 512" aria-hidden="true"><use href="#helm"/></svg><span class="livedot"></span> Sentinel Suite · NinjaTrader 8 · living document<span class="navsep">·</span><a class="navhome" href="SENTINEL_DOCS.html">Docs home →</a></p>
-<h1>Sentinel Data Platform — Spec &amp; Stand-Up Workflow</h1>
-<p class="lede"><strong>Status:</strong> ✅ <strong>BUILT &amp; LIVE (updated 2026-07-14).</strong> All phases below shipped; the sections that read as "to build" / "open decisions" are kept for the design rationale but are RESOLVED — see <strong>§9 Built state</strong> for what is actually running. <strong>Goal (achieved):</strong> turn the trade/tick records into a persistent, always-on, filterable data layer with two graphical front-ends — <strong>Plotly (per-trade path inspection)</strong> and <strong>Grafana (dashboards)</strong> — so you <em>open a URL and the data is there</em>, no copy-paste from chat, no one-off scripts.</p>
-</header>
-<p><strong>What shipped since this spec was written:</strong> SQLite <code>Sentinel\Lab\db\sentinel.db</code> (WAL) + a live <code>--watch</code> ingester + Streamlit :8501 + Grafana :3000, all auto-started by the <strong><code>SentinelDataPlatform</code></strong> scheduled task. <strong>And (2026-07-14) the ingester now folds the Council VOTE VECTOR into the DB</strong> — the decision inputs (<code>votes/netScore/activeW/reasons</code>) live only in the <code>council\1.3\</code> ROW corpus, not the tick sidecars, so the ingester reads both: it <strong>enriches</strong> each tick-true trade with its vote vector and <strong>backfills</strong> the historical graded fires. DB went 702 → ~5,300 trades, <strong>~99% carrying the vote vector.</strong> See [[ingester-vote-vector-fold-in]].</p>
-<p>Related: [[sentinel-ml-lab]] (the "analyze the PATH, go tick-true" redirection), the Deck tape capture (<code>Deck_v0_2_5.cs</code>, raw-tick <code>OnMarketData</code>), the ExcursionRecorder corpus (<code>SentinelExcursionRecorder_v2_0_0</code>, v2.1.2).</p>
-<hr>
-<h2><span class="hn">1.</span>North star (the workflow you described)</h2>
+<h1 id="sentinel-data-platform-spec-stand-up-workflow">Sentinel Data Platform — Spec &amp; Stand-Up Workflow</h1>
+<p><strong>Status:</strong> ✅ <strong>BUILT &amp; LIVE (updated 2026-07-14).</strong> All phases below shipped; the sections that read as
+"to build" / "open decisions" are kept for the design rationale but are RESOLVED — see <strong>§9 Built state</strong> for
+what is actually running. <strong>Goal (achieved):</strong> turn the trade/tick records into a persistent, always-on,
+filterable data layer with two graphical front-ends — <strong>Plotly (per-trade path inspection)</strong> and
+<strong>Grafana (dashboards)</strong> — so you <em>open a URL and the data is there</em>, no copy-paste from chat, no one-off scripts.</p>
+<p><strong>What shipped since this spec was written:</strong> SQLite <code>Sentinel\Lab\db\sentinel.db</code> (WAL) + a live <code>--watch</code>
+ingester + Streamlit :8501 + Grafana :3000, all auto-started by the <strong><code>SentinelDataPlatform</code></strong> scheduled task.
+<strong>And (2026-07-14) the ingester now folds the Council VOTE VECTOR into the DB</strong> — the decision inputs
+(<code>votes/netScore/activeW/reasons</code>) live only in the <code>council\1.3\</code> ROW corpus, not the tick sidecars, so the
+ingester reads both: it <strong>enriches</strong> each tick-true trade with its vote vector and <strong>backfills</strong> the historical
+graded fires. DB went 702 → ~5,300 trades, <strong>~99% carrying the vote vector.</strong> See [[ingester-vote-vector-fold-in]].</p>
+<p>Related: [[sentinel-ml-lab]] (the "analyze the PATH, go tick-true" redirection), the Deck tape capture
+(<code>Deck_v0_2_5.cs</code>, raw-tick <code>OnMarketData</code>), the ExcursionRecorder corpus (<code>SentinelExcursionRecorder_v2_0_0</code>, v2.1.2).</p>
+<hr />
+<h2 id="1-north-star-the-workflow-you-described">1. North star (the workflow you described)</h2>
 <pre><code>  You trade in NT ─▶ Deck writes JSONL tick files ─▶ Ingester loads them ─▶ SQLite ─┬─▶ Streamlit+Plotly  (localhost:8501)
-  (+ Council fires)   (Excursions\ticks\, council\)   (runs on a schedule)    (one DB) └─▶ Grafana          (localhost:3000)</code></pre>
+  (+ Council fires)   (Excursions\ticks\, council\)   (runs on a schedule)    (one DB) └─▶ Grafana          (localhost:3000)
+</code></pre>
 <p>You never touch files or paste links. The ingester keeps the DB current; you go to either front-end and <strong>filter</strong>.</p>
-<hr>
-<h2><span class="hn">2.</span>Architecture decisions (with rationale)</h2>
+<hr />
+<h2 id="2-architecture-decisions-with-rationale">2. Architecture decisions (with rationale)</h2>
 <ol>
-<li><strong>NT writes files, Python owns the DB. NT never talks to SQLite.</strong> NinjaScript stays simple and crash-safe: the Deck/recorder append <strong>JSONL</strong> (durable, append-only, no DB driver in the trading process, no lock contention with a live account). A <strong>Python ingester</strong> reads those files into SQLite. This decouples the <em>trading</em> process from the <em>analysis</em> store — a bug in analysis can never touch order flow.</li>
-<li><strong>SQLite is the single source of truth</strong> for BOTH front-ends. One <code>sentinel.db</code>; Streamlit and Grafana both read it. Rationale: embedded (no server), one file, pandas-native, and Grafana has a first-class SQLite datasource plugin. (Postgres/Influx only if we later need multi-writer or live streaming — not now.)</li>
-<li><strong>Plotly and Grafana are complementary, not redundant.</strong></li>
-<li><strong>Streamlit + Plotly</strong> → <em>inspect ONE trade's path</em> interactively (the favorable-ticks shape, entry heat, raw price), + ad-hoc aggregates.</li>
-<li><strong>Grafana</strong> → <em>dashboards over the whole corpus</em> (blotter, aggregate stats by conviction band / bar type, capture health), live-refreshing.</li>
-<li><strong>The DB schema is fidelity-forward.</strong> It carries a <code>px</code> column now (currently the bar <code>Close[0]</code>) and adds <code>last/bid/ask</code> when the capture goes <strong>raw-tick</strong> via <code>OnMarketData</code> (see §6). No schema churn to upgrade.</li>
+<li><strong>NT writes files, Python owns the DB. NT never talks to SQLite.</strong>
+   NinjaScript stays simple and crash-safe: the Deck/recorder append <strong>JSONL</strong> (durable, append-only, no DB
+   driver in the trading process, no lock contention with a live account). A <strong>Python ingester</strong> reads those
+   files into SQLite. This decouples the <em>trading</em> process from the <em>analysis</em> store — a bug in analysis can
+   never touch order flow.</li>
+<li><strong>SQLite is the single source of truth</strong> for BOTH front-ends. One <code>sentinel.db</code>; Streamlit and Grafana both
+   read it. Rationale: embedded (no server), one file, pandas-native, and Grafana has a first-class SQLite
+   datasource plugin. (Postgres/Influx only if we later need multi-writer or live streaming — not now.)</li>
+<li><strong>Plotly and Grafana are complementary, not redundant.</strong>
+   - <strong>Streamlit + Plotly</strong> → <em>inspect ONE trade's path</em> interactively (the favorable-ticks shape, entry heat,
+     raw price), + ad-hoc aggregates.
+   - <strong>Grafana</strong> → <em>dashboards over the whole corpus</em> (blotter, aggregate stats by conviction band / bar type,
+     capture health), live-refreshing.</li>
+<li><strong>The DB schema is fidelity-forward.</strong> It carries a <code>px</code> column now (currently the bar <code>Close[0]</code>) and adds
+   <code>last/bid/ask</code> when the capture goes <strong>raw-tick</strong> via <code>OnMarketData</code> (see §6). No schema churn to upgrade.</li>
 </ol>
-<hr>
-<h2><span class="hn">3.</span>Data model (SQLite: <code>Sentinel\Lab\db\sentinel.db</code>)</h2>
-<h3><code>trades</code> — one row per captured trade/fire</h3>
-<div class="tblwrap"><table><thead><tr><th>column</th><th>type</th><th>notes</th></tr></thead><tbody><tr><td><code>trade_id</code></td><td>TEXT PK</td><td>the JSONL <code>tradeId</code></td></tr><tr><td><code>source</code></td><td>TEXT</td><td><code>manual</code> (Deck tape) · <code>council</code> (recorder) · <code>godtrades</code> …</td></tr><tr><td><code>inst</code> · <code>bartype</code> · <code>account</code></td><td>TEXT</td><td></td></tr><tr><td><code>dir</code></td><td>INT</td><td>+1 long / −1 short</td></tr><tr><td><code>entry_utc</code> · <code>entry_px</code></td><td>TEXT · REAL</td><td></td></tr><tr><td><code>exit_utc</code> · <code>exit_px</code></td><td>TEXT · REAL</td><td>null while open</td></tr><tr><td><code>max_fav_ticks</code> · <code>max_adv_ticks</code></td><td>REAL</td><td></td></tr><tr><td><code>n_ticks</code> · <code>dur_s</code></td><td>INT · REAL</td><td>path length</td></tr><tr><td><code>partial</code></td><td>INT</td><td>1 = capture armed mid-trade (entry not seen)</td></tr><tr><td><code>schema</code> · <code>src</code></td><td>TEXT</td><td>fidelity discriminator: <code>schema='ctick.1'</code>+<code>src='last'</code> = tick-true sidecar · <code>schema='1.3'</code>+<code>src='row'</code> = bar-based ROW trade folded from <code>council\1.3\</code> (no tick path) · <code>src='row'</code> twins are dropped when a real sidecar lands</td></tr><tr><td><strong>council context</strong> (nullable)</td><td></td><td>filled for council trades — the VOTE VECTOR is folded in from the <code>council\1.3\</code> row corpus (the sidecars don't carry it)</td></tr><tr><td><code>conviction</code> · <code>size_mult</code> · <code>net_score</code> · <code>active_w</code></td><td>REAL</td><td></td></tr><tr><td><code>votes_json</code> · <code>reasons</code> · <code>episode_id</code> · <code>first_touch</code></td><td>TEXT/INT</td><td>~99% populated after the fold-in</td></tr><tr><td><code>barrier_ticks</code> · <code>ms_to_target_r</code> · <code>ms_to_stop_r</code></td><td>REAL/INT</td><td>tick-true first-touch (sidecar)</td></tr><tr><td><strong>derived path features</strong> (computed at ingest)</td><td></td><td>the "analyze the path" columns</td></tr><tr><td><code>time_to_mfe_s</code> · <code>time_to_mae_s</code></td><td>REAL</td><td></td></tr><tr><td><code>mfe_mae_ratio</code></td><td>REAL</td><td></td></tr><tr><td><code>adverse_first</code></td><td>INT</td><td>1 = took heat before it worked (late-ish) vs 0 (favorable first)</td></tr><tr><td><code>ingested_utc</code></td><td>TEXT</td><td></td></tr></tbody></table></div>
-<h3><code>ticks</code> — the path, one row per tick</h3>
-<div class="tblwrap"><table><thead><tr><th>column</th><th>type</th><th>notes</th></tr></thead><tbody><tr><td><code>trade_id</code></td><td>TEXT</td><td>FK → trades</td></tr><tr><td><code>ms</code></td><td>INT</td><td>ms from entry</td></tr><tr><td><code>px</code></td><td>REAL</td><td>bar close now; raw last after the fidelity upgrade</td></tr><tr><td><code>last</code> · <code>bid</code> · <code>ask</code> · <code>vol</code></td><td>REAL/INT</td><td><strong>added at tick.2</strong> (raw-tick capture)</td></tr></tbody></table></div>
-<p><code>PRIMARY KEY (trade_id, ms)</code>, index on <code>trade_id</code>. A <code>trade_features</code> VIEW can pre-compute filter columns (conviction band, R buckets) for Grafana.</p>
-<hr>
-<h2><span class="hn">4.</span>Components to build</h2>
-<div class="tblwrap"><table><thead><tr><th>#</th><th>component</th><th>path</th><th>job</th></tr></thead><tbody><tr><td>A</td><td><strong>DB schema</strong></td><td><code>Lab\db\schema.sql</code></td><td>create <code>trades</code> + <code>ticks</code> (+ view)</td></tr><tr><td>B</td><td><strong>Ingester</strong></td><td><code>Lab\ingest\ingest.py</code></td><td>scan <code>Excursions\ticks\<em>.jsonl</code> <strong>and <code>council\ticks\</em>.jsonl</code></strong> → parse header+ticks → compute path features → upsert into SQLite. <strong>THEN <code>ingest_council_rows()</code> folds <code>council\1.3\*.jsonl</code></strong> (the vote-vector corpus) in — enrich existing tick-true trades' NULL vote columns, else insert a bar-based <code>src='row'</code> trade; per-file mtime watermark (<code>row_files</code> table) keeps <code>--watch</code> cheap. <strong>Idempotent</strong> (skip unchanged by mtime). WAL + <code>busy_timeout</code> so a backfill and the watch loop coexist. Modes: one-shot · <code>--watch</code> (poll 2 s) · <code>--reingest</code> (force full backfill)</td></tr><tr><td>C</td><td><strong>Streamlit explorer</strong></td><td><code>Lab\viz\explorer.py</code></td><td>reads SQLite; sidebar filters (date · inst · bartype · dir · source · conviction band · partial · min ticks); a trade table → click → Plotly path chart (fav-ticks + raw price) + aggregate panels (median path by conviction band, MFE/MAE scatter). Supersedes the file-based <code>viz\tickpaths.py</code>.</td></tr><tr><td>D</td><td><strong>Grafana provisioning</strong></td><td><code>Lab\grafana\</code></td><td>datasource YAML (SQLite → <code>sentinel.db</code>) + dashboard JSON: (1) blotter table (2) path viewer (3) aggregates by conviction/bartype (4) capture-health (records/day, missing exits)</td></tr><tr><td>E</td><td><strong>Always-on runner</strong></td><td><code>Lab\run\</code></td><td>scripts/tasks to keep B (ingest), C (Streamlit), D (Grafana) up so the browser is always live</td></tr></tbody></table></div>
-<hr>
-<h2><span class="hn">5.</span>Stand-up workflow (one-time)</h2>
+<hr />
+<h2 id="3-data-model-sqlite-sentinellabdbsentineldb">3. Data model (SQLite: <code>Sentinel\Lab\db\sentinel.db</code>)</h2>
+<h3 id="trades-one-row-per-captured-tradefire"><code>trades</code> — one row per captured trade/fire</h3>
+<table>
+<thead>
+<tr>
+<th>column</th>
+<th>type</th>
+<th>notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>trade_id</code></td>
+<td>TEXT PK</td>
+<td>the JSONL <code>tradeId</code></td>
+</tr>
+<tr>
+<td><code>source</code></td>
+<td>TEXT</td>
+<td><code>manual</code> (Deck tape) · <code>council</code> (recorder) · <code>godtrades</code> …</td>
+</tr>
+<tr>
+<td><code>inst</code> · <code>bartype</code> · <code>account</code></td>
+<td>TEXT</td>
+<td></td>
+</tr>
+<tr>
+<td><code>dir</code></td>
+<td>INT</td>
+<td>+1 long / −1 short</td>
+</tr>
+<tr>
+<td><code>entry_utc</code> · <code>entry_px</code></td>
+<td>TEXT · REAL</td>
+<td></td>
+</tr>
+<tr>
+<td><code>exit_utc</code> · <code>exit_px</code></td>
+<td>TEXT · REAL</td>
+<td>null while open</td>
+</tr>
+<tr>
+<td><code>max_fav_ticks</code> · <code>max_adv_ticks</code></td>
+<td>REAL</td>
+<td></td>
+</tr>
+<tr>
+<td><code>n_ticks</code> · <code>dur_s</code></td>
+<td>INT · REAL</td>
+<td>path length</td>
+</tr>
+<tr>
+<td><code>partial</code></td>
+<td>INT</td>
+<td>1 = capture armed mid-trade (entry not seen)</td>
+</tr>
+<tr>
+<td><code>schema</code> · <code>src</code></td>
+<td>TEXT</td>
+<td>fidelity discriminator: <code>schema='ctick.1'</code>+<code>src='last'</code> = tick-true sidecar · <code>schema='1.3'</code>+<code>src='row'</code> = bar-based ROW trade folded from <code>council\1.3\</code> (no tick path) · <code>src='row'</code> twins are dropped when a real sidecar lands</td>
+</tr>
+<tr>
+<td><strong>council context</strong> (nullable)</td>
+<td></td>
+<td>filled for council trades — the VOTE VECTOR is folded in from the <code>council\1.3\</code> row corpus (the sidecars don't carry it)</td>
+</tr>
+<tr>
+<td><code>conviction</code> · <code>size_mult</code> · <code>net_score</code> · <code>active_w</code></td>
+<td>REAL</td>
+<td></td>
+</tr>
+<tr>
+<td><code>votes_json</code> · <code>reasons</code> · <code>episode_id</code> · <code>first_touch</code></td>
+<td>TEXT/INT</td>
+<td>~99% populated after the fold-in</td>
+</tr>
+<tr>
+<td><code>barrier_ticks</code> · <code>ms_to_target_r</code> · <code>ms_to_stop_r</code></td>
+<td>REAL/INT</td>
+<td>tick-true first-touch (sidecar)</td>
+</tr>
+<tr>
+<td><strong>derived path features</strong> (computed at ingest)</td>
+<td></td>
+<td>the "analyze the path" columns</td>
+</tr>
+<tr>
+<td><code>time_to_mfe_s</code> · <code>time_to_mae_s</code></td>
+<td>REAL</td>
+<td></td>
+</tr>
+<tr>
+<td><code>mfe_mae_ratio</code></td>
+<td>REAL</td>
+<td></td>
+</tr>
+<tr>
+<td><code>adverse_first</code></td>
+<td>INT</td>
+<td>1 = took heat before it worked (late-ish) vs 0 (favorable first)</td>
+</tr>
+<tr>
+<td><code>ingested_utc</code></td>
+<td>TEXT</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<h3 id="ticks-the-path-one-row-per-tick"><code>ticks</code> — the path, one row per tick</h3>
+<table>
+<thead>
+<tr>
+<th>column</th>
+<th>type</th>
+<th>notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>trade_id</code></td>
+<td>TEXT</td>
+<td>FK → trades</td>
+</tr>
+<tr>
+<td><code>ms</code></td>
+<td>INT</td>
+<td>ms from entry</td>
+</tr>
+<tr>
+<td><code>px</code></td>
+<td>REAL</td>
+<td>bar close now; raw last after the fidelity upgrade</td>
+</tr>
+<tr>
+<td><code>last</code> · <code>bid</code> · <code>ask</code> · <code>vol</code></td>
+<td>REAL/INT</td>
+<td><strong>added at tick.2</strong> (raw-tick capture)</td>
+</tr>
+</tbody>
+</table>
+<p><code>PRIMARY KEY (trade_id, ms)</code>, index on <code>trade_id</code>. A <code>trade_features</code> VIEW can pre-compute filter columns
+(conviction band, R buckets) for Grafana.</p>
+<hr />
+<h2 id="4-components-to-build">4. Components to build</h2>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>component</th>
+<th>path</th>
+<th>job</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>A</td>
+<td><strong>DB schema</strong></td>
+<td><code>Lab\db\schema.sql</code></td>
+<td>create <code>trades</code> + <code>ticks</code> (+ view)</td>
+</tr>
+<tr>
+<td>B</td>
+<td><strong>Ingester</strong></td>
+<td><code>Lab\ingest\ingest.py</code></td>
+<td>scan <code>Excursions\ticks\*.jsonl</code> <strong>and <code>council\ticks\*.jsonl</code></strong> → parse header+ticks → compute path features → upsert into SQLite. <strong>THEN <code>ingest_council_rows()</code> folds <code>council\1.3\*.jsonl</code></strong> (the vote-vector corpus) in — enrich existing tick-true trades' NULL vote columns, else insert a bar-based <code>src='row'</code> trade; per-file mtime watermark (<code>row_files</code> table) keeps <code>--watch</code> cheap. <strong>Idempotent</strong> (skip unchanged by mtime). WAL + <code>busy_timeout</code> so a backfill and the watch loop coexist. Modes: one-shot · <code>--watch</code> (poll 2 s) · <code>--reingest</code> (force full backfill)</td>
+</tr>
+<tr>
+<td>C</td>
+<td><strong>Streamlit explorer</strong></td>
+<td><code>Lab\viz\explorer.py</code></td>
+<td>reads SQLite; sidebar filters (date · inst · bartype · dir · source · conviction band · partial · min ticks); a trade table → click → Plotly path chart (fav-ticks + raw price) + aggregate panels (median path by conviction band, MFE/MAE scatter). Supersedes the file-based <code>viz\tickpaths.py</code>.</td>
+</tr>
+<tr>
+<td>D</td>
+<td><strong>Grafana provisioning</strong></td>
+<td><code>Lab\grafana\</code></td>
+<td>datasource YAML (SQLite → <code>sentinel.db</code>) + dashboard JSON: (1) blotter table (2) path viewer (3) aggregates by conviction/bartype (4) capture-health (records/day, missing exits)</td>
+</tr>
+<tr>
+<td>E</td>
+<td><strong>Always-on runner</strong></td>
+<td><code>Lab\run\</code></td>
+<td>scripts/tasks to keep B (ingest), C (Streamlit), D (Grafana) up so the browser is always live</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="5-stand-up-workflow-one-time">5. Stand-up workflow (one-time)</h2>
 <ol>
 <li><strong>Python deps</strong> (Lab venv already has pandas/plotly/streamlit): <code>pip install watchdog</code> (for <code>--watch</code>), nothing else — SQLite is stdlib (<code>sqlite3</code>).</li>
 <li><strong>Create the DB:</strong> <code>python Lab\ingest\ingest.py --init</code> (runs <code>schema.sql</code>) then a first full ingest of the existing 4 tick files.</li>
 <li><strong>Grafana:</strong> install Grafana OSS (Windows installer <em>or</em> Docker), install the <strong><code>frser-sqlite-datasource</code></strong> plugin, drop the provisioning files from <code>Lab\grafana\</code>. Grafana → <code>localhost:3000</code>.</li>
 <li><strong>Streamlit:</strong> <code>streamlit run Lab\viz\explorer.py</code> → <code>localhost:8501</code>.</li>
 </ol>
-<h2><span class="hn">5b.</span>Always-on (so the data is "just there")</h2>
+<h2 id="5b-always-on-so-the-data-is-just-there">5b. Always-on (so the data is "just there")</h2>
 <ul>
 <li><strong>Ingester:</strong> a <strong>Windows Scheduled Task</strong> running <code>ingest.py --watch</code> (or every 60 s) at logon → new tick files land in SQLite within a minute.</li>
 <li><strong>Streamlit:</strong> a small startup script (or Task) running the server in the background.</li>
 <li><strong>Grafana:</strong> install as a <strong>Windows service</strong> (default) → always up.</li>
 <li>Net: open your browser to either URL anytime → filter → the data's current.</li>
 </ul>
-<hr>
-<h2><span class="hn">6.</span>Fidelity prerequisite (the honest caveat)</h2>
-<p>Today <code>px</code> = the Deck tape's <code>Close[0]</code> = the <strong>brick close</strong> on TBars/HA bar types, <strong>not raw last-trade</strong>. Good for <em>shape</em>, not for fill-level analysis. The upgrade (separate build, tracked in [[sentinel-ml-lab]]):</p>
-<ul>
-<li><strong>Deck tape → raw ticks</strong> via <code>OnMarketData</code> (<code>MarketDataEventArgs.Price</code>), schema <strong><code>tick.2</code></strong> adding <code>last/bid/ask/vol</code>. The DB schema already reserves those columns.</li>
-<li><strong>Tick-true Council-fire recorder</strong> — the recorder currently stores peaks + minute snapshots, no path. A tick-true version logs the full raw-tick excursion per fire → lands in the SAME <code>trades</code>/<code>ticks</code> tables (<code>source='council'</code>) → lets us finally test <strong>conviction vs. path QUALITY</strong>, not a coarse binary.</li>
-</ul>
-<hr>
-<h2><span class="hn">7.</span>Phased plan (build order)</h2>
+<hr />
+<h2 id="6-fidelity-prerequisite-the-honest-caveat">6. Fidelity prerequisite (the honest caveat)</h2>
+<p>Today <code>px</code> = the Deck tape's <code>Close[0]</code> = the <strong>brick close</strong> on TBars/HA bar types, <strong>not raw last-trade</strong>.
+Good for <em>shape</em>, not for fill-level analysis. The upgrade (separate build, tracked in [[sentinel-ml-lab]]):
+- <strong>Deck tape → raw ticks</strong> via <code>OnMarketData</code> (<code>MarketDataEventArgs.Price</code>), schema <strong><code>tick.2</code></strong> adding <code>last/bid/ask/vol</code>. The DB schema already reserves those columns.
+- <strong>Tick-true Council-fire recorder</strong> — the recorder currently stores peaks + minute snapshots, no path. A tick-true version logs the full raw-tick excursion per fire → lands in the SAME <code>trades</code>/<code>ticks</code> tables (<code>source='council'</code>) → lets us finally test <strong>conviction vs. path QUALITY</strong>, not a coarse binary.</p>
+<hr />
+<h2 id="7-phased-plan-build-order">7. Phased plan (build order)</h2>
 <ul>
 <li><strong>Phase 0 — DB + ingest + Streamlit-over-SQLite</strong> (immediate value on the 4 existing files; uses <code>Close[0]</code> px, flagged). → "go to localhost:8501, filter."</li>
 <li><strong>Phase 1 — Grafana</strong> install + SQLite datasource + starter dashboards.</li>
@@ -309,8 +504,8 @@
 <li><strong>Phase 3 — tick-true Council-fire recorder</strong> → council trades in the DB → <strong>path-vs-conviction</strong> analysis (the "don't bury the Council on coarse labels" payoff).</li>
 <li><strong>Phase 4 — always-on services</strong> (scheduled ingester + Streamlit + Grafana service).</li>
 </ul>
-<hr>
-<h2><span class="hn">8.</span>Open decisions (confirm before Phase 0)</h2>
+<hr />
+<h2 id="8-open-decisions-confirm-before-phase-0">8. Open decisions (confirm before Phase 0)</h2>
 <ol>
 <li><strong>SQLite</strong> (recommended) vs Postgres vs InfluxDB. SQLite unless you foresee live-streaming dashboards.</li>
 <li><strong>Streamlit+Plotly</strong> (recommended, already built) vs <strong>Plotly Dash</strong> for the "Plotly" front-end. Streamlit is faster to stand up and reuses <code>tickpaths.py</code>; Dash if you want a more app-like custom UI.</li>
@@ -318,94 +513,289 @@
 <li><strong>DB location:</strong> <code>Sentinel\Lab\db\sentinel.db</code> (Lab-owned, recommended) vs <code>Sentinel\sentinel.db</code>.</li>
 <li><strong>Grafana install:</strong> native Windows service (recommended for always-on) vs Docker.</li>
 </ol>
-<blockquote><p><strong>RESOLVED (all of §7–§8):</strong> SQLite at <code>Lab\db\sentinel.db</code> · Streamlit+Plotly · <code>--watch</code> ingester · Grafana native — every recommended option was taken and shipped. See §9.</p></blockquote>
-<hr>
-<h2><span class="hn">9.</span>Built state (2026-07-14) — what is actually running</h2>
+<blockquote>
+<p><strong>RESOLVED (all of §7–§8):</strong> SQLite at <code>Lab\db\sentinel.db</code> · Streamlit+Plotly · <code>--watch</code> ingester · Grafana
+native — every recommended option was taken and shipped. See §9.</p>
+</blockquote>
+<hr />
+<h2 id="9-built-state-2026-07-14-what-is-actually-running">9. Built state (2026-07-14) — what is actually running</h2>
 <ul>
-<li><strong>DB:</strong> <code>Sentinel\Lab\db\sentinel.db</code>, <strong>WAL</strong> journal + <code>busy_timeout=30000</code> (readers never block the writer; a backfill and the live watch loop coexist). <strong>~14.8k <code>trades</code>, ~6.5M <code>ticks</code> and growing</strong> (was ~5,300 at the 07-14 fold-in). <strong>~99% of council trades carry the vote vector</strong> after the fold-in.</li>
-<li><strong>Ingester (<code>Lab\ingest\ingest.py</code>)</strong> — two passes per scan: (1) tick sidecars (<code>Excursions\ticks\</code> + <code>council\ticks\</code>) → <code>trades</code>+<code>ticks</code>; (2) <strong><code>ingest_council_rows()</code></strong> folds <code>council\1.3\</code> — the ONLY place the vote vector lives — enriching tick-true trades and backfilling historical no-sidecar fires (<code>src='row'</code>). Discriminator: <code>src='last'</code> = tick-true, <code>src='row'</code> = bar-based row; a <code>row</code> twin is deleted when its real sidecar arrives (any order). Backfill: <code>python ingest\ingest.py --reingest</code>. See [[ingester-vote-vector-fold-in]].</li>
-<li><strong>Recorder</strong> — <code>SentinelExcursionRecorder_v2_0_0</code> (<strong>v2.1.6</strong>, schema <strong>1.4</strong> / <code>ctick.3</code>). Writes the schema ROW (<code>council\1.4\</code>) + a per-fire tick-path sidecar (<code>council\ticks\</code>, self-describing ctick.3 header). <strong>Streams each row to disk the moment its excursion window completes (~60 min post-fire)</strong> instead of buffering to session-end, bounding crash-loss of the vote vector to the in-flight window.</li>
-<li><strong>Front-ends:</strong> Streamlit+Plotly <code>viz\explorer.py</code> → <strong>localhost:8501</strong> (+ the Council Paths page); Grafana → <strong>localhost:3000</strong> (SQLite datasource).</li>
-<li><strong>Always-on:</strong> the <strong><code>SentinelDataPlatform</code></strong> scheduled task runs <code>Lab\run\sentinel-data.bat</code> at logon (guarded by "is :8501 up" so it never dupes), launching the <code>.venv</code> ingester (<code>--watch</code>) + Streamlit; Grafana runs as a service. ⚠ Self-heal is <strong>logon-level, not process-level</strong> — a killed ingester is not respawned mid-session.</li>
+<li><strong>DB:</strong> <code>Sentinel\Lab\db\sentinel.db</code>, <strong>WAL</strong> journal + <code>busy_timeout=30000</code> (readers never block the writer; a
+  backfill and the live watch loop coexist). <strong>~14.8k <code>trades</code>, ~6.5M <code>ticks</code> and growing</strong> (was ~5,300 at the 07-14
+  fold-in). <strong>~99% of council trades carry the vote vector</strong> after the fold-in.</li>
+<li><strong>Ingester (<code>Lab\ingest\ingest.py</code>)</strong> — two passes per scan: (1) tick sidecars (<code>Excursions\ticks\</code> + <code>council\ticks\</code>)
+  → <code>trades</code>+<code>ticks</code>; (2) <strong><code>ingest_council_rows()</code></strong> folds <code>council\1.3\</code> — the ONLY place the vote vector lives —
+  enriching tick-true trades and backfilling historical no-sidecar fires (<code>src='row'</code>). Discriminator: <code>src='last'</code> =
+  tick-true, <code>src='row'</code> = bar-based row; a <code>row</code> twin is deleted when its real sidecar arrives (any order). Backfill:
+  <code>python ingest\ingest.py --reingest</code>. See [[ingester-vote-vector-fold-in]].</li>
+<li><strong>Recorder</strong> — <code>SentinelExcursionRecorder_v2_0_0</code> (<strong>v2.1.6</strong>, schema <strong>1.4</strong> / <code>ctick.3</code>). Writes the schema ROW
+  (<code>council\1.4\</code>) + a per-fire tick-path sidecar (<code>council\ticks\</code>, self-describing ctick.3 header). <strong>Streams each row to disk the moment its excursion window completes
+  (~60 min post-fire)</strong> instead of buffering to session-end, bounding crash-loss of the vote vector to the in-flight
+  window.</li>
+<li><strong>Front-ends:</strong> Streamlit+Plotly <code>viz\explorer.py</code> → <strong>localhost:8501</strong> (+ the Council Paths page); Grafana →
+  <strong>localhost:3000</strong> (SQLite datasource).</li>
+<li><strong>Always-on:</strong> the <strong><code>SentinelDataPlatform</code></strong> scheduled task runs <code>Lab\run\sentinel-data.bat</code> at logon (guarded by
+  "is :8501 up" so it never dupes), launching the <code>.venv</code> ingester (<code>--watch</code>) + Streamlit; Grafana runs as a service.
+  ⚠ Self-heal is <strong>logon-level, not process-level</strong> — a killed ingester is not respawned mid-session.</li>
 </ul>
-<h2><span class="hn">10.</span>Health layer (2026-07-15) — "is everything alive &amp; safe"</h2>
-<p>A second, orthogonal surface: <strong>operational health of NT + the whole Sentinel suite</strong>, distinct from the trade-corpus analytics above. Split by design: <strong>Grafana = ops/health</strong> ("am I safe to trade right now"); <strong>Streamlit/Observatory = research</strong> ("does the edge exist"). Don't blur them.</p>
+<h2 id="10-health-layer-2026-07-15-is-everything-alive-safe">10. Health layer (2026-07-15) — "is everything alive &amp; safe"</h2>
+<p>A second, orthogonal surface: <strong>operational health of NT + the whole Sentinel suite</strong>, distinct from the trade-corpus
+analytics above. Split by design: <strong>Grafana = ops/health</strong> ("am I safe to trade right now"); <strong>Streamlit/Observatory =
+research</strong> ("does the edge exist"). Don't blur them.</p>
 <ul>
-<li><strong>Probe (<code>Lab\health\probe.py</code>)</strong> — samples every <strong>30 s</strong>, <strong>READ-ONLY on NT</strong> (files/process/ports only: <code>state.json</code>, <code>sentinel.log</code>, the <code>Ledger</code>, <code>tasklist</code>, socket port checks — never NT internals or orders, so a crash here can't touch trading). No new deps (<code>tasklist</code>, not psutil). Single-instance via a <code>127.0.0.1:8502</code> bind (a blind launcher start is safe; the bound port doubles as the "probe up" signal). Crash-resistant <code>--watch</code> loop (each sample in try/except).</li>
-<li><strong>Health tables</strong> (same <code>sentinel.db</code>, WAL + <code>busy_timeout</code>): <code>health</code> (wide time-series: NT up/responding, kill, connections, feed/risk, service freshness, rolling 5-min err/crit/contention/naked counts, live-Council count, fires today, last conviction, DB/WAL size), <code>governor_health</code> (per-account day P&amp;L vs cap / loss-stop / status), <code>arc_slots</code> (per-slot health · pos_qty→naked · fills · P&amp;L), <code>roster_health</code> (per-scope present/declared/missing/unexpected, parsed from the Council log line), <code>health_event</code> (deduped discrete transitions: NT down, kill engaged, …).</li>
-<li><strong>More tables:</strong> <code>feed_health</code> (per-INSTRUMENT lag/stall from <code>state.json.risk.feeds</code> — already published by RiskService/StateService, <strong>no C# change needed</strong>; empty until a feed is active), <code>connection_health</code> (per broker), <code>eye_health</code>, <code>copier_health</code>, <code>veto_5m</code>, <code>scope_health</code> (<strong>quiet-Council detector</strong> — seconds since last verdict, bounded to recently-active scopes). <code>health</code> also carries NT <strong>CPU%/RAM/uptime</strong> (psutil, CPU normalized by core count), disk free/used%, day-P&amp;L total, win-rate/trades today. Schema grows via an idempotent <code>_migrate()</code>.</li>
-<li><strong>Dashboard <code>Sentinel · Health</code></strong> (uid <code>sentinel-health</code>, <code>Lab\grafana\dashboards\sentinel-health.json</code>, <strong>52 panels</strong>, 4 rows — 🛡 Safety · 🧠 Brain · 💰 P&amp;L/accounts · 🔩 Resources/infra). Generated by <strong><code>Lab\grafana\build_health_dashboard.py</code></strong> (edit the generator, re-run; the provider auto-reloads within 30 s, <code>allowUiUpdates:true</code>). → <strong>localhost:3000/d/sentinel-health</strong>.</li>
-<li><strong>⚠ Two gotchas:</strong> (1) a <strong>Grafana auto-update wipes the unsigned <code>frser-sqlite</code> plugin</strong> → every dashboard reads "No data" (<code>plugin.notRegistered</code>); fix = reinstall + <code>conf\custom.ini</code> <code>allow_loading_unsigned_plugins</code> + restart (<strong>self-heal now in <code>sentinel-data.bat</code></strong>). (2) <strong>frser reads an integer time column as SECONDS</strong> → every time-series query selects <strong><code>ts_ms/1000 AS time</code></strong> (raw ms → "Data outside time range").</li>
-<li><strong>Always-on:</strong> the probe <code>--watch</code> + a Grafana-plugin heal were added to <code>Lab\run\sentinel-data.bat</code> <strong>before</strong> the <code>:8501</code> skip-guard, so they run even when the rest of the platform is already up (the probe's <code>:8502</code> guard prevents dupes). Same logon-level self-heal caveat as the ingester.</li>
+<li><strong>Probe (<code>Lab\health\probe.py</code>)</strong> — samples every <strong>30 s</strong>, <strong>READ-ONLY on NT</strong> (files/process/ports only: <code>state.json</code>,
+  <code>sentinel.log</code>, the <code>Ledger</code>, <code>tasklist</code>, socket port checks — never NT internals or orders, so a crash here can't touch
+  trading). No new deps (<code>tasklist</code>, not psutil). Single-instance via a <code>127.0.0.1:8502</code> bind (a blind launcher start is
+  safe; the bound port doubles as the "probe up" signal). Crash-resistant <code>--watch</code> loop (each sample in try/except).</li>
+<li><strong>Health tables</strong> (same <code>sentinel.db</code>, WAL + <code>busy_timeout</code>): <code>health</code> (wide time-series: NT up/responding, kill,
+  connections, feed/risk, service freshness, rolling 5-min err/crit/contention/naked counts, live-Council count, fires
+  today, last conviction, DB/WAL size), <code>governor_health</code> (per-account day P&amp;L vs cap / loss-stop / status), <code>arc_slots</code>
+  (per-slot health · pos_qty→naked · fills · P&amp;L), <code>roster_health</code> (per-scope present/declared/missing/unexpected, parsed
+  from the Council log line), <code>health_event</code> (deduped discrete transitions: NT down, kill engaged, …).</li>
+<li><strong>More tables:</strong> <code>feed_health</code> (per-INSTRUMENT lag/stall from <code>state.json.risk.feeds</code> — already published by
+  RiskService/StateService, <strong>no C# change needed</strong>; empty until a feed is active), <code>connection_health</code> (per broker),
+  <code>eye_health</code>, <code>copier_health</code>, <code>veto_5m</code>, <code>scope_health</code> (<strong>quiet-Council detector</strong> — seconds since last verdict,
+  bounded to recently-active scopes). <code>health</code> also carries NT <strong>CPU%/RAM/uptime</strong> (psutil, CPU normalized by core
+  count), disk free/used%, day-P&amp;L total, win-rate/trades today. Schema grows via an idempotent <code>_migrate()</code>.</li>
+<li><strong>Dashboard <code>Sentinel · Health</code></strong> (uid <code>sentinel-health</code>, <code>Lab\grafana\dashboards\sentinel-health.json</code>, <strong>52 panels</strong>,
+  4 rows — 🛡 Safety · 🧠 Brain · 💰 P&amp;L/accounts · 🔩 Resources/infra). Generated by <strong><code>Lab\grafana\build_health_dashboard.py</code></strong>
+  (edit the generator, re-run; the provider auto-reloads within 30 s, <code>allowUiUpdates:true</code>). → <strong>localhost:3000/d/sentinel-health</strong>.</li>
+<li><strong>⚠ Two gotchas:</strong> (1) a <strong>Grafana auto-update wipes the unsigned <code>frser-sqlite</code> plugin</strong> → every dashboard reads
+  "No data" (<code>plugin.notRegistered</code>); fix = reinstall + <code>conf\custom.ini</code> <code>allow_loading_unsigned_plugins</code> + restart
+  (<strong>self-heal now in <code>sentinel-data.bat</code></strong>). (2) <strong>frser reads an integer time column as SECONDS</strong> → every time-series
+  query selects <strong><code>ts_ms/1000 AS time</code></strong> (raw ms → "Data outside time range").</li>
+<li><strong>Always-on:</strong> the probe <code>--watch</code> + a Grafana-plugin heal were added to <code>Lab\run\sentinel-data.bat</code> <strong>before</strong> the
+  <code>:8501</code> skip-guard, so they run even when the rest of the platform is already up (the probe's <code>:8502</code> guard prevents
+  dupes). Same logon-level self-heal caveat as the ingester.</li>
 </ul>
-<h2><span class="hn">11.</span>Corpus snapshot ladder (2026-07-17) — "a frozen, reproducible corpus + a recoverable one"</h2>
-<p>The corpus is append-only and lives on one disk. Two failure modes it doesn't defend against on its own: a training run is <strong>not reproducible</strong> (you can't re-fit against "the corpus as it was three weeks ago"), and a contamination event (the replay-leak class, [[corpus-hygiene-and-fill-fidelity]]) has <strong>no clean rollback point</strong>. A tiered, timestamped snapshot ladder answers both. Built 2026-07-17.</p>
+<h2 id="11-corpus-snapshot-ladder-2026-07-17-a-frozen-reproducible-corpus-a-recoverable-one">11. Corpus snapshot ladder (2026-07-17) — "a frozen, reproducible corpus + a recoverable one"</h2>
+<p>The corpus is append-only and lives on one disk. Two failure modes it doesn't defend against on its own: a
+training run is <strong>not reproducible</strong> (you can't re-fit against "the corpus as it was three weeks ago"), and a
+contamination event (the replay-leak class, [[corpus-hygiene-and-fill-fidelity]]) has <strong>no clean rollback point</strong>.
+A tiered, timestamped snapshot ladder answers both. Built 2026-07-17.</p>
 <ul>
-<li><strong>Engine:</strong> <code>Lab\snapshot\snapshot.py</code> (subcommands <code>daily</code> / <code>weekly</code> / <code>verify &lt;dir&gt;</code> / <code>list</code>; flags <code>--dry-run</code>, <code>--date</code>, <code>--week</code>). Wrapper <code>Lab\run\sentinel-snapshot.bat</code>. Runs under <code>Lab\.venv</code>. Every run appends to <code>Sentinel\sentinel.log</code> as <code>[SNAPSHOT]</code> / <code>[SNAPSHOT-CRIT]</code>.</li>
-<li><strong>Three tiers, validate-before-destruct:</strong></li>
-<li><strong>session</strong> = the LIVE <code>Excursions\</code> tree itself. The recorder (§9, v2.1.2) already streams each row to disk crash-safe the moment its window completes, so live <em>is</em> the continuous session-durable record — a discrete session copy (or an NT session-close hook) was <strong>rejected as redundant + fragile</strong>. Live is the ground truth the daily captures; there is no separate session artifact.</li>
-<li><strong>daily</strong> → <code>Snapshots\daily\&lt;date&gt;\</code> — a point-in-time zip of the whole corpus <strong>+ a consistent copy of the ~608 MB WAL-mode <code>sentinel.db</code> via <code>VACUUM INTO</code></strong> (checkpoints + compacts to one clean file; a raw file-copy of a WAL DB is inconsistent). ~118 MB zipped, ~25 s. Pruned only after the covering weekly validates.</li>
-<li><strong>weekly</strong> → <code>Snapshots\weekly\&lt;isoweek&gt;\</code> — the <strong>permanent master, kept forever</strong>. Validates it is a <strong>row-hash superset of the union of that week's dailies</strong>, self-heals any gap into <code>_healed.jsonl</code>, then destructs the validated dailies.</li>
-<li><strong>Validation = superset-of-row-content-hashes, NOT a file diff.</strong> Corpus files grow append-only through the day, so a byte-compare is useless, but "every line I had before is still present" is exact and schema-agnostic. Each snapshot's manifest (per-line <code>sha256</code>) is built in the <strong>same pass</strong> that writes the zip → manifest ≡ zip by construction, re-checkable any time with <code>verify</code>. The daily's own check is <strong>file-presence</strong> (a file present at start but unreadable = a real miss → status <code>gap</code>); the <strong>row-superset</strong> check is a <em>weekly-only</em> concept because the dailies are frozen there — and that check is what catches live <strong>shedding</strong> a file (a schema uplift moving it to <code>_archive</code>, a manual delete), the ladder's real WORM payoff.</li>
-<li>⚠ <em>Design bug caught by driving it:</em> the first cut validated a daily snapshot's rows ⊇ a <strong>live re-read</strong>, which falsely flagged normal forward growth as a gap. A point-in-time snapshot <strong>cannot</strong> be validated against a still-appending corpus — only against frozen lower tiers.</li>
-<li><strong>⚠ Honest caveat (the same shape as §6):</strong> the ladder guarantees <strong>archive INTEGRITY</strong> (no row is ever lost), <strong>not corpus CORRECTNESS</strong>. A superset check preserves poisoned replay rows as faithfully as clean ones — contamination stays <code>corpus_probe</code>'s job ([[corpus-hygiene-and-fill-fidelity]]), not this ladder's. Snapshots freeze what the corpus <em>was</em>; they don't judge it.</li>
-<li><strong>Schedule (box is Central; aligned to the CME daily maintenance break so the corpus is settled + the market closed during a run):</strong></li>
+<li>
+<p><strong>Engine:</strong> <code>Lab\snapshot\snapshot.py</code> (subcommands <code>daily</code> / <code>weekly</code> / <code>verify &lt;dir&gt;</code> / <code>list</code>; flags
+  <code>--dry-run</code>, <code>--date</code>, <code>--week</code>). Wrapper <code>Lab\run\sentinel-snapshot.bat</code>. Runs under <code>Lab\.venv</code>. Every run
+  appends to <code>Sentinel\sentinel.log</code> as <code>[SNAPSHOT]</code> / <code>[SNAPSHOT-CRIT]</code>.</p>
+</li>
+<li>
+<p><strong>Three tiers, validate-before-destruct:</strong></p>
+</li>
+<li><strong>session</strong> = the LIVE <code>Excursions\</code> tree itself. The recorder (§9, v2.1.2) already streams each row to disk
+    crash-safe the moment its window completes, so live <em>is</em> the continuous session-durable record — a discrete
+    session copy (or an NT session-close hook) was <strong>rejected as redundant + fragile</strong>. Live is the ground truth
+    the daily captures; there is no separate session artifact.</li>
+<li><strong>daily</strong> → <code>Snapshots\daily\&lt;date&gt;\</code> — a point-in-time zip of the whole corpus <strong>+ a consistent copy of the
+    ~608 MB WAL-mode <code>sentinel.db</code> via <code>VACUUM INTO</code></strong> (checkpoints + compacts to one clean file; a raw file-copy
+    of a WAL DB is inconsistent). ~118 MB zipped, ~25 s. Pruned only after the covering weekly validates.</li>
+<li>
+<p><strong>weekly</strong> → <code>Snapshots\weekly\&lt;isoweek&gt;\</code> — the <strong>permanent master, kept forever</strong>. Validates it is a
+    <strong>row-hash superset of the union of that week's dailies</strong>, self-heals any gap into <code>_healed.jsonl</code>, then
+    destructs the validated dailies.</p>
+</li>
+<li>
+<p><strong>Validation = superset-of-row-content-hashes, NOT a file diff.</strong> Corpus files grow append-only through the day,
+  so a byte-compare is useless, but "every line I had before is still present" is exact and schema-agnostic. Each
+  snapshot's manifest (per-line <code>sha256</code>) is built in the <strong>same pass</strong> that writes the zip → manifest ≡ zip by
+  construction, re-checkable any time with <code>verify</code>. The daily's own check is <strong>file-presence</strong> (a file present at
+  start but unreadable = a real miss → status <code>gap</code>); the <strong>row-superset</strong> check is a <em>weekly-only</em> concept because
+  the dailies are frozen there — and that check is what catches live <strong>shedding</strong> a file (a schema uplift moving it
+  to <code>_archive</code>, a manual delete), the ladder's real WORM payoff.</p>
+</li>
+<li>
+<p>⚠ <em>Design bug caught by driving it:</em> the first cut validated a daily snapshot's rows ⊇ a <strong>live re-read</strong>, which
+    falsely flagged normal forward growth as a gap. A point-in-time snapshot <strong>cannot</strong> be validated against a
+    still-appending corpus — only against frozen lower tiers.</p>
+</li>
+<li>
+<p><strong>⚠ Honest caveat (the same shape as §6):</strong> the ladder guarantees <strong>archive INTEGRITY</strong> (no row is ever lost),
+  <strong>not corpus CORRECTNESS</strong>. A superset check preserves poisoned replay rows as faithfully as clean ones —
+  contamination stays <code>corpus_probe</code>'s job ([[corpus-hygiene-and-fill-fidelity]]), not this ladder's. Snapshots
+  freeze what the corpus <em>was</em>; they don't judge it.</p>
+</li>
+<li>
+<p><strong>Schedule (box is Central; aligned to the CME daily maintenance break so the corpus is settled + the market
+  closed during a run):</strong></p>
+</li>
 <li><code>SentinelSnapshotDaily</code> — every day <strong>16:30 CT</strong> (mid-break, before the 17:00 reopen).</li>
-<li><code>SentinelSnapshotWeekly</code> — <strong>Sunday 16:45 CT</strong> (after Sunday's daily, before reopen; the whole Mon–Sun iso-week is closed ⇒ no orphaned dailies, zero live writes during the run).</li>
-<li>Registered via <code>Register-ScheduledTask</code>, LogonType <strong>S4U</strong> — runs <strong>whether logged on or not, no stored password</strong>, keeping the Administrator identity so file ACLs / profile paths / the venv resolve exactly as the logged-in run (chosen over a SYSTEM principal, which runs in a different profile context). Both verified firing headless: <code>LastRunResult 0x0</code>.</li>
-<li><strong>Operate:</strong> <code>sentinel-snapshot.bat daily|weekly|list</code>; adjust times in Task Scheduler; disable via <code>Disable-ScheduledTask SentinelSnapshot*</code>.</li>
-<li><strong>Disk trajectory (flagged):</strong> weekly master ≈ 118 MB × 52 ≈ <strong>~6 GB/yr</strong>, kept forever (deliberate: full history). The DB dominates and is <strong>regenerable</strong> from the corpus rows via <code>ingest.py</code>, so the easy future lever if disk matters is weekly = corpus-rows-only + keep just the latest DB. Full detail: [[corpus-snapshot-ladder]].</li>
+<li><code>SentinelSnapshotWeekly</code> — <strong>Sunday 16:45 CT</strong> (after Sunday's daily, before reopen; the whole Mon–Sun iso-week
+    is closed ⇒ no orphaned dailies, zero live writes during the run).</li>
+<li>
+<p>Registered via <code>Register-ScheduledTask</code>, LogonType <strong>S4U</strong> — runs <strong>whether logged on or not, no stored
+    password</strong>, keeping the Administrator identity so file ACLs / profile paths / the venv resolve exactly as the
+    logged-in run (chosen over a SYSTEM principal, which runs in a different profile context). Both verified firing
+    headless: <code>LastRunResult 0x0</code>.</p>
+</li>
+<li>
+<p><strong>Operate:</strong> <code>sentinel-snapshot.bat daily|weekly|list</code>; adjust times in Task Scheduler; disable via
+  <code>Disable-ScheduledTask SentinelSnapshot*</code>.</p>
+</li>
+<li>
+<p><strong>Disk trajectory (flagged):</strong> weekly master ≈ 118 MB × 52 ≈ <strong>~6 GB/yr</strong>, kept forever (deliberate: full history).
+  The DB dominates and is <strong>regenerable</strong> from the corpus rows via <code>ingest.py</code>, so the easy future lever if disk
+  matters is weekly = corpus-rows-only + keep just the latest DB. Full detail: [[corpus-snapshot-ladder]].</p>
+</li>
 </ul>
-<h2><span class="hn">12.</span>Additional surfaces (2026-07-19) — more probes, more boards, one DB</h2>
-<p>Built after §10–§11, all to the SAME recipe (read-only probe → <code>sentinel.db</code> → a themed Grafana board; a guard-port singleton; wired into <code>sentinel-data.bat</code> before the <code>:8501</code> guard):</p>
+<h2 id="12-additional-surfaces-2026-07-19-more-probes-more-boards-one-db">12. Additional surfaces (2026-07-19) — more probes, more boards, one DB</h2>
+<p>Built after §10–§11, all to the SAME recipe (read-only probe → <code>sentinel.db</code> → a themed Grafana board; a
+guard-port singleton; wired into <code>sentinel-data.bat</code> before the <code>:8501</code> guard):</p>
 <ul>
-<li><strong>Corpus-integrity probe</strong> — <code>Lab\health\corpus_probe.py</code> (guard <strong>:8503</strong>): reconciles the recorded corpus (Ledger ↔ rows ↔ sidecars), schema hygiene, replay-leak → <code>corpus_integrity</code>/<code>corpus_folder</code>/<code>corpus_events</code>.</li>
-<li><strong>node01 remote probe</strong> — <code>Lab\health\node01_probe.py</code> (guard <strong>:8504</strong>): SSH-polls the remote bake worker (Tailscale <code>worker1</code>) → <code>node01_health</code>/<code>node01_event</code> → board <strong><code>Sentinel · Node01</code></strong> (localhost:3000/d/sentinel-node01). Surfaces NT render-thread death / bake stall / unreachable. [[distributed-backtest]]</li>
-<li><strong>Docs-health audit</strong> — <code>Lab\docs\audit.py</code> (guard <strong>:8505</strong>, 15-min): scans the docs for drift (broken links, stale HTML, contract version-drift, dangling tokens, orphans) → <code>docs_health</code>/<code>docs_finding</code> → board <strong><code>Sentinel · Docs</code></strong> (localhost:3000/d/sentinel-docs); <code>--errors-only</code> is a git pre-commit gate. [[docs-health]]</li>
+<li><strong>Corpus-integrity probe</strong> — <code>Lab\health\corpus_probe.py</code> (guard <strong>:8503</strong>): reconciles the recorded corpus
+  (Ledger ↔ rows ↔ sidecars), schema hygiene, replay-leak → <code>corpus_integrity</code>/<code>corpus_folder</code>/<code>corpus_events</code>.</li>
+<li><strong>node01 remote probe</strong> — <code>Lab\health\node01_probe.py</code> (guard <strong>:8504</strong>): SSH-polls the remote bake worker
+  (Tailscale <code>worker1</code>) → <code>node01_health</code>/<code>node01_event</code> → board <strong><code>Sentinel · Node01</code></strong>
+  (localhost:3000/d/sentinel-node01). Surfaces NT render-thread death / bake stall / unreachable. [[distributed-backtest]]</li>
+<li><strong>Docs-health audit</strong> — <code>Lab\docs\audit.py</code> (guard <strong>:8505</strong>, 15-min): scans the docs for drift (broken links,
+  stale HTML, contract version-drift, dangling tokens, orphans) → <code>docs_health</code>/<code>docs_finding</code> → board
+  <strong><code>Sentinel · Docs</code></strong> (localhost:3000/d/sentinel-docs); <code>--errors-only</code> is a git pre-commit gate. [[docs-health]]</li>
 </ul>
-<p><strong>Guard-port registry:</strong> 8501 Streamlit explorer · 8502 Health probe · 8503 Corpus probe · 8504 node01 probe · 8505 Docs-health probe · 3000 Grafana. <strong>Four boards, one <code>sentinel.db</code>:</strong> <code>sentinel-trades</code> · <code>sentinel-health</code> · <code>sentinel-node01</code> · <code>sentinel-docs</code>.</p>
-<hr>
-<h2><span class="hn">13.</span>The corpus ACCEPTANCE GATE (2026-07-24) — "are the rows even usable?"</h2>
-<p>§10–§12 answer <em>is the platform alive</em>. This answers a different and harder question: <strong>is what it just recorded worth keeping?</strong> A bake can run for hours at full speed, write a clean-looking corpus, and be worthless because one voter never reached a single row.</p>
-<h3><code>Lab\verify_votes.py</code> — per-lane completeness</h3>
+<p><strong>Guard-port registry:</strong> 8501 Streamlit explorer · 8502 Health probe · 8503 Corpus probe · 8504 node01 probe · 8505 Docs-health probe · 3000 Grafana. <strong>Four boards, one <code>sentinel.db</code>:</strong> <code>sentinel-trades</code> · <code>sentinel-health</code>
+· <code>sentinel-node01</code> · <code>sentinel-docs</code>.</p>
+<hr />
+<h2 id="13-the-corpus-acceptance-gate-2026-07-24-are-the-rows-even-usable">13. The corpus ACCEPTANCE GATE (2026-07-24) — "are the rows even usable?"</h2>
+<p>§10–§12 answer <em>is the platform alive</em>. This answers a different and harder question: <strong>is what it just recorded
+worth keeping?</strong> A bake can run for hours at full speed, write a clean-looking corpus, and be worthless because
+one voter never reached a single row.</p>
+<h3 id="labverify_votespy-per-lane-completeness"><code>Lab\verify_votes.py</code> — per-lane completeness</h3>
 <p>Stdlib-only, so it runs on the bake worker as well as the main box. Three checks per lane:</p>
-<div class="tblwrap"><table><thead><tr><th>Check</th><th>Rule</th></tr></thead><tbody><tr><td><strong>SEAM</strong></td><td>the bar type's own voter(s) MUST be present — derived from the <strong>bar-type id</strong>, so it needs no config (<code>212201</code>/<code>212202</code> → <code>BRK</code> · <code>212203</code> → <code>FLUX</code> · <code>212204</code> → <code>BRK</code>+<code>CVB</code>)</td></tr><tr><td><strong>DECLARED</strong></td><td>every <code>Roster.conf</code> voter (same cascade the Council uses) present as a KEY. Absent = <strong>CRIT</strong>; present on &lt;90% of rows = <strong>WARN</strong> — an intermittent dropout a union-of-rows check would hide</td></tr><tr><td><strong>BRK LEVELS</strong></td><td>brick lanes must carry <code>brkUpper</code>/<code>brkLower</code>, or limit-vs-market grading is dead (Flux exempt by construction)</td></tr></tbody></table></div>
+<table>
+<thead>
+<tr>
+<th>Check</th>
+<th>Rule</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>SEAM</strong></td>
+<td>the bar type's own voter(s) MUST be present — derived from the <strong>bar-type id</strong>, so it needs no config (<code>212201</code>/<code>212202</code> → <code>BRK</code> · <code>212203</code> → <code>FLUX</code> · <code>212204</code> → <code>BRK</code>+<code>CVB</code>)</td>
+</tr>
+<tr>
+<td><strong>DECLARED</strong></td>
+<td>every <code>Roster.conf</code> voter (same cascade the Council uses) present as a KEY. Absent = <strong>CRIT</strong>; present on &lt;90% of rows = <strong>WARN</strong> — an intermittent dropout a union-of-rows check would hide</td>
+</tr>
+<tr>
+<td><strong>BRK LEVELS</strong></td>
+<td>brick lanes must carry <code>brkUpper</code>/<code>brkLower</code>, or limit-vs-market grading is dead (Flux exempt by construction)</td>
+</tr>
+</tbody>
+</table>
 <p><strong><code>EXIT 0</code> = all lanes complete · <code>1</code> = WARN (partial, or too thin to judge) · <code>2</code> = CRIT (missing data).</strong></p>
-<blockquote><p><strong>A voter recorded as <code>0</code> counts as PRESENT.</strong> Abstention versus a missing key is the entire distinction — a voter that legitimately has no opinion must not read as a broken sensor.</p></blockquote>
-<p><strong>It windows on FILE MTIME, not <code>fireTime</code></strong> — and that was a defect in the gate itself, found by driving it. A replay bake writes rows whose <code>fireTime</code> is historical, so a <code>fireTime</code> window silently skipped the whole replayed corpus and would have passed the very bake it was built to catch. Written-at is the only clock that means <em>"this bake, now"</em> for live and replay alike.</p>
-<h3>Wiring — probe → table → board</h3>
-<p><code>Lab\health\corpus_probe.py</code> imports it directly (<code>import verify_votes as _votes</code>) and runs it every <strong>300 s</strong>, writing a per-lane <strong><code>vote_health</code></strong> row plus per-lane <strong><code>corpus_events</code></strong> with the existing change-only de-dup, so each lane alerts <em>and recovers</em> independently. Surfaced as the <strong>🗃 Corpus row</strong> on <strong><code>Sentinel · Health</code></strong> (localhost:3000/d/sentinel-health): lanes-missing-a-voter / partial / brick-lanes-without-levels, the per-lane table, and the event log.</p>
-<blockquote><p><strong>⚠ Nothing rendered <code>corpus_events</code> before this.</strong> The corpus probe had been writing to a DB <strong>no board watched</strong> — a monitor whose output nobody could see is not a monitor.</p></blockquote>
-<p>The probe's <code>busy_timeout</code> was also raised <strong>8 s → 30 s</strong>. Measured, not guessed: it was losing the race with <code>ingest.py --watch</code> on the multi-GB WAL DB and skipping whole sample cycles — a monitor that silently stops.</p>
-<h3>Operator use — the preflight</h3>
-<p>Start a bake, let it run <strong>~10 minutes</strong>, run <code>python Lab\verify_votes.py --days 1</code>, and require <strong><code>EXIT=0</code> with every lane "complete"</strong> before committing to the long run. This is the standing procedure in <a href="SENTINEL_RUNBOOK.md">SENTINEL_RUNBOOK.md</a> §4b ②.</p>
-<hr>
-<h2><span class="hn">14.</span>Fault recording in the Lab (2026-07-25) — <code>lab_faults.swallow()</code></h2>
-<p>The Lab's counterpart to <code>SentinelCore.Swallow</code> on the C# side. Same problem, same fix: a probe, an ingester or a Streamlit page must never die because one malformed row failed to parse — but <em>don't propagate</em> had been implemented as <em>don't record</em>, so a component could fail continuously and silently. The cost is on the record: <code>ingest.py --watch</code> ran for three days against a schema it could not read (§9), and nothing said so.</p>
-<p><strong><code>Lab\lab_faults.py</code></strong> — stdlib only, no dependencies, so <code>verify_votes.py</code> and the health probes stay deployable standalone to a bake node.</p>
-<pre><code>from lab_faults import swallow
+<blockquote>
+<p><strong>A voter recorded as <code>0</code> counts as PRESENT.</strong> Abstention versus a missing key is the entire distinction — a
+voter that legitimately has no opinion must not read as a broken sensor.</p>
+</blockquote>
+<p><strong>It windows on FILE MTIME, not <code>fireTime</code></strong> — and that was a defect in the gate itself, found by driving it. A
+replay bake writes rows whose <code>fireTime</code> is historical, so a <code>fireTime</code> window silently skipped the whole
+replayed corpus and would have passed the very bake it was built to catch. Written-at is the only clock that
+means <em>"this bake, now"</em> for live and replay alike.</p>
+<h3 id="wiring-probe-table-board">Wiring — probe → table → board</h3>
+<p><code>Lab\health\corpus_probe.py</code> imports it directly (<code>import verify_votes as _votes</code>) and runs it every <strong>300 s</strong>,
+writing a per-lane <strong><code>vote_health</code></strong> row plus per-lane <strong><code>corpus_events</code></strong> with the existing change-only de-dup,
+so each lane alerts <em>and recovers</em> independently. Surfaced as the <strong>🗃 Corpus row</strong> on <strong><code>Sentinel · Health</code></strong>
+(localhost:3000/d/sentinel-health): lanes-missing-a-voter / partial / brick-lanes-without-levels, the per-lane
+table, and the event log.</p>
+<blockquote>
+<p><strong>⚠ Nothing rendered <code>corpus_events</code> before this.</strong> The corpus probe had been writing to a DB <strong>no board
+watched</strong> — a monitor whose output nobody could see is not a monitor.</p>
+</blockquote>
+<p>The probe's <code>busy_timeout</code> was also raised <strong>8 s → 30 s</strong>. Measured, not guessed: it was losing the race with
+<code>ingest.py --watch</code> on the multi-GB WAL DB and skipping whole sample cycles — a monitor that silently stops.</p>
+<h3 id="operator-use-the-preflight">Operator use — the preflight</h3>
+<p>Start a bake, let it run <strong>~10 minutes</strong>, run <code>python Lab\verify_votes.py --days 1</code>, and require <strong><code>EXIT=0</code> with
+every lane "complete"</strong> before committing to the long run. This is the standing procedure in
+<a href="SENTINEL_RUNBOOK.md">SENTINEL_RUNBOOK.md</a> §4b ②.</p>
+<hr />
+<h2 id="14-fault-recording-in-the-lab-2026-07-25-lab_faultsswallow">14. Fault recording in the Lab (2026-07-25) — <code>lab_faults.swallow()</code></h2>
+<p>The Lab's counterpart to <code>SentinelCore.Swallow</code> on the C# side. Same problem, same fix: a probe, an
+ingester or a Streamlit page must never die because one malformed row failed to parse — but <em>don't
+propagate</em> had been implemented as <em>don't record</em>, so a component could fail continuously and silently.
+The cost is on the record: <code>ingest.py --watch</code> ran for three days against a schema it could not read
+(§9), and nothing said so.</p>
+<p><strong><code>Lab\lab_faults.py</code></strong> — stdlib only, no dependencies, so <code>verify_votes.py</code> and the health probes stay
+deployable standalone to a bake node.</p>
+<pre><code class="language-python">from lab_faults import swallow
 
 try:
     row = json.loads(line)
 except json.JSONDecodeError as _swex:
-    swallow("ingest.parse", _swex)
-    continue          # control flow is UNCHANGED -- swallow() goes before it, never instead of it</code></pre>
-<p><strong>Contract (deliberately identical to the C# one):</strong> never raises · never alters control flow · rate-limited <strong>per tag</strong> (first 3, then 1/min — the flood fear that made empty handlers attractive) · counts everything including throttled occurrences, so <code>fault_total()</code> is honest.</p>
-<div class="tblwrap"><table><thead><tr><th>Surface</th><th>What it gives you</th></tr></thead><tbody><tr><td><code>Lab\logs\lab-faults.log</code></td><td>timestamped <code>tag / exception type / message / file:line / pid</code>, <strong>5 generations</strong> of rotation</td></tr><tr><td><code>faults()</code> / <code>fault_total()</code></td><td>per-tag and total counts for the running process</td></tr><tr><td><code>python -m lab_faults</code></td><td>tail the log; <code>--clear</code> rotates by hand</td></tr></tbody></table></div>
-<p><strong>Retention is 5 generations, not one, on purpose.</strong> Single-generation rotation destroyed a live forensic window twice in one night during the BRK/FLUX investigation (see NOW.md and <a href="SENTINEL_RUNBOOK.md">SENTINEL_RUNBOOK.md</a> §4b ⑤).</p>
-<p><strong>Migration state (2026-07-25):</strong> all <strong>53</strong> silent handlers across <strong>23</strong> Lab files now record — <code>health\probe.py</code> 11 · <code>docs\audit.py</code> 5 · <code>verify_votes.py</code> 5 · <code>viz\observatory.py</code> 5, and the rest. Zero bare <code>except:</code> remain. Verified by driving, not by reading: every file imports, <code>verify_votes.py</code> and <code>docs\audit.py</code> produce identical output to before, and two real sites (<code>docs.audit._read</code> on a missing path, <code>sentinel_lab.bartag.bartype_name</code> on a bad tag) were confirmed to return their original fallback values <em>and</em> write a fault line.</p>
-<h3>14b. The 🧯 Lab-faults row on the Health board (same session)</h3>
-<p><code>health\probe.py</code> now tails the fault log every cycle into a <strong><code>lab_faults</code></strong> table (per-tag rollup over 24h) plus two columns on the always-written <code>health</code> row, and the <code>Sentinel · Health</code> board gained a <strong>🧯 Lab faults — what failed quietly in the Python</strong> row: <strong>Swallowed faults · 24h · Distinct fault tags · Processes affected · Suppressed (not logged)</strong>, over a per-tag table (<code>tag · occ · logged · procs · first · last · detail</code>). Amber, not red — a swallowed fault is something to look at, not something that stops trading, and reserving red for the safety row keeps the board's alarm vocabulary meaningful. <code>health_event</code> gains <code>labfaults</code> (level change) and <code>labfault_new</code>, which fires <strong>once per newly-seen tag</strong> — a brand-new silent failure is the thing worth surfacing; a known steady one is noise.</p>
+    swallow(&quot;ingest.parse&quot;, _swex)
+    continue          # control flow is UNCHANGED -- swallow() goes before it, never instead of it
+</code></pre>
+<p><strong>Contract (deliberately identical to the C# one):</strong> never raises · never alters control flow ·
+rate-limited <strong>per tag</strong> (first 3, then 1/min — the flood fear that made empty handlers attractive) ·
+counts everything including throttled occurrences, so <code>fault_total()</code> is honest.</p>
+<table>
+<thead>
+<tr>
+<th>Surface</th>
+<th>What it gives you</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>Lab\logs\lab-faults.log</code></td>
+<td>timestamped <code>tag / exception type / message / file:line / pid</code>, <strong>5 generations</strong> of rotation</td>
+</tr>
+<tr>
+<td><code>faults()</code> / <code>fault_total()</code></td>
+<td>per-tag and total counts for the running process</td>
+</tr>
+<tr>
+<td><code>python -m lab_faults</code></td>
+<td>tail the log; <code>--clear</code> rotates by hand</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Retention is 5 generations, not one, on purpose.</strong> Single-generation rotation destroyed a live
+forensic window twice in one night during the BRK/FLUX investigation (see NOW.md and
+<a href="SENTINEL_RUNBOOK.md">SENTINEL_RUNBOOK.md</a> §4b ⑤).</p>
+<p><strong>Migration state (2026-07-25):</strong> all <strong>53</strong> silent handlers across <strong>23</strong> Lab files now record —
+<code>health\probe.py</code> 11 · <code>docs\audit.py</code> 5 · <code>verify_votes.py</code> 5 · <code>viz\observatory.py</code> 5, and the rest.
+Zero bare <code>except:</code> remain. Verified by driving, not by reading: every file imports, <code>verify_votes.py</code>
+and <code>docs\audit.py</code> produce identical output to before, and two real sites (<code>docs.audit._read</code> on a
+missing path, <code>sentinel_lab.bartag.bartype_name</code> on a bad tag) were confirmed to return their original
+fallback values <em>and</em> write a fault line.</p>
+<h3 id="14b-the-lab-faults-row-on-the-health-board-same-session">14b. The 🧯 Lab-faults row on the Health board (same session)</h3>
+<p><code>health\probe.py</code> now tails the fault log every cycle into a <strong><code>lab_faults</code></strong> table (per-tag rollup over
+24h) plus two columns on the always-written <code>health</code> row, and the <code>Sentinel · Health</code> board gained a
+<strong>🧯 Lab faults — what failed quietly in the Python</strong> row:
+<strong>Swallowed faults · 24h · Distinct fault tags · Processes affected · Suppressed (not logged)</strong>, over a
+per-tag table (<code>tag · occ · logged · procs · first · last · detail</code>). Amber, not red — a swallowed fault
+is something to look at, not something that stops trading, and reserving red for the safety row keeps the
+board's alarm vocabulary meaningful. <code>health_event</code> gains <code>labfaults</code> (level change) and <code>labfault_new</code>,
+which fires <strong>once per newly-seen tag</strong> — a brand-new silent failure is the thing worth surfacing; a
+known steady one is noise.</p>
 <p><strong>Three design points, each of which is the difference between a real monitor and a decorative one:</strong></p>
 <ol>
-<li><strong>The headline counts read <code>health</code>, not <code>lab_faults</code>.</strong> <code>health</code> gets a row every cycle whether or not anything failed, so <strong>0 means "measured zero just now."</strong> Reading an empty <code>lab_faults</code> would show 0 for a <em>dead probe</em> too — reproducing, on the board built to abolish it, the exact ambiguity between <em>nothing happened</em> and <em>nothing is watching</em>. (Same defect as §9's ingester liveness being inferred from Streamlit's port.)</li>
-<li><strong><code>occurrences</code> ≠ <code>lines</code>, and the gap is displayed.</strong> Rate limiting suppresses <em>without writing a line</em>, so 7 hits inside one 60 s window write 3 lines and no marker — anything counting lines would report 3 and be confidently wrong. <code>swallow()</code> therefore writes a per-tag <strong>exit summary</strong> (<code>SUMMARY n occurrences this process</code>) via <code>atexit</code>, which the probe treats as authoritative per pid. ⚠ Still a <strong>lower bound</strong> by nature: a hard-killed process runs no <code>atexit</code> handler.</li>
-<li><strong>The roll-up is recomputed from the file every cycle — no watermark.</strong> A probe that has to remember where it got to is a probe that silently double-counts or skips after a restart.</li>
+<li><strong>The headline counts read <code>health</code>, not <code>lab_faults</code>.</strong> <code>health</code> gets a row every cycle whether or
+   not anything failed, so <strong>0 means "measured zero just now."</strong> Reading an empty <code>lab_faults</code> would
+   show 0 for a <em>dead probe</em> too — reproducing, on the board built to abolish it, the exact ambiguity
+   between <em>nothing happened</em> and <em>nothing is watching</em>. (Same defect as §9's ingester liveness being
+   inferred from Streamlit's port.)</li>
+<li><strong><code>occurrences</code> ≠ <code>lines</code>, and the gap is displayed.</strong> Rate limiting suppresses <em>without writing a
+   line</em>, so 7 hits inside one 60 s window write 3 lines and no marker — anything counting lines would
+   report 3 and be confidently wrong. <code>swallow()</code> therefore writes a per-tag <strong>exit summary</strong>
+   (<code>SUMMARY n occurrences this process</code>) via <code>atexit</code>, which the probe treats as authoritative per pid.
+   ⚠ Still a <strong>lower bound</strong> by nature: a hard-killed process runs no <code>atexit</code> handler.</li>
+<li><strong>The roll-up is recomputed from the file every cycle — no watermark.</strong> A probe that has to remember
+   where it got to is a probe that silently double-counts or skips after a restart.</li>
 </ol>
-<p>🐛 <strong>Found by the monitor watching itself, on its first run:</strong> <code>lab_faults()</code> tailed the <code>.1</code> rotation generation before it existed, <code>swallow()</code>ed the <code>FileNotFoundError</code>, and so <strong>manufactured a fault every cycle</strong> — a monitor generating the very signal it reports. Fixed with an existence check. Verified the fix by driving it: three consecutive runs on a clean slate produce <strong>zero faults and no log file at all</strong>, then 6 real occurrences report as <code>occ=6, logged=3, suppressed=3</code> end-to-end through the live daemon.</p>
-<p>🔧 <strong>Also fixed while here:</strong> <code>probe.py</code> bound its <code>:8502</code> single-instance guard <em>before</em> the one-shot branch, so <code>python probe.py</code> refused to run while the daemon was up — making the probe un-inspectable exactly when you most want to inspect it. The guard now binds only under <code>--watch</code>, matching <code>corpus_probe.py</code>, which already had it right.</p>
-<p>⚠ <strong>Operational note:</strong> the probes are long-lived Python processes and <strong>Python does not reload source</strong>. After editing <code>probe.py</code> you must <strong>restart the probe</strong> or the loop keeps running the old code — the same class of failure as §9's three-day-stale ingester. <code>sentinel-data.bat</code> restarts it guarded, so a blind re-run is safe.</p>
-<hr>
-<p><em>The consumer of this DB is the Lab (<code>Lab\train.py</code> fits the ConvictionFloor + per-bar-type weights; <code>Lab\council_paths.py</code> grades conviction vs path quality). Corpus hygiene + fill fidelity: [[corpus-hygiene-and-fill-fidelity]].</em></p>
-<footer><span>Sentinel Suite · <b>Sentinel Data Platform — Spec &amp; Stand-Up Workflow</b></span><span>living document · rendered from Markdown</span></footer>
+<p>🐛 <strong>Found by the monitor watching itself, on its first run:</strong> <code>lab_faults()</code> tailed the <code>.1</code> rotation
+generation before it existed, <code>swallow()</code>ed the <code>FileNotFoundError</code>, and so <strong>manufactured a fault every
+cycle</strong> — a monitor generating the very signal it reports. Fixed with an existence check. Verified the
+fix by driving it: three consecutive runs on a clean slate produce <strong>zero faults and no log file at
+all</strong>, then 6 real occurrences report as <code>occ=6, logged=3, suppressed=3</code> end-to-end through the live
+daemon.</p>
+<p>🔧 <strong>Also fixed while here:</strong> <code>probe.py</code> bound its <code>:8502</code> single-instance guard <em>before</em> the one-shot
+branch, so <code>python probe.py</code> refused to run while the daemon was up — making the probe un-inspectable
+exactly when you most want to inspect it. The guard now binds only under <code>--watch</code>, matching
+<code>corpus_probe.py</code>, which already had it right.</p>
+<p>⚠ <strong>Operational note:</strong> the probes are long-lived Python processes and <strong>Python does not reload source</strong>.
+After editing <code>probe.py</code> you must <strong>restart the probe</strong> or the loop keeps running the old code — the
+same class of failure as §9's three-day-stale ingester. <code>sentinel-data.bat</code> restarts it guarded, so a
+blind re-run is safe.</p>
+<hr />
+<footer><span>Sentinel Suite · <b>Sentinel Data Platform — Spec & Stand-Up Workflow</b></span><span>living document · rendered from Markdown</span></footer>
 </div></body></html>

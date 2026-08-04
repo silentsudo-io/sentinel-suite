@@ -408,6 +408,3 @@ same class of failure as §9's three-day-stale ingester. `sentinel-data.bat` res
 blind re-run is safe.
 
 ---
-
-*The consumer of this DB is the Lab (`Lab\train.py` fits the ConvictionFloor + per-bar-type weights; `Lab\council_paths.py`
-grades conviction vs path quality). Corpus hygiene + fill fidelity: [[corpus-hygiene-and-fill-fidelity]].*

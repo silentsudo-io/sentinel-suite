@@ -52,6 +52,15 @@ import re
 import sys
 from pathlib import Path
 
+# This tool's own output is full of the characters the project writes in — arrows, rules, warning
+# signs. On a Windows console defaulting to cp1252 that is not a mojibake nuisance, it is a hard
+# UnicodeEncodeError that kills the run: adding one "⚠" to a DELIBERATE reason crashed the gate
+# outright. A checker that dies on the text of its own explanation is worse than no checker.
+try:
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+except Exception:
+    pass
+
 REPO = Path(__file__).resolve().parent.parent
 SRC = REPO / "src"
 
@@ -74,6 +83,30 @@ DELIBERATE = {
         "Builder rung. Publishing it would be CS0246 for every user. Returning the caller's "
         "F6 value is EXACTLY what the full version does when there is no Lanes.conf, and "
         "nothing published writes one. Signature preserved so the API does not move."),
+
+    # ── EDITORIAL CUTS (2026-08-04) ─────────────────────────────────────────────────────────────
+    #  These are not stale files. They are places where the canonical doc says MORE than the public
+    #  one should, and they are registered here for one reason: left in the DRIFT list, the obvious
+    #  next action is to "close" them, and closing them republishes exactly what was withheld.
+    #  A checker that reports an intentional difference as drift teaches its reader to ignore it.
+    "SENTINEL_DATA_PLATFORM_SPEC.md": (35,
+        "§15 (corpus EGRESS from a bake node) is withheld. It documents Lab\\sync\\corpus_pull.py, "
+        "which is NOT shipped publicly, and names internal hosts and corpus file counts. A reader "
+        "of this repo has neither the tool nor the machines, so the section is both a disclosure "
+        "and useless to them. Everything else in the spec is published verbatim."),
+
+    "SENTINEL_DOCS.md": (65,
+        "The canonical index registers ALL 66 docs in Docs\\; this repo ships 26. Publishing it "
+        "verbatim would not merely break 40 links, it would publish a table of contents for the "
+        "private estate — infrastructure spec, rack runbook, PKI, the replay fleet — each with a "
+        "status line describing it. Registry rows are filtered to docs this repo actually serves. "
+        "⚠ Filter on BOTH .md and .html: several docs (Architecture Map, Process Atlas) ship as "
+        "HTML with no .md sibling, and a .md-only filter silently drops their rows."),
+
+    "ROADMAP.md": (2,
+        "Retains a prose note that AdvancedSuiteDocumentation and QuickReferenceGuide were archived "
+        "upstream, without linking them — the pages are removed from this repo. The canonical copy "
+        "names the private _archive\\ path, which means nothing to a reader here."),
 }
 
 # Anchored at line start ON PURPOSE. A bare substring search also matches a COMMENT

@@ -456,7 +456,7 @@ namespace NinjaTrader.NinjaScript.AddOns.Sentinel
     /// </summary>
     public static partial class SentinelCore
     {
-        public const string Version = "1.45.0";   // v1.45.0 PRESSURE SEAM — BuySellVolumePressureMountain was ported with a glass card but NEVER given a …State seam, so it computed an order-flow opinion nothing could consult (design system §9 item 6 miss, closed 2026-07-26). New PressureState (BuyPct/SellPct/Delta/Dir/DomRatio/Strong/Divergence/TickBacked) + Set/Get/Touch/All + BSP VoterCatalog row. Enters at defWeight 0.0 AUDITION: the 07-26 re-test killed all 19 voters and every one was PRICE-derived, so a genuine bid/ask-classified order-flow voice is the one untested family — but it is graded before it is trusted. TickBacked is load-bearing: OnMarketData is realtime-only, so a historical rebuild silently falls back to an OHLC proxy that is itself price-derived; a consumer that cannot tell them apart would grade the proxy and call it flow; v1.44.0 LANE FROM DISK - new LaneAssign (Sentinel\Lanes.conf) + ResolveLane(inst,barTag,f6Lane). The lane a chart runs in had ONE source of truth, the Council's F6 ScopeLane, while a Conductor job line's `lane=` LOOKED authoritative and was not. On 2026-07-25 that cost a run twice: once at launch (job said AUD0626, chart said TEST -> fused the SCRAPPED 7-voter roster, declaredW=5.30) and again after a crash-recovery reboot, where the workspace restored to lane TEST and an armed auto-resume would have baked contaminated rows into a lane named for a 19-voter roster. Lanes.conf now wins when it has an entry, F6 otherwise, and the override is ANNOUNCED in the log - never silent. Cascade "<inst>.<barTag>" -> "<inst>" -> F6, matching RosterIO/LaneIO. Paired with Conductor v0.2.0's fail-closed lane guard; v1.43.0 CVD SEAM — new CvdState (session cumulative volume delta + its DERIVATIVES) published by the SentinelCVD indicator, so it works on ANY bar type rather than only where SentinelFlux is the clock. Carries Slope/SlopeZ/Dir (direction), Divergence (flow vs price), and — the one nobody plots — EFFICIENCY: ticks of price per 1,000 contracts of net aggression, i.e. market IMPACT (Kyle's lambda in retail clothing). Low efficiency on rising CVD = absorption; high = a thin book. Orthogonal to every price-derived voter. NOT a duplicate of FluxState: Theta is ONE forming bar's imbalance and resets each bar, FluxState.Cvd was a bonus read nothing consumed and only exists on a Flux chart. Council gains the CVD voter (STATE) + VoterCatalog row; v1.42.0 LOG RETENTION — sentinel.log rotation kept exactly ONE generation and DELETED it on every roll, so at the rates this log actually hits (41,340 lines in 27 SECONDS on a historical rebuild) 5 MB is ~3 minutes of history at 100x replay; that permanently destroyed the 2026-07-23→24 forensic window TWICE in one night mid-investigation of the BRK/FLUX seam bug. Now keeps LOG_GENERATIONS=6 (.1...6). Rotation stays deliberately silent (Swallow→Log→WriteLogFile would recurse). Also archived SentinelExcursionRecorder_v1_4 (contaminated schema 1.3) out of the tree — two excursion recorders were loadable at once, against the one-writer invariant; v1.41.0 Swallow()/Faults() — the RECORDED empty catch: ~350 `catch (Exception _sx) { SentinelCore.Swallow("SentinelCore.anon", _sx); }` across the suite made every expensive bug invisible by construction; Swallow never rethrows (identical behaviour) but counts + rate-limits + logs. Order paths migrated first (Deck 71 · GTrader21 30 · Bridge 28 · Copier 5); v1.40.0 AppDomain GENERATION BEACON — an F5 leaves a chart's bars-type instance on the OLD assembly, publishing into an orphaned static seam store (silent; cost the 07-23 audition bake) → Beacon/BeaconForeign let a consumer say DECOUPLED-restart-NT instead of "absent"; v1.39.0 LaneIO cascade + RosterIO.Resolve (live config reload); v1.38.0 ReplayMode file-switch unblocks bars-type seam publishes in Playback; v1.36.0 CouncilState.CouncilVersion
+        public const string Version = "1.47.0";   // v1.47.0 CVD CATALOG ROW — the Council has declared CVD in KnownVoters and FUSED it since v1.43.0, but VoterCatalog never got its row, so the two surfaces that read the catalog (Cockpit, System Builder) could not see a voter that was actively voting: it could not be shown, toggled, or written into a generated Roster.conf, which would then silently omit a voter the Council counts in its denominator. Found 2026-07-30 by enumerating KnownVoters (25) against VoterCatalog (24) while drawing the architecture guides — the catalog and the code disagreed, and the artifact wins by default. Enters at defWeight 0.0 AUDITION to match the Council's own WeightCvd default; v1.46.0 SIGNAL-FIRE INTAKE — the excursion corpus could only ever see the COUNCIL. SentinelExcursionRecorder polls GetCouncilState and opens on Open("COUNCIL", …), so EVERY strategy was invisible to the corpus by construction: build a strategy, and the thing that grades decisions cannot see its decisions. New NoteSignalFire(scope,dir,tag,…) + DrainSignalFires(scope) + SignalFireStats() make the recorder's intake GENERIC — the Council becomes one caller among several, and Keel/Hull/Pilot (or any future strategy) records through the same path with the same schema. Deliberately an EVENT QUEUE, not a seam: a seam is last-value-wins, so two fires inside one bar would silently drop one, and a fire is exactly the thing that must not be lost. Historical fires are REJECTED AT THE DOOR rather than queued (a queued historical fire drained at realtime is lookahead contamination — the same class as the UpdatedUtc as-of hole), the queue is BOUNDED with counted drops, and stale fires expire on drain. SignalFireStats() exists so a dropped or never-drained fire is visible instead of silent — a strategy that records nothing must not be indistinguishable from a strategy that never fired. Row schema UNCHANGED at 1.5 (the row's `signal` field already carries the tag); carrying strategy-side context onto the row is a deliberate follow-up that needs a schema bump; v1.45.0 PRESSURE SEAM — BuySellVolumePressureMountain was ported with a glass card but NEVER given a …State seam, so it computed an order-flow opinion nothing could consult (design system §9 item 6 miss, closed 2026-07-26). New PressureState (BuyPct/SellPct/Delta/Dir/DomRatio/Strong/Divergence/TickBacked) + Set/Get/Touch/All + BSP VoterCatalog row. Enters at defWeight 0.0 AUDITION: the 07-26 re-test killed all 19 voters and every one was PRICE-derived, so a genuine bid/ask-classified order-flow voice is the one untested family — but it is graded before it is trusted. TickBacked is load-bearing: OnMarketData is realtime-only, so a historical rebuild silently falls back to an OHLC proxy that is itself price-derived; a consumer that cannot tell them apart would grade the proxy and call it flow; v1.44.0 LANE FROM DISK - new LaneAssign (Sentinel\Lanes.conf) + ResolveLane(inst,barTag,f6Lane). The lane a chart runs in had ONE source of truth, the Council's F6 ScopeLane, while a Conductor job line's `lane=` LOOKED authoritative and was not. On 2026-07-25 that cost a run twice: once at launch (job said AUD0626, chart said TEST -> fused the SCRAPPED 7-voter roster, declaredW=5.30) and again after a crash-recovery reboot, where the workspace restored to lane TEST and an armed auto-resume would have baked contaminated rows into a lane named for a 19-voter roster. Lanes.conf now wins when it has an entry, F6 otherwise, and the override is ANNOUNCED in the log - never silent. Cascade "<inst>.<barTag>" -> "<inst>" -> F6, matching RosterIO/LaneIO. Paired with Conductor v0.2.0's fail-closed lane guard; v1.43.0 CVD SEAM — new CvdState (session cumulative volume delta + its DERIVATIVES) published by the SentinelCVD indicator, so it works on ANY bar type rather than only where SentinelFlux is the clock. Carries Slope/SlopeZ/Dir (direction), Divergence (flow vs price), and — the one nobody plots — EFFICIENCY: ticks of price per 1,000 contracts of net aggression, i.e. market IMPACT (Kyle's lambda in retail clothing). Low efficiency on rising CVD = absorption; high = a thin book. Orthogonal to every price-derived voter. NOT a duplicate of FluxState: Theta is ONE forming bar's imbalance and resets each bar, FluxState.Cvd was a bonus read nothing consumed and only exists on a Flux chart. Council gains the CVD voter (STATE) + VoterCatalog row; v1.42.0 LOG RETENTION — sentinel.log rotation kept exactly ONE generation and DELETED it on every roll, so at the rates this log actually hits (41,340 lines in 27 SECONDS on a historical rebuild) 5 MB is ~3 minutes of history at 100x replay; that permanently destroyed the 2026-07-23→24 forensic window TWICE in one night mid-investigation of the BRK/FLUX seam bug. Now keeps LOG_GENERATIONS=6 (.1...6). Rotation stays deliberately silent (Swallow→Log→WriteLogFile would recurse). Also archived SentinelExcursionRecorder_v1_4 (contaminated schema 1.3) out of the tree — two excursion recorders were loadable at once, against the one-writer invariant; v1.41.0 Swallow()/Faults() — the RECORDED empty catch: ~350 `catch (Exception _sx) { SentinelCore.Swallow("SentinelCore.anon", _sx); }` across the suite made every expensive bug invisible by construction; Swallow never rethrows (identical behaviour) but counts + rate-limits + logs. Order paths migrated first (Deck 71 · GTrader21 30 · Bridge 28 · Copier 5); v1.40.0 AppDomain GENERATION BEACON — an F5 leaves a chart's bars-type instance on the OLD assembly, publishing into an orphaned static seam store (silent; cost the 07-23 audition bake) → Beacon/BeaconForeign let a consumer say DECOUPLED-restart-NT instead of "absent"; v1.39.0 LaneIO cascade + RosterIO.Resolve (live config reload); v1.38.0 ReplayMode file-switch unblocks bars-type seam publishes in Playback; v1.36.0 CouncilState.CouncilVersion
 
         // ═════════════════════════════════════════════════════════════════════
         //  SCOPE (v1.15.0) — the coordinate every seam should be keyed by.
@@ -4040,6 +4040,172 @@ namespace NinjaTrader.NinjaScript.AddOns.Sentinel
             if (string.IsNullOrEmpty(key)) return null;
             int i = key.LastIndexOf('.');
             return (i > 0 && i < key.Length - 1) ? key.Substring(0, i) : null;
+        }
+
+        // ═════════════════════════════════════════════════════════════════════════════════════════
+        //  SIGNAL-FIRE INTAKE — how a NON-Council decision reaches the excursion corpus
+        // ═════════════════════════════════════════════════════════════════════════════════════════
+        //
+        //  THE HOLE THIS CLOSES. `SentinelExcursionRecorder` polls `GetCouncilState` and opens on
+        //  `Open("COUNCIL", …)`. That is the ONLY way a fire has ever entered the corpus, so every
+        //  strategy — Bridge included, and Keel/Hull/Pilot when they exist — is invisible to the one
+        //  system built to grade decisions. You could build a strategy, run it for a month, and have
+        //  nothing to grade it with. The recorder's intake becomes generic here; the Council becomes
+        //  one caller among several.
+        //
+        //  ⚠ AN EVENT QUEUE, NOT A SEAM, and the distinction is the whole design.
+        //  Every other publisher here is a seam: last-value-wins, because a *reading* only has a
+        //  current value. A FIRE is not a reading — it is a thing that happened, and two of them
+        //  inside one bar are two facts, not one. Published as a seam, the second silently overwrites
+        //  the first and the corpus quietly under-counts. So: queue, drained exactly once.
+        //
+        //  ⚠ HISTORICAL FIRES ARE REJECTED AT THE DOOR, not queued and filtered later.
+        //  A fire enqueued during a historical rebuild and drained once the chart goes realtime is
+        //  lookahead: it would be stamped with realtime context that did not exist when it fired.
+        //  This is the same failure as the `UpdatedUtc` as-of hole that poisoned five excursion rows
+        //  with identical conviction across three days. The caller declares `isHistorical`; a true
+        //  value is counted and dropped, never stored.
+        //
+        //  ⚠ BOUNDED, WITH COUNTED DROPS. If no recorder is loaded on a scope, nothing drains it —
+        //  so an unbounded queue is a memory leak that a headless bake would find first. Capped, and
+        //  the overflow is COUNTED rather than silently discarded, because "the recorder saw nothing"
+        //  and "the recorder was never there" must not look the same. `SignalFireStats()` is the
+        //  read-out; a strategy that records nothing must be distinguishable from one that never fired.
+        // ─────────────────────────────────────────────────────────────────────────────────────────
+
+        /// <summary>One decision, published for recording. Immutable by convention — the queue hands
+        /// the same instance to the drainer, which must not mutate it.</summary>
+        public sealed class SignalFire
+        {
+            /// <summary>Scope the fire belongs to — "&lt;instrument&gt;.&lt;barTag&gt;". The recorder
+            /// drains only its own, so a strategy on another chart cannot pollute this corpus.</summary>
+            public string Scope;
+            /// <summary>Short uppercase source tag — "COUNCIL", "KEEL", "BRIDGE". Lands in the row's
+            /// `signal` field, which is how the Lab separates cohorts. Keep it a single clean token.</summary>
+            public string Tag;
+            /// <summary>+1 long, -1 short. 0 is not a fire and is rejected.</summary>
+            public int Dir;
+            /// <summary>Optional strategy-side conviction, NaN when the source has no such notion.
+            /// NOT yet written to the row — that needs a schema bump. Carried so the seam does not
+            /// have to change when it is.</summary>
+            public double Conviction = double.NaN;
+            /// <summary>Optional size multiplier the source intended. Same status as Conviction.</summary>
+            public double SizeMult = double.NaN;
+            /// <summary>Free-text provenance for the log, never for the row.</summary>
+            public string Note;
+            /// <summary>When the fire was published (wall clock, realtime only by construction).</summary>
+            public DateTime UtcTime;
+
+            // ── the publisher's own view, carried but NOT authoritative ──────────────────────────
+            /// <summary>The price the PUBLISHER saw when it fired. ⚠ Must be a real traded price —
+            /// never Close[0] on an HA/Renko/Tide bar type, which is a synthetic average that never
+            /// traded and which biased every label in this corpus once already.
+            ///
+            /// ⚠ THE RECORDER DOES NOT USE THIS AS THE ROW'S ENTRY PRICE, and that is deliberate.
+            /// The recorder latches the real tape in its own OnMarketData, distinguishes a silent
+            /// tape ("barclose", explicitly not a tradeable entry) and back-fills the entry when the
+            /// tick arrives after the bar close — machinery that was paid for with a corrupted corpus.
+            /// A publisher's price cannot be trusted more than that, and a caller who passed Close[0]
+            /// by mistake would silently reintroduce the exact bug. Carried for provenance and for a
+            /// cross-check the Lab can run: publisher price vs recorder price should agree, and a
+            /// disagreement is a finding.</summary>
+            public double FirePx = double.NaN;
+            /// <summary>The publisher's own fire timestamp, if it has a more precise one than the
+            /// moment this reached the queue.</summary>
+            public DateTime FireUtc;
+            /// <summary>`&lt;class&gt;#&lt;scope&gt;@&lt;account&gt;` — which instance fired, so two strategies on
+            /// one scope stay distinguishable in the corpus.</summary>
+            public string InstanceKey;
+        }
+
+        /// <summary>How long an undrained fire stays valid. Longer than any plausible bar close, short
+        /// enough that a recorder loaded mid-session does not adopt a stale backlog and stamp it onto
+        /// the wrong bar.</summary>
+        private const double SignalFireTtlSec = 90.0;
+        /// <summary>Per-scope cap. Small on purpose: a healthy scope drains every bar, so a queue this
+        /// deep already means nobody is listening.</summary>
+        private const int SignalFireMaxPerScope = 64;
+
+        private static readonly object _fireGate = new object();
+        private static readonly Dictionary<string, List<SignalFire>> _fires =
+            new Dictionary<string, List<SignalFire>>(StringComparer.OrdinalIgnoreCase);
+        private static long _fireNoted, _fireDrained, _fireDroppedHistorical, _fireDroppedFull, _fireExpired;
+
+        /// <summary>Publish a decision for recording. Safe to call from any thread and from a scope with
+        /// no recorder on it (the fire is simply capped and counted).
+        ///
+        /// ⚠ <paramref name="isHistorical"/> is NOT optional politeness — pass
+        /// <c>State != State.Realtime</c>. A historical fire is dropped here rather than queued,
+        /// because draining it later would stamp realtime context onto a replayed bar.</summary>
+        /// <returns>true if the fire was queued; false if it was rejected or dropped.</returns>
+        public static bool NoteSignalFire(string scope, int dir, string tag, bool isHistorical,
+                                          double firePx = double.NaN, string instanceKey = null,
+                                          DateTime fireUtc = default(DateTime),
+                                          double conviction = double.NaN, double sizeMult = double.NaN,
+                                          string note = null)
+        {
+            if (string.IsNullOrEmpty(scope) || string.IsNullOrEmpty(tag) || dir == 0) return false;
+            if (isHistorical) { lock (_fireGate) { _fireDroppedHistorical++; } return false; }
+
+            DateTime now = DateTime.UtcNow;
+            var f = new SignalFire
+            {
+                Scope = scope, Tag = tag, Dir = dir > 0 ? 1 : -1,
+                Conviction = conviction, SizeMult = sizeMult, Note = note,
+                FirePx = firePx, InstanceKey = instanceKey,
+                FireUtc = (fireUtc == default(DateTime) ? now : fireUtc),
+                UtcTime = now
+            };
+            lock (_fireGate)
+            {
+                List<SignalFire> q;
+                if (!_fires.TryGetValue(scope, out q)) { q = new List<SignalFire>(); _fires[scope] = q; }
+                if (q.Count >= SignalFireMaxPerScope) { _fireDroppedFull++; return false; }
+                q.Add(f);
+                _fireNoted++;
+            }
+            return true;
+        }
+
+        /// <summary>Take every fresh fire queued for <paramref name="scope"/>. DESTRUCTIVE — a fire is
+        /// handed out exactly once, so the one-writer rule that governs the corpus governs this too:
+        /// two recorders on one scope would split the fires between them rather than each seeing all.
+        /// Fires older than the TTL are discarded and counted, not returned.</summary>
+        public static List<SignalFire> DrainSignalFires(string scope)
+        {
+            var outp = new List<SignalFire>();
+            if (string.IsNullOrEmpty(scope)) return outp;
+            DateTime cutoff = DateTime.UtcNow.AddSeconds(-SignalFireTtlSec);
+            lock (_fireGate)
+            {
+                List<SignalFire> q;
+                if (!_fires.TryGetValue(scope, out q) || q.Count == 0) return outp;
+                for (int i = 0; i < q.Count; i++)
+                {
+                    if (q[i].UtcTime < cutoff) _fireExpired++;
+                    else outp.Add(q[i]);
+                }
+                q.Clear();
+                _fireDrained += outp.Count;
+            }
+            return outp;
+        }
+
+        /// <summary>Observability for the intake: noted / drained / dropped-historical / dropped-full /
+        /// expired / currently-queued. Exists so a strategy that produced no corpus rows can be told
+        /// apart from a strategy that never fired — the recurring failure this suite keeps paying for.</summary>
+        public static string SignalFireStats()
+        {
+            lock (_fireGate)
+            {
+                int queued = 0;
+                foreach (var kv in _fires) queued += kv.Value.Count;
+                return "noted=" + _fireNoted + " drained=" + _fireDrained
+                     + " droppedHistorical=" + _fireDroppedHistorical
+                     + " droppedFull=" + _fireDroppedFull
+                     + " expired=" + _fireExpired
+                     + " queued=" + queued + " scopes=" + _fires.Count;
+            }
         }
 
         private sealed class SeamStore<T> where T : class

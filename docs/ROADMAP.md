@@ -64,7 +64,7 @@ up from what holds. Buying N is what the corpus bakes are for.
 
 ### Shipped since the 07-14 block
 
-- **Core v1.45.0** — `ConvictionState` (v1.37.0, the Drift **CVB** voter) · **`ReplayMode`** (v1.38.0) ·
+- **Core v1.47.0** — `ConvictionState` (v1.37.0, the Drift **CVB** voter) · **`ReplayMode`** (v1.38.0) ·
   `RosterIO`/`LaneIO` **cascade** (v1.39.0) · the **generation beacon** (v1.40.0) · **`Swallow`/`Faults`**
   (v1.41.0, migrated across **726 call sites / 86 files**). All documented in
   [SENTINEL_DESIGN_SYSTEM.md](SENTINEL_DESIGN_SYSTEM.md) §6f.
@@ -88,9 +88,9 @@ The suite has moved well past the snapshots below. Where they disagree on a vers
 
 > ⚠ **Live per-tool versions move faster than this narrative.** For the authoritative version matrix
 > (Core · Council · Bridge · Cockpit · GTrader21 · recorder) `memory/NOW.md` wins over any number pinned
-> below; `{{core_version}}` + the voter count render live from code and can't drift.
+> below; `v1.47.0` + the voter count render live from code and can't drift.
 
-- **The Council fuses 25 VOTERS** (was 8–9). **SentinelCore → v1.45.0**, **Council → v1.8.x.**
+- **The Council fuses 25 VOTERS** (was 8–9). **SentinelCore → v1.47.0**, **Council → v1.8.x.**
 - **⭐ Newest thread — SentinelFlux (order-flow imbalance BAR TYPE).** A from-scratch López-de-Prado information-driven
   bar type (BarsPeriodType **212203**, reserved block 212200–212299) stabilised by the TBars discipline. It closes bars on
   accumulated signed order-flow imbalance → the suite's **first genuinely orthogonal axis** (every other voter is
@@ -515,6 +515,8 @@ Current sequence:
 - **Build rules & versioning policy:** [../CONTRIBUTING.md](../CONTRIBUTING.md)
 - **GTrader21 full build history & lessons:** `memory/gtrader21-panel-integration.md`
 - **Copier architecture & decisions:** `memory/copier-samples-analysis.md`
-- **Advanced suite build docs:** [AdvancedSuiteDocumentation.md](AdvancedSuiteDocumentation.md)
-- **Per-indicator/strategy quick reference:** [QuickReferenceGuide.md](QuickReferenceGuide.md)
+- ~~Advanced suite build docs~~ · ~~Per-indicator/strategy quick reference~~ — **ARCHIVED 2026-08-03** to
+  `Docs/_archive/` (`AdvancedSuiteDocumentation.md`, `QuickReferenceGuide.md`). Both were pre-Sentinel, v1.0,
+  dated January 2026 and never updated. Superseded by the [Suite Manual](SENTINEL_SUITE_MANUAL.md) and the
+  [complete registry](SENTINEL_DOCS.md).
 - **Original Sentinel design transcripts:** `~/Downloads/Sentinel_Project_*.txt`

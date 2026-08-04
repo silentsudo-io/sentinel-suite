@@ -10,6 +10,31 @@ per-file `_vX_Y_Z` versions inside the source.
 ## [Unreleased] — P1 scaffolding
 The first release is being assembled: the **non-execution beachhead** (draws on charts, never places an order).
 
+### Changed — runtime and docs brought back in step with the canonical tree (2026-08-04)
+- **`SentinelCore` v1.45.0 → v1.47.0.** Adds the **signal-fire intake** (v1.46.0): `NoteSignalFire` /
+  `DrainSignalFires` / `SignalFireStats`, which let a non-Council strategy reach the excursion corpus
+  through the same path and schema the Council uses. Deliberately an event **queue**, not a state seam —
+  a seam is last-value-wins, so two fires inside one bar would silently drop one, and a fire is exactly
+  the thing that must not be lost. Historical fires are rejected at the door rather than queued (a
+  queued historical fire drained at realtime is lookahead contamination), the queue is bounded with
+  counted drops, and `SignalFireStats()` exists so a dropped or never-drained fire is visible instead of
+  silent. v1.47.0 is a catalog row that lives outside this file; only the version string moves here.
+  - ⚠ `ResolveLane` remains **deliberately reduced** in the published cut and always will be: the full
+    body calls `LaneAssign.Read()`, and `LaneAssign` lives in the unreleased System Builder rung, so
+    shipping it would be a `CS0246` for every user. Returning the caller's F6 value is exactly what the
+    full version does when there is no `Lanes.conf`, and nothing published writes one.
+- **Docs refreshed** against the canonical tree: Roadmap, Design System, Data Platform Spec and the
+  documentation index, with `{{core_version}}` / `{{voter_count}}` re-substituted from code (v1.47.0,
+  25 voters) so the published numbers cannot drift from the source they describe.
+- **`QuickReferenceGuide` retired.** Pre-Sentinel, dated January 2026, never updated; superseded by the
+  Suite Manual. Archived upstream on 2026-08-03 and now removed here rather than left as a stale page.
+
+### Added
+- **`tools/publish_doc.py`** — renders a canonical doc into its published form: strips the internal audit
+  frontmatter, substitutes `{{tokens}}` from `facts.json`, and rewrites internal links. Closing doc drift
+  was never a copy, and doing it by hand shipped a literal `{{core_version}}` exactly once in testing.
+
+
 ### Fixed — from the first wave of public installs (2026-07-27)
 Everything in this block was found by people installing rungs 0-1 for real. That is the point of shipping.
 - **Import archives were missing a compile-time dependency.** `tools/make_ninjascript_archive.py` *silently
