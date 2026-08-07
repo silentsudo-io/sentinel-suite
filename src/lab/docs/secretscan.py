@@ -79,8 +79,25 @@ def _operator_rules():
     except OSError as _swex:
         swallow("docs.secretscan.private_conf", _swex)
     if not pats:
+        # ⛔ SAY SO, LOUDLY. Without this file the gate stops checking for the operator's
+        # domain and host names and still prints "GATE: PASS — no PUBLIC-zone secrets".
+        # Measured: a clean-looking pass with zero blocks and no indication anything was
+        # skipped. That is the exact shape this project keeps finding — a check that is
+        # verified and still lies. A weakened gate must never be indistinguishable from a
+        # satisfied one, so it announces itself on stderr AND in the report body.
+        global _NO_OPERATOR_RULES
+        _NO_OPERATOR_RULES = True
+        sys.stderr.write(
+            "\nsecretscan: ⛔ NO OPERATOR PATTERNS — %s is missing.\n"
+            "            Domain and host-name checks are OFF. The structural rules (RFC1918,\n"
+            "            CGNAT, private keys, JWTs, password assignments) still run, but a\n"
+            "            PASS from this run does NOT mean what it usually means.\n"
+            "            Restore it from private.conf.example.\n\n" % PRIVATE_CONF)
         return []
     return [("operator-private", re.compile("(?:%s)" % "|".join(pats), re.I), "BLOCK")]
+
+
+_NO_OPERATOR_RULES = False
 
 
 # (label, regex, severity). Ordered most- to least-specific; first match per line wins.
@@ -256,6 +273,9 @@ def report(hits, gate_mode=False):
     print("=" * 96)
     print("SENTINEL PUBLISH GATE — %d findings (%d after benign filter)" % (len(hits), len(live)))
     print("=" * 96)
+    if _NO_OPERATOR_RULES:
+        print("  ⛔ DEGRADED — no operator patterns loaded (private.conf missing).")
+        print("     Domain and host-name checks are OFF; a PASS below is NOT a full pass.")
     print("  PUBLIC-zone BLOCK   %5d   %s" % (len(fatal), "⛔ WOULD SHIP A SECRET" if fatal else "✅ none"))
     print("  PARAM-zone  BLOCK   %5d   parameterise before publishing (fleet.conf)" % len(param))
     print("  PRIVATE-zone BLOCK  %5d   expected — these files are never published" % len(parked))
