@@ -1,3 +1,9 @@
+---
+layout: sentinel-ref
+title: "SentinelExcursionRecorder_v2_0_0.cs"
+blurb: "Indicators · 2.0.0 · 1112 lines"
+---
+
 # SentinelExcursionRecorder_v2_0_0.cs
 
 > `bin/Custom/Indicators/SentinelExcursionRecorder_v2_0_0.cs`

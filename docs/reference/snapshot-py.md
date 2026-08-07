@@ -1,3 +1,9 @@
+---
+layout: sentinel-ref
+title: "snapshot.py"
+blurb: "Lab (Python) · unversioned · 367 lines"
+---
+
 # snapshot.py
 
 > `Sentinel/Lab/snapshot/snapshot.py`

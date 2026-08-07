@@ -1,3 +1,9 @@
+---
+layout: sentinel-ref
+title: "keel_exits.py"
+blurb: "Lab (Python) · unversioned · 290 lines"
+---
+
 # keel_exits.py
 
 > `Sentinel/Lab/keel_exits.py`

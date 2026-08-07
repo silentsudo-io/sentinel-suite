@@ -1,3 +1,9 @@
+---
+layout: sentinel-ref
+title: "DDBarsPerSessionAdvisor.cs"
+blurb: "Indicators · unversioned · 370 lines"
+---
+
 # DDBarsPerSessionAdvisor.cs
 
 > `bin/Custom/Indicators/DDBarsPerSessionAdvisor.cs`

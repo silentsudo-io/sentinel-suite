@@ -1,3 +1,9 @@
+---
+layout: sentinel-ref
+title: "facts.py"
+blurb: "Lab (Python) · unversioned · 104 lines"
+---
+
 # facts.py
 
 > `Sentinel/Lab/docs/facts.py`
@@ -6,7 +12,7 @@
 |---|---|
 | **Family** | Lab (Python) |
 | **Version** | — |
-| **Size** | 99 lines |
+| **Size** | 104 lines |
 | **Scope** | **public** — ships in `sentinel-suite` |
 | **Documented by** | [SENTINEL_DOCS_HEALTH_SPEC](../../SENTINEL_DOCS_HEALTH_SPEC.md) |
 

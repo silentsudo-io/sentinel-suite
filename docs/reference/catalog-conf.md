@@ -1,3 +1,9 @@
+---
+layout: sentinel-ref
+title: "catalog.conf"
+blurb: "Config files · unversioned · 34 lines"
+---
+
 # catalog.conf
 
 > `Sentinel/Models/catalog.conf`

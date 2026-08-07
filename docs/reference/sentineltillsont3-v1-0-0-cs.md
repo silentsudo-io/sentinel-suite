@@ -1,3 +1,9 @@
+---
+layout: sentinel-ref
+title: "SentinelTillsonT3_v1_0_0.cs"
+blurb: "Indicators · 1.0.0 · 249 lines"
+---
+
 # SentinelTillsonT3_v1_0_0.cs
 
 > `bin/Custom/Indicators/SentinelTillsonT3_v1_0_0.cs`

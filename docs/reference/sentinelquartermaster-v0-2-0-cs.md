@@ -1,3 +1,9 @@
+---
+layout: sentinel-ref
+title: "SentinelQuartermaster_v0_2_0.cs"
+blurb: "AddOns / runtime · 0.2.0 · 526 lines"
+---
+
 # SentinelQuartermaster_v0_2_0.cs
 
 > `bin/Custom/AddOns/SentinelQuartermaster_v0_2_0.cs`

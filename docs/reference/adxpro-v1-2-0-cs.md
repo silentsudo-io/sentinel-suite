@@ -1,3 +1,9 @@
+---
+layout: sentinel-ref
+title: "ADXPro_v1_2_0.cs"
+blurb: "Indicators · 1.2.0 · 692 lines"
+---
+
 # ADXPro_v1_2_0.cs
 
 > `bin/Custom/Indicators/ADXPro_v1_2_0.cs`

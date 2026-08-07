@@ -1,3 +1,9 @@
+---
+layout: sentinel-ref
+title: "fixtures.py"
+blurb: "Azimuth (Python) · unversioned · 54 lines"
+---
+
 # fixtures.py
 
 > `Sentinel/Azimuth/engine/tests/fixtures.py`

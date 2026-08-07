@@ -1,3 +1,9 @@
+---
+layout: sentinel-ref
+title: "ntdump.py"
+blurb: "Azimuth (Python) · unversioned · 260 lines"
+---
+
 # ntdump.py
 
 > `Sentinel/Azimuth/bars/ntdump.py`

@@ -1,3 +1,9 @@
+---
+layout: sentinel-ref
+title: "ingest.py"
+blurb: "Lab (Python) · unversioned · 632 lines"
+---
+
 # ingest.py
 
 > `Sentinel/Lab/ingest/ingest.py`

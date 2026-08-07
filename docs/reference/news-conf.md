@@ -1,3 +1,9 @@
+---
+layout: sentinel-ref
+title: "News.conf"
+blurb: "Config files · unversioned · 8 lines"
+---
+
 # News.conf
 
 > `Sentinel/News.conf`

@@ -1,3 +1,9 @@
+---
+layout: sentinel-ref
+title: "ident_check.py"
+blurb: "Lab (Python) · unversioned · 119 lines"
+---
+
 # ident_check.py
 
 > `Sentinel/Lab/docs/ident_check.py`

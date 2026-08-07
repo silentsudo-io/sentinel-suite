@@ -1,3 +1,9 @@
+---
+layout: sentinel-ref
+title: "SentinelConductor_v0_1_0.cs"
+blurb: "AddOns / runtime · 0.1.0 · 2203 lines"
+---
+
 # SentinelConductor_v0_1_0.cs
 
 > `bin/Custom/AddOns/SentinelConductor_v0_1_0.cs`

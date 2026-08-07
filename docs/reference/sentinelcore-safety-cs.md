@@ -1,3 +1,9 @@
+---
+layout: sentinel-ref
+title: "SentinelCore.Safety.cs"
+blurb: "AddOns / runtime · unversioned · 458 lines"
+---
+
 # SentinelCore.Safety.cs
 
 > `bin/Custom/AddOns/SentinelCore.Safety.cs`

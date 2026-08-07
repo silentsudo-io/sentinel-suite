@@ -1,3 +1,9 @@
+---
+layout: sentinel-ref
+title: "Explorer.tsx"
+blurb: "Azimuth (front end) · unversioned · 116 lines"
+---
+
 # Explorer.tsx
 
 > `Sentinel/Azimuth/app/src/panes/Explorer.tsx`

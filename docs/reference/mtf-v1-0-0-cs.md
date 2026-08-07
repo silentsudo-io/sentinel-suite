@@ -1,3 +1,9 @@
+---
+layout: sentinel-ref
+title: "Mtf_v1_0_0.cs"
+blurb: "Indicators · 1.0.0 · 378 lines"
+---
+
 # Mtf_v1_0_0.cs
 
 > `bin/Custom/Indicators/Mtf_v1_0_0.cs`

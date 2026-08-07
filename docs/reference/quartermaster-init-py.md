@@ -1,3 +1,9 @@
+---
+layout: sentinel-ref
+title: "__init__.py"
+blurb: "Lab (Python) · 0.1.0 · 8 lines"
+---
+
 # __init__.py
 
 > `Sentinel/Lab/quartermaster/__init__.py`

@@ -1,3 +1,9 @@
+---
+layout: sentinel-ref
+title: "SentinelCore_v1_0_0.cs"
+blurb: "AddOns / runtime · 1.47.0 · 4322 lines"
+---
+
 # SentinelCore_v1_0_0.cs
 
 > `bin/Custom/AddOns/SentinelCore_v1_0_0.cs`

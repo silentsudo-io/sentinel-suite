@@ -1,3 +1,9 @@
+---
+layout: sentinel-ref
+title: "sensor_truth.py"
+blurb: "Lab (Python) · unversioned · 161 lines"
+---
+
 # sensor_truth.py
 
 > `Sentinel/Lab/sensor_truth.py`

@@ -1,3 +1,9 @@
+---
+layout: sentinel-ref
+title: "bartag.py"
+blurb: "Lab (Python) · unversioned · 121 lines"
+---
+
 # bartag.py
 
 > `Sentinel/Lab/sentinel_lab/bartag.py`

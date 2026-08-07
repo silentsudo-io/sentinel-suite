@@ -1,3 +1,9 @@
+---
+layout: sentinel-ref
+title: "exp0005.py"
+blurb: "Lab (Python) · unversioned · 455 lines"
+---
+
 # exp0005.py
 
 > `Sentinel/Lab/harness/exp0005.py`

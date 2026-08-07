@@ -1,3 +1,9 @@
+---
+layout: sentinel-ref
+title: "keel_srcdiff.py"
+blurb: "Lab (Python) · unversioned · 155 lines"
+---
+
 # keel_srcdiff.py
 
 > `Sentinel/Lab/keel_srcdiff.py`

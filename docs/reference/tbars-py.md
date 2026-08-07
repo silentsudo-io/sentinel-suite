@@ -1,3 +1,9 @@
+---
+layout: sentinel-ref
+title: "tbars.py"
+blurb: "Azimuth (Python) · unversioned · 1304 lines"
+---
+
 # tbars.py
 
 > `Sentinel/Azimuth/bars/tbars.py`

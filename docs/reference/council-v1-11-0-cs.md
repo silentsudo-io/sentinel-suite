@@ -1,3 +1,9 @@
+---
+layout: sentinel-ref
+title: "Council_v1_11_0.cs"
+blurb: "Indicators · 1.11.0 · 2067 lines"
+---
+
 # Council_v1_11_0.cs
 
 > `bin/Custom/Indicators/Council_v1_11_0.cs`

@@ -1,3 +1,9 @@
+---
+layout: sentinel-ref
+title: "cvddrift.py"
+blurb: "Lab (Python) · unversioned · 212 lines"
+---
+
 # cvddrift.py
 
 > `Sentinel/Lab/harness/cvddrift.py`

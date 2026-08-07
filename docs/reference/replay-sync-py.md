@@ -1,3 +1,9 @@
+---
+layout: sentinel-ref
+title: "replay_sync.py"
+blurb: "Lab (Python) · unversioned · 105 lines"
+---
+
 # replay_sync.py
 
 > `Sentinel/Lab/sync/replay_sync.py`

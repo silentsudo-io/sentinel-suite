@@ -1,3 +1,9 @@
+---
+layout: sentinel-ref
+title: "SentinelV1_0.cs"
+blurb: "Indicators · unversioned · 3575 lines"
+---
+
 # SentinelV1_0.cs
 
 > `bin/Custom/Indicators/SentinelV1_0.cs`

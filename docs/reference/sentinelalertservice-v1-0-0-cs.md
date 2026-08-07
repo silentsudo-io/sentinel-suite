@@ -1,3 +1,9 @@
+---
+layout: sentinel-ref
+title: "SentinelAlertService_v1_0_0.cs"
+blurb: "AddOns / runtime · 1.0.0 · 270 lines"
+---
+
 # SentinelAlertService_v1_0_0.cs
 
 > `bin/Custom/AddOns/SentinelAlertService_v1_0_0.cs`

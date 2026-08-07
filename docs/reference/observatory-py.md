@@ -1,3 +1,9 @@
+---
+layout: sentinel-ref
+title: "observatory.py"
+blurb: "Lab (Python) · unversioned · 796 lines"
+---
+
 # observatory.py
 
 > `Sentinel/Lab/viz/observatory.py`

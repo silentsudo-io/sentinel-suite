@@ -1,3 +1,9 @@
+---
+layout: sentinel-ref
+title: "Fetch.conf"
+blurb: "Config files · unversioned · 9 lines"
+---
+
 # Fetch.conf
 
 > `Sentinel/Quartermaster/Fetch.conf`

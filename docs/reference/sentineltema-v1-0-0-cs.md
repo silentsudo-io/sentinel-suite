@@ -1,3 +1,9 @@
+---
+layout: sentinel-ref
+title: "SentinelTEMA_v1_0_0.cs"
+blurb: "Indicators · 1.0.0 · 218 lines"
+---
+
 # SentinelTEMA_v1_0_0.cs
 
 > `bin/Custom/Indicators/SentinelTEMA_v1_0_0.cs`

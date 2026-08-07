@@ -1,3 +1,9 @@
+---
+layout: sentinel-ref
+title: "bake_preflight.py"
+blurb: "Lab (Python) · unversioned · 191 lines"
+---
+
 # bake_preflight.py
 
 > `Sentinel/Lab/bake_preflight.py`

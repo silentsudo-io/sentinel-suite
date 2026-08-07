@@ -1,3 +1,9 @@
+---
+layout: sentinel-ref
+title: "event_tiers.conf"
+blurb: "Config files · unversioned · 32 lines"
+---
+
 # event_tiers.conf
 
 > `Sentinel/News/event_tiers.conf`

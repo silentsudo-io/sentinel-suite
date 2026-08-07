@@ -1,3 +1,9 @@
+---
+layout: sentinel-ref
+title: "labels.py"
+blurb: "Lab (Python) · unversioned · 148 lines"
+---
+
 # labels.py
 
 > `Sentinel/Lab/sentinel_lab/labels.py`

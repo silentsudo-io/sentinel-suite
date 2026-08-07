@@ -1,3 +1,9 @@
+---
+layout: sentinel-ref
+title: "tapeio.py"
+blurb: "Azimuth (Python) · unversioned · 150 lines"
+---
+
 # tapeio.py
 
 > `Sentinel/Azimuth/bars/tapeio.py`

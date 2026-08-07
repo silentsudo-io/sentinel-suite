@@ -1,3 +1,9 @@
+---
+layout: sentinel-ref
+title: "config.py"
+blurb: "Azimuth (Python) · unversioned · 225 lines"
+---
+
 # config.py
 
 > `Sentinel/Azimuth/engine/config.py`

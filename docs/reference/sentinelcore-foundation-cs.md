@@ -1,3 +1,9 @@
+---
+layout: sentinel-ref
+title: "SentinelCore.Foundation.cs"
+blurb: "AddOns / runtime · unversioned · 364 lines"
+---
+
 # SentinelCore.Foundation.cs
 
 > `bin/Custom/AddOns/SentinelCore.Foundation.cs`

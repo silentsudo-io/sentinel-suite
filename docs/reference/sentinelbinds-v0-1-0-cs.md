@@ -1,3 +1,9 @@
+---
+layout: sentinel-ref
+title: "SentinelBinds_v0_1_0.cs"
+blurb: "AddOns / runtime · 0.1.0 · 1049 lines"
+---
+
 # SentinelBinds_v0_1_0.cs
 
 > `bin/Custom/AddOns/SentinelBinds_v0_1_0.cs`

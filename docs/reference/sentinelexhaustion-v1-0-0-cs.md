@@ -1,3 +1,9 @@
+---
+layout: sentinel-ref
+title: "SentinelExhaustion_v1_0_0.cs"
+blurb: "Indicators · 1.0.0 · 402 lines"
+---
+
 # SentinelExhaustion_v1_0_0.cs
 
 > `bin/Custom/Indicators/SentinelExhaustion_v1_0_0.cs`

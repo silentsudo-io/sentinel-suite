@@ -1,3 +1,9 @@
+---
+layout: sentinel-ref
+title: "dataset.py"
+blurb: "Lab (Python) · unversioned · 297 lines"
+---
+
 # dataset.py
 
 > `Sentinel/Lab/sentinel_lab/dataset.py`

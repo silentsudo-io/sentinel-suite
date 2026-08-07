@@ -1,3 +1,9 @@
+---
+layout: sentinel-ref
+title: "loaders.py"
+blurb: "Azimuth (Python) · unversioned · 186 lines"
+---
+
 # loaders.py
 
 > `Sentinel/Azimuth/gates/loaders.py`

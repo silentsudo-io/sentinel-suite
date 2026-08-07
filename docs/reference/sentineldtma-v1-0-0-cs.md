@@ -1,3 +1,9 @@
+---
+layout: sentinel-ref
+title: "SentinelDTMA_v1_0_0.cs"
+blurb: "Indicators · 1.0.0 · 240 lines"
+---
+
 # SentinelDTMA_v1_0_0.cs
 
 > `bin/Custom/Indicators/SentinelDTMA_v1_0_0.cs`

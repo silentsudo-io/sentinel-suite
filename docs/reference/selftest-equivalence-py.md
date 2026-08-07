@@ -1,3 +1,9 @@
+---
+layout: sentinel-ref
+title: "selftest_equivalence.py"
+blurb: "Lab (Python) · unversioned · 184 lines"
+---
+
 # selftest_equivalence.py
 
 > `Sentinel/Lab/harness/selftest_equivalence.py`

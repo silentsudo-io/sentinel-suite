@@ -1,3 +1,9 @@
+---
+layout: sentinel-ref
+title: "__init__.py"
+blurb: "Azimuth (Python) · 0.1.0 · 45 lines"
+---
+
 # __init__.py
 
 > `Sentinel/Azimuth/engine/__init__.py`

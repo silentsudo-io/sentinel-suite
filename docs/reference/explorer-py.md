@@ -1,3 +1,9 @@
+---
+layout: sentinel-ref
+title: "explorer.py"
+blurb: "Lab (Python) · unversioned · 163 lines"
+---
+
 # explorer.py
 
 > `Sentinel/Lab/viz/explorer.py`

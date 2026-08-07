@@ -1,3 +1,9 @@
+---
+layout: sentinel-ref
+title: "contract.py"
+blurb: "Azimuth (Python) · unversioned · 359 lines"
+---
+
 # contract.py
 
 > `Sentinel/Azimuth/engine/contract.py`

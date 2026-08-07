@@ -1,3 +1,9 @@
+---
+layout: sentinel-ref
+title: "md2atlas.py"
+blurb: "Sentinel tools · unversioned · 211 lines"
+---
+
 # md2atlas.py
 
 > `Sentinel/tools/md2atlas.py`

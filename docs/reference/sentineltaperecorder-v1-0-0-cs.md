@@ -1,3 +1,9 @@
+---
+layout: sentinel-ref
+title: "SentinelTapeRecorder_v1_0_0.cs"
+blurb: "Indicators · 1.0.0 · 384 lines"
+---
+
 # SentinelTapeRecorder_v1_0_0.cs
 
 > `bin/Custom/Indicators/SentinelTapeRecorder_v1_0_0.cs`

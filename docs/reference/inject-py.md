@@ -1,3 +1,9 @@
+---
+layout: sentinel-ref
+title: "inject.py"
+blurb: "Azimuth (Python) · unversioned · 418 lines"
+---
+
 # inject.py
 
 > `Sentinel/Azimuth/gates/inject.py`

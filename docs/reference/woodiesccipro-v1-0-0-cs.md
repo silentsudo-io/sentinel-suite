@@ -1,3 +1,9 @@
+---
+layout: sentinel-ref
+title: "WoodiesCCIPro_v1_0_0.cs"
+blurb: "Indicators · 1.0.0 · 1223 lines"
+---
+
 # WoodiesCCIPro_v1_0_0.cs
 
 > `bin/Custom/Indicators/WoodiesCCIPro_v1_0_0.cs`

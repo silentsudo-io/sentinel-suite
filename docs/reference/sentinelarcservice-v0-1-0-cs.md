@@ -1,3 +1,9 @@
+---
+layout: sentinel-ref
+title: "SentinelArcService_v0_1_0.cs"
+blurb: "AddOns / runtime · 0.1.0 · 462 lines"
+---
+
 # SentinelArcService_v0_1_0.cs
 
 > `bin/Custom/AddOns/SentinelArcService_v0_1_0.cs`

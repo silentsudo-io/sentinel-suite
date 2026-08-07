@@ -1,3 +1,9 @@
+---
+layout: sentinel-ref
+title: "Analyzer.tsx"
+blurb: "Azimuth (front end) · unversioned · 106 lines"
+---
+
 # Analyzer.tsx
 
 > `Sentinel/Azimuth/app/src/panes/Analyzer.tsx`

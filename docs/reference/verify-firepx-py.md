@@ -1,3 +1,9 @@
+---
+layout: sentinel-ref
+title: "verify_firepx.py"
+blurb: "Lab (Python) · unversioned · 168 lines"
+---
+
 # verify_firepx.py
 
 > `Sentinel/Lab/verify_firepx.py`

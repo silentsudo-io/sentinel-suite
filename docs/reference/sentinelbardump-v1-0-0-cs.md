@@ -1,3 +1,9 @@
+---
+layout: sentinel-ref
+title: "SentinelBarDump_v1_0_0.cs"
+blurb: "Indicators · 1.0.0 · 385 lines"
+---
+
 # SentinelBarDump_v1_0_0.cs
 
 > `bin/Custom/Indicators/SentinelBarDump_v1_0_0.cs`

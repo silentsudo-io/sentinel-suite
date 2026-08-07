@@ -1,3 +1,9 @@
+---
+layout: sentinel-ref
+title: "test_engine_semantics.py"
+blurb: "Azimuth (Python) · unversioned · 357 lines"
+---
+
 # test_engine_semantics.py
 
 > `Sentinel/Azimuth/engine/tests/test_engine_semantics.py`

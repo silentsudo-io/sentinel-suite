@@ -1,3 +1,9 @@
+---
+layout: sentinel-ref
+title: "api.ts"
+blurb: "Azimuth (front end) · unversioned · 98 lines"
+---
+
 # api.ts
 
 > `Sentinel/Azimuth/app/src/data/api.ts`

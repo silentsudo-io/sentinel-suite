@@ -1,3 +1,9 @@
+---
+layout: sentinel-ref
+title: "verify_votes.py"
+blurb: "Lab (Python) · unversioned · 279 lines"
+---
+
 # verify_votes.py
 
 > `Sentinel/Lab/verify_votes.py`

@@ -1,3 +1,9 @@
+---
+layout: sentinel-ref
+title: "artefacts.py"
+blurb: "Azimuth (Python) · unversioned · 278 lines"
+---
+
 # artefacts.py
 
 > `Sentinel/Azimuth/gates/artefacts.py`

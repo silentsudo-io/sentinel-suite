@@ -1,3 +1,9 @@
+---
+layout: sentinel-ref
+title: "test_scaling.py"
+blurb: "Azimuth (Python) · unversioned · 298 lines"
+---
+
 # test_scaling.py
 
 > `Sentinel/Azimuth/engine/tests/test_scaling.py`

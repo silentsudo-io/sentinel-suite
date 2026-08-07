@@ -1,3 +1,9 @@
+---
+layout: sentinel-ref
+title: "build.rs"
+blurb: "Azimuth (front end) · unversioned · 4 lines"
+---
+
 # build.rs
 
 > `Sentinel/Azimuth/app/src-tauri/build.rs`

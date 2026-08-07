@@ -1,3 +1,9 @@
+---
+layout: sentinel-ref
+title: "SentinelWallpaper_v1_0_0.cs"
+blurb: "Indicators · 1.0.0 · 270 lines"
+---
+
 # SentinelWallpaper_v1_0_0.cs
 
 > `bin/Custom/Indicators/SentinelWallpaper_v1_0_0.cs`

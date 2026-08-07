@@ -1,3 +1,9 @@
+---
+layout: sentinel-ref
+title: "wiki.py"
+blurb: "Lab (Python) · unversioned · 313 lines"
+---
+
 # wiki.py
 
 > `Sentinel/Lab/docs/wiki.py`
@@ -6,7 +12,7 @@
 |---|---|
 | **Family** | Lab (Python) |
 | **Version** | — |
-| **Size** | 296 lines |
+| **Size** | 313 lines |
 | **Scope** | **public** — ships in `sentinel-suite` |
 | **Documented by** | _no doc tracks this artifact_ |
 

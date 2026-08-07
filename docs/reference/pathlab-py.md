@@ -1,3 +1,9 @@
+---
+layout: sentinel-ref
+title: "pathlab.py"
+blurb: "Lab (Python) · unversioned · 470 lines"
+---
+
 # pathlab.py
 
 > `Sentinel/Lab/pathlab.py`

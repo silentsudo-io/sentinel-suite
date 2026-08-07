@@ -1,3 +1,9 @@
+---
+layout: sentinel-ref
+title: "adapter.py"
+blurb: "Azimuth (Python) · unversioned · 309 lines"
+---
+
 # adapter.py
 
 > `Sentinel/Azimuth/engine/adapter.py`

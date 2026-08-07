@@ -1,3 +1,9 @@
+---
+layout: sentinel-ref
+title: "train.py"
+blurb: "Lab (Python) · unversioned · 338 lines"
+---
+
 # train.py
 
 > `Sentinel/Lab/train.py`

@@ -1,3 +1,9 @@
+---
+layout: sentinel-ref
+title: "Sentinel — artifact reference"
+blurb: "Every published artifact, generated from its own source."
+---
+
 # Sentinel — artifact reference
 
 _Generated from the code by `Lab/docs/wiki.py`. Do not hand-edit: every page is rebuilt from the artifact's own changelog, so edits here are lost and, worse, become a fifth version of the truth._
@@ -233,7 +239,7 @@ _Generated from the code by `Lab/docs/wiki.py`. Do not hand-edit: every page is 
 | [exit_policy_sweep.py](exit-policy-sweep-py.md) | — | 316 | _mentioned only_ |
 | [exp0005.py](exp0005-py.md) | — | 455 | — |
 | [explorer.py](explorer-py.md) | — | 163 | SENTINEL_AZIMUTH_SPEC |
-| [facts.py](facts-py.md) | — | 99 | SENTINEL_DOCS_HEALTH_SPEC |
+| [facts.py](facts-py.md) | — | 104 | SENTINEL_DOCS_HEALTH_SPEC |
 | [flowscale.py](flowscale-py.md) | — | 259 | _mentioned only_ |
 | [gate3.py](gate3-py.md) | — | 646 | _mentioned only_ |
 | [ident_check.py](ident-check-py.md) | — | 119 | _mentioned only_ |
@@ -268,7 +274,7 @@ _Generated from the code by `Lab/docs/wiki.py`. Do not hand-edit: every page is 
 | [verify_firepx.py](verify-firepx-py.md) | — | 168 | _mentioned only_ |
 | [verify_votes.py](verify-votes-py.md) | — | 279 | _mentioned only_ |
 | [voter_edge.py](voter-edge-py.md) | — | 89 | _mentioned only_ |
-| [wiki.py](wiki-py.md) | — | 296 | — |
+| [wiki.py](wiki-py.md) | — | 313 | — |
 
 ## Sentinel tools (1)
 

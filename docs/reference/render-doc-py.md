@@ -1,3 +1,9 @@
+---
+layout: sentinel-ref
+title: "render_doc.py"
+blurb: "Lab (Python) · unversioned · 47 lines"
+---
+
 # render_doc.py
 
 > `Sentinel/Lab/docs/render_doc.py`

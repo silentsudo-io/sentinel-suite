@@ -1,3 +1,9 @@
+---
+layout: sentinel-ref
+title: "cv.py"
+blurb: "Lab (Python) · unversioned · 66 lines"
+---
+
 # cv.py
 
 > `Sentinel/Lab/sentinel_lab/cv.py`

@@ -1,3 +1,9 @@
+---
+layout: sentinel-ref
+title: "trades.ts"
+blurb: "Azimuth (front end) · unversioned · 275 lines"
+---
+
 # trades.ts
 
 > `Sentinel/Azimuth/app/src/chart/layers/trades.ts`

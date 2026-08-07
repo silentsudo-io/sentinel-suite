@@ -1,3 +1,9 @@
+---
+layout: sentinel-ref
+title: "SentinelWAE_v2_0_0.cs"
+blurb: "Indicators · 2.0.0 · 451 lines"
+---
+
 # SentinelWAE_v2_0_0.cs
 
 > `bin/Custom/Indicators/SentinelWAE_v2_0_0.cs`

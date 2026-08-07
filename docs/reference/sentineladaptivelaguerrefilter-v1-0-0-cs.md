@@ -1,3 +1,9 @@
+---
+layout: sentinel-ref
+title: "SentinelAdaptiveLaguerreFilter_v1_0_0.cs"
+blurb: "Indicators · 1.0.0 · 283 lines"
+---
+
 # SentinelAdaptiveLaguerreFilter_v1_0_0.cs
 
 > `bin/Custom/Indicators/SentinelAdaptiveLaguerreFilter_v1_0_0.cs`

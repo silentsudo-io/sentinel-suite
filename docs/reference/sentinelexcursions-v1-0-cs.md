@@ -1,3 +1,9 @@
+---
+layout: sentinel-ref
+title: "SentinelExcursions_v1_0.cs"
+blurb: "AddOns / runtime · unversioned · 408 lines"
+---
+
 # SentinelExcursions_v1_0.cs
 
 > `bin/Custom/AddOns/SentinelExcursions_v1_0.cs`

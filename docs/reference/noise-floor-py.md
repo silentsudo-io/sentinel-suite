@@ -1,3 +1,9 @@
+---
+layout: sentinel-ref
+title: "noise_floor.py"
+blurb: "Lab (Python) · unversioned · 125 lines"
+---
+
 # noise_floor.py
 
 > `Sentinel/Lab/harness/noise_floor.py`

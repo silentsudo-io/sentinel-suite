@@ -1,3 +1,9 @@
+---
+layout: sentinel-ref
+title: "gate3.py"
+blurb: "Lab (Python) · unversioned · 646 lines"
+---
+
 # gate3.py
 
 > `Sentinel/Lab/gate3.py`

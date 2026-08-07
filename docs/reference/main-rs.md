@@ -1,3 +1,9 @@
+---
+layout: sentinel-ref
+title: "main.rs"
+blurb: "Azimuth (front end) · unversioned · 14 lines"
+---
+
 # main.rs
 
 > `Sentinel/Azimuth/app/src-tauri/src/main.rs`

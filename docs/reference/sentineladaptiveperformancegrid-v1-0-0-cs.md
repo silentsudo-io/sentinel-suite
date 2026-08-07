@@ -1,3 +1,9 @@
+---
+layout: sentinel-ref
+title: "SentinelAdaptivePerformanceGrid_v1_0_0.cs"
+blurb: "Indicators · 1.0.0 · 1399 lines"
+---
+
 # SentinelAdaptivePerformanceGrid_v1_0_0.cs
 
 > `bin/Custom/Indicators/SentinelAdaptivePerformanceGrid_v1_0_0.cs`

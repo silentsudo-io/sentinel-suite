@@ -1,3 +1,9 @@
+---
+layout: sentinel-ref
+title: "SentinelTide_v1_0_0.cs"
+blurb: "Bar types · 1.0.0 · 354 lines"
+---
+
 # SentinelTide_v1_0_0.cs
 
 > `bin/Custom/BarsTypes/SentinelTide_v1_0_0.cs`

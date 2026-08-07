@@ -1,3 +1,9 @@
+---
+layout: sentinel-ref
+title: "series.py"
+blurb: "Azimuth (Python) · unversioned · 219 lines"
+---
+
 # series.py
 
 > `Sentinel/Azimuth/bars/series.py`

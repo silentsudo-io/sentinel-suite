@@ -1,3 +1,9 @@
+---
+layout: sentinel-ref
+title: "l2book.py"
+blurb: "Lab (Python) · unversioned · 182 lines"
+---
+
 # l2book.py
 
 > `Sentinel/Lab/harness/l2book.py`

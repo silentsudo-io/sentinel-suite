@@ -1,3 +1,9 @@
+---
+layout: sentinel-ref
+title: "SentinelTBarsEdgeProbe_v1_0_0.cs"
+blurb: "Strategies · 1.0.0 · 121 lines"
+---
+
 # SentinelTBarsEdgeProbe_v1_0_0.cs
 
 > `bin/Custom/Strategies/SentinelTBarsEdgeProbe_v1_0_0.cs`

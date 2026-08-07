@@ -1,3 +1,9 @@
+---
+layout: sentinel-ref
+title: "SentinelCopierService_v0_1_0.cs"
+blurb: "AddOns / runtime · 0.1.0 · 875 lines"
+---
+
 # SentinelCopierService_v0_1_0.cs
 
 > `bin/Custom/AddOns/SentinelCopierService_v0_1_0.cs`

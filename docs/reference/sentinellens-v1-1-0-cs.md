@@ -1,3 +1,9 @@
+---
+layout: sentinel-ref
+title: "SentinelLens_v1_1_0.cs"
+blurb: "AddOns / runtime · 1.1.0 · 305 lines"
+---
+
 # SentinelLens_v1_1_0.cs
 
 > `bin/Custom/AddOns/SentinelLens_v1_1_0.cs`

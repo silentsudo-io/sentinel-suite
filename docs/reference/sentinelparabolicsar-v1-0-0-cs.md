@@ -1,3 +1,9 @@
+---
+layout: sentinel-ref
+title: "SentinelParabolicSAR_v1_0_0.cs"
+blurb: "Indicators · 1.0.0 · 415 lines"
+---
+
 # SentinelParabolicSAR_v1_0_0.cs
 
 > `bin/Custom/Indicators/SentinelParabolicSAR_v1_0_0.cs`

@@ -1,3 +1,9 @@
+---
+layout: sentinel-ref
+title: "renko.py"
+blurb: "Azimuth (Python) · unversioned · 327 lines"
+---
+
 # renko.py
 
 > `Sentinel/Azimuth/bars/renko.py`

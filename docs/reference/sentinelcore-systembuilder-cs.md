@@ -1,3 +1,9 @@
+---
+layout: sentinel-ref
+title: "SentinelCore.SystemBuilder.cs"
+blurb: "AddOns / runtime · unversioned · 618 lines"
+---
+
 # SentinelCore.SystemBuilder.cs
 
 > `bin/Custom/AddOns/SentinelCore.SystemBuilder.cs`

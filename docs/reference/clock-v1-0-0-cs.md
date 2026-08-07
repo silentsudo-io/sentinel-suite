@@ -1,3 +1,9 @@
+---
+layout: sentinel-ref
+title: "Clock_v1_0_0.cs"
+blurb: "Indicators · 1.0.0 · 309 lines"
+---
+
 # Clock_v1_0_0.cs
 
 > `bin/Custom/Indicators/Clock_v1_0_0.cs`

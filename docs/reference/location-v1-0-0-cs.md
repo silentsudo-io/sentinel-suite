@@ -1,3 +1,9 @@
+---
+layout: sentinel-ref
+title: "Location_v1_0_0.cs"
+blurb: "Indicators · 1.0.0 · 368 lines"
+---
+
 # Location_v1_0_0.cs
 
 > `bin/Custom/Indicators/Location_v1_0_0.cs`

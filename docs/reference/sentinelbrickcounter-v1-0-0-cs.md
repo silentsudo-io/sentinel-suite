@@ -1,3 +1,9 @@
+---
+layout: sentinel-ref
+title: "SentinelBrickCounter_v1_0_0.cs"
+blurb: "Indicators · 1.0.0 · 271 lines"
+---
+
 # SentinelBrickCounter_v1_0_0.cs
 
 > `bin/Custom/Indicators/SentinelBrickCounter_v1_0_0.cs`

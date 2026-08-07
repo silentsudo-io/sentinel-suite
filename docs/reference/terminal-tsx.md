@@ -1,3 +1,9 @@
+---
+layout: sentinel-ref
+title: "Terminal.tsx"
+blurb: "Azimuth (front end) · unversioned · 57 lines"
+---
+
 # Terminal.tsx
 
 > `Sentinel/Azimuth/app/src/panes/Terminal.tsx`

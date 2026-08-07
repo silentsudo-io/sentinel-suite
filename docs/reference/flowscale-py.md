@@ -1,3 +1,9 @@
+---
+layout: sentinel-ref
+title: "flowscale.py"
+blurb: "Lab (Python) · unversioned · 259 lines"
+---
+
 # flowscale.py
 
 > `Sentinel/Lab/harness/flowscale.py`

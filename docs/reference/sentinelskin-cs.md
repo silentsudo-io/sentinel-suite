@@ -1,3 +1,9 @@
+---
+layout: sentinel-ref
+title: "SentinelSkin.cs"
+blurb: "AddOns / runtime · unversioned · 1415 lines"
+---
+
 # SentinelSkin.cs
 
 > `bin/Custom/AddOns/SentinelSkin.cs`

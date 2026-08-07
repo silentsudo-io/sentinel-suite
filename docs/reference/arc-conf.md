@@ -1,3 +1,9 @@
+---
+layout: sentinel-ref
+title: "Arc.conf"
+blurb: "Config files · unversioned · 7 lines"
+---
+
 # Arc.conf
 
 > `Sentinel/Arc.conf`

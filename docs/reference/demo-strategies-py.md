@@ -1,3 +1,9 @@
+---
+layout: sentinel-ref
+title: "demo_strategies.py"
+blurb: "Azimuth (Python) · unversioned · 211 lines"
+---
+
 # demo_strategies.py
 
 > `Sentinel/Azimuth/engine/demo_strategies.py`

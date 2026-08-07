@@ -1,3 +1,9 @@
+---
+layout: sentinel-ref
+title: "tickpaths.py"
+blurb: "Lab (Python) · unversioned · 129 lines"
+---
+
 # tickpaths.py
 
 > `Sentinel/Lab/viz/tickpaths.py`

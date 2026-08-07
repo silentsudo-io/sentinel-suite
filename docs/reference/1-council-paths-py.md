@@ -1,3 +1,9 @@
+---
+layout: sentinel-ref
+title: "1_Council_Paths.py"
+blurb: "Lab (Python) · unversioned · 168 lines"
+---
+
 # 1_Council_Paths.py
 
 > `Sentinel/Lab/viz/pages/1_Council_Paths.py`

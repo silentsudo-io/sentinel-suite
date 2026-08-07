@@ -1,3 +1,9 @@
+---
+layout: sentinel-ref
+title: "limitlab.py"
+blurb: "Lab (Python) · unversioned · 171 lines"
+---
+
 # limitlab.py
 
 > `Sentinel/Lab/limitlab.py`

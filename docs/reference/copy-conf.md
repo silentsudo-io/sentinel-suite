@@ -1,3 +1,9 @@
+---
+layout: sentinel-ref
+title: "Copy.conf"
+blurb: "Config files · unversioned · 6 lines"
+---
+
 # Copy.conf
 
 > `Sentinel/Copy.conf`

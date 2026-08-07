@@ -1,3 +1,9 @@
+---
+layout: sentinel-ref
+title: "voter_edge.py"
+blurb: "Lab (Python) · unversioned · 89 lines"
+---
+
 # voter_edge.py
 
 > `Sentinel/Lab/voter_edge.py`

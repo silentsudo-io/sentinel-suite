@@ -1,3 +1,9 @@
+---
+layout: sentinel-ref
+title: "Cockpit.conf"
+blurb: "Config files · unversioned · 6 lines"
+---
+
 # Cockpit.conf
 
 > `Sentinel/Cockpit.conf`

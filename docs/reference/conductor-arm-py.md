@@ -1,3 +1,9 @@
+---
+layout: sentinel-ref
+title: "conductor_arm.py"
+blurb: "Lab (Python) · unversioned · 226 lines"
+---
+
 # conductor_arm.py
 
 > `Sentinel/Lab/conductor_arm.py`

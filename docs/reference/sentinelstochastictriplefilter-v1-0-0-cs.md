@@ -1,3 +1,9 @@
+---
+layout: sentinel-ref
+title: "SentinelStochasticTripleFilter_v1_0_0.cs"
+blurb: "Indicators · 1.0.0 · 534 lines"
+---
+
 # SentinelStochasticTripleFilter_v1_0_0.cs
 
 > `bin/Custom/Indicators/SentinelStochasticTripleFilter_v1_0_0.cs`

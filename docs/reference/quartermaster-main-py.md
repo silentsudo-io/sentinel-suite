@@ -1,3 +1,9 @@
+---
+layout: sentinel-ref
+title: "__main__.py"
+blurb: "Lab (Python) · unversioned · 113 lines"
+---
+
 # __main__.py
 
 > `Sentinel/Lab/quartermaster/__main__.py`

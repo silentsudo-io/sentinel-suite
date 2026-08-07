@@ -1,3 +1,9 @@
+---
+layout: sentinel-ref
+title: "StatusBar.tsx"
+blurb: "Azimuth (front end) · unversioned · 80 lines"
+---
+
 # StatusBar.tsx
 
 > `Sentinel/Azimuth/app/src/shell/StatusBar.tsx`

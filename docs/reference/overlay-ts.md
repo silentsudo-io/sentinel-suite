@@ -1,3 +1,9 @@
+---
+layout: sentinel-ref
+title: "overlay.ts"
+blurb: "Azimuth (front end) · unversioned · 405 lines"
+---
+
 # overlay.ts
 
 > `Sentinel/Azimuth/app/src/chart/overlay.ts`

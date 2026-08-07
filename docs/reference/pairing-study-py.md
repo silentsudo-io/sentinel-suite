@@ -1,3 +1,9 @@
+---
+layout: sentinel-ref
+title: "pairing_study.py"
+blurb: "Lab (Python) · unversioned · 307 lines"
+---
+
 # pairing_study.py
 
 > `Sentinel/Lab/harness/pairing_study.py`

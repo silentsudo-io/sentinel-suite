@@ -1,3 +1,9 @@
+---
+layout: sentinel-ref
+title: "tide.py"
+blurb: "Lab (Python) · unversioned · 430 lines"
+---
+
 # tide.py
 
 > `Sentinel/Lab/harness/tide.py`

@@ -1,3 +1,9 @@
+---
+layout: sentinel-ref
+title: "catalog.py"
+blurb: "Lab (Python) · unversioned · 227 lines"
+---
+
 # catalog.py
 
 > `Sentinel/Lab/quartermaster/catalog.py`

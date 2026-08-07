@@ -1,3 +1,9 @@
+---
+layout: sentinel-ref
+title: "BuySellVolumePressureMountain_v1_0_0.cs"
+blurb: "Indicators · 1.0.0 · 758 lines"
+---
+
 # BuySellVolumePressureMountain_v1_0_0.cs
 
 > `bin/Custom/Indicators/BuySellVolumePressureMountain_v1_0_0.cs`

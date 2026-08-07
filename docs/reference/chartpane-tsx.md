@@ -1,3 +1,9 @@
+---
+layout: sentinel-ref
+title: "ChartPane.tsx"
+blurb: "Azimuth (front end) · unversioned · 323 lines"
+---
+
 # ChartPane.tsx
 
 > `Sentinel/Azimuth/app/src/panes/ChartPane.tsx`

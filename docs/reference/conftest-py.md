@@ -1,3 +1,9 @@
+---
+layout: sentinel-ref
+title: "conftest.py"
+blurb: "Azimuth (Python) · unversioned · 7 lines"
+---
+
 # conftest.py
 
 > `Sentinel/Azimuth/engine/tests/conftest.py`

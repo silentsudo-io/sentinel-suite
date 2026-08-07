@@ -1,3 +1,9 @@
+---
+layout: sentinel-ref
+title: "VolEnvelope_v0_2_0.cs"
+blurb: "Indicators · 0.2.0 · 726 lines"
+---
+
 # VolEnvelope_v0_2_0.cs
 
 > `bin/Custom/Indicators/VolEnvelope_v0_2_0.cs`

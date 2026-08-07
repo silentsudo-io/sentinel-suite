@@ -1,3 +1,9 @@
+---
+layout: sentinel-ref
+title: "sweep.py"
+blurb: "Azimuth (Python) · unversioned · 217 lines"
+---
+
 # sweep.py
 
 > `Sentinel/Azimuth/engine/sweep.py`

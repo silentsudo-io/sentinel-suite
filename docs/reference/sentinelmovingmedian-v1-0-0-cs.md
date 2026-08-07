@@ -1,3 +1,9 @@
+---
+layout: sentinel-ref
+title: "SentinelMovingMedian_v1_0_0.cs"
+blurb: "Indicators · 1.0.0 · 216 lines"
+---
+
 # SentinelMovingMedian_v1_0_0.cs
 
 > `bin/Custom/Indicators/SentinelMovingMedian_v1_0_0.cs`

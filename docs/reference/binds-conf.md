@@ -1,3 +1,9 @@
+---
+layout: sentinel-ref
+title: "binds.conf"
+blurb: "Config files · unversioned · 3 lines"
+---
+
 # binds.conf
 
 > `Sentinel/Binds/binds.conf`

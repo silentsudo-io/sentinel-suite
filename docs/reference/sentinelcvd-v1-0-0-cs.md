@@ -1,3 +1,9 @@
+---
+layout: sentinel-ref
+title: "SentinelCVD_v1_0_0.cs"
+blurb: "Indicators · 1.0.0 · 411 lines"
+---
+
 # SentinelCVD_v1_0_0.cs
 
 > `bin/Custom/Indicators/SentinelCVD_v1_0_0.cs`

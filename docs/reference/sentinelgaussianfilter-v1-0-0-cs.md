@@ -1,3 +1,9 @@
+---
+layout: sentinel-ref
+title: "SentinelGaussianFilter_v1_0_0.cs"
+blurb: "Indicators · 1.0.0 · 267 lines"
+---
+
 # SentinelGaussianFilter_v1_0_0.cs
 
 > `bin/Custom/Indicators/SentinelGaussianFilter_v1_0_0.cs`

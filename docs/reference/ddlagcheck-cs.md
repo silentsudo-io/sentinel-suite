@@ -1,3 +1,9 @@
+---
+layout: sentinel-ref
+title: "DDLagCheck.cs"
+blurb: "Indicators · unversioned · 792 lines"
+---
+
 # DDLagCheck.cs
 
 > `bin/Custom/Indicators/DDLagCheck.cs`

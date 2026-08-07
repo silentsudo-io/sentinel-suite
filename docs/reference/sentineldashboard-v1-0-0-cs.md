@@ -1,3 +1,9 @@
+---
+layout: sentinel-ref
+title: "SentinelDashboard_v1_0_0.cs"
+blurb: "AddOns / runtime · 1.0.0 · 3763 lines"
+---
+
 # SentinelDashboard_v1_0_0.cs
 
 > `bin/Custom/AddOns/SentinelDashboard_v1_0_0.cs`

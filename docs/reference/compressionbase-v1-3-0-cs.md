@@ -1,3 +1,9 @@
+---
+layout: sentinel-ref
+title: "CompressionBase_v1_3_0.cs"
+blurb: "Indicators · 1.3.0 · 775 lines"
+---
+
 # CompressionBase_v1_3_0.cs
 
 > `bin/Custom/Indicators/CompressionBase_v1_3_0.cs`

@@ -1,0 +1,19 @@
+# GitHub Pages / Jekyll configuration.
+#
+# ⚠ DELIBERATELY MINIMAL, AND THE SCOPE IS THE POINT. The only thing this file does is give
+# docs/reference/ its own layout. Everything else on this site is a SELF-CONTAINED .html file
+# with its own chrome — index.html and every docs/*.html twin — and Jekyll passes .html files
+# without front matter through untouched, so none of them are affected.
+#
+# ⛔ Nothing else belongs here. A site-wide `theme:` would try to wrap pages that already carry
+# their own <head>; an `exclude:` list would change what the site serves, and this repo's links
+# have not been audited against that. The reference layer needed a layout, so it got a layout.
+
+title: Sentinel Suite
+description: Beautiful, intelligent NinjaTrader 8 instruments — MPL-2.0.
+
+defaults:
+  - scope:
+      path: "docs/reference"
+    values:
+      layout: sentinel-ref

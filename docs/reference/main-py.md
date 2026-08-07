@@ -1,3 +1,9 @@
+---
+layout: sentinel-ref
+title: "__main__.py"
+blurb: "Azimuth (Python) · unversioned · 172 lines"
+---
+
 # __main__.py
 
 > `Sentinel/Azimuth/gates/__main__.py`

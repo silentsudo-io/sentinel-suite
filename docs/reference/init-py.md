@@ -1,3 +1,9 @@
+---
+layout: sentinel-ref
+title: "__init__.py"
+blurb: "Azimuth (Python) · unversioned · 147 lines"
+---
+
 # __init__.py
 
 > `Sentinel/Azimuth/bars/__init__.py`

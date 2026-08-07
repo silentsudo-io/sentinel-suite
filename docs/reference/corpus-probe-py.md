@@ -1,3 +1,9 @@
+---
+layout: sentinel-ref
+title: "corpus_probe.py"
+blurb: "Lab (Python) · unversioned · 427 lines"
+---
+
 # corpus_probe.py
 
 > `Sentinel/Lab/health/corpus_probe.py`

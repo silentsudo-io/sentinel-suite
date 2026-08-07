@@ -1,3 +1,9 @@
+---
+layout: sentinel-ref
+title: "vite.config.ts"
+blurb: "Azimuth (front end) · unversioned · 17 lines"
+---
+
 # vite.config.ts
 
 > `Sentinel/Azimuth/app/vite.config.ts`

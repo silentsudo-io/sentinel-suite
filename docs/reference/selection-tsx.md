@@ -1,3 +1,9 @@
+---
+layout: sentinel-ref
+title: "selection.tsx"
+blurb: "Azimuth (front end) · unversioned · 36 lines"
+---
+
 # selection.tsx
 
 > `Sentinel/Azimuth/app/src/shell/selection.tsx`

@@ -1,3 +1,9 @@
+---
+layout: sentinel-ref
+title: "build_docs_dashboard.py"
+blurb: "Lab (Python) · unversioned · 178 lines"
+---
+
 # build_docs_dashboard.py
 
 > `Sentinel/Lab/grafana/build_docs_dashboard.py`

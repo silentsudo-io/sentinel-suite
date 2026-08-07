@@ -1,3 +1,9 @@
+---
+layout: sentinel-ref
+title: "sentinel.ts"
+blurb: "Azimuth (front end) · unversioned · 107 lines"
+---
+
 # sentinel.ts
 
 > `Sentinel/Azimuth/app/src/theme/sentinel.ts`

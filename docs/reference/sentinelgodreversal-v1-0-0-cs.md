@@ -1,3 +1,9 @@
+---
+layout: sentinel-ref
+title: "SentinelGodReversal_v1_0_0.cs"
+blurb: "Indicators · 1.0.0 · 642 lines"
+---
+
 # SentinelGodReversal_v1_0_0.cs
 
 > `bin/Custom/Indicators/SentinelGodReversal_v1_0_0.cs`

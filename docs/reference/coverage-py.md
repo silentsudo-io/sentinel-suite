@@ -1,3 +1,9 @@
+---
+layout: sentinel-ref
+title: "coverage.py"
+blurb: "Lab (Python) · unversioned · 320 lines"
+---
+
 # coverage.py
 
 > `Sentinel/Lab/docs/coverage.py`

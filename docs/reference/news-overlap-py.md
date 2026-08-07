@@ -1,3 +1,9 @@
+---
+layout: sentinel-ref
+title: "news_overlap.py"
+blurb: "Lab (Python) · unversioned · 168 lines"
+---
+
 # news_overlap.py
 
 > `Sentinel/Lab/news_overlap.py`

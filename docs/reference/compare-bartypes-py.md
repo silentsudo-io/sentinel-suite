@@ -1,3 +1,9 @@
+---
+layout: sentinel-ref
+title: "compare_bartypes.py"
+blurb: "Lab (Python) · unversioned · 165 lines"
+---
+
 # compare_bartypes.py
 
 > `Sentinel/Lab/compare_bartypes.py`

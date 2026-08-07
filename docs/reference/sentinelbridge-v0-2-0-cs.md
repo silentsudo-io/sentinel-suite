@@ -1,3 +1,9 @@
+---
+layout: sentinel-ref
+title: "SentinelBridge_v0_2_0.cs"
+blurb: "Strategies · 0.2.0 · 1046 lines"
+---
+
 # SentinelBridge_v0_2_0.cs
 
 > `bin/Custom/Strategies/SentinelBridge_v0_2_0.cs`

@@ -1,3 +1,9 @@
+---
+layout: sentinel-ref
+title: "Profiles.conf"
+blurb: "Config files · unversioned · 60 lines"
+---
+
 # Profiles.conf
 
 > `Sentinel/Profiles.conf`

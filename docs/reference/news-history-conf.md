@@ -1,3 +1,9 @@
+---
+layout: sentinel-ref
+title: "News.history.conf"
+blurb: "Config files · unversioned · 342 lines"
+---
+
 # News.history.conf
 
 > `Sentinel/News/history/News.history.conf`

@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>{{ page.title | default: page.name }} · Sentinel Reference</title>
+<meta name="description" content="{{ page.blurb | default: 'Generated reference page — Sentinel Suite artifact.' }}">
+<style>
+/* ─────────────────────────────────────────────────────────────────────────────
+   Sentinel reference chrome.
+
+   Palette lifted VERBATIM from the suite's rendered docs (docs/*.html) rather
+   than re-picked by eye. The design system's rule is that a palette defined
+   twice will drift; these pages sit one click from those docs, so a near-miss
+   would read as a bug in the theme rather than as two stylesheets.
+   Light is the default; dark follows the OS and the toggle overrides both.
+   ───────────────────────────────────────────────────────────────────────── */
+:root{
+  --void:#e7edf1; --panel:#f3f7f9; --surface:#ffffff; --surface2:#eaf0f3;
+  --ink:#16222c; --ink2:#586873; --line:#cdd8de; --grid:#dde5ea;
+  --accent:#0b8ea1; --up:#12a56f; --down:#e0424f; --warn:#c9861a;
+  --mono:ui-monospace,"Cascadia Code","SF Mono",Consolas,Menlo,monospace;
+  --sans:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+}
+@media (prefers-color-scheme:dark){
+  :root{
+    --void:#0a0e13; --panel:#0d131a; --surface:#141c25; --surface2:#0f161e;
+    --ink:#e2e9ee; --ink2:#8a9ba8; --line:#26333f; --grid:#131c25;
+    --accent:#4ad6e8; --up:#25d08b; --down:#ef5b68; --warn:#e0a53a;
+  }
+}
+:root[data-theme="dark"]{
+  --void:#0a0e13; --panel:#0d131a; --surface:#141c25; --surface2:#0f161e;
+  --ink:#e2e9ee; --ink2:#8a9ba8; --line:#26333f; --grid:#131c25;
+  --accent:#4ad6e8; --up:#25d08b; --down:#ef5b68; --warn:#e0a53a;
+}
+:root[data-theme="light"]{
+  --void:#e7edf1; --panel:#f3f7f9; --surface:#ffffff; --surface2:#eaf0f3;
+  --ink:#16222c; --ink2:#586873; --line:#cdd8de; --grid:#dde5ea;
+  --accent:#0b8ea1; --up:#12a56f; --down:#e0424f; --warn:#c9861a;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--void);color:var(--ink);font-family:var(--sans);
+     line-height:1.6;-webkit-font-smoothing:antialiased}
+.wrap{max-width:960px;margin:0 auto;padding:0 22px 96px}
+
+/* top bar */
+.bar{position:sticky;top:0;z-index:5;background:color-mix(in srgb,var(--void) 88%,transparent);
+     backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+.bar .in{max-width:960px;margin:0 auto;padding:11px 22px;display:flex;align-items:center;gap:16px}
+.bar a{color:var(--ink2);text-decoration:none;font-size:13px}
+.bar a:hover{color:var(--accent)}
+.bar .brand{color:var(--ink);font-weight:650;letter-spacing:-.01em}
+.bar .sp{flex:1}
+.tt{background:none;border:1px solid var(--line);color:var(--ink2);border-radius:7px;
+    width:28px;height:28px;cursor:pointer;font-size:13px;line-height:1}
+.tt:hover{border-color:var(--accent);color:var(--accent)}
+
+/* header */
+h1{font-size:26px;letter-spacing:-.02em;margin:34px 0 6px;font-family:var(--mono);font-weight:650;
+   word-break:break-word}
+blockquote{margin:0 0 22px;padding:9px 0 0;color:var(--ink2);font-size:12.5px;font-family:var(--mono);
+   border:0}
+blockquote p{margin:0}
+h2{font-size:13px;text-transform:uppercase;letter-spacing:.13em;color:var(--ink2);
+   margin:34px 0 12px;font-weight:600}
+
+/* the identity table */
+table{width:100%;border-collapse:collapse;font-size:13.5px;margin:0 0 8px;display:block;
+      overflow-x:auto}
+td,th{border-bottom:1px solid var(--line);padding:8px 12px 8px 0;text-align:left;vertical-align:top}
+tbody tr td:first-child{color:var(--ink2);white-space:nowrap;width:1%;padding-right:24px}
+th{display:none}
+table a{color:var(--accent);text-decoration:none}
+table a:hover{text-decoration:underline}
+code{font-family:var(--mono);font-size:.92em;background:var(--surface2);
+     border:1px solid var(--line);border-radius:4px;padding:1px 5px}
+
+/* the artifact's own changelog */
+pre{background:var(--surface);border:1px solid var(--line);border-left:2px solid var(--accent);
+    border-radius:8px;padding:18px 20px;overflow-x:auto;font-family:var(--mono);font-size:12px;
+    line-height:1.62;color:var(--ink);white-space:pre;margin:0}
+pre code{background:none;border:0;padding:0;font-size:inherit}
+
+hr{border:0;border-top:1px solid var(--line);margin:34px 0 18px}
+footer{color:var(--ink2);font-size:12px;font-family:var(--mono);display:flex;gap:14px;
+       flex-wrap:wrap;justify-content:space-between}
+footer a{color:var(--ink2)}
+a{color:var(--accent)}
+@media(max-width:640px){h1{font-size:21px}.wrap{padding:0 14px 64px}}
+</style>
+</head>
+<body>
+<div class="bar"><div class="in">
+  <a class="brand" href="{{ '/' | relative_url }}">Sentinel</a>
+  <a href="{{ '/docs/reference/' | relative_url }}">Reference</a>
+  <a href="{{ '/docs/SENTINEL_DOCS.html' | relative_url }}">Docs</a>
+  <span class="sp"></span>
+  <a href="https://github.com/silentsudo-io/sentinel-suite">GitHub</a>
+  <button id="tt" class="tt" type="button" aria-label="Toggle light or dark theme" title="Toggle theme">◐</button>
+</div></div>
+
+<div class="wrap">
+  {{ content }}
+  <hr>
+  <footer>
+    <span>Sentinel Suite · generated reference</span>
+    <span>built from the artifact's own source — do not hand-edit</span>
+  </footer>
+</div>
+
+<script>
+// Theme toggle. Stamps data-theme on <html>, which beats the media query in both
+// directions — the OS preference is the default, never a cage.
+(function(){
+  var r=document.documentElement, k='sentinel-theme', s=null;
+  try{s=localStorage.getItem(k)}catch(e){}
+  if(s)r.setAttribute('data-theme',s);
+  var b=document.getElementById('tt');
+  b&&b.addEventListener('click',function(){
+    var cur=r.getAttribute('data-theme');
+    if(!cur)cur=matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light';
+    var nxt=cur==='dark'?'light':'dark';
+    r.setAttribute('data-theme',nxt);
+    try{localStorage.setItem(k,nxt)}catch(e){}
+  });
+})();
+</script>
+</body>
+</html>

@@ -1,3 +1,9 @@
+---
+layout: sentinel-ref
+title: "SentinelRiskService_v1_0_0.cs"
+blurb: "AddOns / runtime · 1.0.0 · 1263 lines"
+---
+
 # SentinelRiskService_v1_0_0.cs
 
 > `bin/Custom/AddOns/SentinelRiskService_v1_0_0.cs`

@@ -1,3 +1,9 @@
+---
+layout: sentinel-ref
+title: "regime_study.py"
+blurb: "Lab (Python) · unversioned · 291 lines"
+---
+
 # regime_study.py
 
 > `Sentinel/Lab/harness/regime_study.py`

@@ -1,3 +1,9 @@
+---
+layout: sentinel-ref
+title: "main.tsx"
+blurb: "Azimuth (front end) · unversioned · 24 lines"
+---
+
 # main.tsx
 
 > `Sentinel/Azimuth/app/src/main.tsx`

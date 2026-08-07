@@ -1,3 +1,9 @@
+---
+layout: sentinel-ref
+title: "SENTINEL CLOCK EDGE BASE.xml"
+blurb: "Chart templates · 1.0 · 642 lines"
+---
+
 # SENTINEL CLOCK EDGE BASE.xml
 
 > `templates/Chart/SENTINEL CLOCK EDGE BASE.xml`

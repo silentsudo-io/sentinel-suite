@@ -1,3 +1,9 @@
+---
+layout: sentinel-ref
+title: "Sentinel Core Components.xml"
+blurb: "Chart templates · 1.0 · 2318 lines"
+---
+
 # Sentinel Core Components.xml
 
 > `templates/Chart/Sentinel Core Components.xml`

@@ -1,3 +1,9 @@
+---
+layout: sentinel-ref
+title: "retest_direction.py"
+blurb: "Lab (Python) · unversioned · 268 lines"
+---
+
 # retest_direction.py
 
 > `Sentinel/Lab/harness/retest_direction.py`

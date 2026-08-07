@@ -1,3 +1,9 @@
+---
+layout: sentinel-ref
+title: "audit.py"
+blurb: "Lab (Python) · unversioned · 459 lines"
+---
+
 # audit.py
 
 > `Sentinel/Lab/docs/audit.py`

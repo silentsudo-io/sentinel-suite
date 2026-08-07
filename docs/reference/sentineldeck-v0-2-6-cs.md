@@ -1,3 +1,9 @@
+---
+layout: sentinel-ref
+title: "SentinelDeck_v0_2_6.cs"
+blurb: "Indicators · 0.2.6 · 3469 lines"
+---
+
 # SentinelDeck_v0_2_6.cs
 
 > `bin/Custom/Indicators/SentinelDeck_v0_2_6.cs`

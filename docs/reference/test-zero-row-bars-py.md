@@ -1,3 +1,9 @@
+---
+layout: sentinel-ref
+title: "test_zero_row_bars.py"
+blurb: "Azimuth (Python) · unversioned · 227 lines"
+---
+
 # test_zero_row_bars.py
 
 > `Sentinel/Azimuth/engine/tests/test_zero_row_bars.py`

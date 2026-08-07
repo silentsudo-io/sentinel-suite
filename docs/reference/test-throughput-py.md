@@ -1,3 +1,9 @@
+---
+layout: sentinel-ref
+title: "test_throughput.py"
+blurb: "Azimuth (Python) · unversioned · 63 lines"
+---
+
 # test_throughput.py
 
 > `Sentinel/Azimuth/engine/tests/test_throughput.py`

@@ -1,3 +1,9 @@
+---
+layout: sentinel-ref
+title: "SentinelKeel_v0_1_0.cs"
+blurb: "Strategies · 0.1.0 · 669 lines"
+---
+
 # SentinelKeel_v0_1_0.cs
 
 > `bin/Custom/Strategies/SentinelKeel_v0_1_0.cs`

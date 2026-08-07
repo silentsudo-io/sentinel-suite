@@ -1,3 +1,9 @@
+---
+layout: sentinel-ref
+title: "Sentinel Validation.xml"
+blurb: "Chart templates · 1.0 · 1381 lines"
+---
+
 # Sentinel Validation.xml
 
 > `templates/Chart/Sentinel Validation.xml`

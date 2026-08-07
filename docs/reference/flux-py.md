@@ -1,3 +1,9 @@
+---
+layout: sentinel-ref
+title: "flux.py"
+blurb: "Azimuth (Python) · unversioned · 1560 lines"
+---
+
 # flux.py
 
 > `Sentinel/Azimuth/bars/flux.py`

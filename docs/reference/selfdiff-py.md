@@ -1,3 +1,9 @@
+---
+layout: sentinel-ref
+title: "selfdiff.py"
+blurb: "Lab (Python) · unversioned · 203 lines"
+---
+
 # selfdiff.py
 
 > `Sentinel/Lab/harness/selfdiff.py`

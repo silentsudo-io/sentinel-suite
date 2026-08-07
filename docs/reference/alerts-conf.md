@@ -1,3 +1,9 @@
+---
+layout: sentinel-ref
+title: "Alerts.conf"
+blurb: "Config files · unversioned · 32 lines"
+---
+
 # Alerts.conf
 
 > `Sentinel/Alerts.conf`

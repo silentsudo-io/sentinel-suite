@@ -1,3 +1,9 @@
+---
+layout: sentinel-ref
+title: "CouncilFusion.cs"
+blurb: "AddOns / runtime · unversioned · 213 lines"
+---
+
 # CouncilFusion.cs
 
 > `bin/Custom/AddOns/CouncilFusion.cs`

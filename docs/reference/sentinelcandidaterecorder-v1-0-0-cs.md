@@ -1,3 +1,9 @@
+---
+layout: sentinel-ref
+title: "SentinelCandidateRecorder_v1_0_0.cs"
+blurb: "Indicators · 1.0.0 · 736 lines"
+---
+
 # SentinelCandidateRecorder_v1_0_0.cs
 
 > `bin/Custom/Indicators/SentinelCandidateRecorder_v1_0_0.cs`

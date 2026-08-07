@@ -1,3 +1,9 @@
+---
+layout: sentinel-ref
+title: "SentinelDrift_v0_1_0.cs"
+blurb: "Bar types · 0.1.0 · 690 lines"
+---
+
 # SentinelDrift_v0_1_0.cs
 
 > `bin/Custom/BarsTypes/SentinelDrift_v0_1_0.cs`

@@ -1,3 +1,9 @@
+---
+layout: sentinel-ref
+title: "SentinelTrendArchitect_v1_0_0.cs"
+blurb: "Indicators · 1.0.0 · 2766 lines"
+---
+
 # SentinelTrendArchitect_v1_0_0.cs
 
 > `bin/Custom/Indicators/SentinelTrendArchitect_v1_0_0.cs`

@@ -1,3 +1,9 @@
+---
+layout: sentinel-ref
+title: "exit_policy_sweep.py"
+blurb: "Lab (Python) · unversioned · 316 lines"
+---
+
 # exit_policy_sweep.py
 
 > `Sentinel/Lab/exit_policy_sweep.py`

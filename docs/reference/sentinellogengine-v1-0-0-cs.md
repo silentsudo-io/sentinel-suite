@@ -1,3 +1,9 @@
+---
+layout: sentinel-ref
+title: "SentinelLogEngine_v1_0_0.cs"
+blurb: "AddOns / runtime · 1.1 · 602 lines"
+---
+
 # SentinelLogEngine_v1_0_0.cs
 
 > `bin/Custom/AddOns/SentinelLogEngine_v1_0_0.cs`

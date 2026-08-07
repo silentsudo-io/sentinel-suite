@@ -1,3 +1,9 @@
+---
+layout: sentinel-ref
+title: "secretscan.py"
+blurb: "Lab (Python) · unversioned · 312 lines"
+---
+
 # secretscan.py
 
 > `Sentinel/Lab/docs/secretscan.py`

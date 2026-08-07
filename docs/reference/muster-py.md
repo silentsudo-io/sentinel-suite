@@ -1,3 +1,9 @@
+---
+layout: sentinel-ref
+title: "muster.py"
+blurb: "Lab (Python) · unversioned · 575 lines"
+---
+
 # muster.py
 
 > `Sentinel/Lab/sync/muster.py`

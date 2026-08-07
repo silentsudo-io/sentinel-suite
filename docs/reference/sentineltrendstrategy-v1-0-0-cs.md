@@ -1,3 +1,9 @@
+---
+layout: sentinel-ref
+title: "SentinelTrendStrategy_v1_0_0.cs"
+blurb: "Strategies · 1.0.0 · 297 lines"
+---
+
 # SentinelTrendStrategy_v1_0_0.cs
 
 > `bin/Custom/Strategies/SentinelTrendStrategy_v1_0_0.cs`

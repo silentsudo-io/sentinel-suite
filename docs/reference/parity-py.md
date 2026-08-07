@@ -1,3 +1,9 @@
+---
+layout: sentinel-ref
+title: "parity.py"
+blurb: "Azimuth (Python) · unversioned · 719 lines"
+---
+
 # parity.py
 
 > `Sentinel/Azimuth/gates/parity.py`
