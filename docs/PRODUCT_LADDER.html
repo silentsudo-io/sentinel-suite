@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Sentinel · Sentinel — Product Ladder &amp; Open-Source Packaging</title>
+<title>Sentinel · Sentinel — Product Ladder & Open-Source Packaging</title>
 <style>
   :root{
     --void:#e7edf1; --panel:#f3f7f9; --surface:#ffffff; --surface2:#eaf0f3;
@@ -248,145 +248,382 @@
 <div class="wrap doc">
 <header>
 <p class="kicker"><svg class="brandmark" viewBox="0 0 512 512" aria-hidden="true"><use href="#helm"/></svg><span class="livedot"></span> Sentinel Suite · NinjaTrader 8 · living document<span class="navsep">·</span><a class="navhome" href="SENTINEL_DOCS.html">Docs home →</a></p>
-<h1>Sentinel — Product Ladder &amp; Open-Source Packaging</h1>
-<p class="lede"><strong>Living document (started 2026-07-10).</strong> This is the <strong>product map</strong> — <em>what a user adopts, how deep they go, and how the pieces are packaged.</em> It is deliberately distinct from <a href="ROADMAP.md">ROADMAP.md</a>, the <strong>pipeline map</strong> (how data flows: sense → decide → act → record → learn). Same system, two lenses. When they disagree, the ROADMAP owns <em>engineering sequence</em>; this doc owns <em>packaging &amp; product shape</em>.</p>
-</header>
-<blockquote><p><strong>North star:</strong> open-source <strong>all of Sentinel</strong>, designed so the plumbing works <strong>no matter which rung a user is standing on.</strong> Open source and modularity are the <em>same cut</em> — if every rung must stand alone as its own bundle over a shared runtime, you cannot accidentally build a monolith.</p></blockquote>
-<blockquote><p><strong>Adoption tiers, not price tiers.</strong> Everything is free, so the ladder is a <em>depth-of-adoption</em> path — how far a user chooses to climb — <strong>not</strong> a pricing menu. "Focus" therefore means <em>what we release first and point newcomers at</em>, not <em>what we sell first</em> (see §7).</p></blockquote>
-<hr>
-<h2><span class="hn">1.</span>Scope — what "Sentinel" means here</h2>
-<p>This document concerns <strong>only the Sentinel-owned files</strong> in <code>bin\Custom</code>. The unrelated commercial vendor tools in the same tree (FlowMatriX, PredatorX, NinZaRenko, GoldenAxe, EliteLicenser, etc.) are <strong>out of scope</strong> and are never part of any Sentinel bundle or license. Contributed work <em>inside</em> Sentinel was released with full permission for open-source use (to be recorded in <code>NOTICE</code>/<code>AUTHORS</code> — §6).</p>
-<hr>
-<h2><span class="hn">2.</span>The two axes of value</h2>
+<h1 id="sentinel-product-ladder-open-source-packaging">Sentinel — Product Ladder &amp; Open-Source Packaging</h1>
+<p><strong>Living document (started 2026-07-10).</strong> This is the <strong>product map</strong> — <em>what a user adopts, how deep
+they go, and how the pieces are packaged.</em> It is deliberately distinct from <a href="ROADMAP.md">ROADMAP.md</a>,
+the <strong>pipeline map</strong> (how data flows: sense → decide → act → record → learn). Same system, two lenses.
+When they disagree, the ROADMAP owns <em>engineering sequence</em>; this doc owns <em>packaging &amp; product shape</em>.</p>
+<blockquote>
+<p><strong>North star:</strong> open-source <strong>all of Sentinel</strong>, designed so the plumbing works <strong>no matter which
+rung a user is standing on.</strong> Open source and modularity are the <em>same cut</em> — if every rung must
+stand alone as its own bundle over a shared runtime, you cannot accidentally build a monolith.</p>
+<p><strong>Adoption tiers, not price tiers.</strong> Everything is free, so the ladder is a <em>depth-of-adoption</em> path
+— how far a user chooses to climb — <strong>not</strong> a pricing menu. "Focus" therefore means <em>what we release
+first and point newcomers at</em>, not <em>what we sell first</em> (see §7).</p>
+</blockquote>
+<hr />
+<h2 id="1-scope-what-sentinel-means-here">1. Scope — what "Sentinel" means here</h2>
+<p>This document concerns <strong>only the Sentinel-owned files</strong> in <code>bin\Custom</code>. The unrelated commercial
+vendor tools in the same tree (FlowMatriX, PredatorX, NinZaRenko, GoldenAxe, EliteLicenser, etc.) are
+<strong>out of scope</strong> and are never part of any Sentinel bundle or license. Contributed work <em>inside</em>
+Sentinel was released with full permission for open-source use (to be recorded in <code>NOTICE</code>/<code>AUTHORS</code> —
+§6).</p>
+<hr />
+<h2 id="2-the-two-axes-of-value">2. The two axes of value</h2>
 <p>Sentinel spans <strong>two orthogonal axes</strong> that compose but are independently valuable:</p>
 <ul>
-<li><strong>Axis A — Beauty.</strong> The Skin + <code>SentinelSkin</code> drawing framework. Makes <em>any</em> NinjaTrader chart beautiful. Needs <strong>zero</strong> intelligence.</li>
-<li><strong>Axis B — Intelligence.</strong> The sense → decide → act → learn pipeline (sensors → Council → Bridge → Lab). Works with <strong>plain</strong> NT rendering. Needs <strong>zero</strong> skin.</li>
+<li><strong>Axis A — Beauty.</strong> The Skin + <code>SentinelSkin</code> drawing framework. Makes <em>any</em> NinjaTrader chart
+  beautiful. Needs <strong>zero</strong> intelligence.</li>
+<li><strong>Axis B — Intelligence.</strong> The sense → decide → act → learn pipeline (sensors → Council → Bridge →
+  Lab). Works with <strong>plain</strong> NT rendering. Needs <strong>zero</strong> skin.</li>
 </ul>
-<p>They compose, but appeal to different people at different depths. This mirrors the publish/consult decoupling already built into the code: aesthetics and intelligence are separable <em>by design</em>.</p>
-<hr>
-<h2><span class="hn">3.</span>The product ladder — the spine</h2>
-<p>Each rung <strong>stands alone</strong> (stop here and it's genuinely useful on its own) <strong>and unlocks the next.</strong> These are <strong>adoption tiers</strong> — how deep a user climbs — and a user climbs only as far as they want.</p>
-<div class="tblwrap"><table><thead><tr><th>Rung</th><th>Product</th><th>Stands alone because…</th><th>Audience</th></tr></thead><tbody><tr><td><strong>0</strong></td><td><strong>Sentinel Skins</strong> — 6 themes + <code>SentinelSkin</code></td><td>makes <em>any</em> NT chart beautiful; the widest, easiest entry</td><td>everyone</td></tr><tr><td><strong>1</strong></td><td><strong>The Sensors</strong> — SentinelTrend, ADXPro, WoodiesCCIPro, VolEnvelope, CompressionBase, LiquidityWalls, God Reversal, WAE (the <strong>8 hero signals</strong>) + Clock, Participation, Location, MTF, Intermarket (the <strong>5 axes</strong>) + the <strong>BarTypes</strong> (SentinelTBars/TbarsCount + <strong>SentinelFlux</strong>, the order-flow-imbalance bar-type axis)</td><td>each hero is a gorgeous, functional standalone indicator</td><td>indicator shoppers</td></tr><tr><td><strong>2</strong></td><td><strong>The Recorder + Log</strong> — the capture engines (excursion corpus + MAE/MFE journaling)</td><td>records every trade's outcome to JSONL, over <em>any</em> strategy</td><td>data-minded traders</td></tr><tr><td><strong>3</strong></td><td><strong>The Observatory</strong> — the human interface to the excursion corpus (<strong>consolidates</strong> Lens + the Dashboard Excursion tab + SentinelExcursions)</td><td>explore / curate / understand your recorded outcomes; the <strong>human counterpart to the ML Lab</strong></td><td>the "understand your trading" crowd</td></tr><tr><td><strong>4</strong></td><td><strong>The Council</strong></td><td>one honest verdict fused from all your sensors — a confluence dashboard</td><td>confluence traders</td></tr><tr><td><strong>5</strong></td><td><strong>The Deck</strong> (+ Cockpit + Dashboard)</td><td>advanced manual chart trader / command surface</td><td>discretionary traders</td></tr><tr><td><strong>6</strong></td><td><strong>The Prop-Survival Kit</strong> — Risk + Governor + Kill-switch + Gate + auto-flatten + reconnect reconciliation</td><td><em>keep your funded account alive</em></td><td><strong>prop-firm traders (large, urgent market)</strong></td></tr><tr><td><strong>7</strong></td><td><strong>The Bridge</strong></td><td>autopilot that consumes the Council</td><td>automation crowd</td></tr><tr><td><strong>8</strong></td><td><strong>The Copier</strong></td><td>mirror one account to many, prop-rule-aware</td><td>multi-account / prop</td></tr><tr><td><strong>9</strong></td><td><strong>Helm</strong> — discretionary human interdiction over <em>any</em> running setup (move stop / close early / skip / pause; publishes a <code>HelmIntent</code>, never touches an order). <strong>✅ BUILT 2026-07-15</strong> (Core v1.34.0 seam · Bridge v0.3.0 consumer · Cockpit v0.5.0 ⑤ Helm rail; plumbing tier live-validated)</td><td>oversight that works over the Deck <strong>and</strong> the Bridge — the human hand on the tiller</td><td>hands-on overseers</td></tr><tr><td><strong>10</strong></td><td><strong>The ML Lab</strong> — pairs with the Observatory (the <em>machine</em> counterpart over the same corpus); now a BUILT data platform (SQLite corpus <code>Lab\db\sentinel.db</code> + live JSONL→SQLite ingester + Streamlit :8501 + Grafana :3000)</td><td>the system fits its own weights from your outcomes</td><td>top tier, the believers</td></tr></tbody></table></div>
-<p><strong>Rung 6 is both a product and a runtime layer</strong> (§4, L2). The Safety layer <strong>is</strong> the survival kit, surfaced through the Cockpit/Dashboard. Some rungs are infrastructure turned into a product — build once, sell as a rung. <strong>Rung 9 (Helm) is the discretionary sibling of Rung 6:</strong> the survival kit is <em>automatic hard limits</em>, Helm is the <em>human hand on the tiller</em> — distinct capabilities, distinct products.</p>
-<p><strong>The ladder is a light tree, not a strict line.</strong> Rung 3 opens an <em>analysis branch</em> (Recorder → <strong>Observatory</strong> ↔ ML Lab) that runs parallel to the <em>execution branch</em> (sensors → Council → Deck/Bridge), both rising over the shared runtime (§4). The <strong>Observatory</strong> (Rung 3) and the <strong>ML Lab</strong> (Rung 10) are the <strong>human</strong> and <strong>machine</strong> consumers of the <em>same</em> excursion corpus — the analysis-tier mirror of the Deck↔Bridge (manual↔auto) duality.</p>
-<h3>Cross-cutting foundations (they span the rungs — NOT rungs themselves)</h3>
+<p>They compose, but appeal to different people at different depths. This mirrors the publish/consult
+decoupling already built into the code: aesthetics and intelligence are separable <em>by design</em>.</p>
+<hr />
+<h2 id="3-the-product-ladder-the-spine">3. The product ladder — the spine</h2>
+<p>Each rung <strong>stands alone</strong> (stop here and it's genuinely useful on its own) <strong>and unlocks the next.</strong>
+These are <strong>adoption tiers</strong> — how deep a user climbs — and a user climbs only as far as they want.</p>
+<table>
+<thead>
+<tr>
+<th>Rung</th>
+<th>Product</th>
+<th>Stands alone because…</th>
+<th>Audience</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>0</strong></td>
+<td><strong>Sentinel Skins</strong> — 6 themes + <code>SentinelSkin</code></td>
+<td>makes <em>any</em> NT chart beautiful; the widest, easiest entry</td>
+<td>everyone</td>
+</tr>
+<tr>
+<td><strong>1</strong></td>
+<td><strong>The Sensors</strong> — SentinelTrend, ADXPro, WoodiesCCIPro, VolEnvelope, CompressionBase, LiquidityWalls, God Reversal, WAE (the <strong>8 hero signals</strong>) + Clock, Participation, Location, MTF, Intermarket (the <strong>5 axes</strong>) + the <strong>BarTypes</strong> (SentinelTBars/TbarsCount + <strong>SentinelFlux</strong>, the order-flow-imbalance bar-type axis)</td>
+<td>each hero is a gorgeous, functional standalone indicator</td>
+<td>indicator shoppers</td>
+</tr>
+<tr>
+<td><strong>2</strong></td>
+<td><strong>The Recorder + Log</strong> — the capture engines (excursion corpus + MAE/MFE journaling)</td>
+<td>records every trade's outcome to JSONL, over <em>any</em> strategy</td>
+<td>data-minded traders</td>
+</tr>
+<tr>
+<td><strong>3</strong></td>
+<td><strong>The Observatory</strong> — the human interface to the excursion corpus (<strong>consolidates</strong> Lens + the Dashboard Excursion tab + SentinelExcursions)</td>
+<td>explore / curate / understand your recorded outcomes; the <strong>human counterpart to the ML Lab</strong></td>
+<td>the "understand your trading" crowd</td>
+</tr>
+<tr>
+<td><strong>4</strong></td>
+<td><strong>The Council</strong></td>
+<td>one honest verdict fused from all your sensors — a confluence dashboard</td>
+<td>confluence traders</td>
+</tr>
+<tr>
+<td><strong>5</strong></td>
+<td><strong>The Deck</strong> (+ Cockpit + Dashboard)</td>
+<td>advanced manual chart trader / command surface</td>
+<td>discretionary traders</td>
+</tr>
+<tr>
+<td><strong>6</strong></td>
+<td><strong>The Prop-Survival Kit</strong> — Risk + Governor + Kill-switch + Gate + auto-flatten + reconnect reconciliation</td>
+<td><em>keep your funded account alive</em></td>
+<td><strong>prop-firm traders (large, urgent market)</strong></td>
+</tr>
+<tr>
+<td><strong>7</strong></td>
+<td><strong>The Bridge</strong></td>
+<td>autopilot that consumes the Council</td>
+<td>automation crowd</td>
+</tr>
+<tr>
+<td><strong>8</strong></td>
+<td><strong>The Copier</strong></td>
+<td>mirror one account to many, prop-rule-aware</td>
+<td>multi-account / prop</td>
+</tr>
+<tr>
+<td><strong>9</strong></td>
+<td><strong>Helm</strong> — discretionary human interdiction over <em>any</em> running setup (move stop / close early / skip / pause; publishes a <code>HelmIntent</code>, never touches an order). <strong>✅ BUILT 2026-07-15</strong> (Core v1.34.0 seam · Bridge v0.3.0 consumer · Cockpit v0.5.0 ⑤ Helm rail; plumbing tier live-validated)</td>
+<td>oversight that works over the Deck <strong>and</strong> the Bridge — the human hand on the tiller</td>
+<td>hands-on overseers</td>
+</tr>
+<tr>
+<td><strong>10</strong></td>
+<td><strong>The ML Lab</strong> — pairs with the Observatory (the <em>machine</em> counterpart over the same corpus); now a BUILT data platform (SQLite corpus <code>Lab\db\sentinel.db</code> + live JSONL→SQLite ingester + Streamlit :8501 + Grafana :3000)</td>
+<td>the system fits its own weights from your outcomes</td>
+<td>top tier, the believers</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Rung 6 is both a product and a runtime layer</strong> (§4, L2). The Safety layer <strong>is</strong> the survival kit,
+surfaced through the Cockpit/Dashboard. Some rungs are infrastructure turned into a product — build once,
+sell as a rung. <strong>Rung 9 (Helm) is the discretionary sibling of Rung 6:</strong> the survival kit is <em>automatic
+hard limits</em>, Helm is the <em>human hand on the tiller</em> — distinct capabilities, distinct products.</p>
+<p><strong>The ladder is a light tree, not a strict line.</strong> Rung 3 opens an <em>analysis branch</em> (Recorder →
+<strong>Observatory</strong> ↔ ML Lab) that runs parallel to the <em>execution branch</em> (sensors → Council →
+Deck/Bridge), both rising over the shared runtime (§4). The <strong>Observatory</strong> (Rung 3) and the <strong>ML Lab</strong>
+(Rung 10) are the <strong>human</strong> and <strong>machine</strong> consumers of the <em>same</em> excursion corpus — the analysis-tier
+mirror of the Deck↔Bridge (manual↔auto) duality.</p>
+<h3 id="cross-cutting-foundations-they-span-the-rungs-not-rungs-themselves">Cross-cutting foundations (they span the rungs — NOT rungs themselves)</h3>
 <p>You don't <em>climb</em> to these; they are the ground the ladder stands on and the tissue between rungs:</p>
 <ul>
 <li><strong>The Runtime</strong> (L0 Skin + F Foundation + L1 Bus + L2 Safety — §4). The floor every rung stands on.</li>
-<li><strong>The Platform Contract</strong> — the naming law + the State-seam protocol + the <code>port-sentinel-indicator</code> skill. This <em>is</em> the "developer / SDK" story: the rules that let anyone extend <em>any</em> rung with a compliant tool. It makes Sentinel a <strong>platform</strong>, not just a product — but it is not a rung.</li>
-<li><strong>The Field Manual</strong> (<code>SENTINEL_PROCESS_ATLAS.html</code>) — the education / onboarding layer that makes every rung learnable. A retention asset, bundled, not a rung.</li>
+<li><strong>The Platform Contract</strong> — the naming law + the State-seam protocol + the <code>port-sentinel-indicator</code>
+  skill. This <em>is</em> the "developer / SDK" story: the rules that let anyone extend <em>any</em> rung with a
+  compliant tool. It makes Sentinel a <strong>platform</strong>, not just a product — but it is not a rung.</li>
+<li><strong>The Field Manual</strong> (<code>SENTINEL_PROCESS_ATLAS.html</code>) — the education / onboarding layer that makes
+  every rung learnable. A retention asset, bundled, not a rung.</li>
 </ul>
-<h3>Still-open candidate products (genuine maybes)</h3>
+<h3 id="still-open-candidate-products-genuine-maybes">Still-open candidate products (genuine maybes)</h3>
 <ul>
-<li><strong>Council-as-a-signal</strong> — the verdict is already a published seam; it could become a shared/subscription feed. <em>(Kept as a parked candidate, 2026-07-10 — near-free optionality, no commitment yet.)</em></li>
+<li><strong>Council-as-a-signal</strong> — the verdict is already a published seam; it could become a shared/subscription
+  feed. <em>(Kept as a parked candidate, 2026-07-10 — near-free optionality, no commitment yet.)</em></li>
 </ul>
-<hr>
-<h2><span class="hn">4.</span>The runtime floor — what makes "any rung" real</h2>
-<p>Every rung bundles a shared substrate. That substrate is <strong>not one floor — it is layers, and rungs only ever depend downward.</strong></p>
-<div class="tblwrap"><table><thead><tr><th>Layer</th><th>Contains</th><th>Needed by</th><th>Dependency</th></tr></thead><tbody><tr><td><strong>L0 · Skin</strong></td><td>palette, <code>Painter</code>, <code>CardLayout</code>, themes (<code>SentinelSkin.cs</code>)</td><td>everyone who draws</td><td>none</td></tr><tr><td><strong>F · Foundation</strong></td><td><code>SettingsDir</code>, <code>Log</code>, <code>SeamStore&lt;T&gt;</code>, <code>ScopeOf</code>/<code>BarTag</code>, <code>InstrumentRoot</code>, <code>Conditions</code>, <code>Alerts</code>, <strong><code>Ledger</code></strong>, <strong><code>State</code></strong> (audit/persistence primitives), + the context vetoes (kill / instrument-kill / news / rollover)</td><td>everyone</td><td>none (above NT)</td></tr><tr><td><strong>L1 · Bus/Seams</strong></td><td>the publish/consult registry — all 13 <code>…State</code> types + Set/Get, <code>EyeVerdict</code>, <code>BrickLog</code>, fleet/assist state</td><td>sensors, Council</td><td>→ F only</td></tr><tr><td><strong>L2 · Safety</strong></td><td>the account-risk <em>decision</em> logic — feed-health, <code>CanEnter</code>, governor, drawdown, profiles, session, <code>SizedQuantity</code>/<code>TickValue</code>/<code>SizeForRisk</code>, order guards, <code>GateEntry</code></td><td>anything that trades (Deck, Bridge, Copier, Risk)</td><td>→ F only</td></tr></tbody></table></div>
-<p><strong>The one rule that keeps every rung standalone:</strong> <em>a file may only reference files in its own layer or below.</em> L1 never references L2; L2 never references L1. (Verified today — §5.)</p>
-<h3>The NT one-assembly caveat</h3>
-<p>NinjaTrader compiles <strong>everything in <code>bin\Custom</code> into a single DLL</strong>, so we cannot ship literal separate assemblies. But <strong>distribution ≠ installation</strong>: a "Sentinel Skins" download is just the L0 files; "Sentinel Sensors" is L0 + F + L1 + the indicators; each bundle is self-contained and installs into the one assembly fine. <strong>The layering is enforced by dependency discipline, not by assembly boundaries.</strong></p>
-<hr>
-<h2><span class="hn">5.</span>Core-split finding (2026-07-10 structural read)</h2>
-<p><code>SentinelCore_v1_0_0.cs</code> is one <strong>3,215-line</strong> file, one giant <code>static class SentinelCore</code> with ~30 nested types. Verdict: <strong>splittable, not entangled — and the dependency arrows already point the right way.</strong></p>
+<hr />
+<h2 id="4-the-runtime-floor-what-makes-any-rung-real">4. The runtime floor — what makes "any rung" real</h2>
+<p>Every rung bundles a shared substrate. That substrate is <strong>not one floor — it is layers, and rungs only
+ever depend downward.</strong></p>
+<table>
+<thead>
+<tr>
+<th>Layer</th>
+<th>Contains</th>
+<th>Needed by</th>
+<th>Dependency</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>L0 · Skin</strong></td>
+<td>palette, <code>Painter</code>, <code>CardLayout</code>, themes (<code>SentinelSkin.cs</code>)</td>
+<td>everyone who draws</td>
+<td>none</td>
+</tr>
+<tr>
+<td><strong>F · Foundation</strong></td>
+<td><code>SettingsDir</code>, <code>Log</code>, <code>SeamStore&lt;T&gt;</code>, <code>ScopeOf</code>/<code>BarTag</code>, <code>InstrumentRoot</code>, <code>Conditions</code>, <code>Alerts</code>, <strong><code>Ledger</code></strong>, <strong><code>State</code></strong> (audit/persistence primitives), + the context vetoes (kill / instrument-kill / news / rollover)</td>
+<td>everyone</td>
+<td>none (above NT)</td>
+</tr>
+<tr>
+<td><strong>L1 · Bus/Seams</strong></td>
+<td>the publish/consult registry — all 13 <code>…State</code> types + Set/Get, <code>EyeVerdict</code>, <code>BrickLog</code>, fleet/assist state</td>
+<td>sensors, Council</td>
+<td>→ F only</td>
+</tr>
+<tr>
+<td><strong>L2 · Safety</strong></td>
+<td>the account-risk <em>decision</em> logic — feed-health, <code>CanEnter</code>, governor, drawdown, profiles, session, <code>SizedQuantity</code>/<code>TickValue</code>/<code>SizeForRisk</code>, order guards, <code>GateEntry</code></td>
+<td>anything that trades (Deck, Bridge, Copier, Risk)</td>
+<td>→ F only</td>
+</tr>
+</tbody>
+</table>
+<p><strong>The one rule that keeps every rung standalone:</strong> <em>a file may only reference files in its own layer or
+below.</em> L1 never references L2; L2 never references L1. (Verified today — §5.)</p>
+<h3 id="the-nt-one-assembly-caveat">The NT one-assembly caveat</h3>
+<p>NinjaTrader compiles <strong>everything in <code>bin\Custom</code> into a single DLL</strong>, so we cannot ship literal separate
+assemblies. But <strong>distribution ≠ installation</strong>: a "Sentinel Skins" download is just the L0 files;
+"Sentinel Sensors" is L0 + F + L1 + the indicators; each bundle is self-contained and installs into the
+one assembly fine. <strong>The layering is enforced by dependency discipline, not by assembly boundaries.</strong></p>
+<hr />
+<h2 id="5-core-split-finding-2026-07-10-structural-read">5. Core-split finding (2026-07-10 structural read)</h2>
+<p><code>SentinelCore_v1_0_0.cs</code> is one <strong>3,215-line</strong> file, one giant <code>static class SentinelCore</code> with ~30
+nested types. Verdict: <strong>splittable, not entangled — and the dependency arrows already point the right
+way.</strong></p>
 <ul>
-<li><strong>Safety does not read the seams.</strong> The entire gate region (<code>GateEntry</code>/<code>CanEnter</code>) has <strong>zero</strong> <code>GetXState</code>/<code>GetCouncilState</code> calls — it decides purely on kill/governor/session/news/rollover.</li>
-<li><strong>The seams only reach downward</strong> — the sole cross-call out of the seam setters is to <code>Conditions.*</code> (a Foundation utility), never to the Gate or Ledger.</li>
+<li><strong>Safety does not read the seams.</strong> The entire gate region (<code>GateEntry</code>/<code>CanEnter</code>) has <strong>zero</strong>
+  <code>GetXState</code>/<code>GetCouncilState</code> calls — it decides purely on kill/governor/session/news/rollover.</li>
+<li><strong>The seams only reach downward</strong> — the sole cross-call out of the seam setters is to <code>Conditions.*</code>
+  (a Foundation utility), never to the Gate or Ledger.</li>
 </ul>
-<p><strong>Mechanism — split without API churn:</strong> make it <code>public static partial class SentinelCore</code> across three files — <code>SentinelCore.Foundation.cs</code>, <code>SentinelCore.Bus.cs</code>, <code>SentinelCore.Safety.cs</code>. <strong>Same class, same call sites, zero churn</strong> across the ~40 consumer files. A partial class missing one partial still compiles as a <em>smaller</em> class → <strong>this is the distribution tiering</strong>: a Rung-1 bundle ships Foundation + Bus only, and the class simply won't have <code>GateEntry</code> (which no sensor calls). The class shrinks gracefully per rung.</p>
-<p><strong>Two relocations the split surfaces:</strong></p>
-<ol>
-<li><code>Conditions</code> + <code>Alerts</code> are physically filed among Safety but are <strong>Foundation</strong> utilities (the Bus depends on <code>Conditions</code>) → move them to <code>SentinelCore.Foundation.cs</code>. Confirm <code>Conditions</code> itself doesn't reach back into Safety before committing.</li>
-<li>The <strong>context vetoes</strong> (kill / instrument-kill / news / rollover) are read by <em>both</em> the Council (L1-side veto) and the Gate (L2) → pure state stores, so they live in <strong>Foundation</strong>, preserving the downward-only rule.</li>
-</ol>
-<p><strong>Caveat:</strong> arrows verified by structural grep, not a full method-by-method read; re-compile each partial against only its downward deps to prove the split. And this file is the one NT loves to clobber at the tail on F5 — anchor mid-class and re-verify before building.</p>
-<hr>
-<h2><span class="hn">6.</span>Open-source posture</h2>
+<p><strong>Mechanism — split without API churn:</strong> make it <code>public static partial class SentinelCore</code> across three
+files — <code>SentinelCore.Foundation.cs</code>, <code>SentinelCore.Bus.cs</code>, <code>SentinelCore.Safety.cs</code>. <strong>Same class, same
+call sites, zero churn</strong> across the ~40 consumer files. A partial class missing one partial still compiles
+as a <em>smaller</em> class → <strong>this is the distribution tiering</strong>: a Rung-1 bundle ships Foundation + Bus only,
+and the class simply won't have <code>GateEntry</code> (which no sensor calls). The class shrinks gracefully per rung.</p>
+<p><strong>Two relocations the split surfaces:</strong>
+1. <code>Conditions</code> + <code>Alerts</code> are physically filed among Safety but are <strong>Foundation</strong> utilities (the Bus
+   depends on <code>Conditions</code>) → move them to <code>SentinelCore.Foundation.cs</code>. Confirm <code>Conditions</code> itself
+   doesn't reach back into Safety before committing.
+2. The <strong>context vetoes</strong> (kill / instrument-kill / news / rollover) are read by <em>both</em> the Council
+   (L1-side veto) and the Gate (L2) → pure state stores, so they live in <strong>Foundation</strong>, preserving the
+   downward-only rule.</p>
+<p><strong>Caveat:</strong> arrows verified by structural grep, not a full method-by-method read; re-compile each partial
+against only its downward deps to prove the split. And this file is the one NT loves to clobber at the
+tail on F5 — anchor mid-class and re-verify before building.</p>
+<hr />
+<h2 id="6-open-source-posture">6. Open-source posture</h2>
 <ul>
-<li><strong>Adoption tiers, not price tiers.</strong> Everything is free; the ladder is a depth-of-adoption path, not a pricing menu. Any monetization (hosted service / support / an "SDK-certified" program) rides <em>on top</em> of the retained trademark and is <strong>fully optional</strong> — nothing on the ladder depends on it. That is why deferring the license costs nothing.</li>
-<li><strong>License: MPL-2.0 (chosen 2026-07-11).</strong> Weak, <strong>file-level</strong> copyleft — improvements to Sentinel's own files flow back, while others can still build proprietary tools <em>alongside</em> it. Chosen because the suite absorbs MPL-2.0 components (e.g. LiquidityWalls, © TradingIQ) → <strong>no license-mixing</strong>; it's <strong>GPL-compatible</strong>; and it sidesteps GPL's friction with the proprietary NinjaTrader host. Every source file carries the MPL per-file header; the <strong>SENTINEL trademark is retained</strong> (not granted by MPL).</li>
-<li><strong>Umbrella = "Sentinel Suite"</strong> (decided 2026-07-10) — the public brand + monorepo (<code>sentinel-suite</code>); the trademark held is <strong>SENTINEL</strong>. Extends the Federated Naming Law: bundles read "Sentinel &lt;Thing&gt;" (Sentinel Skins / Sentinel Sensors / …).</li>
-<li><strong>Trademark retained.</strong> Open-sourcing the <em>code</em> doesn't give away the <em>name</em>. Hold "Sentinel" as a mark — free code, owned brand — preserving the optional commercial door above without closing a line.</li>
-<li><strong><code>NOTICE</code> / <code>AUTHORS</code>.</strong> Record, in writing, that contributed-Sentinel work was released for open-source use — so the permission never has to be reconstructed from memory later.</li>
-<li><strong>Provenance is clean.</strong> Only Sentinel-owned files are in scope; publicly-published indicators (WAE, Woodies, ADX) are reimplementations of public formulas — the implementations are ours. NinjaScript source is open-sourceable; we never redistribute NT's DLLs (reference them as build prerequisites).</li>
+<li><strong>Adoption tiers, not price tiers.</strong> Everything is free; the ladder is a depth-of-adoption path, not a
+  pricing menu. Any monetization (hosted service / support / an "SDK-certified" program) rides <em>on top</em>
+  of the retained trademark and is <strong>fully optional</strong> — nothing on the ladder depends on it. That is why
+  deferring the license costs nothing.</li>
+<li><strong>License: MPL-2.0 (chosen 2026-07-11).</strong> Weak, <strong>file-level</strong> copyleft — improvements to Sentinel's own
+  files flow back, while others can still build proprietary tools <em>alongside</em> it. Chosen because the suite
+  absorbs MPL-2.0 components (e.g. LiquidityWalls, © TradingIQ) → <strong>no license-mixing</strong>; it's <strong>GPL-compatible</strong>;
+  and it sidesteps GPL's friction with the proprietary NinjaTrader host. Every source file carries the MPL
+  per-file header; the <strong>SENTINEL trademark is retained</strong> (not granted by MPL).</li>
+<li><strong>Umbrella = "Sentinel Suite"</strong> (decided 2026-07-10) — the public brand + monorepo (<code>sentinel-suite</code>);
+  the trademark held is <strong>SENTINEL</strong>. Extends the Federated Naming Law: bundles read "Sentinel <Thing>"
+  (Sentinel Skins / Sentinel Sensors / …).</li>
+<li><strong>Trademark retained.</strong> Open-sourcing the <em>code</em> doesn't give away the <em>name</em>. Hold "Sentinel" as a
+  mark — free code, owned brand — preserving the optional commercial door above without closing a line.</li>
+<li><strong><code>NOTICE</code> / <code>AUTHORS</code>.</strong> Record, in writing, that contributed-Sentinel work was released for
+  open-source use — so the permission never has to be reconstructed from memory later.</li>
+<li><strong>Provenance is clean.</strong> Only Sentinel-owned files are in scope; publicly-published indicators (WAE,
+  Woodies, ADX) are reimplementations of public formulas — the implementations are ours. NinjaScript
+  source is open-sourceable; we never redistribute NT's DLLs (reference them as build prerequisites).</li>
 </ul>
-<hr>
-<h2><span class="hn">7.</span>Release focus &amp; phasing</h2>
-<p>Because these are <strong>adoption tiers, not price tiers</strong> (§6), "focus" = <em>what we release first and point newcomers at.</em> The rungs collapse into <strong>4 release phases on a risk gradient:</strong></p>
-<div class="tblwrap"><table><thead><tr><th>Phase</th><th>Ships</th><th>Order risk</th><th>Why here</th></tr></thead><tbody><tr><td><strong>P1 · Beachhead</strong> ✅ <strong>the focus</strong></td><td>Runtime + <strong>Skins</strong> (0) + <strong>Sensors</strong> — the <strong>8 hero signal indicators + BarTypes</strong> (1)</td><td><strong>none</strong></td><td>beautiful, wide appeal, proves the modular runtime, zero liability</td></tr><tr><td><strong>P2 · Intelligence</strong></td><td>the <strong>5 orthogonal axes</strong> (Clock/Participation/Location/MTF/Intermarket, rung 1) + Recorder+Log (2) + <strong>Observatory</strong> (3) + <strong>Council</strong> (4)</td><td><strong>none</strong></td><td>"understand + fuse" — the axes only mean something once the Council consumes them; nothing touches an account</td></tr><tr><td><strong>P3 · Execution</strong></td><td><strong>Prop-Survival Kit</strong> (6, <em>first</em>) → Deck (5) → Bridge (7) → Copier (8) → <strong>Helm</strong> (9)</td><td><strong>real money</strong></td><td>safety ships <em>before</em> autopilot; Helm = human interdiction over any running setup; loudest disclaimers</td></tr><tr><td><strong>P4 · Learning</strong></td><td><strong>ML Lab</strong> (10)</td><td>n/a</td><td>capstone; needs a baked corpus anyway</td></tr></tbody></table></div>
-<p><strong>P1 is the confirmed focus (2026-07-10).</strong> It carries no order-execution risk, has the widest appeal, and <em>is</em> the platform floor every later phase plugs into. Clean risk gradient across the four phases: <strong>none → none → real-money → advanced.</strong></p>
-<h3>Decided (formerly open questions)</h3>
+<hr />
+<h2 id="7-release-focus-phasing">7. Release focus &amp; phasing</h2>
+<blockquote>
+<h2 id="superseded-2026-08-07-the-phasing-is-history-everything-shipped">✅ SUPERSEDED 2026-08-07 — <strong>THE PHASING IS HISTORY. EVERYTHING SHIPPED.</strong></h2>
+<p><strong>P1 released 2026-07-16. P2, P3 and P4 released together on 2026-08-07</strong> (commit <code>d6c1aea</code>,
+429 files) rather than as three staged phases. <strong>Every rung of the ladder is public, MPL-2.0.</strong>
+The only things still private are <strong>infrastructure</strong> (hosts, topology, credentials) and <strong>fitted
+models</strong> (<code>Roster.conf</code> / <code>Model.conf</code> — a roster is a <em>result</em>; the suite ships the mechanism).</p>
+<p><strong>Read the table below as the RISK GRADIENT it always was, not as a schedule.</strong> That gradient is
+still the right way to introduce the suite to a newcomer — start them at zero order risk and let
+them climb — and it is exactly how the public README and the landing page are ordered. What is no
+longer true is the claim that the later phases are unreleased.</p>
+<p>⚠ One nuance the phase table cannot express: <strong>rung 3 (Observatory) shipped PARTIAL</strong> — the Lens
+is public, the consolidated surface is not finished. Both the README and the Pages ladder say
+<code>Partial</code>; keep them honest if that changes.</p>
+</blockquote>
+<p>Because these are <strong>adoption tiers, not price tiers</strong> (§6), "focus" = <em>what we release first and point
+newcomers at.</em> The rungs collapse into <strong>4 release phases on a risk gradient:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Phase</th>
+<th>Ships</th>
+<th>Order risk</th>
+<th>Why here</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>P1 · Beachhead</strong> ✅ <strong>the focus</strong></td>
+<td>Runtime + <strong>Skins</strong> (0) + <strong>Sensors</strong> — the <strong>8 hero signal indicators + BarTypes</strong> (1)</td>
+<td><strong>none</strong></td>
+<td>beautiful, wide appeal, proves the modular runtime, zero liability</td>
+</tr>
+<tr>
+<td><strong>P2 · Intelligence</strong></td>
+<td>the <strong>5 orthogonal axes</strong> (Clock/Participation/Location/MTF/Intermarket, rung 1) + Recorder+Log (2) + <strong>Observatory</strong> (3) + <strong>Council</strong> (4)</td>
+<td><strong>none</strong></td>
+<td>"understand + fuse" — the axes only mean something once the Council consumes them; nothing touches an account</td>
+</tr>
+<tr>
+<td><strong>P3 · Execution</strong></td>
+<td><strong>Prop-Survival Kit</strong> (6, <em>first</em>) → Deck (5) → Bridge (7) → Copier (8) → <strong>Helm</strong> (9)</td>
+<td><strong>real money</strong></td>
+<td>safety ships <em>before</em> autopilot; Helm = human interdiction over any running setup; loudest disclaimers</td>
+</tr>
+<tr>
+<td><strong>P4 · Learning</strong></td>
+<td><strong>ML Lab</strong> (10)</td>
+<td>n/a</td>
+<td>capstone; needs a baked corpus anyway</td>
+</tr>
+</tbody>
+</table>
+<p><strong>P1 is the confirmed focus (2026-07-10).</strong> It carries no order-execution risk, has the widest appeal,
+and <em>is</em> the platform floor every later phase plugs into. Clean risk gradient across the four phases:
+<strong>none → none → real-money → advanced.</strong></p>
+<h3 id="decided-formerly-open-questions">Decided (formerly open questions)</h3>
 <ul>
-<li><strong>Rung 1 splits across P1/P2</strong> (decided 2026-07-10) — the <strong>8 hero signal/regime indicators</strong> (SentinelTrend, ADXPro, WoodiesCCIPro, VolEnvelope, CompressionBase, LiquidityWalls, God Reversal, WAE) + the <strong>BarTypes</strong> ship in <strong>P1</strong>; the <strong>5 orthogonal axes</strong> (Clock, Participation, Location, MTF, Intermarket) are Council inputs, so their release waits for <strong>P2</strong>.</li>
-<li><strong>P1 ships as two rung-bundles</strong> (decided 2026-07-10) — <strong>Sentinel Skins</strong> (runtime + 6 themes) and <strong>Sentinel Sensors</strong> (runtime + bus + the 8 hero indicators + BarTypes), mirroring the two axes, plus an optional "grab-both" <strong>Sentinel Starter</strong> meta-bundle. Each bundle is self-contained (carries its own runtime floor per §4). This is the per-rung-bundle model for the whole ladder, seeded by P1.</li>
+<li><strong>Rung 1 splits across P1/P2</strong> (decided 2026-07-10) — the <strong>8 hero signal/regime indicators</strong>
+  (SentinelTrend, ADXPro, WoodiesCCIPro, VolEnvelope, CompressionBase, LiquidityWalls, God Reversal, WAE)</li>
+<li>the <strong>BarTypes</strong> ship in <strong>P1</strong>; the <strong>5 orthogonal axes</strong> (Clock, Participation, Location, MTF,
+  Intermarket) are Council inputs, so their release waits for <strong>P2</strong>.</li>
+<li><strong>P1 ships as two rung-bundles</strong> (decided 2026-07-10) — <strong>Sentinel Skins</strong> (runtime + 6 themes) and
+  <strong>Sentinel Sensors</strong> (runtime + bus + the 8 hero indicators + BarTypes), mirroring the two axes, plus an
+  optional "grab-both" <strong>Sentinel Starter</strong> meta-bundle. Each bundle is self-contained (carries its own
+  runtime floor per §4). This is the per-rung-bundle model for the whole ladder, seeded by P1.</li>
 <li><strong>Prop-Survival Kit is its own product</strong> (Rung 6) — and it <strong>leads P3</strong> (safety before autopilot).</li>
-<li><strong>Helm is its own advanced rung</strong> (Rung 9, decided 2026-07-10) — placed after the Bridge/Copier as discretionary oversight over any running setup; the human counterpart to the automatic Prop-Survival Kit.</li>
+<li><strong>Helm is its own advanced rung</strong> (Rung 9, decided 2026-07-10) — placed after the Bridge/Copier as
+  discretionary oversight over any running setup; the human counterpart to the automatic Prop-Survival Kit.</li>
 <li><strong>The Copier is just Rung 8</strong> — the "free lead-gen" framing dissolves when everything is open.</li>
-<li><strong>No SDK rung</strong> — that role is the <strong>Platform Contract</strong> (a cross-cutting foundation, §3), not a product you climb to.</li>
+<li><strong>No SDK rung</strong> — that role is the <strong>Platform Contract</strong> (a cross-cutting foundation, §3), not a
+  product you climb to.</li>
 <li><strong>No education rung</strong> — that role is the <strong>Field Manual</strong> (a cross-cutting foundation, §3).</li>
 <li><strong>Repo = monorepo</strong> with per-rung folders + per-rung release bundles (mirrors the partial-class tiering).</li>
-<li><strong>Per-bundle SemVer</strong> (decided 2026-07-10) — each release bundle versions independently (Sentinel Skins v1.0.0, Sentinel Sensors v1.x.0), releasing on its own clock as phases ship. The internal per-file <code>_vX_Y_Z</code> convention stays as the source-of-truth for individual tools underneath; the bundle version is the release/changelog marker.</li>
+<li><strong>Per-bundle SemVer</strong> (decided 2026-07-10) — each release bundle versions independently (Sentinel Skins
+  v1.0.0, Sentinel Sensors v1.x.0), releasing on its own clock as phases ship. The internal per-file
+  <code>_vX_Y_Z</code> convention stays as the source-of-truth for individual tools underneath; the bundle version is
+  the release/changelog marker.</li>
 </ul>
-<h3>P1 Definition of Done — per bundle (bar: FULL community launch, decided 2026-07-10)</h3>
-<p>Each P1 bundle (<strong>Sentinel Skins</strong>, <strong>Sentinel Sensors</strong>) must satisfy <strong>A–E</strong> before release — contributor-ready from day one.</p>
-<p><strong>A · Code &amp; compliance</strong></p>
-<ul>
-<li>Every shipped tool <strong>F5-compiles clean</strong> (NT is authoritative).</li>
-<li>Each sensor <strong>fully naming-law compliant</strong> (via the <code>port-sentinel-indicator</code> skill): "Sentinel &amp;lt;Thing&amp;gt;", glass card, label remover, published <code>…State</code> seam. A half-plumbed sensor cannot ship.</li>
-<li><strong>Bundle dependency-clean</strong> — Skins references no Bus/Safety; Sensors references no L2 Safety. The downward-only rule (§4) holds at the <em>bundle</em> boundary, not just the file.</li>
-</ul>
-<p><strong>B · Docs</strong></p>
-<ul>
-<li>Top-level <strong>README</strong> (what Sentinel Suite is, the two-axis pitch, install).</li>
-<li><strong>Install guide</strong> (drop into <code>bin\Custom</code> → F5; NT-version prereq; we ship no NT DLLs).</li>
-<li><strong>Per-tool one-pager</strong> each (purpose, inputs, card readout) — or a combined Sensors reference.</li>
-<li>Links to the <strong>Field Manual</strong> + <strong>Design System</strong>.</li>
-</ul>
-<p><strong>C · Visual showcase</strong> (the beauty beachhead — non-negotiable)</p>
-<ul>
-<li>A <strong>demo workspace/template</strong> users open to see it instantly.</li>
-<li><strong>Screenshots / GIFs</strong> in the README, <strong>dark + light</strong> themes.</li>
-</ul>
-<p><strong>D · Legal / meta</strong></p>
-<ul>
-<li><strong>NOTICE / AUTHORS</strong> (records contributed-Sentinel work released with permission).</li>
-<li><strong>Trading disclaimer</strong> (educational, not financial advice, no warranty) — even for indicators.</li>
-<li><strong>LICENSE</strong> (deferred placeholder until §6 is chosen).</li>
-</ul>
-<p><strong>E · Community scaffolding</strong></p>
-<ul>
-<li><strong>CONTRIBUTING</strong> → the Platform Contract + the <code>port-sentinel-indicator</code> skill (how to add a compliant tool).</li>
-<li><strong>Issue / PR templates</strong>.</li>
-<li><strong>Third-party sensor compliance checklist</strong> (naming law + card + State seam).</li>
-<li><strong>Build verification</strong> — ⚠ <em>not conventional CI.</em> NT compiles ONE assembly and <strong>F5 is authoritative</strong>; headless builds false-clean and produce ghosts (see <a href="../CONTRIBUTING.md">../CONTRIBUTING.md</a> build rules). So "CI" here = the <strong>documented headless-verify recipe + a manual F5 checklist</strong>, not an automated compile gate.</li>
-</ul>
-<hr>
-<h2><span class="hn">8.</span>Next steps</h2>
+<h3 id="p1-definition-of-done-per-bundle-bar-full-community-launch-decided-2026-07-10">P1 Definition of Done — per bundle (bar: FULL community launch, decided 2026-07-10)</h3>
+<p>Each P1 bundle (<strong>Sentinel Skins</strong>, <strong>Sentinel Sensors</strong>) must satisfy <strong>A–E</strong> before release —
+contributor-ready from day one.</p>
+<p><strong>A · Code &amp; compliance</strong>
+- Every shipped tool <strong>F5-compiles clean</strong> (NT is authoritative).
+- Each sensor <strong>fully naming-law compliant</strong> (via the <code>port-sentinel-indicator</code> skill): "Sentinel &lt;Thing&gt;",
+  glass card, label remover, published <code>…State</code> seam. A half-plumbed sensor cannot ship.
+- <strong>Bundle dependency-clean</strong> — Skins references no Bus/Safety; Sensors references no L2 Safety. The
+  downward-only rule (§4) holds at the <em>bundle</em> boundary, not just the file.</p>
+<p><strong>B · Docs</strong>
+- Top-level <strong>README</strong> (what Sentinel Suite is, the two-axis pitch, install).
+- <strong>Install guide</strong> (drop into <code>bin\Custom</code> → F5; NT-version prereq; we ship no NT DLLs).
+- <strong>Per-tool one-pager</strong> each (purpose, inputs, card readout) — or a combined Sensors reference.
+- Links to the <strong>Field Manual</strong> + <strong>Design System</strong>.</p>
+<p><strong>C · Visual showcase</strong> (the beauty beachhead — non-negotiable)
+- A <strong>demo workspace/template</strong> users open to see it instantly.
+- <strong>Screenshots / GIFs</strong> in the README, <strong>dark + light</strong> themes.</p>
+<p><strong>D · Legal / meta</strong>
+- <strong>NOTICE / AUTHORS</strong> (records contributed-Sentinel work released with permission).
+- <strong>Trading disclaimer</strong> (educational, not financial advice, no warranty) — even for indicators.
+- <strong>LICENSE</strong> (deferred placeholder until §6 is chosen).</p>
+<p><strong>E · Community scaffolding</strong>
+- <strong>CONTRIBUTING</strong> → the Platform Contract + the <code>port-sentinel-indicator</code> skill (how to add a compliant tool).
+- <strong>Issue / PR templates</strong>.
+- <strong>Third-party sensor compliance checklist</strong> (naming law + card + State seam).
+- <strong>Build verification</strong> — ⚠ <em>not conventional CI.</em> NT compiles ONE assembly and <strong>F5 is authoritative</strong>;
+  headless builds false-clean and produce ghosts (see <a href="../CLAUDE.md">../CLAUDE.md</a> build rules). So "CI"
+  here = the <strong>documented headless-verify recipe + a manual F5 checklist</strong>, not an automated compile gate.</p>
+<hr />
+<h2 id="8-next-steps">8. Next steps</h2>
 <ol>
-<li><strong>Boundary inventory</strong> — enumerate every Sentinel-owned file, mapped to its rung + layer. The license-agnostic input every downstream step needs. Buildable offline.</li>
-<li><strong>Cut the two P1 bundles</strong> — from the inventory, isolate <strong>Sentinel Skins</strong> (runtime + themes) and <strong>Sentinel Sensors</strong> (runtime + bus + the 8 hero indicators + BarTypes), plus the grab-both <strong>Starter</strong>.</li>
+<li><strong>Boundary inventory</strong> — enumerate every Sentinel-owned file, mapped to its rung + layer. The
+   license-agnostic input every downstream step needs. Buildable offline.</li>
+<li><strong>Cut the two P1 bundles</strong> — from the inventory, isolate <strong>Sentinel Skins</strong> (runtime + themes) and
+   <strong>Sentinel Sensors</strong> (runtime + bus + the 8 hero indicators + BarTypes), plus the grab-both <strong>Starter</strong>.</li>
 <li><strong>Prototype the Core partial-class split</strong> (behind a careful F5) to prove the three-layer floor.</li>
 <li><strong>Draft <code>NOTICE</code> / <code>AUTHORS</code></strong> + choose the monorepo layout.</li>
 <li>✅ <strong>License chosen — MPL-2.0</strong> (§6). Paste the full canonical MPL-2.0 text into <code>LICENSE</code> before publish.</li>
 </ol>
-<h3>✅ P2 ASSEMBLED (2026-07-11) — the Intelligence tier, two bundles</h3>
-<p>Both <strong>LAYER on Sensors</strong> for the runtime (no re-shipped <code>SentinelCore</code>/<code>SentinelSkin</code> → no CS0101), verified <strong>Safety-free</strong>. See <a href="SENTINEL_BOUNDARY_INVENTORY.md">SENTINEL_BOUNDARY_INVENTORY.md</a> §9 for the file lists.</p>
-<ul>
-<li><strong>Sentinel Intelligence</strong> (Rungs 1→4): 5 orthogonal axes (Clock/Participation/Location/MTF/Intermarket) + <strong>Council</strong> + <code>SentinelNewsService</code>. Mtf/Intermarket host <code>SentinelTrend</code> (⇒ needs Sensors). <strong>Eye DEFERRED</strong> (JET engine; Council consumes its seam only, ships without it).</li>
-<li><strong>Sentinel Observatory</strong> (Rungs 2–3): <strong><code>SentinelExcursionRecorder_v2_0_0</code></strong> (clean-room — the private v1_4 with GodTrades21 hosting stripped; Council-only; schema 1.3 unchanged; <strong>headless-verified clean</strong>, awaits an F5) + LogEngine/LogService + Lens + Excursions.</li>
-<li><strong>Provenance:</strong> ⚠ the boundary doc's §6 was WRONG — v1_4 Recorder EMBEDDED GodTrades (not reference-only); fixed by the v2 clean-room. All shipped P2 files are now provenance-clean.</li>
-<li><strong>Open at P2:</strong> Eye clean-room · live write-validation of v2 recorder (market-open Council fires) · demo workspace + screenshots (DoD C) · the Dashboard Excursion-tab → Observatory consolidation (Dashboard is P3).</li>
-</ul>
-<hr>
-<h2><span class="hn">9.</span>Relationship to other docs</h2>
+<h3 id="p2-assembled-2026-07-11-the-intelligence-tier-two-bundles">✅ P2 ASSEMBLED (2026-07-11) — the Intelligence tier, two bundles</h3>
+<p>Both <strong>LAYER on Sensors</strong> for the runtime (no re-shipped <code>SentinelCore</code>/<code>SentinelSkin</code> → no CS0101), verified
+<strong>Safety-free</strong>. See <a href="SENTINEL_BOUNDARY_INVENTORY.md">SENTINEL_BOUNDARY_INVENTORY.md</a> §9 for the file lists.
+- <strong>Sentinel Intelligence</strong> (Rungs 1→4): 5 orthogonal axes (Clock/Participation/Location/MTF/Intermarket) +
+  <strong>Council</strong> + <code>SentinelNewsService</code>. Mtf/Intermarket host <code>SentinelTrend</code> (⇒ needs Sensors). <strong>Eye DEFERRED</strong>
+  (JET engine; Council consumes its seam only, ships without it).
+- <strong>Sentinel Observatory</strong> (Rungs 2–3): <strong><code>SentinelExcursionRecorder_v2_0_0</code></strong> (clean-room — the private v1_4
+  with GodTrades21 hosting stripped; Council-only; schema 1.3 unchanged; <strong>headless-verified clean</strong>, awaits an
+  F5) + LogEngine/LogService + Lens + Excursions.
+- <strong>Provenance:</strong> ⚠ the boundary doc's §6 was WRONG — v1_4 Recorder EMBEDDED GodTrades (not reference-only);
+  fixed by the v2 clean-room. All shipped P2 files are now provenance-clean.
+- <strong>Open at P2:</strong> Eye clean-room · live write-validation of v2 recorder (market-open Council fires) · demo
+  workspace + screenshots (DoD C) · the Dashboard Excursion-tab → Observatory consolidation (Dashboard is P3).</p>
+<hr />
+<h2 id="9-relationship-to-other-docs">9. Relationship to other docs</h2>
 <ul>
 <li><a href="ROADMAP.md">ROADMAP.md</a> — the pipeline map (engineering sequence). This doc is the product map.</li>
-<li><a href="SENTINEL_SHIP_MANIFEST.md">SENTINEL_SHIP_MANIFEST.md</a> — every indicator's hard-deps (SentinelCore + SentinelSkin); the raw material for the boundary inventory.</li>
-<li><a href="SENTINEL_NAMING_FEDERATION.md">SENTINEL_NAMING_FEDERATION.md</a> — the 4-layer naming tell; the heart of the Platform Contract.</li>
-<li><a href="SENTINEL_DESIGN_SYSTEM.md">SENTINEL_DESIGN_SYSTEM.md</a> — the palette/component/State-seam spec (L0 + the publish protocol).</li>
+<li><a href="SENTINEL_SHIP_MANIFEST.md">SENTINEL_SHIP_MANIFEST.md</a> — every indicator's hard-deps (SentinelCore +
+  SentinelSkin); the raw material for the boundary inventory.</li>
+<li><a href="SENTINEL_NAMING_FEDERATION.md">SENTINEL_NAMING_FEDERATION.md</a> — the 4-layer naming tell; the heart of
+  the Platform Contract.</li>
+<li><a href="SENTINEL_DESIGN_SYSTEM.md">SENTINEL_DESIGN_SYSTEM.md</a> — the palette/component/State-seam spec (L0 + the
+  publish protocol).</li>
 <li><a href="SENTINEL_PROCESS_ATLAS.html">SENTINEL_PROCESS_ATLAS.html</a> — the Field Manual (the education foundation).</li>
 </ul>
-<footer><span>Sentinel Suite · <b>Sentinel — Product Ladder &amp; Open-Source Packaging</b></span><span>living document · rendered from Markdown</span></footer>
+<footer><span>Sentinel Suite · <b>Sentinel — Product Ladder & Open-Source Packaging</b></span><span>living document · rendered from Markdown</span></footer>
 </div></body></html>

@@ -56,10 +56,12 @@ red are reserved for **money and direction**, nothing else. Once you see it, you
 
 ## What's inside
 
-Five bundles, each self-contained. Install what you want; ignore the rest.
+**The whole suite is here** — every rung, MPL-2.0. Each bundle is self-contained; install what you
+want and ignore the rest.
 
-> ⚠ **Four of them are read-only and cannot place an order. The fifth, the Deck, trades.**
-> It is a **testers' preview** — see its row below and read its guide before installing it.
+> ⚠ **Most of this is read-only and cannot place an order. Four things trade: the Deck (manual),
+> the Bridge (automated), the Copier (mirrors fills), and the reference strategies.**
+> Read the relevant folder's README before installing any of them, and **start on SIM.**
 
 | Bundle | Rung | What you get |
 |---|---|---|
@@ -68,6 +70,15 @@ Five bundles, each self-contained. Install what you want; ignore the rest.
 | **📡 [Sentinel Sensors](src/sensors/)** | 1 · Intelligence | **8 hero signals** (Trend, ADX, Woodies CCI, VolEnvelope, Compression, Liquidity Walls, God Reversal, WAE) · 13 more (SuperTrend, Regime, Structure, VIDYA, Parabolic SAR…) · **3 bar types** (TBars, TbarsCount, **Flux** — order-flow imbalance) |
 | **🎛️ [Sentinel Deck](src/deck/) — PREVIEW (DEV)** | 5 · Execution | **⚠ PLACES REAL ORDERS.** A manual discretionary order deck: full order types, bracket / breakeven / 7 trailing modes, chart-scoped flatten, an account risk card, and a signal reader that can **arm you or fire for you**. **Unfinished and under test** — auto-fire has never been live-validated. **Start on SIM.** **[Tester's guide](src/deck/Docs/SENTINEL_DECK_TESTING_GUIDE.md)** · **[spec](src/deck/Docs/SENTINEL_DECK_SPEC.md)** |
 | **〰️ [Sentinel Smoothers](src/smoothers/)** | 1 · Beauty × Data | 23 moving averages & filters, clean-room and rebuilt to the suite's card/color language — EMA · HMA · DEMA · TEMA · VWMA · Zero-Lag family · Ehlers · Gaussian · Butterworth · Super Smoother |
+| **📼 [Recorder & Log](src/recorder/)** | 2 · Data | Excursion, candidate and tape recorders + the log engine. Writes every outcome to JSONL over *any* strategy |
+| **🔭 [Observatory](src/observatory/)** | 3 · Data | The Lens over the recorded corpus. **Partial release** — the consolidated surface is still landing |
+| **🏛️ [The Council](src/council/)** | 4 · Intelligence | The confluence arbiter: weights every sensor's seam into one verdict + a conviction score. **Read its README before trusting a verdict** |
+| **🛡️ [Prop-Survival Kit](src/prop-kit/)** | 6 · Execution | Risk limits, trailing drawdown, the consistency governor, kill switch, alerts, news blackouts — the funded-account layer |
+| **🌉 [The Bridge](src/bridge/) — TRADES** | 7 · Execution | **⚠ PLACES REAL ORDERS.** Autopilot that consumes the Council's verdict. It executes a verdict; it does not judge one |
+| **🔀 [The Copier](src/copier/) — TRADES** | 8 · Execution | **⚠ PLACES REAL ORDERS.** Prop-rule-aware multi-account fill mirroring, GC→MGC cross-sizing, manual-assist tickets |
+| **📈 [Strategies](src/strategies/) — TRADES** | — | **⚠ PLACE REAL ORDERS.** Keel (a range-filter reference with a full measurement rig), TrendStrategy, and a bar-type probe |
+| **🔬 [The ML Lab](src/lab/)** | 10 · Data | 60 Python tools: ingest, harness, docs-health, visualisation. **Read its README** — it documents a real methodological limitation in its own analysis |
+| **🧭 [Azimuth](src/azimuth/)** | 10 · Data | Bar types, a tick-resolution engine and parity gates in Python + a Tauri research shell. NinjaTrader is *a* host, not *the* host |
 
 Every tool is naming-law compliant, draws a glass card, and — where it's a signal — publishes a
 `…State` seam. See **[docs/](docs/)** for the full reference.
@@ -124,18 +135,19 @@ Full steps in the **[docs](docs/)**.
 
 ## The Ladder
 
-Sentinel is built as a ladder — every rung stands alone *and* unlocks the next. **Rungs 0–1 are
-released here.** The rest are built and under active development; the docs map the whole thing so you
-can see where it goes.
+Sentinel is built as a ladder — every rung stands alone *and* unlocks the next. **As of August 2026
+every rung is open source.** Start at 0 and climb as far as you want; nothing above you is locked.
 
 | | Rung | | | Rung |
 |--:|:--|---|--:|:--|
-| **0** | Skins & Binds ✅ | | **6** | Prop-Survival Kit |
-| **1** | Sensors & Smoothers ✅ | | **7** | The Bridge |
-| **2** | Recorder & Log | | **8** | The Copier |
-| **3** | Observatory | | **9** | Helm |
-| **4** | The Council | | **10** | The ML Lab |
-| **5** | Deck & Cockpit | | | |
+| **0** | Skins & Binds ✅ | | **6** | Prop-Survival Kit ✅ |
+| **1** | Sensors & Smoothers ✅ | | **7** | The Bridge ✅ |
+| **2** | Recorder & Log ✅ | | **8** | The Copier ✅ |
+| **3** | Observatory ◐ | | **9** | Helm ✅ |
+| **4** | The Council ✅ | | **10** | The ML Lab ✅ |
+| **5** | Deck & Cockpit ✅ | | | |
+
+✅ released · ◐ partial — the Observatory's consolidated surface is still landing.
 
 ---
 

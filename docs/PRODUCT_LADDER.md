@@ -167,6 +167,21 @@ tail on F5 — anchor mid-class and re-verify before building.
 
 ## 7. Release focus & phasing
 
+> ## ✅ SUPERSEDED 2026-08-07 — **THE PHASING IS HISTORY. EVERYTHING SHIPPED.**
+> **P1 released 2026-07-16. P2, P3 and P4 released together on 2026-08-07** (commit `d6c1aea`,
+> 429 files) rather than as three staged phases. **Every rung of the ladder is public, MPL-2.0.**
+> The only things still private are **infrastructure** (hosts, topology, credentials) and **fitted
+> models** (`Roster.conf` / `Model.conf` — a roster is a *result*; the suite ships the mechanism).
+>
+> **Read the table below as the RISK GRADIENT it always was, not as a schedule.** That gradient is
+> still the right way to introduce the suite to a newcomer — start them at zero order risk and let
+> them climb — and it is exactly how the public README and the landing page are ordered. What is no
+> longer true is the claim that the later phases are unreleased.
+>
+> ⚠ One nuance the phase table cannot express: **rung 3 (Observatory) shipped PARTIAL** — the Lens
+> is public, the consolidated surface is not finished. Both the README and the Pages ladder say
+> `Partial`; keep them honest if that changes.
+
 Because these are **adoption tiers, not price tiers** (§6), "focus" = *what we release first and point
 newcomers at.* The rungs collapse into **4 release phases on a risk gradient:**
 
@@ -235,7 +250,7 @@ contributor-ready from day one.
 - **Issue / PR templates**.
 - **Third-party sensor compliance checklist** (naming law + card + State seam).
 - **Build verification** — ⚠ *not conventional CI.* NT compiles ONE assembly and **F5 is authoritative**;
-  headless builds false-clean and produce ghosts (see [../CONTRIBUTING.md](../CONTRIBUTING.md) build rules). So "CI"
+  headless builds false-clean and produce ghosts (see [../CLAUDE.md](../CLAUDE.md) build rules). So "CI"
   here = the **documented headless-verify recipe + a manual F5 checklist**, not an automated compile gate.
 
 ---
