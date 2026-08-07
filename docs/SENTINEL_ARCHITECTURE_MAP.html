@@ -207,12 +207,12 @@ other half honestly. Companion page: <a href="SENTINEL_RUNTIME_TOPOLOGY.html">Ru
       <div class="box"><div class="bt">Deck <span class="chip live">live</span></div>
         <div class="bs">On-chart manual trader + SIGNAL ARM. Public testers’ preview shipped.</div></div>
       <div class="box"><div class="bt">Grafana · <code>:3000</code> <span class="chip live">live</span></div>
-        <div class="bs">4 boards — trades · health · docs · node01. Ops, not research.</div></div>
+        <div class="bs">4 boards — trades · health · docs · legacy-node. Ops, not research.</div></div>
       <div class="box"><div class="bt">Streamlit · <code>:8501</code> <span class="chip live">live</span></div>
         <div class="bs">Observatory + Explorer + Tick-Paths + Council-Paths. Research, not ops.</div></div>
       <div class="box acc"><div class="bt">Claude Code + <code>nt8bridge</code> <span class="chip live">live</span></div>
         <div class="bs">NT’s <b>own</b> compiler, headless, in ~15&nbsp;s with real Roslyn errors. <code>deploy</code> hot-reloads running instances.</div></div>
-      <div class="box"><div class="bt">SSH / Tailscale → node01 <span class="chip live">live</span></div>
+      <div class="box"><div class="bt">SSH / Tailscale → legacy-node <span class="chip live">live</span></div>
         <div class="bs">Remote bake worker driven over PowerShell; lights-out replay baking.</div></div>
     </div>
   </div>
@@ -352,7 +352,7 @@ other half honestly. Companion page: <a href="SENTINEL_RUNTIME_TOPOLOGY.html">Ru
       <div class="box"><div class="bt">Services <span class="chip live">live</span></div>
         <div class="bs">State · Log · LogEngine · Alert · News · Risk · Arc (fleet) · Binds · Lens (analytics) · Skin.</div></div>
       <div class="box"><div class="bt">SentinelSkin + drawing framework <span class="chip live">live</span></div>
-        <div class="bs">Six themes behind one switch; glass cards; the label remover; the <code>cards.off</code> render kill switch that ended the node01 UCEERR floods.</div></div>
+        <div class="bs">Six themes behind one switch; glass cards; the label remover; the <code>cards.off</code> render kill switch that ended the legacy-node UCEERR floods.</div></div>
       <div class="box acc"><div class="bt">Beacon / generation guard <span class="chip live">live</span></div>
         <div class="bs">An F5 orphans a bar-type seam onto a dead AppDomain. <code>Beacon</code>/<code>BeaconForeign</code> let a consumer say <b>DECOUPLED — restart NT</b> instead of “absent”.</div></div>
     </div>
@@ -455,7 +455,7 @@ other half honestly. Companion page: <a href="SENTINEL_RUNTIME_TOPOLOGY.html">Ru
 
       <div class="box"><div class="bt">Health, docs &amp; faults <span class="chip live">8 files</span></div>
         <div class="bs"><code>health\probe.py</code> NT + suite health · <code>corpus_probe.py</code> is the
-          <i>corpus</i> trustworthy · <code>node01_probe.py</code> read-only over SSH ·
+          <i>corpus</i> trustworthy · <code>legacy-node_probe.py</code> read-only over SSH ·
           <code>docs\audit.py</code> drift/link/version audit · <code>docs\facts.py</code> single-sources volatile
           numbers as <code>{{tokens}}</code> · <code>ident_check.py</code> does every identifier a doc names still
           exist · <code>grafana\build_*_dashboard.py</code> boards are <b>generated, not hand-edited JSON</b> ·
@@ -485,9 +485,9 @@ other half honestly. Companion page: <a href="SENTINEL_RUNTIME_TOPOLOGY.html">Ru
     <div class="grid tight">
       <div class="box"><div class="bt"><code>sentinel.log</code> <span class="chip live">live</span></div><div class="bs">6 rotation generations. Read the log, not a screenshot.</div></div>
       <div class="box acc"><div class="bt"><code>sentinel.db</code> <span class="chip live">live</span></div><div class="bs">SQLite, WAL, 30&nbsp;s busy timeout. ⏭ single-node → Postgres.</div></div>
-      <div class="box"><div class="bt">Grafana <code>:3000</code> <span class="chip live">4 boards</span></div><div class="bs">trades · health · docs · node01. Tron chrome via native <code>extraThemes</code>.</div></div>
+      <div class="box"><div class="bt">Grafana <code>:3000</code> <span class="chip live">4 boards</span></div><div class="bs">trades · health · docs · legacy-node. Tron chrome via native <code>extraThemes</code>.</div></div>
       <div class="box"><div class="bt">Streamlit <code>:8501</code> <span class="chip live">live</span></div><div class="bs">The research surface.</div></div>
-      <div class="box"><div class="bt">Probes <code>:8502</code> <code>:8504</code> <code>:8505</code> <span class="chip live">live</span></div><div class="bs">health · node01 · docs-audit, each single-instance-guarded.</div></div>
+      <div class="box"><div class="bt">Probes <code>:8502</code> <code>:8504</code> <code>:8505</code> <span class="chip live">live</span></div><div class="bs">health · legacy-node · docs-audit, each single-instance-guarded.</div></div>
       <div class="box warnb"><div class="bt">Zero vs dead <span class="chip live">enforced</span></div><div class="bs">Headline counts read the <i>heartbeat</i> table, so <b>0 means “measured zero just now”</b> — an empty findings table would read 0 for a dead probe.</div></div>
     </div>
   </div>
@@ -498,7 +498,7 @@ other half honestly. Companion page: <a href="SENTINEL_RUNTIME_TOPOLOGY.html">Ru
     <div class="grid tight">
       <div class="box"><div class="bt">NinjaTrader 8.1.7.2 <span class="chip live">live</span></div><div class="bs">One assembly, whole-tree compile — one broken file blocks everything.</div></div>
       <div class="box acc"><div class="bt"><code>cli-nt-bridge</code> <span class="chip live">v1.1.1</span></div><div class="bs">NT’s own compiler headless. Our upstream PR merged.</div></div>
-      <div class="box"><div class="bt">node01 bake worker <span class="chip live">live</span></div><div class="bs">Tailscale · Tradovate replay feed · lights-out via <code>ConnectOnStartup</code> + autorun + autologin.</div></div>
+      <div class="box"><div class="bt">legacy-node bake worker <span class="chip live">live</span></div><div class="bs">Tailscale · Tradovate replay feed · lights-out via <code>ConnectOnStartup</code> + autorun + autologin.</div></div>
       <div class="box"><div class="bt">Conductor v0.1.0h <span class="chip live">live</span></div><div class="bs">Replay <b>transport</b>: seek · queue · checkpoint-resume · autorun. Seven NT/logic bugs found by driving it.</div></div>
       <div class="box"><div class="bt">Quartermaster <span class="chip live">live</span></div><div class="bs"><code>.nrd</code> supply: procure → verify → catalog → provision. 90-day rolling feed floor; deep history from the extracted archive.</div></div>
       <div class="box"><div class="bt">Snapshot ladder <span class="chip live">live</span></div><div class="bs">Tiered WORM snapshots + scheduled tasks. Guarantees integrity, not correctness.</div></div>

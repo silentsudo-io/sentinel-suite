@@ -151,9 +151,39 @@ def strip_mpl_header(text: str) -> str:
     return "\n".join(lines[end + 1:])
 
 
-def normalise(text: str) -> list[str]:
+# ── THIRD PUBLISH TRANSFORM: the nickname scrub ─────────────────────────────────
+# The published copy has operator-private machine nicknames rewritten to generic ones
+# (tools/scrub.py). Like the MPL header and the generated region, that is an INTENDED
+# difference, so it must be normalised away here or every scrubbed file reports as drift
+# forever -- and a report that is wrong on purpose is one people stop reading.
+#
+# Applied to the LOCAL side only: local still says the real name, published already says
+# the generic one, so scrubbing local brings the two into the same coordinate system.
+# A missing map makes this a no-op and scrub.py says so on stderr.
+try:
+    from scrub import load_map as _load_scrub, scrub as _apply_scrub
+except ImportError:                                     # tool used standalone
+    def _load_scrub(*_a, **_k):
+        return []
+
+    def _apply_scrub(t, _r=None):
+        return t, {}
+
+_SCRUB_RULES = None
+
+
+def _scrub_rules():
+    global _SCRUB_RULES
+    if _SCRUB_RULES is None:
+        _SCRUB_RULES = _load_scrub()
+    return _SCRUB_RULES
+
+
+def normalise(text: str, local_side: bool = False) -> list[str]:
     text = text.replace("\r\n", "\n").replace("\r", "\n")
     text = strip_mpl_header(strip_region(text))
+    if local_side:
+        text, _ = _apply_scrub(text, _scrub_rules())
     return [ln.rstrip() for ln in text.rstrip().split("\n")]
 
 
@@ -191,10 +221,9 @@ def _load_facts(local_root: Path) -> dict:
         return {}
 
 
-def normalise_doc(text: str, facts: dict) -> list[str]:
+def normalise_doc(text: str, facts: dict, local_side: bool = False) -> list[str]:
     text = text.replace("\r\n", "\n").replace("\r", "\n")
     text = FRONTMATTER_RE.sub("", text, count=1)
-
     stash: list[str] = []
 
     def hide(m):
@@ -210,6 +239,13 @@ def normalise_doc(text: str, facts: dict) -> list[str]:
     # phantom drift on a file that had just been published.
     text = CLAUDEMD_RE.sub(
         lambda m: "`CONTRIBUTING.md`" if m.group(0).startswith("`") else "CONTRIBUTING.md", text)
+    # ⚠ SCRUB LAST, AFTER TOKEN SUBSTITUTION — order is load-bearing here, not stylistic.
+    # The first cut scrubbed at the top of this function and a mention still drifted: the line
+    # was a {{ports_table}} token, so substitution ran AFTERWARDS and put the private name
+    # straight back from facts.json. A transform that runs before a substitution does not
+    # survive it. (The value itself is fixed at source in facts.py; this is the belt.)
+    if local_side:
+        text, _ = _apply_scrub(text, _scrub_rules())
     # prose reflows freely; compare on content, not on where a line happened to wrap
     return [ln.rstrip() for ln in text.rstrip().split("\n") if ln.strip()]
 
@@ -319,7 +355,8 @@ def main() -> int:
                 # and have no private counterpart. Silence beats a false alarm here.
                 continue
             a = normalise_doc(pub.read_text(encoding="utf-8", errors="replace"), facts)
-            b = normalise_doc(loc.read_text(encoding="utf-8", errors="replace"), facts)
+            b = normalise_doc(loc.read_text(encoding="utf-8", errors="replace"), facts,
+                              local_side=True)
             if args.diff and pub.name == args.diff:
                 print("\n".join(difflib.unified_diff(
                     a, b, fromfile=f"published/{pub.name}", tofile=f"local/{pub.name}",
@@ -347,7 +384,7 @@ def main() -> int:
             continue
 
         a = normalise(raw)
-        b = normalise(loc.read_text(encoding="utf-8", errors="replace"))
+        b = normalise(loc.read_text(encoding="utf-8", errors="replace"), local_side=True)
 
         if args.diff and pub.name == args.diff:
             print("\n".join(difflib.unified_diff(

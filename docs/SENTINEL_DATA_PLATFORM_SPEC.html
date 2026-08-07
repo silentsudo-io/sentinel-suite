@@ -643,15 +643,15 @@ guard-port singleton; wired into <code>sentinel-data.bat</code> before the <code
 <ul>
 <li><strong>Corpus-integrity probe</strong> — <code>Lab\health\corpus_probe.py</code> (guard <strong>:8503</strong>): reconciles the recorded corpus
   (Ledger ↔ rows ↔ sidecars), schema hygiene, replay-leak → <code>corpus_integrity</code>/<code>corpus_folder</code>/<code>corpus_events</code>.</li>
-<li><strong>node01 remote probe</strong> — <code>Lab\health\node01_probe.py</code> (guard <strong>:8504</strong>): SSH-polls the remote bake worker
-  (Tailscale <code>worker1</code>) → <code>node01_health</code>/<code>node01_event</code> → board <strong><code>Sentinel · Node01</code></strong>
-  (localhost:3000/d/sentinel-node01). Surfaces NT render-thread death / bake stall / unreachable. [[distributed-backtest]]</li>
+<li><strong>legacy-node remote probe</strong> — <code>Lab\health\legacy-node_probe.py</code> (guard <strong>:8504</strong>): SSH-polls the remote bake worker
+  (Tailscale <code>worker1</code>) → <code>legacy-node_health</code>/<code>legacy-node_event</code> → board <strong><code>Sentinel · legacy-node</code></strong>
+  (localhost:3000/d/sentinel-legacy-node). Surfaces NT render-thread death / bake stall / unreachable. [[distributed-backtest]]</li>
 <li><strong>Docs-health audit</strong> — <code>Lab\docs\audit.py</code> (guard <strong>:8505</strong>, 15-min): scans the docs for drift (broken links,
   stale HTML, contract version-drift, dangling tokens, orphans) → <code>docs_health</code>/<code>docs_finding</code> → board
   <strong><code>Sentinel · Docs</code></strong> (localhost:3000/d/sentinel-docs); <code>--errors-only</code> is a git pre-commit gate. [[docs-health]]</li>
 </ul>
-<p><strong>Guard-port registry:</strong> 8501 Streamlit explorer · 8502 Health probe · 8503 Corpus probe · 8504 node01 probe · 8505 Docs-health probe · 3000 Grafana. <strong>Four boards, one <code>sentinel.db</code>:</strong> <code>sentinel-trades</code> · <code>sentinel-health</code>
-· <code>sentinel-node01</code> · <code>sentinel-docs</code>.</p>
+<p><strong>Guard-port registry:</strong> 8501 Streamlit explorer · 8502 Health probe · 8503 Corpus probe · 8504 legacy-node probe · 8505 Docs-health probe · 3000 Grafana. <strong>Four boards, one <code>sentinel.db</code>:</strong> <code>sentinel-trades</code> · <code>sentinel-health</code>
+· <code>sentinel-legacy-node</code> · <code>sentinel-docs</code>.</p>
 <hr />
 <h2 id="13-the-corpus-acceptance-gate-2026-07-24-are-the-rows-even-usable">13. The corpus ACCEPTANCE GATE (2026-07-24) — "are the rows even usable?"</h2>
 <p>§10–§12 answer <em>is the platform alive</em>. This answers a different and harder question: <strong>is what it just recorded

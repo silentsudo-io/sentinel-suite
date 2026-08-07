@@ -1,0 +1,53 @@
+#!/bin/sh
+# Sentinel publish gate — git pre-commit hook for the PUBLIC repo.
+#
+# Install:   cp tools/pre-commit .git/hooks/pre-commit && chmod +x .git/hooks/pre-commit
+# Bypass:    git commit --no-verify        (do this only when you have READ the finding)
+#
+# WHY HERE AND NOT ONLY IN THE LAB. The Lab-side scanner runs over the private tree and tells
+# you what is in it. This one runs at the only boundary that actually matters: the moment
+# content enters a repo that has a public remote. A gate one step back from the boundary
+# protects everything except the path someone actually takes.
+#
+# It scans the STAGED CONTENT, not the working tree — the working tree is not what gets
+# committed, and a scanner that checks the wrong artifact is the "verified and still lying"
+# failure this project has written down six times.
+#
+# Fails OPEN if python or the scanner is missing: a developer without the Lab checked out must
+# still be able to commit a README. The allowlist (nothing enters src/ that a human did not
+# put there) remains the real control; this is the backstop.
+
+set -e
+
+SCAN="${SENTINEL_SECRETSCAN:-$HOME/Documents/NinjaTrader 8/Sentinel/Lab/docs/secretscan.py}"
+PY="${SENTINEL_PY:-python}"
+
+if [ ! -f "$SCAN" ]; then
+  echo "pre-commit: secretscan.py not found — skipping (set SENTINEL_SECRETSCAN to enable)" >&2
+  exit 0
+fi
+if ! command -v "$PY" >/dev/null 2>&1; then
+  echo "pre-commit: no python on PATH — skipping" >&2
+  exit 0
+fi
+
+STAGED=$(git diff --cached --name-only --diff-filter=ACM)
+[ -z "$STAGED" ] && exit 0
+
+TMP=$(mktemp -d)
+trap 'rm -rf "$TMP"' EXIT
+
+# Materialise staged content (NOT the working tree) into a scratch tree, then gate that.
+echo "$STAGED" | while IFS= read -r f; do
+  [ -z "$f" ] && continue
+  mkdir -p "$TMP/$(dirname "$f")"
+  git show ":$f" > "$TMP/$f" 2>/dev/null || true
+done
+
+if ! "$PY" "$SCAN" --gate "$TMP"; then
+  echo "" >&2
+  echo "⛔ COMMIT REFUSED — staged content carries a PUBLIC-zone secret." >&2
+  echo "   Fix the file, or classify it in Lab/docs/zones.conf if it must never ship." >&2
+  echo "   Override only after reading the finding:  git commit --no-verify" >&2
+  exit 1
+fi

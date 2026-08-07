@@ -234,7 +234,7 @@ namespace NinjaTrader.NinjaScript.AddOns.Sentinel
         /// <summary>Global card-render kill. FALSE when <Documents>\NinjaTrader 8\Sentinel\cards.off exists —
         /// every glass card + plot-skin primitive draws NOTHING (indicators still compute + publish their State
         /// seams + write the corpus; only the human-facing rendering is suppressed). For headless / bake / test
-        /// charts where the render thread is a liability (see node01 UCEERR flood). Polled ≤2s in MaybeRefreshTheme
+        /// charts where the render thread is a liability (see legacy-node UCEERR flood). Polled ≤2s in MaybeRefreshTheme
         /// → live toggle. Mirrors the existing Sentinel\layout.off + theme.txt file switches.</summary>
         public static volatile bool CardsEnabled = true;
         public static void SetTheme(Theme t)
@@ -461,7 +461,7 @@ namespace NinjaTrader.NinjaScript.AddOns.Sentinel
                 // v1.1 (2026-07-25) — BIND THE RENDER TARGET **BEFORE** the cards-off early-out.
                 // This used to `return` while _rt was still null, so any caller that draws DIRECTLY to the
                 // RenderTarget but sources its brush from B() got `new SolidColorBrush(null, c)` -> a
-                // NullReferenceException on every frame. MEASURED on node01 (the only box carrying
+                // NullReferenceException on every frame. MEASURED on legacy-node (the only box carrying
                 // Sentinel\cards.off): VolEnvelope's forward cone threw 4x within 5s of every chart load.
                 // Binding here costs nothing when cards are off (brushes are created lazily, on demand) and
                 // makes B() safe for every present and future direct-draw caller. Drawing is still fully

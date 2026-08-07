@@ -23,3 +23,14 @@ dist/
 # Python bytecode from tools/
 __pycache__/
 *.pyc
+
+# ── Operator-specific config — BELT AND BRACES, NOT THE CONTROL ────────────────────
+# The real control is the allowlist: nothing enters src/ that a human did not put there,
+# and tools/pre-commit gates staged content against Lab\docs\secretscan.py. These lines
+# exist only so a local `*.conf` from the .example templates cannot be added by reflex.
+# ⛔ Do NOT start trusting this list. gitignore cannot see a secret INSIDE a file you
+# meant to publish, which is this project's actual exposure shape.
+private.conf
+fleet.conf
+*.secret
+.secrets/

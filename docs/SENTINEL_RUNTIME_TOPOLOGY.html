@@ -137,7 +137,7 @@ on a one-writer file. Companion page: <a href="SENTINEL_ARCHITECTURE_MAP.html">�
 <div class="meta">
   <span class="s"><b>Processes</b> 1 NT + 6 daemons</span>
   <span class="s"><b>Ports</b> 5</span>
-  <span class="s"><b>Boxes</b> 2 (main + node01)</span>
+  <span class="s"><b>Boxes</b> 2 (main + legacy-node)</span>
   <span class="s"><b>Persistence</b> files → SQLite</span>
   <span class="s">Core v1.45.0 · Council v1.11.0</span>
 </div>
@@ -330,7 +330,7 @@ that loses power resumes from a checkpoint file.</p>
   <!-- consumers -->
   <g class="n" transform="translate(300,366)"><rect width="245" height="58" rx="9"/>
     <text class="t" x="12" y="21">Grafana · :3000</text>
-    <text class="s" x="12" y="38">trades · health · docs · node01</text>
+    <text class="s" x="12" y="38">trades · health · docs · legacy-node</text>
     <text class="s" x="12" y="52">OPS — dashboards are generated</text></g>
   <g class="n" transform="translate(575,366)"><rect width="245" height="58" rx="9"/>
     <text class="t" x="12" y="21">Streamlit · :8501</text>
@@ -348,9 +348,9 @@ that loses power resumes from a checkpoint file.</p>
   <path class="e d" d="M982,200 L982,364"/>
   <text class="el" x="988" y="250">bypasses the DB</text>
 
-  <!-- node01 -->
+  <!-- legacy-node -->
   <g class="grp"><rect x="40" y="452" width="1040" height="86" rx="13"/>
-    <text class="gt" x="56" y="444">③ NODE01 — REMOTE BAKE WORKER (TAILSCALE)</text></g>
+    <text class="gt" x="56" y="444">③ legacy-node — REMOTE BAKE WORKER (TAILSCALE)</text></g>
   <g class="n" transform="translate(58,468)"><rect width="240" height="54" rx="9"/>
     <text class="t" x="12" y="21">NT + Conductor + recorders</text>
     <text class="s" x="12" y="38">autologin → autorun → resume</text></g>
@@ -361,7 +361,7 @@ that loses power resumes from a checkpoint file.</p>
     <text class="t" x="12" y="21">replay_sync.py</text>
     <text class="s" x="12" y="38">rule-based bake-set sync → compile</text></g>
   <g class="n up" transform="translate(808,468)"><rect width="254" height="54" rx="9"/>
-    <text class="t" x="12" y="21">node01_probe.py · :8504</text>
+    <text class="t" x="12" y="21">legacy-node_probe.py · :8504</text>
     <text class="s" x="12" y="38">READ-ONLY over SSH → the same DB</text></g>
 
   <path class="e" d="M298,495 L316,495"/>
@@ -370,7 +370,7 @@ that loses power resumes from a checkpoint file.</p>
 <div class="dcap"><b>Solid arrow = a write or a tail.</b> <b>Dashed = a read that crosses a machine or skips the
 DB.</b> Note the two deliberate DB bypasses: the <b>harness</b> works from raw CSV so it can never inherit NT's
 mistakes, and the <b>analysis CLIs</b> can read sidecars directly — an expedient, explicitly not the architecture.
-<b>One edge is omitted for legibility:</b> <code>node01_probe.py</code> writes into the <i>same</i>
+<b>One edge is omitted for legibility:</b> <code>legacy-node_probe.py</code> writes into the <i>same</i>
 <code>sentinel.db</code> as the local probes — that is the only thing crossing back from the remote box.</div>
 </div>
 
@@ -388,7 +388,7 @@ mistakes, and the <b>analysis CLIs</b> can read sidecars directly — an expedie
     <tr><td><code>probe.py --watch</code></td><td><span class="tag py">daemon</span> :8502</td><td>Samples NT + suite health (incl. swallowed Lab faults) into the DB every cycle. Writes a heartbeat row so <b>0 means “measured zero just now”</b>, never “dead probe”.</td></tr>
     <tr><td><code>corpus_probe.py</code></td><td><span class="tag py">daemon</span></td><td>Audits whether the recorded corpus is <i>trustworthy</i> — completeness, schema, vote coverage — as opposed to merely present.</td></tr>
     <tr><td><code>docs\audit.py</code></td><td><span class="tag py">daemon</span> :8505</td><td>Docs drift: broken links, stale HTML siblings, contract-version drift, dangling <code>{{tokens}}</code>, orphans. Gates commits via a pre-commit hook.</td></tr>
-    <tr><td><code>node01_probe.py</code></td><td><span class="tag py">daemon</span> :8504</td><td>One read-only PowerShell metrics snapshot per cycle over SSH. Never touches NT on the remote box.</td></tr>
+    <tr><td><code>legacy-node_probe.py</code></td><td><span class="tag py">daemon</span> :8504</td><td>One read-only PowerShell metrics snapshot per cycle over SSH. Never touches NT on the remote box.</td></tr>
     <tr><td>Streamlit</td><td><span class="tag py">server</span> :8501</td><td>The research surface — Observatory (honesty ladder), Explorer, Tick-Paths, Council-Paths. Pages import the CLIs so numbers cannot drift between the two.</td></tr>
     <tr><td>Grafana</td><td><span class="tag ex">server</span> :3000</td><td>Ops boards over the SQLite datasource. Dashboard JSON is <b>generated</b> by <code>build_*_dashboard.py</code>, never hand-edited.</td></tr>
     <tr><td><code>snapshot.py</code></td><td><span class="tag py">task</span></td><td>Tiered WORM corpus snapshots, validate-before-destruct. Two scheduled tasks. Guarantees integrity — not correctness.</td></tr>
@@ -430,7 +430,7 @@ the tree” is not a category that exists here.</p>
     <tr><td>F5 vs restart</td><td>F5 recompiles and reloads. It does <b>not</b> reload a chart's sticky bar type, and it orphans bar-type seams. <b>Bars-type work ⇒ full NT restart.</b> <code>deploy</code> hot-reloads under a running instance; a plain file write does not.</td></tr>
     <tr><td>Version forks</td><td>Namespace + class name are an indicator's serialization identity. A new version is a <i>different tool</i>: remove the old instance from the chart first, or two of them collide on one scope.</td></tr>
     <tr><td>Realtime gate</td><td><code>UpdatedUtc</code> stamps wall-clock even during replay, so a freshness check cannot tell replay from live. Anything that records gates on <code>State.Realtime</code>.</td></tr>
-    <tr><td class="mono">:3000 · :8501 · :8502 · :8504 · :8505</td><td>Grafana · Streamlit · health probe · node01 probe · docs audit. Each daemon binds its port as its own single-instance guard.</td></tr>
+    <tr><td class="mono">:3000 · :8501 · :8502 · :8504 · :8505</td><td>Grafana · Streamlit · health probe · legacy-node probe · docs audit. Each daemon binds its port as its own single-instance guard.</td></tr>
   </tbody>
 </table></div>
 

@@ -261,15 +261,15 @@ guard-port singleton; wired into `sentinel-data.bat` before the `:8501` guard):
 
 - **Corpus-integrity probe** — `Lab\health\corpus_probe.py` (guard **:8503**): reconciles the recorded corpus
   (Ledger ↔ rows ↔ sidecars), schema hygiene, replay-leak → `corpus_integrity`/`corpus_folder`/`corpus_events`.
-- **node01 remote probe** — `Lab\health\node01_probe.py` (guard **:8504**): SSH-polls the remote bake worker
-  (Tailscale `worker1`) → `node01_health`/`node01_event` → board **`Sentinel · Node01`**
-  (localhost:3000/d/sentinel-node01). Surfaces NT render-thread death / bake stall / unreachable. [[distributed-backtest]]
+- **legacy-node remote probe** — `Lab\health\legacy-node_probe.py` (guard **:8504**): SSH-polls the remote bake worker
+  (Tailscale `worker1`) → `legacy-node_health`/`legacy-node_event` → board **`Sentinel · legacy-node`**
+  (localhost:3000/d/sentinel-legacy-node). Surfaces NT render-thread death / bake stall / unreachable. [[distributed-backtest]]
 - **Docs-health audit** — `Lab\docs\audit.py` (guard **:8505**, 15-min): scans the docs for drift (broken links,
   stale HTML, contract version-drift, dangling tokens, orphans) → `docs_health`/`docs_finding` → board
   **`Sentinel · Docs`** (localhost:3000/d/sentinel-docs); `--errors-only` is a git pre-commit gate. [[docs-health]]
 
-**Guard-port registry:** 8501 Streamlit explorer · 8502 Health probe · 8503 Corpus probe · 8504 node01 probe · 8505 Docs-health probe · 3000 Grafana. **Four boards, one `sentinel.db`:** `sentinel-trades` · `sentinel-health`
-· `sentinel-node01` · `sentinel-docs`.
+**Guard-port registry:** 8501 Streamlit explorer · 8502 Health probe · 8503 Corpus probe · 8504 legacy-node probe · 8505 Docs-health probe · 3000 Grafana. **Four boards, one `sentinel.db`:** `sentinel-trades` · `sentinel-health`
+· `sentinel-legacy-node` · `sentinel-docs`.
 
 ---
 

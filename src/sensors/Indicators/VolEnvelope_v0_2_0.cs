@@ -437,7 +437,7 @@ namespace NinjaTrader.NinjaScript.Indicators.Sentinel.Sensors
 			// v0.2.1 (2026-07-25) — honour the cards.off render kill switch. The cone draws DIRECTLY to the
 			// RenderTarget (a filled geometry, not a Painter primitive), so it does NOT inherit the Painter's
 			// per-method `_off` guard, and it was the ONE tool in the tree still drawing while cards were off.
-			// That is also why it threw a NullReferenceException every frame on node01: Begin() returned before
+			// That is also why it threw a NullReferenceException every frame on legacy-node: Begin() returned before
 			// binding _rt, so B() built a brush on a null target. Painter now binds _rt regardless, and this
 			// skips the work entirely on a bake node. RENDER PATH ONLY — the ENV vote comes from OnBarUpdate
 			// and was never affected.
@@ -666,4 +666,3 @@ namespace NinjaTrader.NinjaScript.Indicators.Sentinel.Sensors
 		}
 	}
 }
-
