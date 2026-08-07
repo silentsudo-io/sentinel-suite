@@ -159,6 +159,11 @@ Start with the two visual guides — the
 **[Runtime Topology](https://silentsudo-io.github.io/sentinel-suite/docs/SENTINEL_RUNTIME_TOPOLOGY.html)**
 (what runs, and who owns each artifact).
 
+**Every published artifact has a generated reference page** — identity, version, the full changelog
+the file carries about itself, which `…State` seams it publishes or consumes, and what depends on it:
+**[the artifact reference](https://silentsudo-io.github.io/sentinel-suite/docs/reference/)**
+(229 pages, index computed from the source — so it cannot drift).
+
 The full canon lives in **[docs/](docs/)** — the design system, the naming law, the field manual, the
 dataset dictionary, and a spec for every tool.
 
