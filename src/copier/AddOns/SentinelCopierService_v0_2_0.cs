@@ -7,8 +7,8 @@
 // ─────────────────────────────────────────────────────────────────────────────
 // ═════════════════════════════════════════════════════════════════════════════
 //  SentinelCopierService — headless multi-account trade copier (NT8 AddOn)
-//  File: SentinelCopierService_v0_1_0.cs
-//  Service version: v0.1.0   (SKELETON — compiles + structured; live paths marked VALIDATE)
+//  File: SentinelCopierService_v0_2_0.cs
+//  Service version: v0.2.0   (SKELETON — compiles + structured; live paths marked VALIDATE)
 // ─────────────────────────────────────────────────────────────────────────────
 //  WHAT THIS IS  (part of the "Sentinel Suite"; see Docs/ROADMAP.md)
 //    A headless, always-on AddOn service — SAME architecture as MAECaptureService:
@@ -79,6 +79,27 @@
 //  CHANGELOG
 //    (in-place, 2026-07-25) — RECORDED CATCHES: 5 empty `catch {}` -> SentinelCore.Swallow (Core >= v1.41.0).
 //             Behaviour identical; a swallowed fault on the mirror path is now counted and logged.
+//    v0.2.0 — COPY MODE + THE POSITION RECONCILER. (fork of v0.1.0h; v0.1.0 frozen to
+//             bin\_archive\copier-v0_1_0-superseded-2026-08-09\ so two singletons cannot both run.)
+//             • CopyMode {Fill,Order} per follower, default Fill — an axis INDEPENDENT of
+//               FollowerMode {Auto,Manual}: Copy Mode is WHAT we mirror, FollowerMode is HOW it
+//               reaches the follower. Order+Manual is a real combination.
+//             • Copy.conf field 5, APPENDED not inserted: a v0.1.0 four-field file still loads and
+//               defaults to Fill. An UNRECOGNISED value logs and stays Fill — a config we cannot
+//               read is one the operator believes says something else.
+//             • ⛔ ORDER MODE FAILS CLOSED. Not implemented in v0.2.0, so an Order-mode follower is
+//               REFUSED (at Subscribe AND again in MirrorToFollower, so a reload cannot sneak one
+//               onto the Fill path) rather than silently mirrored on fills. A copier that works but
+//               not the way it was configured, saying nothing, is the worse outcome.
+//             • POSITION RECONCILER, every 30s, for BOTH modes: follower net vs leader net × ratio
+//               × multiplier, per mapped instrument. Fill mode drifts too — a rejected mirror, a
+//               partial, a hand-placed follower trade, a restart mid-flight — and nothing noticed.
+//               ⭐ Alerts only after TWO consecutive disagreements: a mirror in flight IS a
+//               divergence for a moment, and an alert that fires on healthy operation gets ignored.
+//               ⛔ REPORTS, NEVER CORRECTS — a wrong "fix" on a real position costs far more than a
+//               delta the operator is told about (cf. the unmanaged-restart orphan-cancel lesson).
+//             VALIDATE on SIM: Position.Quantity/MarketPosition freshness inside the timer callback,
+//             and that the streak logic does not alarm during normal mirror latency.
 //    v0.1.0h — (in-place) COPY-SLIPPAGE capture: also subscribe enabled AUTO followers' ExecutionUpdate
 //             (OnFollowerExecution) to log each mirror FILL to SentinelCore.Ledger.Fill with intended =
 //             the LEADER fill price we replicated (correlated by mirror order name at submit) vs the
@@ -150,6 +171,18 @@ namespace NinjaTrader.NinjaScript.AddOns.SentinelCopier
     // instead of submitting — for prop firms that bar automated copy-trading (TPT eval/PRO, Bulenox).
     public enum FollowerMode { Auto, Manual }
 
+    // ── COPY MODE — WHAT WE MIRROR. An axis independent of FollowerMode, which is HOW the mirror
+    //    reaches the follower (submit vs assist ticket). Order+Manual is a real combination: mirror
+    //    the leader's working order as a ticket for a firm you would rather hand-place into.
+    //
+    //  Fill  (default) — mirror EXECUTIONS. Only ever copies things that actually happened, so a
+    //        follower can never hold a position the leader never took. Cannot mirror a resting order.
+    //  Order — mirror ORDER events. Faster off the mark and mirrors working orders, but it copies
+    //        INTENT: if the leader's limit never fills and the follower's does, they diverge and
+    //        nothing in the fill path will ever notice. That is why Order mode is inseparable from
+    //        the position reconciler below — an Order-mode copier without one looks fine for weeks.
+    public enum CopyMode { Fill, Order }
+
     // one entry in a follower's instrument map: leader symbol → target symbol + size ratio.
     // e.g. GC → { MGC, 10 }  (1 GC ≈ 10 MGC); size = leaderQty × ratio × follower.Multiplier.
     public sealed class InstrumentMapEntry
@@ -163,6 +196,7 @@ namespace NinjaTrader.NinjaScript.AddOns.SentinelCopier
         public string AccountName;
         public bool   Enabled = true;
         public FollowerMode Mode = FollowerMode.Auto;   // Auto = submit orders; Manual = emit assist ticket
+        public CopyMode CopyMode = CopyMode.Fill;       // Fill = mirror executions; Order = mirror intent
         public double Multiplier = 1.0;  // extra per-follower size scaling on top of ratio
         // leader master symbol (e.g. "GC") → target (e.g. MGC ×10). Empty = same instrument.
         public Dictionary<string, InstrumentMapEntry> InstrumentMap =
@@ -177,12 +211,12 @@ namespace NinjaTrader.NinjaScript.AddOns.SentinelCopier
         public List<FollowerConfig> Followers = new List<FollowerConfig>();
     }
 
-    public class SentinelCopierService_v0_1_0 : NinjaTrader.NinjaScript.AddOnBase
+    public class SentinelCopierService_v0_2_0 : NinjaTrader.NinjaScript.AddOnBase
     {
         private const string OrderPrefix = "SentCopy_";     // suite contract: copier order tag
 
         // ── singleton so a future dashboard/settings window can attach ──
-        public static SentinelCopierService_v0_1_0 Instance { get; private set; }
+        public static SentinelCopierService_v0_2_0 Instance { get; private set; }
 
         // Kill-switch + feed-health now live in the shared SentinelCore (suite-wide), not here.
         // Flip via SentinelCore.SetKillSwitch(true, "..."); the mirror gate consults SentinelCore.
@@ -201,13 +235,32 @@ namespace NinjaTrader.NinjaScript.AddOns.SentinelCopier
         private readonly Dictionary<string, double> _mirrorLeaderPx // mirror order name → leader fill px (intended)
             = new Dictionary<string, double>(StringComparer.Ordinal);
 
+        // ── copy-mode refusal: log once per account, not once per fill ──
+        private readonly HashSet<string> _orderModeWarned = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        // ── POSITION RECONCILER ───────────────────────────────────────────────
+        // Answers the one question neither copy path can answer about itself: is the follower
+        // actually where the leader is? Fill mode can still drift — a rejected mirror, a partial,
+        // a hand-placed trade on the follower, a restart mid-flight — and today NOTHING notices.
+        // Order mode cannot ship without this at all, because it copies intent.
+        //
+        // ⭐ TWO CONSECUTIVE DISAGREEMENTS BEFORE IT SPEAKS. A mirror in flight IS a divergence for
+        // a moment, so a single sample would cry wolf on every single trade — and an alert that
+        // fires on healthy operation is one the operator learns to ignore, which is worse than no
+        // alert. Same lesson this suite already applies to every NT state read.
+        private System.Threading.Timer _reconcileTimer;
+        private readonly Dictionary<string, int> _divergedStreak     // "acct|instrument" → consecutive bad samples
+            = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+        private const int ReconcileSeconds = 30;
+        private const int DivergeStreakToAlert = 2;
+
         // ─────────────────────────────────────────────────────────────────────
         protected override void OnStateChange()
         {
             // base ctor calls this BEFORE our ctor — do not rely on field initializers.
             if (State == State.SetDefaults)
             {
-                Name = "SentinelCopierService_v0_1_0";
+                Name = "SentinelCopierService_v0_2_0";
                 Description = "Sentinel Suite — headless multi-account fill-mirror trade copier. "
                             + "Mirrors a leader account's fills to enabled followers (with "
                             + "instrument cross-map + size). Inert until configured. Runs always.";
@@ -240,8 +293,15 @@ namespace NinjaTrader.NinjaScript.AddOns.SentinelCopier
             }
 
             Subscribe();
-            Log("SentinelCopierService v0.1.0 started. Leader='" + (_config.LeaderAccount ?? "<none>")
+
+            // The reconciler runs regardless of copy mode: Fill can drift too (a rejected mirror, a
+            // partial, a hand-placed follower trade, a restart mid-flight) and nothing noticed before.
+            _reconcileTimer = new System.Threading.Timer(ReconcileTick, null,
+                ReconcileSeconds * 1000, ReconcileSeconds * 1000);
+
+            Log("SentinelCopierService v0.2.0 started. Leader='" + (_config.LeaderAccount ?? "<none>")
                 + "', followers=" + _config.Followers.Count
+                + ", reconciler every " + ReconcileSeconds + "s"
                 + (string.IsNullOrEmpty(_config.LeaderAccount) ? " (inert until a leader is set)." : "."));
         }
 
@@ -252,9 +312,17 @@ namespace NinjaTrader.NinjaScript.AddOns.SentinelCopier
         {
             if (!_started) return;
             _started = false;
+            if (_reconcileTimer != null)
+            {
+                try { _reconcileTimer.Dispose(); }
+                catch (Exception _sx) { SentinelCore.Swallow("SentinelCopier.Stop", _sx); }
+                _reconcileTimer = null;
+            }
+            _divergedStreak.Clear();
+            _orderModeWarned.Clear();
             Unsubscribe();
             if (Instance == this) Instance = null;
-            Log("SentinelCopierService stopped; leader subscription released.");
+            Log("SentinelCopierService stopped; leader subscription released, reconciler disposed.");
         }
 
         // ── (re)subscribe to the configured leader account's executions ──────────
@@ -290,6 +358,103 @@ namespace NinjaTrader.NinjaScript.AddOns.SentinelCopier
                 }
                 if (_followerSubscribed.Count > 0) Log("Subscribed to " + _followerSubscribed.Count + " follower account(s) for copy-slippage capture.");
             }
+
+            // ⛔ ORDER MODE IS NOT BUILT YET, AND IT FAILS CLOSED RATHER THAN FALLING BACK.
+            // Silently mirroring an Order-mode follower on the Fill path would give the operator a
+            // copier that works — just not the one they configured — and nothing would ever say so.
+            // Refusing is the honest state: they see it at startup, before a trade, not after one.
+            foreach (FollowerConfig f in _config.Followers)
+            {
+                if (f == null || !f.Enabled || f.CopyMode != CopyMode.Order) continue;
+                Log("REFUSING follower '" + f.AccountName + "': copy mode ORDER is not implemented "
+                    + "in v0.2.0 (the mirror path and its position reconciler land together — an "
+                    + "Order-mode copier without reconciliation diverges invisibly). This follower "
+                    + "will NOT be mirrored at all. Set it to fill in Copy.conf to copy it now.");
+            }
+        }
+
+        // ── the reconciler: does each follower's NET position match the leader's, scaled? ────────
+        // Reports only. It never places or cancels an order to "fix" a difference: a wrong
+        // correction on a real position is far more expensive than a delta the operator is told
+        // about, and this suite already learned that from unmanaged restart reconciliation
+        // (a mistaken "orphan" cancel kills a live stop).
+        private void ReconcileTick(object _)
+        {
+            try
+            {
+                CopierConfig cfg = _config;
+                if (cfg == null || string.IsNullOrEmpty(cfg.LeaderAccount)) return;
+                Account leader = FindAccount(cfg.LeaderAccount);
+                if (leader == null || leader.Positions == null) return;
+
+                foreach (FollowerConfig f in cfg.Followers)
+                {
+                    if (f == null || !f.Enabled || string.IsNullOrEmpty(f.AccountName)) continue;
+                    if (f.Mode == FollowerMode.Manual) continue;   // we do not place these; not ours to reconcile
+                    Account fa = FindAccount(f.AccountName);
+                    if (fa == null || !IsConnected(fa) || fa.Positions == null) continue;
+
+                    foreach (Position lp in leader.Positions)
+                    {
+                        if (lp == null || lp.Instrument == null) continue;
+                        string leaderSym = lp.Instrument.MasterInstrument != null
+                            ? lp.Instrument.MasterInstrument.Name : null;
+                        if (string.IsNullOrEmpty(leaderSym)) continue;
+
+                        double ratio = 1.0;
+                        string targetSym = leaderSym;
+                        InstrumentMapEntry me;
+                        if (f.InstrumentMap != null && f.InstrumentMap.TryGetValue(leaderSym, out me) && me != null)
+                        {
+                            targetSym = me.TargetSymbol;
+                            ratio = me.SizeRatio;
+                        }
+
+                        int leaderNet = SignedQty(lp);
+                        int expected = (int)Math.Round(leaderNet * ratio * f.Multiplier);
+                        int actual = 0;
+                        foreach (Position fp in fa.Positions)
+                        {
+                            if (fp == null || fp.Instrument == null || fp.Instrument.MasterInstrument == null) continue;
+                            if (!string.Equals(fp.Instrument.MasterInstrument.Name, targetSym,
+                                               StringComparison.OrdinalIgnoreCase)) continue;
+                            actual += SignedQty(fp);
+                        }
+
+                        string key = f.AccountName + "|" + targetSym;
+                        if (expected == actual)
+                        {
+                            int had;
+                            if (_divergedStreak.TryGetValue(key, out had) && had >= DivergeStreakToAlert)
+                                Log("RECONCILED: " + key + " is back in line at " + actual + ".");
+                            _divergedStreak.Remove(key);
+                            continue;
+                        }
+
+                        int streak;
+                        _divergedStreak.TryGetValue(key, out streak);
+                        streak++;
+                        _divergedStreak[key] = streak;
+                        if (streak != DivergeStreakToAlert) continue;   // speak once, on crossing
+                        Log("🔴 POSITION DIVERGENCE: follower '" + f.AccountName + "' holds " + actual
+                            + " " + targetSym + " but the leader implies " + expected
+                            + " (leader " + leaderNet + " " + leaderSym + " × ratio " + ratio
+                            + " × mult " + f.Multiplier + "). Seen on " + streak
+                            + " consecutive checks " + ReconcileSeconds + "s apart. NOT auto-corrected — "
+                            + "reconciling by hand is the operator's call.");
+                        try { SentinelCore.Log("Copy", "DIVERGENCE " + key + " actual=" + actual + " expected=" + expected); }
+                        catch (Exception _sx) { SentinelCore.Swallow("SentinelCopier.Reconcile", _sx); }
+                    }
+                }
+            }
+            catch (Exception ex) { Log("ReconcileTick error: " + ex.Message); }
+        }
+
+        // Net signed quantity of a position: long positive, short negative, flat zero.
+        private static int SignedQty(Position p)
+        {
+            if (p == null || p.MarketPosition == MarketPosition.Flat) return 0;
+            return p.MarketPosition == MarketPosition.Long ? p.Quantity : -p.Quantity;
         }
 
         private void Unsubscribe()
@@ -354,7 +519,10 @@ namespace NinjaTrader.NinjaScript.AddOns.SentinelCopier
                     sb.AppendLine("follower=" + f.AccountName
                         + "|" + (!f.Enabled ? "off" : (f.Mode == FollowerMode.Manual ? "manual" : "on"))
                         + "|" + f.Multiplier.ToString(CultureInfo.InvariantCulture)
-                        + "|" + MapToDsl(f.InstrumentMap));
+                        + "|" + MapToDsl(f.InstrumentMap)
+                        // field 5 = copy mode. APPENDED, never inserted: a Copy.conf written by
+                        // v0.1.0 has four fields and must keep loading, defaulting to Fill.
+                        + "|" + (f.CopyMode == CopyMode.Order ? "order" : "fill"));
                 }
                 File.WriteAllText(ConfigPath, sb.ToString(), Encoding.UTF8);
                 SentinelCore.Log("Copy", "Config saved → " + ConfigPath);
@@ -401,6 +569,18 @@ namespace NinjaTrader.NinjaScript.AddOns.SentinelCopier
                         double m;
                         if (parts.Length > 2 && double.TryParse(parts[2].Trim(), NumberStyles.Any, CultureInfo.InvariantCulture, out m)) f.Multiplier = m;
                         if (parts.Length > 3) ParseMapDsl(parts[3], f.InstrumentMap);
+                        // Absent field 5 (any v0.1.0 file) => Fill. An UNRECOGNISED value is NOT
+                        // silently treated as Fill: it is logged and left at Fill, because a config
+                        // we cannot read is a config the operator believes says something else.
+                        if (parts.Length > 4)
+                        {
+                            string cm = parts[4].Trim();
+                            if (cm.Equals("order", StringComparison.OrdinalIgnoreCase)) f.CopyMode = CopyMode.Order;
+                            else if (!cm.Equals("fill", StringComparison.OrdinalIgnoreCase) && cm.Length > 0)
+                                SentinelCore.Log("Copy", "LoadConfig: follower '" + f.AccountName
+                                    + "' has an unrecognised copy mode '" + cm + "' — using Fill. "
+                                    + "Valid values: fill, order.");
+                        }
                         cfg.Followers.Add(f);
                     }
                 }
@@ -550,6 +730,17 @@ namespace NinjaTrader.NinjaScript.AddOns.SentinelCopier
         {
             try
             {
+                // ⛔ The refusal is enforced HERE too, not only announced at Subscribe(). A config
+                // reload, a Reconfigure() or a hand-edit between startup and this fill must not be
+                // able to sneak an Order-mode follower onto the Fill path.
+                if (f.CopyMode == CopyMode.Order)
+                {
+                    if (_orderModeWarned.Add(f.AccountName ?? ""))
+                        Log("skip: follower '" + f.AccountName + "' is copy mode ORDER, which is not "
+                            + "implemented — NOT mirroring (it is not silently copied on the Fill path).");
+                    return;
+                }
+
                 // MANUAL mode: don't submit — publish a "place by hand" assist ticket instead
                 // (for prop accounts that bar automated copy-trading). Self-contained path.
                 if (f.Mode == FollowerMode.Manual)

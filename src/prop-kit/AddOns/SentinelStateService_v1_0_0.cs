@@ -427,7 +427,7 @@ namespace NinjaTrader.NinjaScript.AddOns.Sentinel
 
         private void AppendCopier(StringBuilder sb)
         {
-            var svc = SentinelCopierService_v0_1_0.Instance;
+            var svc = SentinelCopierService_v0_2_0.Instance;
             CopierConfig cfg = svc != null ? svc.CurrentConfig : null;
             if (svc == null) { sb.Append("{ \"running\": false }"); return; }
             sb.Append("{ \"running\": true, \"leader\": ").Append(Str(cfg != null ? cfg.LeaderAccount : null));
@@ -442,7 +442,7 @@ namespace NinjaTrader.NinjaScript.AddOns.Sentinel
                     sb.Append("{ \"account\": ").Append(Str(f.AccountName))
                       .Append(", \"enabled\": ").Append(f.Enabled ? "true" : "false")
                       .Append(", \"mult\": ").Append(Num(f.Multiplier))
-                      .Append(", \"map\": ").Append(Str(SentinelCopierService_v0_1_0.MapToDsl(f.InstrumentMap)))
+                      .Append(", \"map\": ").Append(Str(SentinelCopierService_v0_2_0.MapToDsl(f.InstrumentMap)))
                       .Append(" }");
                 }
             }
