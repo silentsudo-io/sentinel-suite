@@ -49,11 +49,33 @@ PROSE = """<style>
 </style>"""
 
 def inline(s):
+    r"""Markdown inline -> HTML.
+
+    ⚠ INLINE CODE IS STASHED BEFORE EMPHASIS RUNS, and that ordering is the whole point.
+    Until 2026-08-08 this converted `code` to <code> and then ran the * and ** rules over the
+    WHOLE string, contents included — so a literal asterisk inside inline code was treated as an
+    emphasis marker and paired with the next one, anywhere on the line. In
+    SENTINEL_DATA_PLATFORM_SPEC that turned the glob `Excursions\ticks\*.jsonl` … `council\ticks\*`
+    into an <em> span straddling two code spans, producing BOTH a corrupted file path (the
+    asterisks vanish) and malformed nesting: <code>…<em>.jsonl</code> … <code>…</em>.jsonl.
+    One page on the public site carries it today.
+
+    This is the same failure as publish_doc.py substituting {{tokens}} inside backticks, fixed the
+    same morning: a transform that does not protect code will eat code that looks like syntax.
+    ⇒ Stash first, transform, restore last. Keep this idiom whenever a rule is added below.
+    """
     s = _html.escape(s, quote=False)
+    codes = []
+
+    def _stash(m):
+        codes.append(m.group(1))
+        return "\x01%d\x01" % (len(codes) - 1)
+
+    s = re.sub(r'`([^`]+)`', _stash, s)
     s = re.sub(r'\[([^\]]+)\]\(([^)]+)\)', r'<a href="\2">\1</a>', s)
-    s = re.sub(r'`([^`]+)`', r'<code>\1</code>', s)
     s = re.sub(r'\*\*(.+?)\*\*', r'<strong>\1</strong>', s)   # non-greedy so a nested *italic* survives
     s = re.sub(r'(?<!\w)\*([^*]+)\*(?!\w)', r'<em>\1</em>', s)
+    s = re.sub(r'\x01(\d+)\x01', lambda m: '<code>%s</code>' % codes[int(m.group(1))], s)
     return s
 
 def split_row(line):
