@@ -95,13 +95,19 @@ DELIBERATE = {
         "of this repo has neither the tool nor the machines, so the section is both a disclosure "
         "and useless to them. Everything else in the spec is published verbatim."),
 
-    "SENTINEL_DOCS.md": (65,
-        "The canonical index registers ALL 66 docs in Docs\\; this repo ships 26. Publishing it "
-        "verbatim would not merely break 40 links, it would publish a table of contents for the "
+    "SENTINEL_DOCS.md": (62,
+        "The canonical index registers every doc in Docs\\; this repo ships a subset. Publishing it "
+        "verbatim would not merely break links, it would publish a table of contents for the "
         "private estate — infrastructure spec, rack runbook, PKI, the replay fleet — each with a "
         "status line describing it. Registry rows are filtered to docs this repo actually serves. "
         "⚠ Filter on BOTH .md and .html: several docs (Architecture Map, Process Atlas) ship as "
-        "HTML with no .md sibling, and a .md-only filter silently drops their rows."),
+        "HTML with no .md sibling, and a .md-only filter silently drops their rows. "
+        "AS OF 2026-08-08 THIS IS NO LONGER HAND-FILTERED: `publish_doc.py --index` generates it, "
+        "keyed on the published set rather than on a secrecy denylist, so a doc that is new, private "
+        "or merely unfinished is excluded by default. The generated result links to exactly the same "
+        "24 documents the hand-curated version did. Regenerate rather than hand-edit; this line count "
+        "moves whenever the canonical index grows, and a stale count here drops the file back into "
+        "DRIFT — which is how it got reported as unresolved drift on 2026-08-08."),
 
     "ROADMAP.md": (2,
         "Retains a prose note that AdvancedSuiteDocumentation and QuickReferenceGuide were archived "
