@@ -95,7 +95,16 @@ DELIBERATE = {
         "of this repo has neither the tool nor the machines, so the section is both a disclosure "
         "and useless to them. Everything else in the spec is published verbatim."),
 
-    "SENTINEL_DOCS.md": (56,
+    # 🔴 THIRD MANUAL BUMP (65→62 on 08-08, 62→56, 56→57 on 08-09). Each one was verified by
+    #    reading the --diff and confirming the divergence is still only the withheld rows — and
+    #    each one will rot again the next time a doc is added, because the canonical index grows
+    #    by one row per doc while the published subset does not. A count is the WRONG KEY for a
+    #    divergence that is "published is a SUBSET of canonical".
+    #    ⇒ OWED, with the design already settled: key this entry on the SHAPE instead — every
+    #      extra line must be a registry row (or the banner) whose link target this repo does not
+    #      serve. `drifted` currently carries only (rel, n, loc), so the diff lines have to be
+    #      threaded through to make that checkable. Until then this stays a count and stays rotting.
+    "SENTINEL_DOCS.md": (57,
         "The canonical index registers every doc in Docs\\; this repo ships a subset. Publishing it "
         "verbatim would not merely break links, it would publish a table of contents for the "
         "private estate — infrastructure spec, rack runbook, PKI, the replay fleet — each with a "

@@ -7,7 +7,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 // ═════════════════════════════════════════════════════════════════════════════
 //  SentinelBarDump — the EQUIVALENCE GATE's ground truth
-//  File: SentinelBarDump_v1_0_0.cs   ·   Version v1.0.0   ·   Schema bars.1   ·   namespace …Indicators.Sentinel
+//  File: SentinelBarDump_v1_0_0.cs   ·   Version v1.1.0   ·   Schema bars.2   ·   namespace …Indicators.Sentinel
 // ─────────────────────────────────────────────────────────────────────────────
 //  WHAT THIS IS
 //    A transcript of what NinjaTrader's bar construction ACTUALLY produced: every completed bar's
@@ -58,6 +58,19 @@
 //    3. Diff it against the harness with Lab\harness\equivalence.py.
 //
 //  CHANGELOG
+//    v1.1.0 (2026-08-09) — SCHEMA bars.2: the header now carries `resetOnNewTradingDay`
+//           (NinjaTrader's `Bars.IsResetOnNewTradingDay`, the Data Series "Break at EOD", the Python
+//           port's `reset_on_new_session`). It changes where EVERY bar boundary falls, so without it
+//           the two columns cannot honestly be compared — it was a *stated precondition* of the
+//           bar-type parity gate rather than a compared field, which means a settings mismatch would
+//           have surfaced as a bar disagreement and been debugged as a porting bug.
+//           ⛔ It cannot be set instead of recorded: measured on two NT builds, the property is
+//           READ-ONLY and appears in neither `BarsProperties`, `BarsPeriod`, nor any chart template.
+//           Recording it is the only defence there is. 1 = on, 0 = off, **-1 = UNKNOWN** (not the
+//           same claim as off — the gate must treat -1 as unknown, never as "EOD was off").
+//           ⚠ Deliberately edited IN PLACE rather than forked to `_v1_1_0`: the type name is the
+//           indicator's serialization identity, and a rename would orphan it in every chart template
+//           and workspace that already names it. The version that consumers key on is `schema`.
 //    v1.0.0 (2026-07-26) — initial. Every-bar JSONL transcript, self-describing header, buffered
 //           writes with periodic flush, no realtime gate (see above), glass card + label remover.
 // ═════════════════════════════════════════════════════════════════════════════
@@ -76,8 +89,8 @@ namespace NinjaTrader.NinjaScript.Indicators.Sentinel
 {
     public class SentinelBarDump_v1_0_0 : Indicator
     {
-        private const string SchemaVer = "bars.1";
-        private const string DumpVer   = "1.0.0";
+        private const string SchemaVer = "bars.2";
+        private const string DumpVer   = "1.1.0";
 
         private string        _logPath;
         private StringBuilder _buf;
@@ -96,7 +109,7 @@ namespace NinjaTrader.NinjaScript.Indicators.Sentinel
         {
             if (State == State.SetDefaults)
             {
-                Name        = "Sentinel Bar Dump v1.0.0";
+                Name        = "Sentinel Bar Dump v1.1.0";
                 Description = "Writes EVERY completed bar (time + OHLC + volume) to JSONL as the answer key for the "
                             + "offline harness equivalence gate. Bar-type agnostic, unthrottled, historical bars "
                             + "included on purpose. No orders, no seam, no opinion. Writes Sentinel\\Harness\\bars\\.";
@@ -165,6 +178,8 @@ namespace NinjaTrader.NinjaScript.Indicators.Sentinel
               .Append(",\"periodValue2\":").Append(F(SafePeriodValue2()))
               .Append(",\"baseValue\":").Append(F(SafeBaseValue()))
               .Append(",\"tradingHours\":").Append(Q(SafeTradingHours()))
+              // Schema bars.2 — see SafeResetOnNewTradingDay(). 1 = on, 0 = off, -1 = UNKNOWN.
+              .Append(",\"resetOnNewTradingDay\":").Append(F(SafeResetOnNewTradingDay()))
               .Append(",\"openedUtc\":").Append(Q(Iso(DateTime.UtcNow)))
               .Append("}");
             Append(sb.ToString());
@@ -342,6 +357,25 @@ namespace NinjaTrader.NinjaScript.Indicators.Sentinel
         {
             try { return Bars != null && Bars.TradingHours != null ? Bars.TradingHours.Name : "?"; }
             catch (Exception _sx) { SentinelCore.Swallow("SentinelBarDump.TradingHours", _sx); return "?"; }
+        }
+
+        // ⭐⭐ "BREAK AT EOD", AND WHY IT MUST BE RECORDED RATHER THAN ASSUMED.
+        // This is NinjaTrader's `Bars.IsResetOnNewTradingDay`, and the Python port's
+        // `reset_on_new_session`. It changes where EVERY bar boundary falls, so the two columns
+        // cannot be compared without it — and until now the dump did not carry it, which made it a
+        // *stated precondition* of the bar-type parity gate instead of a compared field
+        // (`Azimuth/bars/renko.py`: "a field only one side can see cannot be part of a shared
+        // identity"). ⇒ A settings mismatch would surface as a BAR DISAGREEMENT and be debugged as a
+        // porting bug.
+        // ⛔ It cannot simply be set to a known value either: measured 2026-08-09 on two NT builds,
+        //    `IsResetOnNewTradingDay` is READ-ONLY, and it appears nowhere in `BarsProperties`, in
+        //    `BarsPeriod`, or in any chart template. **Recording it is the only defence available.**
+        // Emitted as a nullable-ish flag: -1 means "could not read", which is NOT the same claim as
+        // false, and the gate must treat it as unknown rather than as "EOD off".
+        private double SafeResetOnNewTradingDay()
+        {
+            try { return Bars != null ? (Bars.IsResetOnNewTradingDay ? 1 : 0) : -1; }
+            catch (Exception _sx) { SentinelCore.Swallow("SentinelBarDump.ResetOnNewTradingDay", _sx); return -1; }
         }
         private bool SafeFirstOfSession()
         {
