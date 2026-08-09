@@ -11,7 +11,20 @@ usage:  python docs/render_doc.py <name.md> [more.md ...]
 """
 import io, os, re, sys, markdown
 
-DOCS = r"C:\Users\Administrator\Documents\NinjaTrader 8\bin\Custom\Docs"
+# BUS FACTOR: a published tool pinned to one home directory is one a contributor cannot run.
+# $SENTINEL_CUSTOM > walk up from this file > the historical default.
+def _docs_dir():
+    env = os.environ.get("SENTINEL_CUSTOM")
+    if env and os.path.isdir(os.path.join(env, "Docs")):
+        return os.path.join(env, "Docs")
+    here = os.path.dirname(os.path.abspath(__file__))
+    guess = os.path.abspath(os.path.join(here, "..", "..", "..", "bin", "Custom", "Docs"))
+    if os.path.isdir(guess):
+        return guess
+    return 'C:\\Users\\Administrator\\Documents\\NinjaTrader 8\\bin\\Custom\\Docs'
+
+
+DOCS = _docs_dir()
 TEMPLATE = os.path.join(DOCS, "SENTINEL_CONDUCTOR_SPEC.html")
 
 

@@ -54,6 +54,32 @@ CHECKS = [
 ]
 
 
+def check_hook_installed() -> tuple[bool, str]:
+    r"""Is tools\pre-commit actually INSTALLED, and is the installed copy current?
+
+    ⚠ BUS FACTOR, and the reason this is a check rather than a line in a README: git hooks are not
+    tracked by git. A FRESH CLONE HAS NO HOOK AT ALL — the publish gate that refuses to commit a
+    secret simply does not exist for the next person until someone copies it into place. And on the
+    machine where it IS installed it is a COPY, so editing tools\pre-commit changes nothing: on
+    2026-08-08 the installed copy was found already stale against its source.
+    ⇒ Two failure modes, both silent, both invisible to anyone reading the source tree.
+    """
+    src = os.path.join(HERE, "pre-commit")
+    dst = os.path.join(REPO, ".git", "hooks", "pre-commit")
+    if not os.path.exists(src):
+        return False, "tools/pre-commit is missing from the repo"
+    if not os.path.exists(dst):
+        return False, ("NO HOOK INSTALLED — this clone will not gate commits at all.\n"
+                       "       cp tools/pre-commit .git/hooks/pre-commit && chmod +x .git/hooks/pre-commit")
+    a = open(src, encoding="utf-8", errors="replace").read()
+    b = open(dst, encoding="utf-8", errors="replace").read()
+    if a != b:
+        return False, ("installed hook is STALE against tools/pre-commit — edits to the source do "
+                       "not take effect until re-copied.\n"
+                       "       cp tools/pre-commit .git/hooks/pre-commit")
+    return True, "installed and current"
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--local", required=True, help=r"path to bin\Custom")
@@ -61,8 +87,15 @@ def main() -> int:
     a = ap.parse_args()
     local = os.path.abspath(a.local)
 
-    print(f"verify_all — {len(CHECKS)} guards\n")
+    print(f"verify_all — {len(CHECKS) + 1} guards\n")
     failed, untested = [], []
+
+    ok, why = check_hook_installed()
+    if ok:
+        print(f"  ok {'commit hook':<26} {why}")
+    else:
+        print(f"  ✗  {'commit hook':<26} {why}")
+        failed.append("commit hook")
 
     for label, argv_of, meaning in CHECKS:
         argv = argv_of(local)

@@ -42,7 +42,23 @@ import os
 import re
 import sys
 
-CUSTOM = r"C:\Users\Administrator\Documents\NinjaTrader 8\bin\Custom"
+# ⚠ BUS FACTOR, not cosmetics. As a bare constant this tool runs on exactly one machine, and this
+# repo has already learned that lesson once: muster.py hardcoded a fleet and the note recorded at the
+# time was "the better reason was never security — as written, nobody else could run these tools at
+# all." A published tool pinned to one operator's home directory is a tool a contributor cannot run.
+# Resolution order: --custom > $SENTINEL_CUSTOM > walk up from this file > the historical default.
+def _default_custom() -> str:
+    env = os.environ.get("SENTINEL_CUSTOM")
+    if env and os.path.isdir(env):
+        return env
+    here = os.path.dirname(os.path.abspath(__file__))          # …\Sentinel\Lab\docs
+    guess = os.path.abspath(os.path.join(here, "..", "..", "..", "bin", "Custom"))
+    if os.path.isdir(guess):
+        return guess
+    return r"C:\Users\Administrator\Documents\NinjaTrader 8\bin\Custom"
+
+
+CUSTOM = _default_custom()
 SKIP_DIRS = {"_archive", "obj", "bin", "__pycache__", ".git", ".claude", "_copier_samples", "_verify"}
 
 # `const string <anything>Ver|Version = "1.2.3"` - the suite uses Version, RecVer, CouncilVer,
@@ -97,7 +113,14 @@ def scan_versions(root: str = CUSTOM):
 
 def main(argv) -> int:
     quiet = "--quiet" in argv
-    rows = scan_versions()
+    root = CUSTOM
+    if "--custom" in argv:
+        root = argv[argv.index("--custom") + 1]
+    if not os.path.isdir(root):
+        print("version_check: no bin\\Custom at %s\n"
+              "  Set SENTINEL_CUSTOM or pass --custom <path>." % root)
+        return 2
+    rows = scan_versions(root)
     bad = [r for r in rows if r["status"] == "MISMATCH"]
 
     if not quiet:

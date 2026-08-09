@@ -9,7 +9,20 @@ try:                                   # Windows console is cp1252 — a '→' i
 except Exception:
     pass
 
-DOCS = r"c:/Users/Administrator/Documents/NinjaTrader 8/bin/Custom/Docs"
+# ⚠ BUS FACTOR: pinned to one home directory this renderer runs on one machine only.
+# $SENTINEL_CUSTOM > walk up from this file > the historical default.
+def _docs_dir():
+    env = os.environ.get("SENTINEL_CUSTOM")
+    if env and os.path.isdir(os.path.join(env, "Docs")):
+        return os.path.join(env, "Docs").replace(chr(92), "/")
+    here = os.path.dirname(os.path.abspath(__file__))
+    guess = os.path.abspath(os.path.join(here, "..", "..", "bin", "Custom", "Docs"))
+    if os.path.isdir(guess):
+        return guess.replace(chr(92), "/")
+    return r"c:/Users/Administrator/Documents/NinjaTrader 8/bin/Custom/Docs"
+
+
+DOCS = _docs_dir()
 ATLAS = DOCS + "/SENTINEL_PROCESS_ATLAS.html"
 
 def extract_atlas():
