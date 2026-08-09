@@ -18,6 +18,7 @@ on:
       - 'src/**'
       - 'tools/check_bundle_deps.py'
       - 'tools/test_bundle_deps.py'
+      - 'tools/bundles.conf'
 
 jobs:
   check:

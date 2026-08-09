@@ -97,12 +97,13 @@ automated gate:
 3. ⚠ **Editing a `.cs` while NT is running re-appends the generated region** → strip any duplicate
    `#region NinjaScript generated code` to zero before F5. And a recompile does **not** reload running
    indicator instances — restart NT to see new behavior live.
-4. **Bundle self-containment (automated):** each bundle must ship *every* file it compile-depends on —
-   including plain-C# dependencies that aren't a `…State` seam. NT builds all of `bin\Custom` as one
-   assembly, so a dependency you forgot compiles fine *for you* but hands a downloader a `CS0246`/`CS0103`
-   that takes their whole tree down (this happened once — `SentinelTBars` → `Shared/TbarsSudoV3Config.cs`).
-   Run the checker:
+4. **Bundle install-completeness (automated):** a bundle must compile from its **documented install** —
+   its own files, its requirements from **`tools/bundles.conf`** (transitively), and `runtime/`. NT builds
+   all of `bin\Custom` as one assembly, so a dependency you forgot compiles fine *for you* but hands a
+   downloader a `CS0246`/`CS0103` that takes their whole tree down (this happened once — `SentinelTBars`
+   → `Shared/TbarsSudoV3Config.cs`). Run the checker:
    ```
+   python tools/test_bundle_deps.py                       # the checker's own controls
    python tools/check_bundle_deps.py                      # self-scan (what CI runs on every PR)
    ```
    **Maintainers, before cutting a release**, also run the authoritative check against your full private
@@ -111,8 +112,17 @@ automated gate:
    ```
    python tools/check_bundle_deps.py --universe "C:/Users/…/NinjaTrader 8/bin/Custom"
    ```
-   It reports each bundle as self-contained or names the missing type + the file that needs it. Exit code 1
-   fails the build.
+   Exit code 1 fails the build.
+
+   ⚠ **A bundle is an install unit, not a silo (changed 2026-08-09).** This rule used to demand every
+   bundle be *self-contained*, and after the full-suite release that was simply false — `deck` really does
+   use the Copier and Risk services. It reported 16 true breaks on every push for three days and nobody
+   acted, because 15 more findings were noise from nested type names. **If your bundle needs another
+   bundle, declare the edge in `tools/bundles.conf`** — with the one-line reason, as the existing entries do.
+   ⛔ **Never fix a missing dependency by copying the file into both bundles.** One assembly means a user
+   who installs both then gets `CS0101` duplicate-class and their *whole tree* stops compiling — strictly
+   worse than the `CS0246` you were fixing. Declare the edge, or move the file into a bundle both already
+   require.
 
 ## Pull requests
 

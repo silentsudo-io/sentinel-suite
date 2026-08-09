@@ -17,9 +17,19 @@ HOW IT WORKS
     own src/; pass --universe to point at the full private bin\\Custom tree — the
     authoritative release-time check, which also catches a type that lives in the
     private tree but is shipped in NO bundle).
-  * For each bundle, every custom type it references must be DEFINED in a file that
-    bundle ships (its own files + runtime). Anything referenced-but-not-shipped is a
-    MISSING DEPENDENCY.
+  * For each bundle, every custom type it references must be DEFINED inside its
+    CLOSURE — its own files, its declared requirements from `tools/bundles.conf`
+    (transitively), and runtime/. Anything else is a MISSING DEPENDENCY.
+
+BUNDLES DEPEND ON BUNDLES, AND THAT IS DELIBERATE (2026-08-09)
+  This used to require every bundle to be self-contained, and after the full-suite
+  release that was simply false: `deck` really does use the Copier and Risk services.
+  It reported 16 true breaks for three days and nobody acted, because 15 more were
+  noise. The rule is now "a documented install compiles" rather than "every folder is
+  an island" — the alternatives were duplicating files (⛔ CS0101 duplicate-class for
+  anyone installing two bundles: NT compiles bin\\Custom as ONE assembly, so that is
+  strictly worse than the CS0246 being prevented) or dissolving everything into
+  runtime/ until it means nothing.
 
 USAGE
   # public CI (self-scan): universe = this repo's src/
@@ -152,10 +162,61 @@ def cs_files(root: Path):
     return [p for p in root.rglob('*.cs') if '.git' not in p.parts]
 
 
+class ManifestError(Exception):
+    """The bundle manifest cannot be trusted to describe an install."""
+
+
+def load_manifest(path: Path) -> dict:
+    """`bundle = dep, dep` lines -> {bundle: [deps]}. Missing file -> {} (no edges)."""
+    if not path.is_file():
+        return {}
+    out = {}
+    for n, raw in enumerate(path.read_text(encoding='utf-8').splitlines(), 1):
+        line = raw.split('#', 1)[0].strip()
+        if not line:
+            continue
+        if '=' not in line:
+            raise ManifestError('%s:%d: expected `bundle = dep, dep`, got %r' % (path.name, n, raw.strip()))
+        k, v = line.split('=', 1)
+        k = k.strip()
+        if k in out:
+            raise ManifestError('%s:%d: bundle %r is declared twice; one line per bundle, '
+                                'or the second silently wins' % (path.name, n, k))
+        out[k] = [d.strip() for d in v.split(',') if d.strip()]
+    return out
+
+
+def closure(bundle: str, manifest: dict) -> list:
+    """`bundle` plus its declared requirements, transitively. Raises on a cycle.
+
+    ⛔ A CYCLE IS FATAL, not merely odd: if deck requires prop-kit and prop-kit requires
+    deck, then "install deck" and "install prop-kit" are the same instruction, and the
+    manifest has stopped describing anything a reader can act on.
+    """
+    seen, order, stack = set(), [], []
+
+    def walk(b):
+        if b in stack:
+            raise ManifestError('dependency CYCLE: %s' % ' -> '.join(stack[stack.index(b):] + [b]))
+        if b in seen:
+            return
+        stack.append(b)
+        for d in manifest.get(b, []):
+            walk(d)
+        stack.pop()
+        seen.add(b)
+        order.append(b)
+
+    walk(bundle)
+    return order
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument('--repo', default=str(Path(__file__).resolve().parent.parent),
                     help='repo root (default: parent of tools/)')
+    ap.add_argument('--manifest', default=str(Path(__file__).resolve().parent / 'bundles.conf'),
+                    help='bundle dependency manifest (default: tools/bundles.conf)')
     ap.add_argument('--universe', action='append', default=[],
                     help='extra tree(s) whose type definitions count as "custom" '
                          '(e.g. the full private bin\\Custom). Repeatable.')
@@ -184,30 +245,85 @@ def main() -> int:
         universe |= defined_types(sentinel_files)
 
     bundles = sorted(d for d in src.iterdir() if d.is_dir() and d.name != 'runtime')
+    names = {b.name for b in bundles}
+
+    try:
+        manifest = load_manifest(Path(args.manifest))
+    except ManifestError as exc:
+        print(f'ERROR: {exc}', file=sys.stderr)
+        return 2
+    # A declared bundle that does not exist is a manifest that has rotted away from the
+    # tree, and it would silently widen a closure to nothing. Catch it before the scan.
+    for b, deps in sorted(manifest.items()):
+        for bad in [x for x in [b] + deps if x not in names]:
+            print(f'ERROR: bundles.conf names "{bad}", which is not a bundle under src/',
+                  file=sys.stderr)
+            return 2
+
     problems = 0
+    unused = []
     for b in bundles:
         bfiles = cs_files(b)
         if not bfiles:
             continue
-        shipped = defined_types(bfiles + runtime_files)
+        try:
+            need = closure(b.name, manifest)
+        except ManifestError as exc:
+            print(f'ERROR: {exc}', file=sys.stderr)
+            return 2
+        closure_files = [f for n in need for f in cs_files(src / n)] + runtime_files
+        shipped = defined_types(closure_files)
         refs = referenced_idents(bfiles)
-        # a custom type this bundle uses but neither defines nor gets from runtime
+        # a custom type this bundle uses that its documented install does not provide
         missing = sorted((refs & universe) - shipped)
+        deps = [d for d in need if d != b.name]
+        via = (' + ' + ', '.join(sorted(deps))) if deps else ''
+
         if missing:
             problems += len(missing)
-            print(f'\n[MISSING DEP] bundle "{b.name}" references custom types it does not ship:')
+            print(f'\n[MISSING DEP] bundle "{b.name}"{via} still does not provide:')
             for t in missing:
                 users = [str(f.relative_to(repo)) for f in bfiles
                          if re.search(rf'\b{re.escape(t)}\b', strip_comments(f.read_text(encoding="utf-8", errors="replace")))]
-                print(f'    - {t}   (used in: {", ".join(users)})')
+                owner = next((n for n in sorted(names)
+                              if t in defined_types(cs_files(src / n))), '(nowhere in src/)')
+                print(f'    - {t}   defined in bundle "{owner}"')
+                print(f'        used in: {", ".join(users)}')
         else:
-            print(f'[ok] {b.name}: {len(bfiles)} files, self-contained')
+            print(f'[ok] {b.name}: {len(bfiles)} files, closure complete{via}')
+
+        # ⛔ REDUNDANT IS NOT UNNEEDED, and conflating them causes the wrong edit.
+        # `deck -> copier` is reachable transitively via `deck -> prop-kit -> copier`, but
+        # deck DIRECTLY uses CopierConfig; deleting the edge would silently make deck's
+        # install depend on a choice prop-kit is free to change. So an edge is judged by
+        # whether this bundle references any type the dependency OWNS — not by whether
+        # some other path happens to supply it.
+        for d in manifest.get(b.name, []):
+            owned = defined_types(cs_files(src / d))
+            if not (refs & owned):
+                unused.append((b.name, d))
+
+    if unused:
+        print('\n[NOTE] declared requirements this bundle references NO type from:')
+        for b, d in unused:
+            print(f'    {b} -> {d}')
+        print('    Not a failure. This checker matches TYPES, so a partial-class METHOD\n'
+              '    dependency (e.g. SentinelCore.GateEntry) is invisible to it and the edge\n'
+              '    may still be real. Read it; do not reflex-delete.\n'
+              '    (An edge that IS used but also reachable transitively is not listed here —\n'
+              '     redundant is not unneeded, and dropping it would make this bundle\'s\n'
+              '     install depend on a choice another bundle is free to change.)')
 
     if problems:
-        print(f'\nFAIL: {problems} missing dependency reference(s). '
-              f'Ship the defining file with the bundle (see docs/CONTRIBUTING).', file=sys.stderr)
+        print(f'\nFAIL: {problems} reference(s) no documented install provides.\n'
+              f'      Either declare the owning bundle in tools/bundles.conf, or move the\n'
+              f'      defining file into a bundle this one already requires.\n'
+              f'      ⛔ Do NOT duplicate the file into both bundles: NinjaTrader compiles\n'
+              f'         bin\\Custom as ONE assembly, so a user installing both then gets\n'
+              f'         CS0101 duplicate-class and their whole tree stops compiling.',
+              file=sys.stderr)
         return 1
-    print('\nPASS: every bundle is self-contained.')
+    print('\nPASS: every bundle\'s documented install is complete.')
     return 0
 
 
