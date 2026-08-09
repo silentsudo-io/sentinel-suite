@@ -36,7 +36,7 @@ open-source (MPL-2.0); the ladder is depth-of-adoption, not price.
 | **Council** | a read-only chart tool | **fuse** every fresh seam into one verdict (bias · conviction · size) |
 | **Deck / Bridge** | manual trader / automated consumer | **act** on the verdict (the only pieces that place orders) |
 | **Gate** | the pre-submit safety choke point | **guard** — kill switch, governor, sizing, session/news vetoes |
-| **Recorder** | a no-orders characterization tool | **grade** — write each verdict's real forward outcome to disk |
+| **Recorder** | a no-orders characterization tool | **grade** — write each *decision's* real forward outcome to disk. ⚠ Until Core v1.46.0 that meant each **Council verdict** and nothing else — see §"the corpus could only see the Council" below |
 | **Lab** | offline Python, outside NinjaTrader — now a stood-up data platform (SQLite corpus + JSONL ingester + Streamlit + Grafana) | **learn** — fit the Council's weights + floor from the graded corpus |
 
 The rest of this document is how those pieces form a single loop, and why the order they were built in matters.
@@ -218,6 +218,30 @@ fit on a contaminated corpus learns the contamination.** Most of this project's 
 
 The principle: **correctness precedes collection precedes learning.** Each is a prerequisite for the next,
 and getting them out of order produces a confident model that is confidently wrong.
+
+### 🔴 The fourth example, and the most expensive: the corpus could only ever see the Council   *(Core v1.46.0, 2026-07-30)*
+
+The three above are all *contamination* — rows that exist and lie. This one is the opposite failure, and it
+went unnoticed far longer because **the corpus was clean; it was simply blind.**
+
+The Recorder's only intake was a `GetCouncilState` poll, so it opened every row on `Open("COUNCIL", …)`.
+**Every strategy was therefore invisible to the corpus by construction.** Not degraded, not partial —
+absent. You could run a strategy for a month and have *nothing to grade it with*, while every dashboard
+stayed green, because the thing that was missing had never been a row in the first place.
+
+⭐ **That, and not exit policy, was the actual blocker behind [SentinelKeel](SENTINEL_KEEL_SPEC.md).** The
+system built to grade decisions could not see the decisions of the only tool making them.
+
+The fix is architectural rather than a widening: `SentinelCore.NoteSignalFire(scope, dir, tag, …)` is a
+**generic door**, and the Council becomes one caller among several rather than the sole source. Keel, the
+Bridge, or any future strategy records through the same path with the same schema. Row schema was
+deliberately **not** bumped — the row's `signal` field already carried the tag, so a `KEEL` row and a
+`COUNCIL` row differ only in a value the Lab already reads: no reader change, no corpus split.
+
+⚠ **The generalisation worth carrying:** the first three examples were caught by *asking whether a row was
+true*. This one could only be caught by asking **what the corpus is structurally incapable of containing** —
+a question no amount of validating existing rows will ever raise. Corpus hygiene checks the rows you have;
+nothing but design review checks the rows you can never get.
 
 ---
 

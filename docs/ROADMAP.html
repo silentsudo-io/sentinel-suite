@@ -307,8 +307,20 @@ up from what holds. Buying N is what the corpus bakes are for.</p>
 <ul>
 <li><strong>Core v1.47.0</strong> — <code>ConvictionState</code> (v1.37.0, the Drift <strong>CVB</strong> voter) · <strong><code>ReplayMode</code></strong> (v1.38.0) ·
   <code>RosterIO</code>/<code>LaneIO</code> <strong>cascade</strong> (v1.39.0) · the <strong>generation beacon</strong> (v1.40.0) · <strong><code>Swallow</code>/<code>Faults</code></strong>
-  (v1.41.0, migrated across <strong>726 call sites / 86 files</strong>). All documented in
-  <a href="SENTINEL_DESIGN_SYSTEM.md">SENTINEL_DESIGN_SYSTEM.md</a> §6f.</li>
+  (v1.41.0, migrated across <strong>726 call sites / 86 files</strong>) · <strong>log retention <code>LOG_GENERATIONS = 6</code></strong>
+  (v1.42.0) · <strong><code>CvdState</code></strong> (v1.43.0, the <strong>CVD</strong> voter — cumulative delta on <em>any</em> bar type, carrying
+  <strong>Efficiency</strong>: ticks of price per 1,000 contracts of net aggression) · <strong><code>LaneAssign</code>/<code>ResolveLane</code></strong>
+  (v1.44.0, the lane read from <code>Sentinel\Lanes.conf</code> rather than F6 alone) · <strong><code>PressureState</code></strong>
+  (v1.45.0, the <strong>BSP</strong> voter — bid/ask-classified buy-vs-sell share) · <strong><code>NoteSignalFire</code> /
+  <code>DrainSignalFires</code> / <code>SignalFireStats</code></strong> (v1.46.0) · the <strong>CVD <code>VoterCatalog</code> row</strong> (v1.47.0).
+  All documented in <a href="SENTINEL_DESIGN_SYSTEM.md">SENTINEL_DESIGN_SYSTEM.md</a> §6f and §9.
+  ⭐ <strong>v1.46.0 is the one that mattered most and it is not a voter:</strong> the excursion corpus could only
+  ever see the <strong>Council</strong>, because the recorder's sole intake was a <code>GetCouncilState</code> poll opening on
+  <code>Open("COUNCIL", …)</code>. <strong>Every strategy was invisible to the corpus by construction</strong> — you could run
+  one for a month and have nothing to grade it with. That, not exit policy, was the actual blocker
+  behind <strong>Keel</strong>. Intake is now generic and the Council is one caller among several.
+  ⚠ <strong>The <code>{{core_version}}</code> token kept this bullet's NUMBER current while its LIST rotted six versions
+  behind</strong> — a substituted token refreshes the claim it stands in for, never the prose around it.</li>
 <li><strong>The corpus acceptance gate</strong> — <code>Lab\verify_votes.py</code> + <code>vote_health</code> + the 🗃 Corpus row on the Health board
   (<a href="SENTINEL_DATA_PLATFORM_SPEC.md">SENTINEL_DATA_PLATFORM_SPEC.md</a> §13), and the <strong>10-minute preflight</strong>
   procedure (<a href="SENTINEL_RUNBOOK.md">SENTINEL_RUNBOOK.md</a> §4b).</li>
@@ -328,7 +340,7 @@ up from what holds. Buying N is what the corpus bakes are for.</p>
 <blockquote>
 <p>⚠ <strong>Live per-tool versions move faster than this narrative.</strong> For the authoritative version matrix
 (Core · Council · Bridge · Cockpit · GTrader21 · recorder) <code>memory/NOW.md</code> wins over any number pinned
-below; <code>v1.47.0</code> + the voter count render live from code and can't drift.</p>
+below; <code>{{core_version}}</code> + the voter count render live from code and can't drift.</p>
 </blockquote>
 <ul>
 <li><strong>The Council fuses 25 VOTERS</strong> (was 8–9). <strong>SentinelCore → v1.47.0</strong>, <strong>Council → v1.8.x.</strong></li>

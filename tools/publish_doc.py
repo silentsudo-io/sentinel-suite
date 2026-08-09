@@ -37,6 +37,16 @@ REPO = os.path.abspath(os.path.join(HERE, ".."))
 
 FRONTMATTER = re.compile(r"\A---\r?\n.*?\r?\n---\r?\n", re.S)
 TOKEN = re.compile(r"\{\{(\w+)\}\}")
+# Fenced and inline code are PROTECTED from token substitution, so a doc can document a literal
+# {{token}} without the renderer eating it. ⚠ THIS WAS MISSING UNTIL 2026-08-08, and the two other
+# implementations of this same transform both had it: md2atlas.py (the authoritative renderer,
+# line ~185) and check_parity.normalise_doc, whose own comment says the rules are lifted from
+# md2atlas DELIBERATELY because "if this normaliser and that renderer disagree, this tool reports
+# drift that does not exist." This file was the third implementation and the only one without the
+# rule, so it did BOTH harms at once: it published `v1.47.0` where the prose said `{{core_version}}`
+# — turning a sentence ABOUT the token into a nonsense sentence — and it made check_parity report
+# permanent 4-line drift on a file that was correctly published. Keep all three in step.
+CODE = re.compile(r"```.*?```|`[^`\n]*`", re.S)
 
 
 def load_facts(custom: str) -> dict:
@@ -62,7 +72,15 @@ def render(text: str, facts: dict) -> tuple[str, list[str]]:
             return m.group(0)
         return str(v)
 
+    stash: list[str] = []
+
+    def hide(m):
+        stash.append(m.group(0))
+        return "\x00%d\x00" % (len(stash) - 1)
+
+    text = CODE.sub(hide, text)
     text = TOKEN.sub(sub, text)
+    text = re.sub(r"\x00(\d+)\x00", lambda m: stash[int(m.group(1))], text)
     # The internal map file is not published; CONTRIBUTING.md is its public counterpart.
     text = text.replace("../CLAUDE.md", "../CONTRIBUTING.md").replace("`CLAUDE.md`", "`CONTRIBUTING.md`")
     text = text.replace("CLAUDE.md build rules", "CONTRIBUTING.md build rules")

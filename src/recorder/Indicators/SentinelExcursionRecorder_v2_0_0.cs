@@ -7,11 +7,15 @@
 // ─────────────────────────────────────────────────────────────────────────────
 // ═════════════════════════════════════════════════════════════════════════════
 //  SentinelExcursionRecorder — pure signal characterization for the Sentinel Suite (NT8)
-//  File: SentinelExcursionRecorder_v2_0_0.cs   ·   Version v2.3.0   ·   Schema 1.5 (sidecar ctick.4)   ·   namespace …Indicators.Sentinel
+//  File: SentinelExcursionRecorder_v2_0_0.cs   ·   Version v2.5.0   ·   Schema 1.5 (sidecar ctick.4)   ·   namespace …Indicators.Sentinel
+//  ⚠ This banner read v2.3.0 until 2026-08-08 while `RecVer` (the value that STAMPS EVERY ROW) already read
+//    2.5.0 — two changelog entries had been written without bumping the header. The header is what a human
+//    and the generated reference page read; RecVer is what the corpus reads. Keep them in step.
 // ─────────────────────────────────────────────────────────────────────────────
 //  WHAT THIS IS
 //    A pure, no-orders CHARACTERIZATION recorder. On each edge-detected COUNCIL verdict (an aligned
-//    bias-flip, mirroring the SentinelBridge entry trigger) it opens a record and tracks, fire → EOD,
+//    bias-flip, mirroring the SentinelBridge entry trigger) — AND, since v2.4.0, on any fire published by
+//    any tool through SentinelCore.NoteSignalFire — it opens a record and tracks, fire → EOD,
 //    the max favourable/adverse excursion (MFE/MAE, ticks), 1/5/15/60-minute milestones, and the
 //    schema-1.3 FIRST-TOUCH label (which ATR-scaled barrier — target or stop — is crossed first).
 //    Rows are appended to Sentinel\Excursions\*.jsonl and consumed offline by the Observatory + the ML

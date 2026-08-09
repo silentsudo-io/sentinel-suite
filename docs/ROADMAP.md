@@ -66,8 +66,20 @@ up from what holds. Buying N is what the corpus bakes are for.
 
 - **Core v1.47.0** — `ConvictionState` (v1.37.0, the Drift **CVB** voter) · **`ReplayMode`** (v1.38.0) ·
   `RosterIO`/`LaneIO` **cascade** (v1.39.0) · the **generation beacon** (v1.40.0) · **`Swallow`/`Faults`**
-  (v1.41.0, migrated across **726 call sites / 86 files**). All documented in
-  [SENTINEL_DESIGN_SYSTEM.md](SENTINEL_DESIGN_SYSTEM.md) §6f.
+  (v1.41.0, migrated across **726 call sites / 86 files**) · **log retention `LOG_GENERATIONS = 6`**
+  (v1.42.0) · **`CvdState`** (v1.43.0, the **CVD** voter — cumulative delta on *any* bar type, carrying
+  **Efficiency**: ticks of price per 1,000 contracts of net aggression) · **`LaneAssign`/`ResolveLane`**
+  (v1.44.0, the lane read from `Sentinel\Lanes.conf` rather than F6 alone) · **`PressureState`**
+  (v1.45.0, the **BSP** voter — bid/ask-classified buy-vs-sell share) · **`NoteSignalFire` /
+  `DrainSignalFires` / `SignalFireStats`** (v1.46.0) · the **CVD `VoterCatalog` row** (v1.47.0).
+  All documented in [SENTINEL_DESIGN_SYSTEM.md](SENTINEL_DESIGN_SYSTEM.md) §6f and §9.
+  ⭐ **v1.46.0 is the one that mattered most and it is not a voter:** the excursion corpus could only
+  ever see the **Council**, because the recorder's sole intake was a `GetCouncilState` poll opening on
+  `Open("COUNCIL", …)`. **Every strategy was invisible to the corpus by construction** — you could run
+  one for a month and have nothing to grade it with. That, not exit policy, was the actual blocker
+  behind **Keel**. Intake is now generic and the Council is one caller among several.
+  ⚠ **The `{{core_version}}` token kept this bullet's NUMBER current while its LIST rotted six versions
+  behind** — a substituted token refreshes the claim it stands in for, never the prose around it.
 - **The corpus acceptance gate** — `Lab\verify_votes.py` + `vote_health` + the 🗃 Corpus row on the Health board
   ([SENTINEL_DATA_PLATFORM_SPEC.md](SENTINEL_DATA_PLATFORM_SPEC.md) §13), and the **10-minute preflight**
   procedure ([SENTINEL_RUNBOOK.md](SENTINEL_RUNBOOK.md) §4b).
@@ -88,7 +100,7 @@ The suite has moved well past the snapshots below. Where they disagree on a vers
 
 > ⚠ **Live per-tool versions move faster than this narrative.** For the authoritative version matrix
 > (Core · Council · Bridge · Cockpit · GTrader21 · recorder) `memory/NOW.md` wins over any number pinned
-> below; `v1.47.0` + the voter count render live from code and can't drift.
+> below; `{{core_version}}` + the voter count render live from code and can't drift.
 
 - **The Council fuses 25 VOTERS** (was 8–9). **SentinelCore → v1.47.0**, **Council → v1.8.x.**
 - **⭐ Newest thread — SentinelFlux (order-flow imbalance BAR TYPE).** A from-scratch López-de-Prado information-driven
