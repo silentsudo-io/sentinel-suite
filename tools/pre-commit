@@ -51,3 +51,25 @@ if ! "$PY" "$SCAN" --gate "$TMP"; then
   echo "   Override only after reading the finding:  git commit --no-verify" >&2
   exit 1
 fi
+
+# ── doc-transform conformance ────────────────────────────────────────────────────────────────
+# Runs only when a transform is actually being changed, so ordinary commits pay nothing.
+#
+# WHY THIS IS A HOOK AND NOT A NOTE. On 2026-08-08 the same defect — a text transform rewriting
+# the inside of an inline-code span — was found three times in one day, in three tools, each
+# written by someone who knew the rule and had written it down. The knowledge was never the
+# missing part. Documentation had already failed; this asserts it instead.
+#
+# ⚠ NOT fail-open, unlike the scanner above. The scanner protects against a secret a developer
+# may not be able to see; this protects a rule that is fully checkable from the repo alone, and
+# the whole point is that it cannot be skipped by someone who does not know it exists.
+TRANSFORMS=$(echo "$STAGED" | grep -E 'tools/(publish_doc|check_parity)\.py|src/lab/md2atlas\.py|src/lab/docs/audit\.py|tools/test_doc_transforms\.py' || true)
+if [ -n "$TRANSFORMS" ]; then
+  if ! "$PY" "$(git rev-parse --show-toplevel)/tools/test_doc_transforms.py"; then
+    echo "" >&2
+    echo "⛔ COMMIT REFUSED — a doc transform no longer protects inline code." >&2
+    echo "   Stash code spans first, transform, restore last. See tools/test_doc_transforms.py." >&2
+    echo "   Override only after reading the finding:  git commit --no-verify" >&2
+    exit 1
+  fi
+fi

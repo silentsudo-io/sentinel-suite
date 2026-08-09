@@ -425,14 +425,32 @@ def main() -> int:
             print(f"    {rel}")
         print("    (renamed, archived or deleted upstream — the snapshot is stale)\n")
 
-    # Only exempt a known file at its known SIZE. A changed count means new divergence
-    # landed on top of the documented one, so it goes back into the drift list.
-    def is_deliberate(d):
-        exp = DELIBERATE.get(Path(d[0]).name)
-        return exp is not None and exp[0] == d[1]
+    # Only exempt a known file at its known SIZE. A changed count means new divergence landed on
+    # top of the documented one, so it must resurface — that safety property is deliberate.
+    #
+    # ⚠ WHAT WAS WRONG WAS THE FAILURE MODE, NOT THE RULE (fixed 2026-08-08). When the count went
+    # stale the file dropped back into DRIFT *anonymously*: the report said "66 lines
+    # SENTINEL_DOCS.md" and nothing said it was a REGISTERED divergence whose count had merely
+    # moved. The obvious next action on a DRIFT row is to close it by publishing — which for that
+    # file would republish a table of contents for the private estate. A registry keyed on an
+    # exact number decays every time the source grows, so the decay has to ANNOUNCE ITSELF.
+    def registration(d):
+        return DELIBERATE.get(Path(d[0]).name)
 
-    deliberate = [d for d in drifted if is_deliberate(d)]
-    drifted = [d for d in drifted if not is_deliberate(d)]
+    deliberate = [d for d in drifted if registration(d) and registration(d)[0] == d[1]]
+    stale_reg = [d for d in drifted if registration(d) and registration(d)[0] != d[1]]
+    drifted = [d for d in drifted if not registration(d)]
+
+    if stale_reg:
+        print(f"STALE REGISTRATION ({len(stale_reg)}) — registered as DELIBERATE, but the size moved.")
+        print("    These are NOT ordinary drift. Do NOT close one by publishing it — re-read the")
+        print("    reason in DELIBERATE, confirm the divergence is still only what it describes,")
+        print("    then update the line count there.\n")
+        for rel, n, loc in sorted(stale_reg, key=lambda r: -r[1]):
+            exp = DELIBERATE[Path(rel).name]
+            print(f"    {n:>6} lines   {rel}   (registered at {exp[0]})")
+            print(f"             {exp[1][:150]}…")
+        print()
 
     if drifted:
         print(f"DRIFT ({len(drifted)}) — local has moved ahead; decide per file whether it ships:")
