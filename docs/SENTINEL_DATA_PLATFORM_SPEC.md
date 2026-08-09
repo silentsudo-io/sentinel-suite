@@ -317,7 +317,7 @@ The probe's `busy_timeout` was also raised **8 s → 30 s**. Measured, not guess
 
 Start a bake, let it run **~10 minutes**, run `python Lab\verify_votes.py --days 1`, and require **`EXIT=0` with
 every lane "complete"** before committing to the long run. This is the standing procedure in
-[SENTINEL_RUNBOOK.md](SENTINEL_RUNBOOK.md) §4b ②.
+SENTINEL_RUNBOOK.md §4b ②.
 
 ---
 
@@ -354,7 +354,7 @@ counts everything including throttled occurrences, so `fault_total()` is honest.
 
 **Retention is 5 generations, not one, on purpose.** Single-generation rotation destroyed a live
 forensic window twice in one night during the BRK/FLUX investigation (see NOW.md and
-[SENTINEL_RUNBOOK.md](SENTINEL_RUNBOOK.md) §4b ⑤).
+SENTINEL_RUNBOOK.md §4b ⑤).
 
 **Migration state (2026-07-25):** all **53** silent handlers across **23** Lab files now record —
 `health\probe.py` 11 · `docs\audit.py` 5 · `verify_votes.py` 5 · `viz\observatory.py` 5, and the rest.

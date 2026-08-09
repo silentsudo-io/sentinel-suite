@@ -456,7 +456,14 @@ namespace NinjaTrader.NinjaScript.Indicators.Sentinel
         private static bool _catalogExported;   // one shared-catalog emit per session (first Council to load)
         private readonly List<Vote>   _votes    = new List<Vote>(8);
         private readonly List<double> _convHist = new List<double>();
-        private const string CouncilVer = "1.9.0";          // v1.36.0 — the authoritative version, stamped as cnclVer on recorded verdicts (A1 provenance)
+        // ⚠ BUMP THIS WITH THE HEADER, EVERY TIME. It is stamped as cnclVer on every recorded verdict, so it is
+        // the ONLY thing that lets the corpus separate one Council's behaviour from another's.
+        // 🔴 It read "1.9.0" while the header read v1.11.0 (found 2026-08-08 by Lab\docs\version_check.py). The
+        // corpus therefore holds 8,547 rows stamped 1.9.0 that are actually a MIXTURE of v1.9.0, v1.10.0 and
+        // v1.11.0 — and v1.11.0 was a real behavioural fork (off-chart STF no longer votes or vetoes). Those rows
+        // cannot be separated by this column; they can only be split by fire TIME against the version dates.
+        // This has drifted before: the v1.36.0 changelog records bumping it 1.8.1→1.8.3 after the same lapse.
+        private const string CouncilVer = "1.11.0";         // v1.36.0 — the authoritative version, stamped as cnclVer on recorded verdicts (A1 provenance)
         private const int HistMax = 48;
         private int _lastHistBar = -1;
         // change detection for the log

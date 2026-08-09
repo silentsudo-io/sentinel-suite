@@ -361,6 +361,23 @@ def scan(conn):
     except Exception as _swex:
         swallow("docs.audit.coverage", _swex)
 
+    # --- VERSION SELF-CONSISTENCY (header vs the const that gets stamped on data) ---
+    # Same reasoning as coverage above: one scan, one board. A file whose banner and version const
+    # disagree is lying to somebody, and which one is believed depends on who is reading — a human
+    # reads the banner (that is how memory\NOW.md carried the recorder as v2.3.0 for a week while
+    # it stamped 2.5.0 on every row), the corpus gets the const. First run found the Council
+    # stamping cnclVer=1.9.0 while at v1.11.0, so 8,547 corpus rows conflate three Council
+    # behaviours across a real behavioural fork. Fails OPEN, like coverage.
+    try:
+        from version_check import scan_versions
+        for r in scan_versions():
+            if r["status"] == "MISMATCH":
+                cs = ", ".join(f"{k}={v}" for k, v in r["consts"])
+                f.add(r["file"], "version_mismatch", "ERROR",
+                      f"header v{r['header']} vs code {cs} — the const is what stamps the data")
+    except Exception as _swex:
+        swallow("docs.audit.version_check", _swex)
+
     # ---- write ----
     ms, iso = now_ms(), dt.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     c = f.counts

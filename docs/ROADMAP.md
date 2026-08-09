@@ -82,7 +82,7 @@ up from what holds. Buying N is what the corpus bakes are for.
   behind** — a substituted token refreshes the claim it stands in for, never the prose around it.
 - **The corpus acceptance gate** — `Lab\verify_votes.py` + `vote_health` + the 🗃 Corpus row on the Health board
   ([SENTINEL_DATA_PLATFORM_SPEC.md](SENTINEL_DATA_PLATFORM_SPEC.md) §13), and the **10-minute preflight**
-  procedure ([SENTINEL_RUNBOOK.md](SENTINEL_RUNBOOK.md) §4b).
+  procedure (SENTINEL_RUNBOOK.md §4b).
 - **An F5 decouples every bar-type seam; only an NT RESTART fixes it** — the answer to the whole BRK/FLUX/CVB
   saga. RUNBOOK §4b ①.
 - **Replay throughput:** the continuous contract `GC ##-##` delivers **0.25–1.29×** where front-month delivers
@@ -145,7 +145,7 @@ The suite has moved well past the snapshots below. Where they disagree on a vers
 
 > **⭐ NEWEST (2026-07-11) — Sentinel goes OPEN SOURCE (MPL-2.0).** A parallel *productization* thread turned the
 > suite into a shipping open-source product: the **Product Ladder** ([PRODUCT_LADDER.md](PRODUCT_LADDER.md)) + the
-> **boundary inventory** ([SENTINEL_BOUNDARY_INVENTORY.md](SENTINEL_BOUNDARY_INVENTORY.md)); the SentinelCore
+> **boundary inventory** (SENTINEL_BOUNDARY_INVENTORY.md); the SentinelCore
 > **runtime split** (→ **v1.23.0**, now a `partial class` so the Sensors bundle omits the L2 Safety layer,
 > bundle-clean-verified); the assembled **`suite-oss`** repo (in `Documents\NinjaTrader 8\Sentinel\`, *outside*
 > `bin\Custom`); a full **provenance audit** (WAE was an unlicensed port → **clean-roomed** as `SentinelWAE_v2_0_0`;
@@ -155,7 +155,7 @@ The suite has moved well past the snapshots below. Where they disagree on a vers
 The suite looks and behaves like a **system**, and as of 2026-07-07 it has a **brain**: the **Council** confluence
 arbiter (see below). Prior threads: (A) the **safety/correctness hardening push** to make it
 fundable/prop-safe (offline build DONE; LIVE validation pending) — see
-**[SENTINEL_HARDENING_FRAMEWORK.md](SENTINEL_HARDENING_FRAMEWORK.md)** + **[SENTINEL_TEST_TRACKER.md](SENTINEL_TEST_TRACKER.md)**
+**[SENTINEL_HARDENING_FRAMEWORK.md](SENTINEL_HARDENING_FRAMEWORK.md)** + **SENTINEL_TEST_TRACKER.md**
 + `sentinel-hardening` memory; (B) a **design-system / Sentinel-homing polish** thread that made the on-chart tools
 cohere and the tree self-organize; and (C) **the Deck SIGNAL ARM** — a generic indicator-plot signal → arm/auto-fire
 engine (see below + `deck-signal-arm` memory). The newest thread (D) is **fusion + orthogonal signal collection** —
@@ -213,7 +213,7 @@ Thread (E) landed. The suite now has a full **sense → decide → act → recor
   as a `"COUNCIL"` signal (schema 1.2, conviction buckets LOW/MID/HIGH). **SentinelExcursions → v1.0.5** (ByConviction
   partition + `ConvictionVerdictCode` — "does conviction pay?"). **Dashboard → v1.1.6** (⑤ Conviction referee in the
   Excursion tab; **Apply ◆** writes `<inst>_COUNCIL_<dir>.conf` — the file the Bridge reads). See
-  **[EXCURSION_RECORDER_v1_4_SPEC.md](EXCURSION_RECORDER_v1_4_SPEC.md)**.
+  **EXCURSION_RECORDER_v1_4_SPEC.md**.
 - **FEDERATED NAMING LAW ratified** (**[SENTINEL_NAMING_FEDERATION.md](SENTINEL_NAMING_FEDERATION.md)** + design-system §7):
   every Sentinel tool carries the tell on **4 layers** — display `Name="Sentinel <Thing>"`, class `Sentinel<Thing>_vX_Y_Z`,
   namespace `…Indicators.Sentinel`, cyan card + label-remover. **⚠ STRATEGIES stay in the BASE `…Strategies` namespace
@@ -306,7 +306,7 @@ entitlement, and it's an ES/NQ tool anyway) · book/spread microstructure · VIX
 ### Safety/correctness hardening (thread A)
 The active work is a **safety/correctness hardening push** to make it fundable/prop-safe — see
 **[SENTINEL_HARDENING_FRAMEWORK.md](SENTINEL_HARDENING_FRAMEWORK.md)** (the plan) +
-**[SENTINEL_TEST_TRACKER.md](SENTINEL_TEST_TRACKER.md)** + the `sentinel-hardening` memory.
+**SENTINEL_TEST_TRACKER.md** + the `sentinel-hardening` memory.
 
 **Newest since 2026-07-03 (all compiles clean; ⚠ needs live validation — market was closed):**
 - **Sentinel Deck** (`Deck_v0_2_1`, indicator, `Indicators.Sentinel`) — a MANUAL discretionary order deck +
@@ -355,7 +355,7 @@ Highlights since the Jul-1 snapshot below:
   glass card + label remover; raw maxMFE/maxMAE per signal, regime+eye tagged) → **SentinelExcursions v1.0.5** (ByConviction
   partition + `ConvictionVerdictCode`) + the **Excursion tab** (edge chart, per-signal detail, expectancy grid w/ ◆ best-responsible,
   Eye referee, **⑤ Conviction referee**, fire-rate) → **Apply ◆ / Sync-all** writes `.conf` (incl. `<inst>_COUNCIL_<dir>.conf`
-  the Bridge reads) → GTrader21 auto-reads. First finding: **FC-in-trend is the edge; OBR is noise.** See [EXCURSION_RECORDER_v1_4_SPEC.md](EXCURSION_RECORDER_v1_4_SPEC.md).
+  the Bridge reads) → GTrader21 auto-reads. First finding: **FC-in-trend is the edge; OBR is noise.** See EXCURSION_RECORDER_v1_4_SPEC.md.
 - **Safety (Risk v1.0.6):** feed lag/stall watchdog with **hysteresis** + **auto feed-recovery**; **scoped** (per-
   instrument) auto-kill; **rollover countdown**; **news lockout** (`News.conf`); **consistency governor** hosting
   (`Profiles.conf`, firm presets). **Copier v0.1.0g** — scoped-kill + governor + session gating per follower.
@@ -363,7 +363,7 @@ Highlights since the Jul-1 snapshot below:
 
 **Immediate next (all LIVE / market-open — the offline build is done):** open the dashboard **Test** tab and run
 the safe checks now (alert sound, dry-run gate probe, self-checks, ledger audit); then on a Sim session validate
-the market-open items in **[SENTINEL_TEST_TRACKER.md](SENTINEL_TEST_TRACKER.md)**: kill-switch proof, GTrader21
+the market-open items in **SENTINEL_TEST_TRACKER.md**: kill-switch proof, GTrader21
 position-state **restore** (turn on the opt-in prop, recompile mid-position, confirm NO duplicate stop), stop-fill
 **slippage**, **auto-flatten**, and **reconnect** naked-position alert. Then re-arm the live ES FC-in-trend test and
 validate the governor/session/sizing gates funded. See `memory/sentinel-hardening.md` for the blow-by-blow.
@@ -495,7 +495,7 @@ Current sequence:
 
 0. ✅ **DONE — the whole offline hardening build** (SentinelCore v1.1.0 · Dashboard v1.1.4 · AlertService v1.0.1 ·
    GTrader21 v0.1.6 fill-capture/persist/restore · Deck v0.2.0 + Copier v0.1.0h fill-capture). Compiles clean, F5'd.
-1. 🔜 **LIVE validation via the Test tab + [SENTINEL_TEST_TRACKER.md](SENTINEL_TEST_TRACKER.md)**: kill-switch proof
+1. 🔜 **LIVE validation via the Test tab + SENTINEL_TEST_TRACKER.md**: kill-switch proof
    (probe→HARD), alert sound, GTrader21 restore (opt-in; recompile mid-position; **no dup stop**), stop-fill slippage,
    auto-flatten, reconnect naked-position alert.
 2. **Validate the safety gates on a Sim account** before funded use: governor caps/loss-stop, per-account session
@@ -518,7 +518,7 @@ Current sequence:
    Bridge/Excursion Ledger records to answer *does conviction actually pay?* and feed the answer back into the sensor weights
    / `<inst>_COUNCIL_<dir>.conf`; (c) build the **Event/news veto axis** — a dedicated `EventState` seam beyond the existing
    news-lockout path, fed from `EconomicCalendar.py` `block_windows` (freshness guard · equity-bias-not-for-gold · ET→session);
-   (d) clear the pending **[SENTINEL_TEST_TRACKER.md](SENTINEL_TEST_TRACKER.md)** safety proofs (items 1-5 above).
+   (d) clear the pending **SENTINEL_TEST_TRACKER.md** safety proofs (items 1-5 above).
 
 ---
 

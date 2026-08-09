@@ -229,7 +229,7 @@ The Recorder's only intake was a `GetCouncilState` poll, so it opened every row 
 absent. You could run a strategy for a month and have *nothing to grade it with*, while every dashboard
 stayed green, because the thing that was missing had never been a row in the first place.
 
-⭐ **That, and not exit policy, was the actual blocker behind [SentinelKeel](SENTINEL_KEEL_SPEC.md).** The
+⭐ **That, and not exit policy, was the actual blocker behind SentinelKeel.** The
 system built to grade decisions could not see the decisions of the only tool making them.
 
 The fix is architectural rather than a widening: `SentinelCore.NoteSignalFire(scope, dir, tag, …)` is a

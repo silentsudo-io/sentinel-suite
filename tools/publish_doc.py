@@ -86,6 +86,34 @@ def render(text: str, facts: dict) -> tuple[str, list[str]]:
     text = text.replace("CLAUDE.md build rules", "CONTRIBUTING.md build rules")
     text = text.replace("the CLAUDE.md order-ownership", "the CONTRIBUTING.md order-ownership")
     text = text.replace("root `CLAUDE.md`", "root `CONTRIBUTING.md`")
+
+    # ── DE-LINK ANY DOC THIS REPO DOES NOT SERVE ────────────────────────────────────────────────
+    # Applies to EVERY doc, not just the index. The index filter (--index) was built first and
+    # fixed only SENTINEL_DOCS; a site-wide count then found 9 dead internal links across 6 other
+    # published docs — ROADMAP alone had 4, and one was introduced the same day by adding a
+    # perfectly reasonable cross-reference to a spec that happens not to ship.
+    #
+    # ⇒ The failure was never index-specific. Any doc can link to a doc that stayed private or
+    # simply has not shipped, and the author has no way to know which without checking the repo.
+    # So the repo answers it: the link degrades to plain text and the prose survives.
+    # Bare `Name.md` / `Name.html` only — a path with a slash (../CONTRIBUTING.md) or a URL is
+    # never touched.
+    docs_dir = os.path.join(REPO, "docs")
+    if os.path.isdir(docs_dir):
+        pub = {os.path.splitext(f)[0] for f in os.listdir(docs_dir) if f.endswith((".md", ".html"))}
+
+        def _delink(m):
+            if m.group(2) in pub:
+                return m.group(0)
+            unresolved_links.append(m.group(2))
+            return m.group(1)
+
+        unresolved_links: list[str] = []
+        text = LINK.sub(_delink, text)
+        if unresolved_links:
+            print("  de-linked %d target(s) not served here: %s"
+                  % (len(unresolved_links), ", ".join(sorted(set(unresolved_links)))))
+
     return text, unresolved
 
 
@@ -248,12 +276,31 @@ def check_renderers() -> int:
     return rc
 
 
+def deliberate_names() -> dict:
+    r"""check_parity's DELIBERATE registry — files whose published copy is INTENTIONALLY not local.
+
+    Read from check_parity rather than duplicated, because a second copy of this list is exactly
+    the "one rule, N implementations, N-1 have it" failure this repo spent 2026-08-08 removing.
+    """
+    try:
+        import importlib.util
+        p = os.path.join(HERE, "check_parity.py")
+        spec = importlib.util.spec_from_file_location("_cp", p)
+        m = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(m)
+        return dict(getattr(m, "DELIBERATE", {}))
+    except Exception:
+        return {}
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--local", required=True, help="path to bin\\Custom")
     ap.add_argument("--check", action="store_true", help="report only, write nothing")
     ap.add_argument("--index", action="store_true",
                     help="treat the doc as the docs INDEX: drop rows pointing at unpublished docs")
+    ap.add_argument("--force", action="store_true",
+                    help="publish even a file registered as a DELIBERATE divergence")
     ap.add_argument("--check-renderers", action="store_true",
                     help="verify every published .html matches tools/renderers.conf; publishes nothing")
     ap.add_argument("docs", nargs="*")
@@ -265,8 +312,28 @@ def main() -> int:
         ap.error("give at least one doc, or use --check-renderers")
 
     facts = load_facts(a.local)
+    registry = deliberate_names()
     rc = 0
     for name in a.docs:
+        # ⛔ EDITORIAL CUTS ARE PROTECTED BY NOTHING ELSE — REFUSE TO OVERWRITE ONE (2026-08-08).
+        # A doc registered as DELIBERATE has a published copy a human deliberately made DIFFERENT:
+        # SENTINEL_DATA_PLATFORM_SPEC withholds §15 because it documents an unshipped tool and
+        # names internal hosts. Republishing regenerates from the canonical copy and silently puts
+        # it back. That happened today, and — the part that matters — THE SECRET SCANNER PASSED IT:
+        # the restored section's hits are nicknames, which are REVIEW severity, not BLOCK. The
+        # editorial cut had no mechanical protection at all; the registry only ever REPORTED it.
+        # ⚠ Registered ≠ unpublishable. It means the publish must be a deliberate act, so this
+        # refuses by default and names the flag rather than warning into a scrollback nobody reads.
+        if name in registry and not a.force:
+            sys.stderr.write(
+                "publish_doc: %s is registered as a DELIBERATE divergence — refusing.\n"
+                "  Its published copy differs from local ON PURPOSE:\n"
+                "    %s\n"
+                "  Republishing would overwrite that. If the cut is genuinely obsolete, remove the\n"
+                "  entry from check_parity.DELIBERATE first, then:  --force\n"
+                % (name, registry[name][1][:400]))
+            rc = 1
+            continue
         src = os.path.join(a.local, "Docs", name)
         dst = os.path.join(REPO, "docs", name)
         if not os.path.exists(src):

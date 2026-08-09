@@ -77,13 +77,13 @@ SRC = REPO / "src"
 # spot. If the count moves, something other than the known exception changed and it is
 # reported as drift again.
 DELIBERATE = {
-    "SentinelCore_v1_0_0.cs": (37,
-        "ResolveLane is gutted on purpose: the real body calls LaneAssign.Read(), and "
-        "LaneAssign lives in SentinelCore.SystemBuilder.cs — part of the UNRELEASED System "
-        "Builder rung. Publishing it would be CS0246 for every user. Returning the caller's "
-        "F6 value is EXACTLY what the full version does when there is no Lanes.conf, and "
-        "nothing published writes one. Signature preserved so the API does not move."),
-
+    # ⛔ SentinelCore_v1_0_0.cs WAS registered here (ResolveLane gutted because LaneAssign lived in
+    #    the unreleased System Builder rung). REMOVED 2026-08-08: SentinelCore.SystemBuilder.cs —
+    #    including `public static class LaneAssign` with Read() — shipped in d6c1aea, the full-suite
+    #    release, so the premise "publishing it would be CS0246 for every user" stopped being true.
+    #    The published Core now carries the real body. ⭐ Nobody noticed the reason had expired
+    #    because the entry kept the file quietly out of the drift report — a registry entry whose
+    #    justification dies goes on suppressing forever. That is why CLOSED DIVERGENCE now reports.
     # ── EDITORIAL CUTS (2026-08-04) ─────────────────────────────────────────────────────────────
     #  These are not stale files. They are places where the canonical doc says MORE than the public
     #  one should, and they are registered here for one reason: left in the DRIFT list, the obvious
@@ -95,7 +95,7 @@ DELIBERATE = {
         "of this repo has neither the tool nor the machines, so the section is both a disclosure "
         "and useless to them. Everything else in the spec is published verbatim."),
 
-    "SENTINEL_DOCS.md": (62,
+    "SENTINEL_DOCS.md": (56,
         "The canonical index registers every doc in Docs\\; this repo ships a subset. Publishing it "
         "verbatim would not merely break links, it would publish a table of contents for the "
         "private estate — infrastructure spec, rack runbook, PKI, the replay fleet — each with a "
@@ -109,10 +109,11 @@ DELIBERATE = {
         "moves whenever the canonical index grows, and a stale count here drops the file back into "
         "DRIFT — which is how it got reported as unresolved drift on 2026-08-08."),
 
-    "ROADMAP.md": (2,
-        "Retains a prose note that AdvancedSuiteDocumentation and QuickReferenceGuide were archived "
-        "upstream, without linking them — the pages are removed from this repo. The canonical copy "
-        "names the private _archive\\ path, which means nothing to a reader here."),
+    # ⛔ ROADMAP.md WAS registered here (a prose note naming the private _archive\ path without
+    #    linking it). REMOVED 2026-08-08: publish_doc now de-links any target this repo does not
+    #    serve, and normalise_doc mirrors that on the local side, so the difference is a mechanical
+    #    transform rather than an editorial cut. The registry is for what a human decided to
+    #    withhold; anything a transform explains does not belong in it.
 }
 
 # Anchored at line start ON PURPOSE. A bare substring search also matches a COMMENT
@@ -252,8 +253,31 @@ def normalise_doc(text: str, facts: dict, local_side: bool = False) -> list[str]
     # survive it. (The value itself is fixed at source in facts.py; this is the belt.)
     if local_side:
         text, _ = _apply_scrub(text, _scrub_rules())
+        # ⚠ FOURTH PUBLISH-TIME TRANSFORM, normalised here for the same reason as the other three
+        # (frontmatter, tokens, scrub): publish_doc de-links any `Name.md` this repo does not
+        # serve, so the published copy legitimately says `Runbook` where local says
+        # `[Runbook](SENTINEL_RUNBOOK.md)`. Without this the six docs carrying such a link read as
+        # permanent drift, and the obvious "fix" is to register them as deliberate divergences —
+        # which would be the wrong primitive entirely: they are not editorial cuts, they are a
+        # mechanical transform, and the registry is for things a human decided to withhold.
+        text = _DOCLINK_RE.sub(
+            lambda m: m.group(0) if m.group(2) in _served_docs() else m.group(1), text)
     # prose reflows freely; compare on content, not on where a line happened to wrap
     return [ln.rstrip() for ln in text.rstrip().split("\n") if ln.strip()]
+
+
+_DOCLINK_RE = re.compile(r"\[([^\]]+)\]\(([A-Za-z0-9_.-]+)\.(?:md|html)\)")
+_SERVED_CACHE: set | None = None
+
+
+def _served_docs() -> set:
+    """Doc stems this repo actually serves — .md OR .html (several ship HTML-only)."""
+    global _SERVED_CACHE
+    if _SERVED_CACHE is None:
+        d = REPO / "docs"
+        _SERVED_CACHE = {p.stem for p in d.iterdir()
+                         if p.suffix in (".md", ".html")} if d.is_dir() else set()
+    return _SERVED_CACHE
 
 
 def find_local(local_root: Path, published: Path) -> Path | None:
@@ -347,6 +371,7 @@ def main() -> int:
         return 2
 
     drifted, errors, orphaned, clean = [], [], [], 0
+    compared: set = set()          # every published file actually reached, for the closed-divergence check
 
     # ── docs/ ── published prose, same canonical-ahead model as src/, own transforms.
     facts = _load_facts(local_root)
@@ -368,6 +393,7 @@ def main() -> int:
                     a, b, fromfile=f"published/{pub.name}", tofile=f"local/{pub.name}",
                     lineterm="")))
                 return 0
+            compared.add(pub.name)
             if a == b:
                 clean += 1
             else:
@@ -397,6 +423,7 @@ def main() -> int:
                 a, b, fromfile=f"published/{pub.name}", tofile=f"local/{pub.name}", lineterm="")))
             return 0
 
+        compared.add(pub.name)
         if a == b:
             clean += 1
         else:
@@ -440,6 +467,28 @@ def main() -> int:
     deliberate = [d for d in drifted if registration(d) and registration(d)[0] == d[1]]
     stale_reg = [d for d in drifted if registration(d) and registration(d)[0] != d[1]]
     drifted = [d for d in drifted if not registration(d)]
+
+    # ⛔ A REGISTERED DIVERGENCE THAT IS NOW FAITHFUL MEANS THE WITHHELD THING GOT PUBLISHED.
+    # This is the dangerous direction and it was invisible until 2026-08-08: `publish.py --update`
+    # overwrites the published copy from the canonical one, which silently CLOSES a divergence the
+    # registry says must not be closed. It happened to SentinelCore that day. Drift is loud; the
+    # absence of drift is not, so a divergence disappearing has to be announced too.
+    drifted_names = {Path(d[0]).name for d in drifted} | {Path(d[0]).name for d in deliberate} \
+        | {Path(d[0]).name for d in stale_reg}
+    published_names = compared
+    closed_reg = [n for n in DELIBERATE
+                  if n not in drifted_names and (not published_names or n in published_names)]
+
+    if closed_reg:
+        print(f"CLOSED DIVERGENCE ({len(closed_reg)}) — registered as DELIBERATE, now IDENTICAL to local.")
+        print("    The withheld difference is no longer withheld: something published it, most likely")
+        print("    `publish.py --update`, which overwrites the snapshot from the canonical copy.")
+        print("    Confirm the content was safe to ship, then DELETE the DELIBERATE entry — leaving a")
+        print("    stale one is how the registry rots into a blind spot.\n")
+        for n in sorted(closed_reg):
+            print(f"    {n}")
+            print(f"             was: {DELIBERATE[n][1][:150]}…")
+        print()
 
     if stale_reg:
         print(f"STALE REGISTRATION ({len(stale_reg)}) — registered as DELIBERATE, but the size moved.")

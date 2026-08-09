@@ -705,7 +705,7 @@ watched</strong> — a monitor whose output nobody could see is not a monitor.</
 <h3 id="operator-use-the-preflight">Operator use — the preflight</h3>
 <p>Start a bake, let it run <strong>~10 minutes</strong>, run <code>python Lab\verify_votes.py --days 1</code>, and require <strong><code>EXIT=0</code> with
 every lane "complete"</strong> before committing to the long run. This is the standing procedure in
-<a href="SENTINEL_RUNBOOK.md">SENTINEL_RUNBOOK.md</a> §4b ②.</p>
+SENTINEL_RUNBOOK.md §4b ②.</p>
 <hr />
 <h2 id="14-fault-recording-in-the-lab-2026-07-25-lab_faultsswallow">14. Fault recording in the Lab (2026-07-25) — <code>lab_faults.swallow()</code></h2>
 <p>The Lab's counterpart to <code>SentinelCore.Swallow</code> on the C# side. Same problem, same fix: a probe, an
@@ -750,7 +750,7 @@ counts everything including throttled occurrences, so <code>fault_total()</code>
 </table>
 <p><strong>Retention is 5 generations, not one, on purpose.</strong> Single-generation rotation destroyed a live
 forensic window twice in one night during the BRK/FLUX investigation (see NOW.md and
-<a href="SENTINEL_RUNBOOK.md">SENTINEL_RUNBOOK.md</a> §4b ⑤).</p>
+SENTINEL_RUNBOOK.md §4b ⑤).</p>
 <p><strong>Migration state (2026-07-25):</strong> all <strong>53</strong> silent handlers across <strong>23</strong> Lab files now record —
 <code>health\probe.py</code> 11 · <code>docs\audit.py</code> 5 · <code>verify_votes.py</code> 5 · <code>viz\observatory.py</code> 5, and the rest.
 Zero bare <code>except:</code> remain. Verified by driving, not by reading: every file imports, <code>verify_votes.py</code>

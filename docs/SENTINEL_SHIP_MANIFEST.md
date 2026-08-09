@@ -1,7 +1,7 @@
 # Sentinel Suite — SHIP MANIFEST
 
 > **⚠ Dated snapshot (2026-07-06).** The current ship set is larger than what's listed below — see
-> **[SENTINEL_BOUNDARY_INVENTORY.md](SENTINEL_BOUNDARY_INVENTORY.md)** for the authoritative file→rung→bundle map
+> **SENTINEL_BOUNDARY_INVENTORY.md** for the authoritative file→rung→bundle map
 > (it adds Council, Bridge, Cockpit, WAE, GodReversal, SentinelFlux, the 5 orthogonal axes, and the data platform).
 > The dependency-graph *principles* here (one-assembly compile, 2 shared runtime files, collision defense) still hold.
 

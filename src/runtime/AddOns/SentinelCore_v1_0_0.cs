@@ -7,8 +7,11 @@
 // ─────────────────────────────────────────────────────────────────────────────
 // ═════════════════════════════════════════════════════════════════════════════
 //  SentinelCore — shared infrastructure for the Sentinel Suite (NT8)
-//  File: SentinelCore_v1_0_0.cs
-//  Version: v1.0.0
+//  File: SentinelCore_v1_0_0.cs          ← FROZEN identity; the filename never moves (serialization)
+//  Version: v1.47.0                      ← the LIVE version. Must equal `const string Version` below.
+//  ⚠ This banner read v1.0.0 until 2026-08-08 — 47 minor versions behind the const it is supposed to
+//    mirror — because it looked like it was just restating the filename. It was not: it is a version
+//    CLAIM, and it was the one a human reads. Checked now by Lab\docs\version_check.py.
 // ─────────────────────────────────────────────────────────────────────────────
 //  WHAT THIS IS  (see Docs/ROADMAP.md, memory: sentinel-suite-architecture)
 //    The ONE intentional shared dependency of the Sentinel Suite. Every Sentinel
@@ -581,17 +584,36 @@ namespace NinjaTrader.NinjaScript.AddOns.Sentinel
         private static readonly HashSet<string> _laneAnnounced = new HashSet<string>();
         private static readonly object _laneAnnounceGate = new object();
 
-        /// <summary>The EFFECTIVE lane for a chart.
-        ///
-        /// ⚠ PUBLISHED BUILD — lane-from-disk is NOT in this cut. The full implementation reads
-        /// Sentinel\Lanes.conf via `LaneAssign`, which lives in SentinelCore.SystemBuilder.cs, part of
-        /// the unreleased System Builder rung. Rather than ship half that substrate, this build returns
-        /// the caller's F6 value unchanged — which is EXACTLY what the full version does when there is
-        /// no Lanes.conf and no matching entry, and nothing in the released bundles writes one. The
-        /// signature is kept so the API does not move when the rung ships.</summary>
+        /// <summary>The EFFECTIVE lane for a chart. Sentinel\Lanes.conf (scope then instrument) OVERRIDES
+        /// the F6 value; with no file and no entry the F6 value is returned unchanged (back-compat).
+        /// LOGS ONCE per (key -> lane) when the file wins — a silent disagreement between the file and F6
+        /// is exactly the failure this exists to prevent, so it must never be quiet.</summary>
         public static string ResolveLane(string inst, string barTag, string f6Lane)
         {
-            return SanitizeLane(f6Lane);
+            string f6 = SanitizeLane(f6Lane);
+            try
+            {
+                var map = LaneAssign.Read();
+                if (map.Count == 0) return f6;
+
+                string key = null, val = null;
+                string scopeKey = (!string.IsNullOrEmpty(inst) && !string.IsNullOrEmpty(barTag)) ? inst + "." + barTag : null;
+                if (scopeKey != null && map.TryGetValue(scopeKey, out val)) key = scopeKey;
+                else if (!string.IsNullOrEmpty(inst) && map.TryGetValue(inst, out val)) key = inst;
+                if (key == null) return f6;
+
+                string resolved = SanitizeLane(val);
+                if (string.Equals(resolved, f6, StringComparison.OrdinalIgnoreCase)) return f6;   // agree: nothing to say
+
+                string stamp = key + "->" + resolved + "|f6=" + f6;
+                bool announce;
+                lock (_laneAnnounceGate) { announce = _laneAnnounced.Add(stamp); }
+                if (announce)
+                    Log("Core", "LANE from Lanes.conf: '" + resolved + "' for " + key
+                              + " (F6 ScopeLane said '" + (string.IsNullOrEmpty(f6) ? "<blank>" : f6) + "') — the FILE wins");
+                return resolved;
+            }
+            catch (Exception _sx) { SentinelCore.Swallow("SentinelCore.ResolveLane", _sx); return f6; }
         }
 
         private static string SanitizeLane(string lane)
