@@ -89,12 +89,180 @@ def render(text: str, facts: dict) -> tuple[str, list[str]]:
     return text, unresolved
 
 
+LINK = re.compile(r"\[([^\]]+)\]\(([A-Za-z0-9_.-]+)\.(md|html)\)")
+TABLE_HDR = re.compile(r"^\s*\|[^|]*\|")          # any table row, header or data
+TABLE_SEP = re.compile(r"^\s*\|[\s:-]+\|[\s:|-]*$")
+HEADING = re.compile(r"^(#{2,4})\s")
+
+
+def published_docs(repo_docs: str) -> set:
+    """Doc stems that actually exist in the published tree — .md OR .html.
+
+    ⚠ BOTH extensions, and this is not pedantry. Built from .md alone, the first version of this
+    filter dropped SENTINEL_PROCESS_ATLAS, SENTINEL_ARCHITECTURE_MAP and SENTINEL_RUNTIME_TOPOLOGY,
+    which ship as hand-authored HTML with no markdown source. Three front-door links would have
+    vanished from the index on the grounds that the pages "do not exist".
+    """
+    return {os.path.splitext(f)[0] for f in os.listdir(repo_docs)
+            if f.endswith((".md", ".html"))}
+
+
+def filter_index(text: str, pub: set) -> tuple[str, dict]:
+    r"""Reduce the canonical docs index to the docs that are actually published.
+
+    WHY THIS EXISTS, and why the rule is "published" rather than "not secret".
+    The canonical index lists every doc in Docs\ — 85 linking rows. Published verbatim, 49 of them
+    point at files that are not in this repo. Only 7 are withheld for secrecy (the infra docs); the
+    other 42 are ordinary public docs that simply have not shipped. So the dominant failure is not
+    disclosure, it is a front door where half the links 404.
+
+    Keying the filter on the PUBLISHED SET makes both problems the same problem, and makes it
+    fail safe: a doc that is new, private, or merely unfinished is absent from this repo, so it is
+    excluded by default. A denylist keyed on zones.conf would need editing every time a private doc
+    is added — and would still have shipped all 42 dead links.
+
+    Three cases, and the mixed one is why this is not a one-liner:
+      * every link target unpublished  -> drop the row (it is entirely about absent docs)
+      * some published, some not       -> DE-LINK the absent ones, keep the row. Dropping it would
+                                          lose a published doc's only listing.
+      * a section left with no rows    -> drop the heading and its table header too. A bare
+                                          "### Infrastructure & ops" heading over an empty table
+                                          advertises the withheld content by name, which is the
+                                          disclosure this filter exists to prevent.
+    """
+    lines = text.splitlines(keepends=True)
+    out, stats = [], {"rows_kept": 0, "rows_dropped": 0, "delinked": 0, "sections_dropped": 0}
+
+    for line in lines:
+        targets = LINK.findall(line)
+        if targets and (line.lstrip().startswith("|") or line.lstrip().startswith("-")):
+            stems = [t[1] for t in targets]
+            if not any(s in pub for s in stems):
+                stats["rows_dropped"] += 1
+                continue
+            if not all(s in pub for s in stems):
+                def delink(m):
+                    if m.group(2) in pub:
+                        return m.group(0)
+                    stats["delinked"] += 1
+                    return m.group(1)
+                line = LINK.sub(delink, line)
+            stats["rows_kept"] += 1
+        out.append(line)
+
+    # SAFETY NET — de-link any surviving link to an unpublished doc, anywhere.
+    # ⚠ The row pass above only inspects lines that START with | or -, and the first run of this
+    # filter shipped a dead SENTINEL_BOUNDARY_INVENTORY link sitting on the CONTINUATION line of a
+    # multi-line bullet. A row-shaped filter cannot see a row that wraps. This sweep is
+    # structure-blind on purpose, so prose links are covered too.
+    def sweep(m):
+        if m.group(2) in pub:
+            return m.group(0)
+        stats["delinked"] += 1
+        return m.group(1)
+
+    out = [LINK.sub(sweep, ln) for ln in out]
+
+    # second pass: drop headings whose section no longer has a single data row
+    pruned, i = [], 0
+    while i < len(out):
+        line = out[i]
+        m = HEADING.match(line)
+        if m:
+            j = i + 1
+            has_row = False
+            while j < len(out) and not HEADING.match(out[j]):
+                s = out[j]
+                if TABLE_HDR.match(s) and not TABLE_SEP.match(s) and "| doc | status |" not in s:
+                    has_row = True
+                    break
+                if s.strip() and not TABLE_HDR.match(s) and not s.strip().startswith("|"):
+                    has_row = True     # prose section, not a filtered table — always keep
+                    break
+                j += 1
+            if not has_row:
+                stats["sections_dropped"] += 1
+                i = j
+                continue
+        pruned.append(line)
+        i += 1
+
+    # Say so. An index silently reduced to a subset reads as the whole map, and a reader who
+    # cannot see that rows were removed has no way to ask for the ones that were.
+    body = "".join(pruned)
+    banner = ("> ℹ **This is the published subset.** The canonical index lists every document in the\n"
+              "> working tree; rows pointing at documents that are not part of this repository have been\n"
+              "> filtered out, so every link here resolves. Nothing is hidden by omission that is not\n"
+              "> simply unpublished.\n\n")
+    m = re.search(r"^# .*\n", body, re.M)
+    if m:
+        body = body[:m.end()] + "\n" + banner + body[m.end():].lstrip("\n")
+    return body, stats
+
+
+def check_renderers() -> int:
+    r"""Verify every published .html still matches the renderer tools\renderers.conf declares.
+
+    The two renderers emit identical chrome, so the only reliable discriminator is a body marker:
+    render_doc emits <h1 id="…"> (python-markdown's toc extension), md2atlas emits a bare <h1>.
+    A page whose marker stops matching its declaration means someone re-rendered it with the other
+    tool — which rewrites the entire body and buries any real change in thousands of cosmetic lines.
+    Catching that here is cheaper than catching it in a diff.
+    """
+    docs = os.path.join(REPO, "docs")
+    conf = os.path.join(HERE, "renderers.conf")
+    declared = {}
+    with open(conf, encoding="utf-8") as f:
+        for line in f:
+            line = line.split("#")[0].strip()
+            if line:
+                stem, r = line.split()
+                declared[stem] = r
+
+    rc, checked = 0, 0
+    for fn in sorted(os.listdir(docs)):
+        if not fn.endswith(".html"):
+            continue
+        stem = fn[:-5]
+        want = declared.get(stem)
+        if want is None:
+            print("  ⚠ %s — published but NOT DECLARED in renderers.conf" % fn)
+            rc = 1
+            continue
+        has_md = os.path.exists(os.path.join(docs, stem + ".md"))
+        with open(os.path.join(docs, fn), encoding="utf-8") as f:
+            body = f.read()
+        if want == "handwritten":
+            if has_md:
+                print("  ⚠ %s — declared handwritten but a .md source exists" % fn)
+                rc = 1
+            checked += 1
+            continue
+        got = "render_doc" if "<h1 id=" in body else "md2atlas"
+        checked += 1
+        if got != want:
+            print("  ✗ %s — declared %s, looks like %s" % (fn, want, got))
+            rc = 1
+    print("  renderers: %d pages checked, %d declared%s"
+          % (checked, len(declared), "" if rc == 0 else "  — MISMATCHES ABOVE"))
+    return rc
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--local", required=True, help="path to bin\\Custom")
     ap.add_argument("--check", action="store_true", help="report only, write nothing")
-    ap.add_argument("docs", nargs="+")
+    ap.add_argument("--index", action="store_true",
+                    help="treat the doc as the docs INDEX: drop rows pointing at unpublished docs")
+    ap.add_argument("--check-renderers", action="store_true",
+                    help="verify every published .html matches tools/renderers.conf; publishes nothing")
+    ap.add_argument("docs", nargs="*")
     a = ap.parse_args()
+
+    if a.check_renderers:
+        return check_renderers()
+    if not a.docs:
+        ap.error("give at least one doc, or use --check-renderers")
 
     facts = load_facts(a.local)
     rc = 0
@@ -107,6 +275,10 @@ def main() -> int:
             continue
         with open(src, encoding="utf-8") as f:
             out, unresolved = render(f.read(), facts)
+        if a.index:
+            out, st = filter_index(out, published_docs(os.path.join(REPO, "docs")))
+            print("  index filter: %d rows kept · %d dropped · %d links de-linked · %d empty sections dropped"
+                  % (st["rows_kept"], st["rows_dropped"], st["delinked"], st["sections_dropped"]))
         if unresolved:
             print("  ⚠ %s — UNRESOLVED tokens: %s" % (name, ", ".join(sorted(set(unresolved)))))
             rc = 1

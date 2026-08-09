@@ -249,6 +249,12 @@
 <header>
 <p class="kicker"><svg class="brandmark" viewBox="0 0 512 512" aria-hidden="true"><use href="#helm"/></svg><span class="livedot"></span> Sentinel Suite · NinjaTrader 8 · living document<span class="navsep">·</span><a class="navhome" href="SENTINEL_DOCS.html">Docs home →</a></p>
 <h1 id="sentinel-documentation">Sentinel Documentation</h1>
+<blockquote>
+<p>ℹ <strong>This is the published subset.</strong> The canonical index lists every document in the
+working tree; rows pointing at documents that are not part of this repository have been
+filtered out, so every link here resolves. Nothing is hidden by omission that is not
+simply unpublished.</p>
+</blockquote>
 <p>The one door into the Sentinel Suite's documentation — a bound set of living documents, four chapters by
 audience, all in one house style. Start with the reading path that fits why you're here.</p>
 <h2 id="start-here-pick-your-path">Start here — pick your path</h2>
@@ -266,7 +272,7 @@ audience, all in one house style. Start with the reading path that fits why you'
 <li><strong>Writing code for it?</strong> → the <a href="SENTINEL_DESIGN_SYSTEM.html">Design System</a> (palette, components, build),
   the <a href="SENTINEL_ML_SPEC.html">ML Spec</a> (schema + the offline Lab), the
   <a href="SENTINEL_DATASET_DICTIONARY.html">Dataset Dictionary</a> (corpus syntax, nomenclature &amp; how the Lab reads
-  it).</li>
+  it), and the Boundary Inventory (every file → rung → bundle).</li>
 </ul>
 <h2 id="the-chapters">The chapters</h2>
 <table>
@@ -502,15 +508,25 @@ status. If you cannot state its status in a line, that is a signal about the doc
 <td>the pipeline and the packaging map</td>
 </tr>
 <tr>
-<td><a href="SENTINEL_SUITE_MANUAL.md">Suite Manual</a> · <a href="../README.md">README</a></td>
+<td><a href="SENTINEL_SUITE_MANUAL.md">Suite Manual</a> · README</td>
 <td>zero-to-fluent manual · repo front page</td>
 </tr>
 <tr>
-<td><a href="SENTINEL_SHIP_MANIFEST.md">Ship Manifest</a></td>
-<td>what ships</td>
+<td>Test Tracker · <a href="SENTINEL_SHIP_MANIFEST.md">Ship Manifest</a></td>
+<td>what is tested · what ships</td>
 </tr>
 </tbody>
 </table>
+<h3 id="archived-docs_archive">Archived — <code>Docs\_archive\</code></h3>
+<p>Superseded or pre-Sentinel. Kept, not deleted, because several are only legible as the plan that was wrong.</p>
+<p><code>SENTINEL_REPLAY_FARM_SPEC</code> (answered by the Watch) · <code>EYE_ADJUDICATION</code> (the Eye is dead) ·
+<code>AdvancedSuiteDocumentation</code> · <code>QuickReferenceGuide</code> · <code>FuzzyLogicProjectConversation</code> (all pre-Sentinel).</p>
+<hr />
+<p>⚠ <strong>25 of the documents in <code>Docs\</code> have no status line.</strong> (Said that way deliberately: this count is over
+the whole canonical tree, and the published copy of this index lists only a subset — "25 of <em>these</em>" would
+be false there while looking freshly checked.) That is the next thing worth fixing: a doc that never
+states whether it is a plan, a spec or a record cannot be audited for staleness, and this whole sweep started
+because three documents' status lines had been false for weeks.</p>
 <h2 id="the-system-in-one-line">The system in one line</h2>
 <p>SENSORS watch (incl. the <strong>order-flow FLUX</strong> axis) → CORE carries → COUNCIL decides → BRIDGE / DECK act → GATE guards →
 LEDGER remembers → LENS grades → <strong>LAB learns</strong> (the built SQLite data platform fits the ConvictionFloor + per-bar-type

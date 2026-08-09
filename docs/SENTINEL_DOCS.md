@@ -1,5 +1,10 @@
 # Sentinel Documentation
 
+> ℹ **This is the published subset.** The canonical index lists every document in the
+> working tree; rows pointing at documents that are not part of this repository have been
+> filtered out, so every link here resolves. Nothing is hidden by omission that is not
+> simply unpublished.
+
 The one door into the Sentinel Suite's documentation — a bound set of living documents, four chapters by
 audience, all in one house style. Start with the reading path that fits why you're here.
 
@@ -18,7 +23,7 @@ audience, all in one house style. Start with the reading path that fits why you'
 - **Writing code for it?** → the [Design System](SENTINEL_DESIGN_SYSTEM.html) (palette, components, build),
   the [ML Spec](SENTINEL_ML_SPEC.html) (schema + the offline Lab), the
   [Dataset Dictionary](SENTINEL_DATASET_DICTIONARY.html) (corpus syntax, nomenclature & how the Lab reads
-  it).
+  it), and the Boundary Inventory (every file → rung → bundle).
 
 ## The chapters
 
@@ -93,8 +98,22 @@ unregistered, or it should be in `_archive\`.
 | doc | status |
 |---|---|
 | [Roadmap](ROADMAP.md) · [Product Ladder](PRODUCT_LADDER.md) | the pipeline and the packaging map |
-| [Suite Manual](SENTINEL_SUITE_MANUAL.md) · [README](../README.md) | zero-to-fluent manual · repo front page |
-| [Ship Manifest](SENTINEL_SHIP_MANIFEST.md) | what ships |
+| [Suite Manual](SENTINEL_SUITE_MANUAL.md) · README | zero-to-fluent manual · repo front page |
+| Test Tracker · [Ship Manifest](SENTINEL_SHIP_MANIFEST.md) | what is tested · what ships |
+
+### Archived — `Docs\_archive\`
+Superseded or pre-Sentinel. Kept, not deleted, because several are only legible as the plan that was wrong.
+
+`SENTINEL_REPLAY_FARM_SPEC` (answered by the Watch) · `EYE_ADJUDICATION` (the Eye is dead) ·
+`AdvancedSuiteDocumentation` · `QuickReferenceGuide` · `FuzzyLogicProjectConversation` (all pre-Sentinel).
+
+---
+
+⚠ **25 of the documents in `Docs\` have no status line.** (Said that way deliberately: this count is over
+the whole canonical tree, and the published copy of this index lists only a subset — "25 of *these*" would
+be false there while looking freshly checked.) That is the next thing worth fixing: a doc that never
+states whether it is a plan, a spec or a record cannot be audited for staleness, and this whole sweep started
+because three documents' status lines had been false for weeks.
 
 ## The system in one line
 
