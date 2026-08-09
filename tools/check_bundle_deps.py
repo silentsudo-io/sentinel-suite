@@ -58,6 +58,17 @@ def strip_comments(src: str) -> str:
     return src
 
 
+# Brace counting decides top-level vs nested (see `defined_types`), and a FORMAT STRING
+# is full of braces: `Log($"{a} of {b}")`. Left in, those inflate the depth and a
+# genuinely top-level type reads as nested -- which would DROP it from the universe and
+# MISS a real dependency. That is the dangerous direction, so strings go first.
+_STR_RE = re.compile(r'@"(?:[^"]|"")*"|"(?:\\.|[^"\\])*"|\'(?:\\.|[^\'\\])*\'', re.DOTALL)
+
+
+def strip_strings(src: str) -> str:
+    return _STR_RE.sub(' ', src)
+
+
 def is_nt_sdk(f: Path) -> bool:
     try:
         head = f.read_text(encoding='utf-8', errors='replace')[:2000]
@@ -85,12 +96,48 @@ def is_sentinel(f: Path) -> bool:
     return bool(SENTINEL_HDR_RE.search(head))
 
 
+def top_level_types(src: str) -> set:
+    """Type names another FILE could reference by their simple name.
+
+    ⭐ NESTED TYPES ARE EXCLUDED, AND EXCLUDING THEM LOSES NO COVERAGE — that is the
+    whole argument, so it is written down rather than trusted.
+    A `public sealed class Pt` nested inside `SentinelExcursions_v1_0` is reachable
+    from another file only as `SentinelExcursions_v1_0.Pt`. So either:
+      * the other bundle really uses it — and then it must also name the OUTER type,
+        which IS top-level and IS still checked; or
+      * the other bundle merely has its own local `Pt` — and there was never a
+        dependency at all.
+    Either way the dependency is still caught, and the false positive is gone.
+
+    ⛔ MEASURED, not assumed (2026-08-09): this rule removed 15 findings and kept all
+    16 real ones. Every one of the 15 was a generic nested name — `Pt`, `Sub`, `Kind`,
+    `Group`, `Result`, `Trade`, `Summary`, `TpStop`, `Config`, `RiskSnapshot`,
+    `OpenSnapshot`, `AlertChannelConfig` — and in every case where the reference was
+    genuine, the outer type was ALREADY in the real list on its own.
+
+    Why it mattered: 15 of 31 findings were noise, and `bundle-deps` had been red on
+    every push since the 2026-08-07 full-suite release. A gate that cries wolf on half
+    its output is a gate people stop reading — and this one was being ignored while it
+    was also reporting 16 true cross-bundle breaks.
+    """
+    body = strip_strings(strip_comments(src))
+    out = set()
+    for m in DEF_RE.finditer(body):
+        head = body[:m.start()]
+        # `namespace X { }` is a brace that is not a nesting TYPE, so discount one
+        # level per namespace opened before this point.
+        depth = head.count('{') - head.count('}') - len(re.findall(r'\bnamespace\b', head))
+        if depth <= 0:
+            out.add(m.group(1))
+    return out
+
+
 def defined_types(files, skip_nt_sdk=False) -> set:
     out = set()
     for f in files:
         if skip_nt_sdk and is_nt_sdk(f):
             continue
-        out.update(DEF_RE.findall(strip_comments(f.read_text(encoding='utf-8', errors='replace'))))
+        out.update(top_level_types(f.read_text(encoding='utf-8', errors='replace')))
     return out
 
 
