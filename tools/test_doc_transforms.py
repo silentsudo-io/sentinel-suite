@@ -116,6 +116,36 @@ check("no_protection_here" in au.CODEBLK.sub("", "A bare {{no_protection_here}} 
       "audit.py's code-strip also removed a BARE token",
       "anti-vacuous: it must still catch genuinely dangling tokens")
 
+# ── 5. index filtering must DROP a private row, not de-link it into surviving prose ───────────
+# ⚠ REGRESSION GUARD (2026-08-08). The site-wide de-link was added inside render(); the index
+# filter keys on LINKS, so de-linking first destroyed what it matches. A row pointing at a PRIVATE
+# doc became plain text, stopped looking like a linking row, survived the filter, and put private
+# doc names into the published index as prose. Order is load-bearing, and this asserts the order.
+INDEX_FIXTURE = (
+    "# Docs\n\n"
+    "### Infrastructure & ops\n"
+    "| doc | status |\n|---|---|\n"
+    "| [Infra Runbook](SENTINEL_PRIVATE_NOT_SHIPPED.md) | the whole rack |\n\n"
+    "### Public\n"
+    "| doc | status |\n|---|---|\n"
+    "| [Roadmap](ROADMAP.md) | the pipeline map |\n"
+)
+# ⛔ THIS MUST RUN THE REAL PIPELINE, NOT filter_index ALONE. The first version of this check called
+# filter_index() directly, so it passed whether the ordering was right or wrong — it could not see
+# the bug it was written for. Caught by injecting the regression and watching the test stay green:
+# a check that cannot fail for its own reason is not a check. Mirror main()'s composition exactly.
+_rendered, _ = pd.render(INDEX_FIXTURE, FACTS, delink=False)      # --index defers de-linking
+filtered, _stats = pd.filter_index(_rendered, {"ROADMAP"})
+filtered, _ = pd.render(filtered, FACTS, delink=True)             # …and applies it AFTER
+check("SENTINEL_PRIVATE_NOT_SHIPPED" not in filtered,
+      "index filter LEFT a private doc's name behind",
+      "de-linking must not run before the filter, or the row survives as prose")
+check("Infrastructure & ops" not in filtered,
+      "index filter left an EMPTY section heading naming withheld content")
+check("[Roadmap](ROADMAP.md)" in filtered,
+      "index filter dropped a row it should have kept",
+      "anti-vacuous: dropping everything must not pass")
+
 # ── report ────────────────────────────────────────────────────────────────────────────────────
 print(f"doc-transform conformance: {checks} checks across 4 transforms")
 if failures:

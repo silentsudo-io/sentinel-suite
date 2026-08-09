@@ -57,7 +57,7 @@ def load_facts(custom: str) -> dict:
         return json.load(f)
 
 
-def render(text: str, facts: dict) -> tuple[str, list[str]]:
+def render(text: str, facts: dict, delink: bool = True) -> tuple[str, list[str]]:
     text = FRONTMATTER.sub("", text, count=1)
 
     unresolved: list[str] = []
@@ -98,8 +98,14 @@ def render(text: str, facts: dict) -> tuple[str, list[str]]:
     # So the repo answers it: the link degrades to plain text and the prose survives.
     # Bare `Name.md` / `Name.html` only — a path with a slash (../CONTRIBUTING.md) or a URL is
     # never touched.
+    # ⚠ ORDER IS LOAD-BEARING (2026-08-08). The index filter keys on LINKS, so de-linking
+    # first destroys the very thing it matches: a row pointing at a PRIVATE doc became
+    # plain text, stopped looking like a linking row, and SURVIVED the filter — putting
+    # private doc names into the published index as prose. Second ordering break of the
+    # same day (the scrub had to move after token substitution for the same reason).
+    # ⇒ With --index, render() defers this and main() applies it AFTER filter_index.
     docs_dir = os.path.join(REPO, "docs")
-    if os.path.isdir(docs_dir):
+    if delink and os.path.isdir(docs_dir):
         pub = {os.path.splitext(f)[0] for f in os.listdir(docs_dir) if f.endswith((".md", ".html"))}
 
         def _delink(m):
@@ -341,11 +347,12 @@ def main() -> int:
             rc = 1
             continue
         with open(src, encoding="utf-8") as f:
-            out, unresolved = render(f.read(), facts)
+            out, unresolved = render(f.read(), facts, delink=not a.index)
         if a.index:
             out, st = filter_index(out, published_docs(os.path.join(REPO, "docs")))
             print("  index filter: %d rows kept · %d dropped · %d links de-linked · %d empty sections dropped"
                   % (st["rows_kept"], st["rows_dropped"], st["delinked"], st["sections_dropped"]))
+            out, _ = render(out, facts, delink=True)   # de-link AFTER filtering, never before
         if unresolved:
             print("  ⚠ %s — UNRESOLVED tokens: %s" % (name, ", ".join(sorted(set(unresolved)))))
             rc = 1
