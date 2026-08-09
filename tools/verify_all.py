@@ -47,11 +47,23 @@ CHECKS = [
      "drift · a STALE REGISTRATION · or a CLOSED DIVERGENCE (something withheld got published)"),
 
     ("version self-consistency",
-     lambda local: [sys.executable,
-                    os.path.join(os.path.dirname(local), "..", "Sentinel", "Lab", "docs",
-                                 "version_check.py")],
+     # ⚠ Prefer the canonical tree's copy, but FALL BACK TO THE ONE IN THIS REPO. Found by
+     # rehearsing the bootstrap doc from a bare clone: the canonical-tree path does not exist on a
+     # fresh machine, so this guard reported UNTESTED even though src/lab/docs/version_check.py was
+     # sitting right there. A guard that cannot find itself in a clean checkout is a guard that
+     # never runs for the person who most needs it.
+     lambda local: [sys.executable, _version_check_path(local)] +
+                   (["--custom", local] if os.path.isdir(local) else []),
      "a file states two different versions of itself; the const is what stamps the data"),
 ]
+
+
+def _version_check_path(local: str) -> str:
+    canonical = os.path.abspath(os.path.join(os.path.dirname(local), "..", "Sentinel",
+                                             "Lab", "docs", "version_check.py"))
+    if os.path.exists(canonical):
+        return canonical
+    return os.path.join(REPO, "src", "lab", "docs", "version_check.py")
 
 
 def check_hook_installed() -> tuple[bool, str]:
@@ -86,6 +98,20 @@ def main() -> int:
     ap.add_argument("-v", "--verbose", action="store_true", help="show each check's full output")
     a = ap.parse_args()
     local = os.path.abspath(a.local)
+
+    # ⛔ MISCONFIGURED IS NOT FAILED, and conflating them is the exact lie this tool exists to stop.
+    # Rehearsing the bootstrap doc from a bare clone, a non-existent --local made snapshot parity
+    # report "FAILED — drift · STALE REGISTRATION · CLOSED DIVERGENCE". A new operator would go
+    # hunting for drift that does not exist, when the real message is "you have not restored
+    # bin\Custom yet" — which is precisely the gap §7 of the bootstrap doc is about.
+    if not os.path.isdir(local):
+        print(f"verify_all: --local is not a directory:\n  {local}\n")
+        print("  This is a SETUP problem, not a failing guard. bin\\Custom is the canonical")
+        print("  NinjaTrader tree; it is only PARTLY published, so cloning this repo does not")
+        print("  create it. See Docs\\SENTINEL_BOOTSTRAP.md §7.")
+        print("\n  Guards that need no canonical tree can still be run individually:")
+        print("    python tools/test_doc_transforms.py")
+        return 2
 
     print(f"verify_all — {len(CHECKS) + 1} guards\n")
     failed, untested = [], []
