@@ -331,11 +331,35 @@ def main() -> int:
         if not pub.exists():
             sys.stderr.write("publish: %s is not in the snapshot\n" % pub)
             return 2
+
+        # ⛔ WRONG-TOOL GUARD (2026-08-08). This is the CODE path: it strips the NinjaScript
+        # generated region, scrubs nicknames and adds the MPL header. It does NOT substitute
+        # {{tokens}}, strip audit frontmatter, or rewrite CLAUDE.md links — publish_doc.py does.
+        # Reaching for this one on a doc shipped literal `{{core_version}}` into three public
+        # documents, and the two tools' names are similar enough that it will be reached for
+        # again. Refusing and NAMING the right command is the whole fix.
+        if pub.suffix.lower() == ".md" and pub.parent.name == "docs" and pub.parent.parent == REPO:
+            sys.stderr.write(
+                "publish: %s is a DOC, and this is the code path.\n"
+                "  It would ship literal {{tokens}} and the internal audit frontmatter.\n"
+                "  Use:  python tools/publish_doc.py --local \"<bin\\Custom>\" %s\n"
+                "  (add --index for SENTINEL_DOCS.md, which is filtered to the published set)\n"
+                % (pub.name, pub.name))
+            return 2
+
         dest = pub
-        matches = list(Path(os.environ.get("SENTINEL_LOCAL", "")).rglob(pub.name)) \
-            if os.environ.get("SENTINEL_LOCAL") else []
+        local_root = os.environ.get("SENTINEL_LOCAL", "")
+        matches = list(Path(local_root).rglob(pub.name)) if local_root else []
         if not matches:
-            sys.stderr.write("publish: --update needs SENTINEL_LOCAL set to the canonical tree\n")
+            # Distinguish "unset" from "set but no match" — the old message said the former for
+            # both, which misdiagnoses every file living outside the tree it points at.
+            if not local_root:
+                sys.stderr.write("publish: --update needs SENTINEL_LOCAL set to the canonical tree\n")
+            else:
+                sys.stderr.write(
+                    "publish: SENTINEL_LOCAL is set to %s but %s is not under it.\n"
+                    "  Point it at the tree that actually holds the file (e.g. …\\NinjaTrader 8\\Sentinel\n"
+                    "  for Lab tooling, …\\bin\\Custom for NinjaScript).\n" % (local_root, pub.name))
             return 2
         src_path = matches[0]
     else:
