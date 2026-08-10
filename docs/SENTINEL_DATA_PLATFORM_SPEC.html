@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Sentinel · Sentinel Data Platform — Spec & Stand-Up Workflow</title>
+<title>Sentinel · Sentinel Data Platform — Spec &amp; Stand-Up Workflow</title>
 <style>
   :root{
     --void:#e7edf1; --panel:#f3f7f9; --surface:#ffffff; --surface2:#eaf0f3;
@@ -669,7 +669,7 @@ one voter never reached a single row.</p>
 <tbody>
 <tr>
 <td><strong>SEAM</strong></td>
-<td>the bar type's own voter(s) MUST be present — derived from the <strong>bar-type id</strong>, so it needs no config (<code>212201</code>/<code>212202</code> → <code>BRK</code> · <code>212203</code> → <code>FLUX</code> · <code>212204</code> → <code>BRK</code>+<code>CVB</code>)</td>
+<td>the bar type's own voter(s) MUST be present — derived from the <strong>bar-type id</strong>, so it needs no config (<code>212201</code>/<code>212202</code> → <code>BRK</code> · <code>212203</code> → <code>FLUX</code> · <code>212204</code> → <code>BRK</code>+<code>CVB</code>). 🔴 <strong>This map covers 4 of the 7 shipped bar types — <code>212205</code> Lattice · <code>212206</code> Effort · <code>212207</code> Tide are ABSENT</strong>, so a lane on one of them passes SEAM by having nothing to check. Flagged 2026-08-10, <em>not</em> guessed: filling it in is a claim about which seams each type actually publishes and must be read off the bars types. <strong>Same defect class as the Core name registry completed in v1.48.0 — an id-keyed table that silently covers only the ids someone remembered.</strong></td>
 </tr>
 <tr>
 <td><strong>DECLARED</strong></td>
@@ -797,5 +797,5 @@ After editing <code>probe.py</code> you must <strong>restart the probe</strong> 
 same class of failure as §9's three-day-stale ingester. <code>sentinel-data.bat</code> restarts it guarded, so a
 blind re-run is safe.</p>
 <hr />
-<footer><span>Sentinel Suite · <b>Sentinel Data Platform — Spec & Stand-Up Workflow</b></span><span>living document · rendered from Markdown</span></footer>
+<footer><span>Sentinel Suite · <b>Sentinel Data Platform — Spec &amp; Stand-Up Workflow</b></span><span>living document · rendered from Markdown</span></footer>
 </div></body></html>

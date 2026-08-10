@@ -285,7 +285,7 @@ Stdlib-only, so it runs on the bake worker as well as the main box. Three checks
 
 | Check | Rule |
 |---|---|
-| **SEAM** | the bar type's own voter(s) MUST be present — derived from the **bar-type id**, so it needs no config (`212201`/`212202` → `BRK` · `212203` → `FLUX` · `212204` → `BRK`+`CVB`) |
+| **SEAM** | the bar type's own voter(s) MUST be present — derived from the **bar-type id**, so it needs no config (`212201`/`212202` → `BRK` · `212203` → `FLUX` · `212204` → `BRK`+`CVB`). 🔴 **This map covers 4 of the 7 shipped bar types — `212205` Lattice · `212206` Effort · `212207` Tide are ABSENT**, so a lane on one of them passes SEAM by having nothing to check. Flagged 2026-08-10, *not* guessed: filling it in is a claim about which seams each type actually publishes and must be read off the bars types. **Same defect class as the Core name registry completed in v1.48.0 — an id-keyed table that silently covers only the ids someone remembered.** |
 | **DECLARED** | every `Roster.conf` voter (same cascade the Council uses) present as a KEY. Absent = **CRIT**; present on <90% of rows = **WARN** — an intermittent dropout a union-of-rows check would hide |
 | **BRK LEVELS** | brick lanes must carry `brkUpper`/`brkLower`, or limit-vs-market grading is dead (Flux exempt by construction) |
 

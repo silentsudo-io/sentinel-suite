@@ -528,7 +528,17 @@ def main() -> int:
     print(f"{clean} of {clean + len(drifted) + len(deliberate) + len(orphaned)} "
           f"published files are faithful"
           + (f", {len(deliberate)} deliberately divergent." if deliberate else "."))
-    return 1 if (drifted or errors or orphaned) else 0
+    # ⛔ stale_reg and closed_reg are FATAL, and were not until 2026-08-10. They were printed —
+    # in full, with instructions — and then the exit code said 0, so `verify_all` reported
+    # "ok snapshot parity / PASS — every guard green" with a STALE REGISTRATION on screen. The
+    # ledger's guarantee table claims a green verify_all means "no drift · no STALE REGISTRATION ·
+    # no CLOSED DIVERGENCE"; two of those three were unenforced.
+    # ⭐ This is the house pattern, third time recorded: `rt` was COUNTED but not refused, the tag
+    # filters MEASURED occupancy they never applied, and here the divergence registry is CHECKED
+    # and not enforced. **Printing a hazard is not refusing it** — and a gate that prints while
+    # passing is worse than no gate, because the summary line is what gets read.
+    # CLOSED DIVERGENCE is the dangerous one: it means withheld content was republished.
+    return 1 if (drifted or errors or orphaned or stale_reg or closed_reg) else 0
 
 
 if __name__ == "__main__":
