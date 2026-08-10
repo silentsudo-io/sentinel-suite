@@ -64,14 +64,16 @@ up from what holds. Buying N is what the corpus bakes are for.
 
 ### Shipped since the 07-14 block
 
-- **Core v1.47.0** — `ConvictionState` (v1.37.0, the Drift **CVB** voter) · **`ReplayMode`** (v1.38.0) ·
+- **Core v1.48.0** — `ConvictionState` (v1.37.0, the Drift **CVB** voter) · **`ReplayMode`** (v1.38.0) ·
   `RosterIO`/`LaneIO` **cascade** (v1.39.0) · the **generation beacon** (v1.40.0) · **`Swallow`/`Faults`**
   (v1.41.0, migrated across **726 call sites / 86 files**) · **log retention `LOG_GENERATIONS = 6`**
   (v1.42.0) · **`CvdState`** (v1.43.0, the **CVD** voter — cumulative delta on *any* bar type, carrying
   **Efficiency**: ticks of price per 1,000 contracts of net aggression) · **`LaneAssign`/`ResolveLane`**
   (v1.44.0, the lane read from `Sentinel\Lanes.conf` rather than F6 alone) · **`PressureState`**
   (v1.45.0, the **BSP** voter — bid/ask-classified buy-vs-sell share) · **`NoteSignalFire` /
-  `DrainSignalFires` / `SignalFireStats`** (v1.46.0) · the **CVD `VoterCatalog` row** (v1.47.0).
+  `DrainSignalFires` / `SignalFireStats`** (v1.46.0) · the **CVD `VoterCatalog` row** (v1.47.0) · the
+  **completed bar-type name registry** (v1.48.0 — `_bartypeNames` carried 3 of the 7 shipped Sentinel
+  bar types, so Drift/Lattice/Effort/Tide rendered as `Type212204`…`Type212207` on every surface).
   All documented in [SENTINEL_DESIGN_SYSTEM.md](SENTINEL_DESIGN_SYSTEM.md) §6f and §9.
   ⭐ **v1.46.0 is the one that mattered most and it is not a voter:** the excursion corpus could only
   ever see the **Council**, because the recorder's sole intake was a `GetCouncilState` poll opening on
@@ -80,6 +82,11 @@ up from what holds. Buying N is what the corpus bakes are for.
   behind **Keel**. Intake is now generic and the Council is one caller among several.
   ⚠ **The `{{core_version}}` token kept this bullet's NUMBER current while its LIST rotted six versions
   behind** — a substituted token refreshes the claim it stands in for, never the prose around it.
+  ⭐ **And it recurred on 2026-08-10, one bump later:** v1.48.0 landed, the token moved this bullet's
+  heading to v1.48.0 by itself, and the list still stopped at v1.47.0 until it was added by hand.
+  ⇒ **A version bump is a THREE-place edit** — the const, the file banner, and every prose list that
+  enumerates what shipped. The first two are guarded by `version_check.py`; **the third is not**, and a
+  token makes the gap invisible by keeping the surrounding claim looking fresh.
 - **The corpus acceptance gate** — `Lab\verify_votes.py` + `vote_health` + the 🗃 Corpus row on the Health board
   ([SENTINEL_DATA_PLATFORM_SPEC.md](SENTINEL_DATA_PLATFORM_SPEC.md) §13), and the **10-minute preflight**
   procedure (SENTINEL_RUNBOOK.md §4b).
@@ -102,7 +109,7 @@ The suite has moved well past the snapshots below. Where they disagree on a vers
 > (Core · Council · Bridge · Cockpit · GTrader21 · recorder) `memory/NOW.md` wins over any number pinned
 > below; `{{core_version}}` + the voter count render live from code and can't drift.
 
-- **The Council fuses 25 VOTERS** (was 8–9). **SentinelCore → v1.47.0**, **Council → v1.8.x.**
+- **The Council fuses 25 VOTERS** (was 8–9). **SentinelCore → v1.48.0**, **Council → v1.8.x.**
 - **⭐ Newest thread — SentinelFlux (order-flow imbalance BAR TYPE).** A from-scratch López-de-Prado information-driven
   bar type (BarsPeriodType **212203**, reserved block 212200–212299) stabilised by the TBars discipline. It closes bars on
   accumulated signed order-flow imbalance → the suite's **first genuinely orthogonal axis** (every other voter is

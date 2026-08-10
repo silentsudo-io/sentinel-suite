@@ -18,6 +18,10 @@ _NAMES = {
     212201: "SentinelTBars",       # adaptive HA/Renko brick engine (BrickState -> BRK)
     212202: "SentinelTbarsCount",  # plain brick + ticks-to-next HUD
     212203: "SentinelFlux",        # order-flow imbalance bars (FluxState -> FLUX)
+    212204: "SentinelDrift",       # CVB divergence bars (CvbState -> CVB)
+    212205: "SentinelLattice",
+    212206: "SentinelEffort",
+    212207: "SentinelTide",
     2016:   "ERP",                 # legacy (ERP_Type_Bars)
     54321:  "EdsRetrace",          # legacy (EdsRetraceBarsV2)
     69696:  "TBarsElse",           # pre-Sentinel TBars lineage
@@ -40,7 +44,11 @@ _TAG = re.compile(r"^(\d+)v(\d+)(?:x(\d+))?$")
 # i.e. Value2 == 4*Value and Speed = Value*2 — a STRUCTURAL signature, not a fixed list of ids, so
 # any current-or-future derivative is classified for what it IS. So "6/24" == Speed 12, "10/40" ==
 # Speed 20, "12/48" == Speed 24, "2/8" == Speed 4. (See tbars-speed-settings-mapping.)
-_FLUX_BARS = {212203}            # SentinelFlux — the single param is the imbalance THRESHOLD, not a speed
+# SentinelFlux's single F6 param is BaseBarsPeriodValue, renamed "Flux Size" (SentinelFlux_v1_0_0.cs
+# SetDefaults). It is a SCALE, not a threshold: FluxRefSize = 8 is the size at which fluxScale == 1.0,
+# and the imbalance threshold θ* is COMPUTED per bar from the EWMA — it is never dialed in. Excluded
+# from the Speed signature because Value2 is forced to 0, so "4*Value" can never match by accident.
+_FLUX_BARS = {212203}
 
 
 def _is_speed(bid, val, val2):
@@ -93,9 +101,10 @@ def friendly_bartag(bartag) -> str:
         val2i = int(val2) if val2 else None
         if _is_speed(bid_i, int(val), val2i):
             label = f"{name} Speed {int(val) * 2}"          # one-knob brick bars -> Speed N
-        elif bid_i in _FLUX_BARS and not val2:
-            label = f"{name} thr {val}"                      # Flux: imbalance threshold, not a speed
         else:
+            # Flux falls through here deliberately: "SentinelFlux 8" is the size, and it matches
+            # SentinelCore.FriendlyBartag exactly. It used to read "SentinelFlux thr 8", which named
+            # the size as the imbalance threshold — a different quantity the operator never sets.
             label = f"{name} {val}" + (f"/{val2}" if val2 else "")   # fallback: raw ratio
     if lane:
         label += f" · {lane}"

@@ -214,11 +214,24 @@ def census(path, tzname: str = NT_TIMEZONE) -> dict:
     comma = False
     header = None
     lines = 0
+    nondata = 0
+    meta = None
     with _open(path) as fh:
         for line in fh:
             lines += 1
             if header is None:
                 header = not (line.startswith("L1;") or line.startswith("L2;"))
+            # ⛔ Only L1;/L2; lines are data records. The `len(f) < 5` guard below is NOT enough:
+            # a tape file's `#META;tapeVer=…;inst=GC 12-26;tickSize=…;tz=…;openedUtc=…` header has SIX
+            # fields, so it sailed through, `first` became "inst=GC 12-26", and _utc() then did
+            # int("inst") -> ValueError. census() crashed on every #META;-headed file in the tape tree.
+            # Filtering on the RECORD PREFIX is the same test `header` already makes one line above —
+            # the information to reject it was present and simply was not applied to the parse.
+            if not (line.startswith("L1;") or line.startswith("L2;")):
+                nondata += 1
+                if meta is None and line.startswith("#META;"):
+                    meta = line.rstrip("\r\n")
+                continue
             f = line.rstrip("\r\n").split(";")
             if len(f) < 5:
                 continue
@@ -248,6 +261,7 @@ def census(path, tzname: str = NT_TIMEZONE) -> dict:
     empty = [h for h in range(24) if hour_trades[h] == 0 and sum(hour_trades)]
     return {
         "path": path, "lines": lines, "header_row": header, "comma_decimal": comma,
+        "nondata_lines": nondata, "meta": meta,
         "types": dict(sorted(tally.items())), "first_local": first, "last_local": last,
         "first_utc": _utc(first), "last_utc": _utc(last),
         "trades": sum(hour_trades), "hour_trades": hour_trades,

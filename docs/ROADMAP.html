@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Sentinel · NinjaTrader Suite — Vision & Roadmap</title>
+<title>Sentinel · NinjaTrader Suite — Vision &amp; Roadmap</title>
 <style>
   :root{
     --void:#e7edf1; --panel:#f3f7f9; --surface:#ffffff; --surface2:#eaf0f3;
@@ -305,14 +305,16 @@ up from what holds. Buying N is what the corpus bakes are for.</p>
 </ul>
 <h3 id="shipped-since-the-07-14-block">Shipped since the 07-14 block</h3>
 <ul>
-<li><strong>Core v1.47.0</strong> — <code>ConvictionState</code> (v1.37.0, the Drift <strong>CVB</strong> voter) · <strong><code>ReplayMode</code></strong> (v1.38.0) ·
+<li><strong>Core v1.48.0</strong> — <code>ConvictionState</code> (v1.37.0, the Drift <strong>CVB</strong> voter) · <strong><code>ReplayMode</code></strong> (v1.38.0) ·
   <code>RosterIO</code>/<code>LaneIO</code> <strong>cascade</strong> (v1.39.0) · the <strong>generation beacon</strong> (v1.40.0) · <strong><code>Swallow</code>/<code>Faults</code></strong>
   (v1.41.0, migrated across <strong>726 call sites / 86 files</strong>) · <strong>log retention <code>LOG_GENERATIONS = 6</code></strong>
   (v1.42.0) · <strong><code>CvdState</code></strong> (v1.43.0, the <strong>CVD</strong> voter — cumulative delta on <em>any</em> bar type, carrying
   <strong>Efficiency</strong>: ticks of price per 1,000 contracts of net aggression) · <strong><code>LaneAssign</code>/<code>ResolveLane</code></strong>
   (v1.44.0, the lane read from <code>Sentinel\Lanes.conf</code> rather than F6 alone) · <strong><code>PressureState</code></strong>
   (v1.45.0, the <strong>BSP</strong> voter — bid/ask-classified buy-vs-sell share) · <strong><code>NoteSignalFire</code> /
-  <code>DrainSignalFires</code> / <code>SignalFireStats</code></strong> (v1.46.0) · the <strong>CVD <code>VoterCatalog</code> row</strong> (v1.47.0).
+  <code>DrainSignalFires</code> / <code>SignalFireStats</code></strong> (v1.46.0) · the <strong>CVD <code>VoterCatalog</code> row</strong> (v1.47.0) · the
+  <strong>completed bar-type name registry</strong> (v1.48.0 — <code>_bartypeNames</code> carried 3 of the 7 shipped Sentinel
+  bar types, so Drift/Lattice/Effort/Tide rendered as <code>Type212204</code>…<code>Type212207</code> on every surface).
   All documented in <a href="SENTINEL_DESIGN_SYSTEM.md">SENTINEL_DESIGN_SYSTEM.md</a> §6f and §9.
   ⭐ <strong>v1.46.0 is the one that mattered most and it is not a voter:</strong> the excursion corpus could only
   ever see the <strong>Council</strong>, because the recorder's sole intake was a <code>GetCouncilState</code> poll opening on
@@ -320,7 +322,12 @@ up from what holds. Buying N is what the corpus bakes are for.</p>
   one for a month and have nothing to grade it with. That, not exit policy, was the actual blocker
   behind <strong>Keel</strong>. Intake is now generic and the Council is one caller among several.
   ⚠ <strong>The <code>{{core_version}}</code> token kept this bullet's NUMBER current while its LIST rotted six versions
-  behind</strong> — a substituted token refreshes the claim it stands in for, never the prose around it.</li>
+  behind</strong> — a substituted token refreshes the claim it stands in for, never the prose around it.
+  ⭐ <strong>And it recurred on 2026-08-10, one bump later:</strong> v1.48.0 landed, the token moved this bullet's
+  heading to v1.48.0 by itself, and the list still stopped at v1.47.0 until it was added by hand.
+  ⇒ <strong>A version bump is a THREE-place edit</strong> — the const, the file banner, and every prose list that
+  enumerates what shipped. The first two are guarded by <code>version_check.py</code>; <strong>the third is not</strong>, and a
+  token makes the gap invisible by keeping the surrounding claim looking fresh.</li>
 <li><strong>The corpus acceptance gate</strong> — <code>Lab\verify_votes.py</code> + <code>vote_health</code> + the 🗃 Corpus row on the Health board
   (<a href="SENTINEL_DATA_PLATFORM_SPEC.md">SENTINEL_DATA_PLATFORM_SPEC.md</a> §13), and the <strong>10-minute preflight</strong>
   procedure (SENTINEL_RUNBOOK.md §4b).</li>
@@ -343,7 +350,7 @@ up from what holds. Buying N is what the corpus bakes are for.</p>
 below; <code>{{core_version}}</code> + the voter count render live from code and can't drift.</p>
 </blockquote>
 <ul>
-<li><strong>The Council fuses 25 VOTERS</strong> (was 8–9). <strong>SentinelCore → v1.47.0</strong>, <strong>Council → v1.8.x.</strong></li>
+<li><strong>The Council fuses 25 VOTERS</strong> (was 8–9). <strong>SentinelCore → v1.48.0</strong>, <strong>Council → v1.8.x.</strong></li>
 <li><strong>⭐ Newest thread — SentinelFlux (order-flow imbalance BAR TYPE).</strong> A from-scratch López-de-Prado information-driven
   bar type (BarsPeriodType <strong>212203</strong>, reserved block 212200–212299) stabilised by the TBars discipline. It closes bars on
   accumulated signed order-flow imbalance → the suite's <strong>first genuinely orthogonal axis</strong> (every other voter is
@@ -954,5 +961,5 @@ Current sequence:</p>
   <a href="SENTINEL_DOCS.md">complete registry</a>.</li>
 <li><strong>Original Sentinel design transcripts:</strong> <code>~/Downloads/Sentinel_Project_*.txt</code></li>
 </ul>
-<footer><span>Sentinel Suite · <b>NinjaTrader Suite — Vision & Roadmap</b></span><span>living document · rendered from Markdown</span></footer>
+<footer><span>Sentinel Suite · <b>NinjaTrader Suite — Vision &amp; Roadmap</b></span><span>living document · rendered from Markdown</span></footer>
 </div></body></html>

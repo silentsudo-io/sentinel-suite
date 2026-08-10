@@ -1,6 +1,8 @@
 # SentinelFlux — Order-Flow Imbalance Bars (spec)
 
 **Status:** ✅ **BUILT & LIVE-VALIDATED (2026-07-14)** · **Author:** Sentinel Suite · **Date:** 2026-07-14
+**Last re-certified against the source:** 2026-08-10 — §3, §5 and §8 corrected where they described knobs and an ATR clamp
+the shipped bars type does not have. **§8 is now split into the one F6 param and the internal constants.**
 **Artifact:** `BarsTypes\SentinelFlux_v1_0_0.cs` · class `SentinelFlux_v1_0_0` · display `"SentinelFlux v1.0.0"`
 **BarsPeriodType id:** `212203` (reserved Sentinel bars block 212200–212299)
 **Seam:** `SentinelCore.FluxState` (v1.31.0) → the **FLUX voter** in the Council (v1.6.3, now 22 voters) + a `FluxAbsorbDamp` absorption modulator.
@@ -11,8 +13,9 @@
 > vs TBars is pre-registered as **EXP-0004**.
 
 > One line: a bar closes when **accumulated signed order-flow imbalance** crosses an adaptive threshold — López de Prado's
-> *information-driven bars* — stabilized by the **TBars** discipline (ATR-clamped threshold + price/time backstops + HA bodies +
-> deterministic per-session latch) so it can never hit the runaway failure mode that makes naïve imbalance bars unusable.
+> *information-driven bars* — stabilized by the **TBars** discipline (self-consistent threshold + ATR-price/time/tick
+> backstops + HA bodies + deterministic per-session latch) so it can never hit the runaway failure mode that makes naïve
+> imbalance bars unusable.
 
 ---
 
@@ -75,10 +78,15 @@ is the hybrid.
 SentinelFlux is a hybrid on three independent axes:
 
 1. **Sampling axis** — bars close on **order-flow imbalance** (information-driven), not time / tick / volume / range / price.
-2. **Stabilization axis** — the imbalance threshold is **ATR-clamped + backstopped** (TBars density rails + force-close), so it
-   is bounded above and below and always terminates.
+2. **Stabilization axis** — the imbalance threshold is **self-consistent + backstopped**: `θ*` tracks the tape's own realized
+   `E[|θ|]`, and the TBars-style force-close rails (price / time / tick) guarantee termination.
 3. **Rendering axis** — bodies are **Heikin-Ashi smoothed** with **real price wicks** (TBars aesthetic), so the suite's cards,
    skins, and eye read it as family.
+
+> ⚠ **Axis 2 read "ATR-clamped" until 2026-08-10 and that has been false since the 2026-07-14 hotfix**, which removed the
+> ATR term from `θ*` (§5). **ATR now drives only the price backstop.** The wording survived because the hotfix was written
+> into §5 where the formula lives, and the one-line summary up here was never re-read against it — *a correction applied at
+> the point of detail leaves every summary of that detail stale.*
 
 Plus a microstructure upgrade the tick rule can't do (§4).
 
@@ -126,16 +134,24 @@ on a backstop carry `|θ| < θ*` and pull it **down**, which makes imbalance the
 CLOSE the bar when ANY of:
   (a) |θ| ≥ θ*                                   // imbalance target hit  (the information event)
   (b) price displacement ≥ PriceBackstopMult · atr   // hard price backstop (prevents the "one giant bar")
-  (c) (now − birthTime) ≥ ForceStagnationSeconds     // time backstop      (prevents "never closes in a dead tape")
+  (c) (now − birthTime) ≥ ForceStagnationSecs        // time backstop      (prevents "never closes in a dead tape")
   (d) nTicks ≥ MaxTicksPerBar                         // tick backstop      (belt-and-suspenders)
 ```
 On close: brick **flow-direction** = `sign(θ)`; **price-direction** = `sign(close − barOpen)`. These can DIVERGE — that
-divergence is *absorption* and is surfaced natively (§7). Then update `expT`/`expImb`/`atr`, roll HA bodies, seed the next bar.
+divergence is *absorption* and is surfaced natively (§7). Then update `imbEwma` (winsorized) and `atr`, roll HA bodies, seed
+the next bar.
 
-**Micro-split & quiet hours** are inherited from TBars unchanged (optional).
+> ⚠ **Corrected 2026-08-10:** this line named `expT`/`expImb`, **neither of which exists in the shipped bars type** — they are
+> TBars-lineage names that were carried over when this section was drafted from the TBars spec. The only per-close estimators
+> SentinelFlux maintains are `imbEwma` (the `E[|θ|]` EWMA, winsorized at `WinsorMult`) and the brick `atr`.
 
-**Why this is stable:** the EWMA gives the *information-adaptive* behaviour (bars sync to surprise); the ATR band gives a
-*physically-bounded* size so it can neither explode nor collapse; the three backstops guarantee termination. The bar always
+> ⛔ **Micro-split and quiet hours are NOT implemented.** This section previously read *"inherited from TBars unchanged
+> (optional)"*; there is no such code and no such switch in `SentinelFlux_v1_0_0.cs` — see the §8 note. Treat them as
+> **unbuilt**, not as defaulted-on behaviour.
+
+**Why this is stable:** the EWMA gives the *information-adaptive* behaviour (bars sync to surprise); `θ*` is bounded below by
+the `max(1, …)` floor and pulled toward realized `|θ|` from above, so it can neither explode nor collapse; the three backstops
+guarantee termination. ⚠ **ATR is not part of that bound** — it scales only the price backstop `(b)`. The bar always
 closes for a legible reason, logged in `BrickLog` (`reason ∈ {imb, price, time, tick}`) so the corpus can audit *why* each bar
 formed — itself a feature.
 
@@ -181,26 +197,58 @@ publish ON, and be wired into the Council with a Reasons line.
 
 ---
 
-## 8. Parameters (F6 grid; latched per session)
+## 8. Parameters
+
+> 🔴 **CORRECTED 2026-08-10 — this section listed ELEVEN F6 params and the bars type exposes exactly ONE.** The table was
+> written as a *design intent* and read ever after as a *description of the shipped grid*. Four of the eleven
+> (`EnableMicroSplit`, `EnableQuietHours`, `PublishFluxState`, `ShowIndicatorLabel`) do not exist in the source **in any
+> form**; the rest exist only as private fields with no F6 surface. Verified against `SentinelFlux_v1_0_0.cs` by name.
+> ⭐ **Why this mattered more than a doc nit:** an operator reading it would look for knobs that are not there, and a *sweep*
+> designed against it would vary parameters that cannot be varied — producing a corpus whose scopes differ only by accident.
+
+### 8a. The F6 grid — one knob
 
 | Param | Default | Role |
 |---|---|---|
-| `ImbalanceMode` | `Volume` (VIB) | Tick / Volume / Dollar accumulator |
-| `SignMode` | `QuoteThenTick` | quote rule primary, tick-rule fallback |
-| **`Flux Size`** (= `BaseBarsPeriodValue`) | `8` | **the one knob** — `fluxScale = FluxSize / 8` sets the INFORMATION per bar (raise to coarsen) |
-| `IntensityLen` | `50` | EWMA length for `E[\|θ\|]` (the self-consistent close threshold `θ* = fluxScale × E[\|θ\|]`) |
-| `WinsorMult` | `4.0` | block-trade guard: cap a bar's `E[\|θ\|]` contribution at `×` the running estimate |
-| `AtrLength` | `14` | per-brick ATR EMA (shared with TBars logic) |
-| `PriceBackstopMult` | `2.5` | force-close at `×ATR` price displacement |
-| `ForceStagnationSeconds` | `90` | time backstop |
-| `MaxTicksPerBar` | `5000` | tick backstop |
-| `EnableMicroSplit` / `EnableQuietHours` | `true` | inherited TBars behaviour |
-| `PublishFluxState` | `true` | publish the seam + wire the Council |
-| `ShowIndicatorLabel` | `false` | Sentinel label-remover standard |
+| **`Flux Size`** (= `BaseBarsPeriodValue`, renamed in `SetDefaults`) | `8` | **the one knob** — `fluxScale = FluxSize / FluxRefSize(8)` sets the INFORMATION per bar (raise to coarsen) |
 
-There is intentionally **one primary "size" feel** exposed the way TBars exposes *Speed Settings*: **`Flux Size`** sets how much
-information a bar represents (θ\* self-tunes to the tape via `E[|θ|]`). The size-sweep axis for EXP-0004 (§9) is `Flux Size`
-(the scope tag encodes it — `GC.212203v8` vs `v12` — so a sweep is graded separately).
+`Value` and `Value2` are **removed from the grid** (`SafeRemoveProperty`). `Value` is still written behind the scenes — set to
+the size, with `Value2 = 0` — for one reason only: so the **scope tag separates a sweep** (`GC.212203v8` vs `v12`) automatically.
+⚠ That `Value2 = 0` is also what keeps Flux out of the TBars *Speed* signature (`Value2 == 4 × Value`) in
+`SentinelCore.FriendlyBartag` and its Python mirror, so a Flux tag renders as **`SentinelFlux 8`** — a SIZE, never a "Speed"
+and never a threshold.
+
+There is intentionally **one primary "size" feel**, exposed the way TBars exposes *Speed Settings*: `Flux Size` sets how much
+information a bar represents (θ\* self-tunes to the tape via `E[|θ|]`). The size-sweep axis for EXP-0004 (§9) is `Flux Size`.
+
+### 8b. Internal constants — real, but NOT operator-facing
+
+These are `private` fields in the bars type. The values below are read from the shipped source and are correct; what was wrong
+is the claim that a human can set them. **Changing one is a code edit and a version bump, not an F6 change.**
+
+> ⛔ **Writing convention in this table, and it is load-bearing:** `absθ` below means `|θ|`. **A pipe cannot appear inside a
+> cell on this page** — `renderers.conf` assigns this doc to **md2atlas**, and md2atlas splits table rows on `|` *before*
+> honouring the `\|` escape, so an escaped pipe still explodes the cell into extra columns. Measured 2026-08-10: the first
+> draft of this very table rendered `IntensityLen` as **seven columns**. This is the concrete form of the known md2atlas
+> defect already recorded against `SENTINEL_DESIGN_SYSTEM`. **Check the rendered HTML, not the markdown.**
+
+| Field | Value | Role |
+|---|---|---|
+| `_mode` | `ImbMode.Volume` (VIB) | Tick / Volume / Dollar accumulator — the enum exists, the selector does not |
+| `_useQuoteRule` | `true` | Lee–Ready quote rule, tick-rule fallback |
+| `IntensityLen` | `50` | EWMA length for `E[absθ]` (the self-consistent close threshold `θ* = max(1, fluxScale × E[absθ])`) |
+| `WinsorMult` | `4.0` | block-trade guard: cap a bar's `E[absθ]` contribution at `×` the running estimate |
+| `DivergenceFrac` | `0.5` | `absθ ≥ this × θ*` AND flow≠price ⇒ divergence (absorption). **Was missing from this section entirely** |
+| `AtrLength` | `14` | per-brick ATR EMA — feeds the price backstop ONLY, not `θ*` |
+| `PriceBackstopMult` | `2.5` | force-close at `×ATR` price displacement |
+| `ForceStagnationSecs` | `90` | time backstop. ⚠ documented here as `ForceStagnationSeconds`; the real identifier is `…Secs` |
+| `MaxTicksPerBar` | `5000` | tick backstop |
+| `RealtimePublishMinutes` | `5.0` (`const`) | the real seam gate — FluxState publishes only for near-realtime bars. **There is no `PublishFluxState` switch** |
+| `FluxLogThrottleSeconds` | `10.0` (`const`) | human-log throttle |
+
+⛔ **`EnableMicroSplit` · `EnableQuietHours` · `PublishFluxState` · `ShowIndicatorLabel` DO NOT EXIST.** The first two are
+unbuilt (§5); the third is superseded by `RealtimePublishMinutes`; the fourth is the Sentinel *indicator* label-remover
+standard and does not apply to a bars type, whose on-chart name comes from `ChartLabel()`.
 
 ---
 
@@ -239,9 +287,14 @@ STF-only single-voter chart — conviction pins at 1.00 there (the current corpu
 - **Historical tick quotes.** If replayed tick data lacks bid/ask, signing silently degrades to the tick rule — fine and
   deterministic, but the live-vs-replay `FlowDir` may differ. Gate: log the signing mode per session; compare replay==live
   ([[council-historical-replay]]).
-- **EWMA seeding transient.** First `ExpEwmaBars` bars of a fresh load are pre-convergence. Mitigation: seed `expT`/`expImb`
-  from the ATR band on bar 0 (already the clamp floor), and mark the first N bars `warmup=1` in `BrickLog` so the corpus can
-  drop them.
+- **EWMA seeding transient.** Bars before `imbEwma` is seeded are pre-convergence. **As SHIPPED this is handled by an explicit
+  `warmup` flag, not by seeding from ATR:** while `warmup` is true `θ*` returns `double.MaxValue`, so the imbalance clock cannot
+  fire and early bars close on a *physical* backstop instead. `warmup` clears once `imbEwma` is seeded.
+  ⚠ **Corrected 2026-08-10.** This read *"First `ExpEwmaBars` bars … seed `expT`/`expImb` from the ATR band on bar 0 (already
+  the clamp floor)"* — **three phantoms in one sentence** (`ExpEwmaBars`, `expT`, `expImb`) plus an ATR clamp floor that the
+  07-14 hotfix removed. The *mitigation* described here was never built; a different and better one was.
+  ⏭ Still owed: mark warmup bars `warmup=1` in `BrickLog` so the corpus can drop them — the flag exists in the engine but is
+  **not** stamped on the row, so a consumer cannot currently tell a pre-convergence bar from a converged one.
 - **Direction semantics.** Flow-dir ≠ price-dir bars are informative but visually unusual. Decision: color the HA body by
   **price-dir** (familiar), expose flow-dir only via the seam + an optional flow-tint outline. Confirm the visual on first F5.
 - **Dollar mode cross-contract.** DIB is the stable choice for GC↔MGC or roll continuity; default stays VIB, but expose DIB for
