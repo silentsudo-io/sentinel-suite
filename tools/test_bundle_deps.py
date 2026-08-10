@@ -106,8 +106,14 @@ if src.is_dir():
     if deck.is_dir():
         bfiles = cs_files(deck)
         missing = (referenced_idents(bfiles) & universe) - defined_types(bfiles + runtime_files)
-        check("a real cross-bundle dep is STILL reported (deck -> SentinelCopierService_v0_1_0)",
-              "SentinelCopierService_v0_1_0" in missing, sorted(missing))
+        # ⛔ Do NOT pin a version-suffixed type name here. This control was written as
+        # `"SentinelCopierService_v0_1_0" in missing` and went red the day the copier
+        # forked to v0.2.0 — an assertion that must be hand-edited at every version bump
+        # is one that eventually gets edited without thought. Assert the PROPERTY: deck
+        # still reports a dependency on a type the copier bundle OWNS, whatever it is called.
+        copier_owned = defined_types(cs_files(src / "copier")) if (src / "copier").is_dir() else set()
+        check("a real cross-bundle dep is STILL reported (deck -> a copier-owned type)",
+              bool(missing & copier_owned), sorted(missing & copier_owned) or sorted(missing))
         check("the nested-name noise is gone (deck no longer reports `Pt`)",
               "Pt" not in missing, sorted(missing))
 else:
