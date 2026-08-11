@@ -64,7 +64,7 @@
 //             what the editor predicts. Spec: Docs/SENTINEL_SYSTEM_BUILDER_SPEC.md. Reads/writes config only — no
 //             new seam, no order path → the F5 is test-safe.
 //    v0.2.2 (2026-07-09) — ROSTER LINE (exec plan 3.1; needs SentinelCore ≥ v1.16.0). Renders the Council's
-//             declared-vs-actual roster under the tally — `Roster 8/10 — EYE, BRK missing`, amber when incomplete
+//             declared-vs-actual roster under the tally — `Roster 8/10 — CCI, BRK missing`, amber when incomplete
 //             or when an undeclared sensor spoke. Given its OWN row rather than a why-line rung: an incomplete
 //             roster degrades TRUST without BLOCKING, so folding it into the kill ▸ governor ▸ veto ▸ stale ▸ floor
 //             chain would mask a real blocker beneath it. The one concession — a READY verdict fused from a partial
@@ -1108,7 +1108,7 @@ namespace NinjaTrader.NinjaScript.AddOns.Sentinel
                 + (stale ? "   ·   stale " + ((int)age) + "s" : ""), Muted, 10, new Thickness(0, 8, 0, 0)));
 
             // ROSTER — declared vs actual. This is the line that would have caught the Eye on day one: for 332
-            // verdicts EYE simply never voted and the emergent roster had no way to say so. It gets its OWN row
+            // verdicts a declared voter simply never voted and the emergent roster had no way to say so. It gets its OWN row
             // rather than a why-line rung, because an incomplete roster degrades TRUST without BLOCKING — folding
             // it into the priority chain would mask a real blocker beneath it.
             if (cs.Roster != null)
@@ -1264,10 +1264,6 @@ namespace NinjaTrader.NinjaScript.AddOns.Sentinel
             var cs = _lastCouncil;
             int bias = cs != null ? cs.Bias : 0;
             int shown = 0;
-
-            var ey = Safe(() => SentinelCore.GetEyeVerdict(inst, BigAge));
-            shown += SeamRow(_votersBody, "EYE", ey == null ? null : "score " + F(ey.Score, "0.00") + (string.IsNullOrEmpty(ey.Source) ? "" : "  " + ey.Source),
-                    (ey == null ? (DateTime?)null : ey.UpdatedUtc), SeamStale, ey == null ? 0 : ey.Direction, true, bias, true, null) ? 1 : 0;
 
             var tr = Safe(() => SentinelCore.GetTrendState(inst, BigAge));
             shown += SeamRow(_votersBody, "TREND", tr == null ? null : "bars " + tr.BarsInTrend + "  " + Tk(tr.DistanceTicks) + (tr.Flipped ? "  FLIP" : ""),

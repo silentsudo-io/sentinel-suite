@@ -13,7 +13,7 @@
 //  WHAT THIS IS  (see Docs/ROADMAP.md, memory: sentinel-suite-architecture)
 //    The ONE window for the whole suite. Adds "Sentinel Suite" under Control Center > New.
 //    A TabControl with one tab per Sentinel tool; each tab ATTACHES to that tool's headless
-//    service singleton (e.g. SentinelCopierService_v0_2_0.Instance) — it does NOT own the
+//    service singleton (e.g. SentinelCopierService_v0_2_1.Instance) — it does NOT own the
 //    service, and closing this window never stops any service. Same attach pattern as
 //    MAEDashboard → MAECaptureService.
 //
@@ -68,7 +68,7 @@
 //             baseline), recessive Faint/Edge gridlines, values/labels in TEXT tokens (never the bar hue).
 //             Applied: SLIPPAGE = avg-slip-per-instrument diverging bars (red adverse / green improvement);
 //             JOURNAL = activity histogram (events per hour today / per day for a window); LENS = net-ticks
-//             diverging bars per strategy + instrument; EYE = signed-score diverging bars (green long / red
+//             diverging bars per strategy + instrument; score = signed-score diverging bars (green long / red
 //             short); ARC = day-P&L per fleet slot; RISK = data-lag per feed (green/amber/red by threshold);
 //             ACCOUNTS = fleet day-P&L per governed account. Charts sit ABOVE the existing text rows (chart +
 //             table, per the accessibility rule). SignedBars auto-picks MAGNITUDE bars (full width) for
@@ -84,7 +84,7 @@
 //             tab "▶ Live" toggle (2s auto-refresh tail; stopped on close). SentinelAlertService→v1.0.1.
 //    v1.1.2 — (in-place) new SLIPPAGE tab + FILL events in Journal (Substrate 2, execution-quality view).
 //             SentinelCore v1.1.0 gained Ledger.Fill (records intended-vs-actual fill price → adverse
-//             slip ticks); GTrader21 (in-place, observability-only) now logs every realtime fill.
+//             slip ticks); the Bridge (in-place, observability-only) now logs every realtime fill.
 //             SLIPPAGE tab: window (Today / 7 / 30) → tiles (fills · avg slip · worst · adverse % · est.
 //             $ impact via SentinelCore.TickValue), per-instrument drag (sorted), and worst individual
 //             fills. Only stop/limit fills (a comparable intended price) count — pure-market fills are
@@ -100,7 +100,7 @@
 //             Ledger.ReadRecent()/ReadDay()/Parse() (SentinelCore v1.1.0). On-demand, read-only; cached
 //             parse so filter buttons don't re-hit disk. No parallel journal — one stream, many views.
 //    v1.1.0 — VISUAL RESKIN (phase 1 — theme + chrome) to the "flight-instrument" design language (see
-//             the design-direction mockup + the redesigned GTrader21 risk card). Repaletted all brushes to
+//             the design-direction mockup + the redesigned the Bridge risk card). Repaletted all brushes to
 //             the mockup tokens (void/panel/line/ink/mute + Green/Red=money, Amber=caution) and added a
 //             cyan ACCENT (=live/watching) + Ink2/Faint/Card2. New TOP BAR: Sentinel "eye" brand mark
 //             (glow), SENTINEL SUITE title, and the kill-switch as a rounded status pill (dot+label, red
@@ -114,20 +114,20 @@
 //    v1.0.8 — (in-place) Risk tab: a "Consistency governor" section (per-account daily P&L vs cap/
 //             loss-stop + status, from SentinelCore's governor registry). Excursion tab: a "Sync all
 //             ◆ configs" button (write every confident +EV signal's ◆ config in one click; refactored
-//             ApplyBestRespToGTrader → WriteConfigFor). EyeVerdictCode now delegates to Group.
-//    v1.0.7 — (in-place) Eye referee → ACTIONABLE: a green/amber recommendation line ("Eye-gate ON/OFF
-//             for this signal") from EyeVerdictCode; and "Apply ◆" now writes useEyeGate=true/false into
-//             the .conf when the referee is conclusive (GTrader21 v0.1.6 applies it). Closes the
+//             ApplyBestRespToSignalConfig → WriteConfigFor). (the referee delegate was removed 2026-08-11)
+//    v1.0.7 — (in-place, REMOVED 2026-08-11) a signal referee → ACTIONABLE: a green/amber recommendation line ("gate ON/OFF
+//             for this signal"); and "Apply ◆" now writes useEyeGate=true/false into
+//             the .conf when the referee is conclusive (the Bridge v0.1.6 applies it). Closes the
 //             referee→config→strategy loop for the Eye filter.
-//    v1.0.6 — (in-place) Excursion tab: "Active lab configs" live section (which running GTrader21
+//    v1.0.6 — (in-place) Excursion tab: "Active lab configs" live section (which running the Bridge
 //             instance is on which .conf + TP/SL, from SentinelCore's config-use registry, refreshed
 //             on the timer); and a ④ "Eye referee" in the per-signal detail (endorsed vs not-endorsed
 //             medians/expectancy + a plain-English verdict — fills in as Eye data accrues).
 //    v1.0.5 — (in-place) Excursion viz: ★ mark now ORANGE / ◆ GREEN (colored Runs); per-signal
 //             FIRE-RATE (n/day + days, in the text rows + detail header — a +EV signal that fires
-//             rarely isn't a business); scatter EYE-ENDORSEMENT overlay (hollow rings on Eye-endorsed
-//             fires + legend, accrues once Eye runs); "Apply ◆ to GTrader21 config" button writes the
-//             best-responsible TP/SL to Sentinel\GTraderConfigs\<inst>_<signal>_<dir>.conf.
+//             rarely isn't a business); scatter endorsement overlay (hollow rings on Eye-endorsed
+//             fires + legend, accrues once Eye runs); "Apply ◆ to signal config" button writes the
+//             best-responsible TP/SL to Sentinel\SignalConfigs\<inst>_<signal>_<dir>.conf.
 //    v1.0.4 — (in-place) Excursion viz CONFIDENCE + R:R honesty: edge chart dims small-sample rows
 //             (n<30) + a "Confident only (n≥30)" filter on the chart & detail selector; expectancy
 //             grid now shows R:R per config, marks the best RESPONSIBLE (stop≤TP) config with ◆
@@ -288,7 +288,6 @@ namespace NinjaTrader.NinjaScript.AddOns.Sentinel
         // Copy-tab widgets
         private ComboBox _leaderCombo;
         private ComboBox _policyCombo;
-        private CheckBox _eyeGateCheck;
         private StackPanel _followersPanel;
         private readonly List<FollowerRow> _followerRows = new List<FollowerRow>();
 
@@ -327,9 +326,6 @@ namespace NinjaTrader.NinjaScript.AddOns.Sentinel
         private StackPanel _lensTiles;
         private StackPanel _lensStrat;
         private StackPanel _lensInst;
-        private TextBlock _lensEyeVerdict;   // plain-English "does Eye add edge?" conclusion
-        private StackPanel _lensEye;         // Endorsed / NotEndorsed / NoVerdict rows
-        private StackPanel _lensBand;        // score-band expectancy curve
 
         // Journal-tab widgets (blotter/audit — a VIEW of the SentinelCore.Ledger JSONL stream)
         private TextBlock _journalStatus;
@@ -360,10 +356,7 @@ namespace NinjaTrader.NinjaScript.AddOns.Sentinel
         private StackPanel _tVerify;
         private TextBlock _tVerifyStatus;
 
-        // Eye-tab widgets (per-instrument GodTrades qualification from SentinelEye charts)
-        private TextBlock _eyeStatus;
         private StackPanel _eyeTiles;
-        private StackPanel _eyePanel;
 
         // Arc-tab widgets (fleet orchestration board — read SentinelCore fleet registry)
         private TextBlock _arcStatus;
@@ -412,7 +405,7 @@ namespace NinjaTrader.NinjaScript.AddOns.Sentinel
             _logTimer = new System.Windows.Threading.DispatcherTimer(
                 System.Windows.Threading.DispatcherPriority.Background, Dispatcher);
             _logTimer.Interval = TimeSpan.FromMilliseconds(750);
-            _logTimer.Tick += (s, e) => { RefreshHomeLive(); RefreshLogLive(); RefreshRiskLive(); RefreshEyeLive(); RefreshArcLive(); RefreshAssistLive(); RefreshActiveConfigsLive(); RefreshApProfilesLive(); };
+            _logTimer.Tick += (s, e) => { RefreshHomeLive(); RefreshLogLive(); RefreshRiskLive(); RefreshArcLive(); RefreshAssistLive(); RefreshActiveConfigsLive(); RefreshApProfilesLive(); };
             _logTimer.Start();
             var logSvc = SentinelLogService.Instance;
             if (logSvc != null)
@@ -431,7 +424,7 @@ namespace NinjaTrader.NinjaScript.AddOns.Sentinel
             RefreshLogLive();
             RefreshRiskLive();
             RefreshLensLoad();
-            RefreshEyeLive();
+           
             RefreshArcLive();
             RefreshAssistLive();
             RefreshActiveConfigsLive();
@@ -457,7 +450,6 @@ namespace NinjaTrader.NinjaScript.AddOns.Sentinel
             tabs.Items.Add(new TabItem { Header = "Journal", Content = BuildJournalTab() });
             tabs.Items.Add(new TabItem { Header = "Slippage", Content = BuildSlippageTab() });
             tabs.Items.Add(new TabItem { Header = "Lens",  Content = BuildLensTab() });
-            tabs.Items.Add(new TabItem { Header = "Eye",    Content = BuildEyeTab() });
             tabs.Items.Add(new TabItem { Header = "Arc",    Content = BuildArcTab() });
             tabs.Items.Add(new TabItem { Header = "Assist", Content = BuildAssistTab() });
             tabs.Items.Add(new TabItem { Header = "Excursion", Content = BuildExcursionTab() });
@@ -1025,10 +1017,6 @@ namespace NinjaTrader.NinjaScript.AddOns.Sentinel
             _policyCombo.SelectedIndex = 1; // Warn
             panel.Children.Add(_policyCombo);
 
-            _eyeGateCheck = new CheckBox {
-                Content = "Eye-gate — mirror only SentinelEye-qualified ENTRIES (exits always mirror)",
-                IsChecked = false, Foreground = Text, Margin = new Thickness(0, 2, 0, 12) };
-            panel.Children.Add(_eyeGateCheck);
 
             panel.Children.Add(Label("Followers  (map DSL: \"GC>MGC*10, CL>MCL*10\" — blank = same instrument)", true));
             _followersPanel = new StackPanel { Margin = new Thickness(0, 4, 0, 4) };
@@ -1083,7 +1071,7 @@ namespace NinjaTrader.NinjaScript.AddOns.Sentinel
             row.Mult = new TextBox { Text = (prefill != null ? prefill.Multiplier : 1.0).ToString(CultureInfo.InvariantCulture), Width = 46, Margin = new Thickness(2, 0, 6, 0) };
             sp.Children.Add(row.Mult);
 
-            row.Map = new TextBox { Text = prefill != null ? SentinelCopierService_v0_2_0.MapToDsl(prefill.InstrumentMap) : "", MinWidth = 220, Margin = new Thickness(0, 0, 6, 0) };
+            row.Map = new TextBox { Text = prefill != null ? SentinelCopierService_v0_2_1.MapToDsl(prefill.InstrumentMap) : "", MinWidth = 220, Margin = new Thickness(0, 0, 6, 0) };
             sp.Children.Add(row.Map);
 
             var remove = MakeButton("×", (s, e) =>
@@ -1102,14 +1090,13 @@ namespace NinjaTrader.NinjaScript.AddOns.Sentinel
         // ── apply UI → live copier config ────────────────────────────────────
         private void ApplyConfig()
         {
-            var svc = SentinelCopierService_v0_2_0.Instance;
+            var svc = SentinelCopierService_v0_2_1.Instance;
             if (svc == null) { SetStatus("copier service not running — compile SentinelCopierService (F5)."); return; }
 
             var cfg = new CopierConfig();
             cfg.LeaderAccount = ComboText(_leaderCombo);
             ProviderPolicy pol;
             cfg.Policy = Enum.TryParse(_policyCombo.SelectedItem as string, out pol) ? pol : ProviderPolicy.Warn;
-            cfg.UseEyeGate = _eyeGateCheck != null && _eyeGateCheck.IsChecked == true;
 
             foreach (FollowerRow r in _followerRows)
             {
@@ -1119,37 +1106,36 @@ namespace NinjaTrader.NinjaScript.AddOns.Sentinel
                 var f = new FollowerConfig { AccountName = acct, Enabled = r.Enabled.IsChecked == true };
                 double m;
                 f.Multiplier = double.TryParse(r.Mult.Text, NumberStyles.Any, CultureInfo.InvariantCulture, out m) ? m : 1.0;
-                SentinelCopierService_v0_2_0.ParseMapDsl(r.Map.Text, f.InstrumentMap);
+                SentinelCopierService_v0_2_1.ParseMapDsl(r.Map.Text, f.InstrumentMap);
                 cfg.Followers.Add(f);
             }
 
             svc.Reconfigure(cfg);
-            SentinelCopierService_v0_2_0.SaveConfig(cfg);   // persist → survives NT recompiles/restarts
+            SentinelCopierService_v0_2_1.SaveConfig(cfg);   // persist → survives NT recompiles/restarts
             SetStatus("applied + saved: leader='" + (cfg.LeaderAccount ?? "<none>") + "', followers=" + cfg.Followers.Count
-                + ", policy=" + cfg.Policy + ", eye-gate=" + (cfg.UseEyeGate ? "ON" : "off"));
+                + ", policy=" + cfg.Policy);
         }
 
         private void ReloadConfig()
         {
-            var svc = SentinelCopierService_v0_2_0.Instance;
+            var svc = SentinelCopierService_v0_2_1.Instance;
             if (svc == null) { SetStatus("copier service not running"); return; }
-            var cfg = SentinelCopierService_v0_2_0.LoadConfig();
+            var cfg = SentinelCopierService_v0_2_1.LoadConfig();
             if (cfg == null) { SetStatus("no Copy.conf on disk to reload"); return; }
             svc.Reconfigure(cfg);
             LoadFromLiveConfig();
             SetStatus("reloaded Copy.conf: leader='" + (cfg.LeaderAccount ?? "<none>") + "', followers=" + cfg.Followers.Count
-                + ", eye-gate=" + (cfg.UseEyeGate ? "ON" : "off"));
+               );
         }
 
         private void LoadFromLiveConfig()
         {
-            var svc = SentinelCopierService_v0_2_0.Instance;
+            var svc = SentinelCopierService_v0_2_1.Instance;
             CopierConfig cfg = svc != null ? svc.CurrentConfig : null;
             if (cfg == null) return;
 
             if (cfg.LeaderAccount != null) _leaderCombo.SelectedItem = cfg.LeaderAccount;
             _policyCombo.SelectedItem = cfg.Policy.ToString();
-            if (_eyeGateCheck != null) _eyeGateCheck.IsChecked = cfg.UseEyeGate;
             _followersPanel.Children.Clear();
             _followerRows.Clear();
             foreach (FollowerConfig f in cfg.Followers) AddFollowerRow(f);
@@ -1164,7 +1150,7 @@ namespace NinjaTrader.NinjaScript.AddOns.Sentinel
             return string.IsNullOrEmpty(c.Text) ? null : c.Text.Trim();
         }
 
-        // (instrument-map DSL parse/format now live canonically on SentinelCopierService_v0_2_0,
+        // (instrument-map DSL parse/format now live canonically on SentinelCopierService_v0_2_1,
         //  reused here so the dashboard and the persisted Copy.conf always agree.)
 
         // ── helpers ──────────────────────────────────────────────────────────
@@ -1223,7 +1209,7 @@ namespace NinjaTrader.NinjaScript.AddOns.Sentinel
 
         private void RefreshStatus()
         {
-            bool copierUp = SentinelCopierService_v0_2_0.Instance != null;
+            bool copierUp = SentinelCopierService_v0_2_1.Instance != null;
             SetStatus("Copier service: " + (copierUp ? "running" : "NOT running (F5 to compile)")
                 + "   •   accounts: " + AccountNames().Count);
         }
@@ -2315,15 +2301,6 @@ namespace NinjaTrader.NinjaScript.AddOns.Sentinel
 
             // ── Eye-partition: the profit question — do Eye-endorsed trades out-earn the rest? ──
             panel.Children.Add(Label("Eye filter — does it add edge?", true));
-            _lensEyeVerdict = new TextBlock { Foreground = Text, FontFamily = new FontFamily("Consolas"),
-                FontSize = 11, Margin = new Thickness(0, 2, 0, 6), TextWrapping = TextWrapping.Wrap };
-            panel.Children.Add(_lensEyeVerdict);
-            _lensEye = new StackPanel { Margin = new Thickness(0, 0, 0, 8) };
-            panel.Children.Add(_lensEye);
-            panel.Children.Add(new TextBlock { Text = "Score-band curve (where does expectancy turn positive?)",
-                Foreground = Muted, FontFamily = new FontFamily("Consolas"), FontSize = 10, Margin = new Thickness(0, 2, 0, 2) });
-            _lensBand = new StackPanel { Margin = new Thickness(0, 0, 0, 12) };
-            panel.Children.Add(_lensBand);
 
             panel.Children.Add(Label("By strategy", true));
             _lensStrat = new StackPanel { Margin = new Thickness(0, 4, 0, 10) };
@@ -2344,7 +2321,7 @@ namespace NinjaTrader.NinjaScript.AddOns.Sentinel
             {
                 _lensStatus.Text = s.Error;
                 _lensTiles.Children.Clear(); _lensStrat.Children.Clear(); _lensInst.Children.Clear();
-                _lensEye.Children.Clear(); _lensBand.Children.Clear(); _lensEyeVerdict.Text = "";
+                _lensStatus.Text = "";
                 return;
             }
             _lensStatus.Text = "loaded " + s.TradesParsed + " trades from " + s.FilesRead + " file(s)  ·  " + s.LogDir;
@@ -2359,16 +2336,6 @@ namespace NinjaTrader.NinjaScript.AddOns.Sentinel
             _lensTiles.Children.Add(LogTile("Avg MFE", "+" + o.AvgMfe.ToString("0.0") + "t", Green));
             _lensTiles.Children.Add(LogTile("MFE capture", o.MfeCapturePct.ToString("0") + "%", Text));
 
-            // Eye-partition — the headline profit question
-            _lensEyeVerdict.Text = s.EyeVerdict ?? "";
-            _lensEye.Children.Clear();
-            if (s.ByEye.Count == 0) _lensEye.Children.Add(MonoLine("—", Muted));
-            foreach (var g in s.ByEye) _lensEye.Children.Add(EyeGroupLine(g));
-
-            _lensBand.Children.Clear();
-            if (s.ByEyeScoreBand.Count == 0)
-                _lensBand.Children.Add(MonoLine("— (no trades carried an Eye verdict yet)", Muted));
-            foreach (var g in s.ByEyeScoreBand) _lensBand.Children.Add(GroupLine(g));
 
             _lensStrat.Children.Clear();
             if (s.ByStrategy.Count == 0) _lensStrat.Children.Add(MonoLine("—", Muted));
@@ -2380,12 +2347,11 @@ namespace NinjaTrader.NinjaScript.AddOns.Sentinel
             else { _lensInst.Children.Add(LensNetChart(s.ByInstrument)); _lensInst.Children.Add(LensDivider()); }
             foreach (var g in s.ByInstrument) _lensInst.Children.Add(GroupLine(g));
 
-            _lensStatus.Text += "  ·  Eye verdict on " + s.EyeCoverage + "/" + s.TradesParsed + " trades";
             if (s.TierSkipped > 0) _lensStatus.Text += "  ·  " + s.TierSkipped + " tier-2 dupes skipped (tier-1 = source of truth)";
             SentinelCore.Log("Lens", "loaded " + s.TradesParsed + " trades: winrate " + o.WinRate.ToString("0")
                 + "%, net " + o.NetTicks.ToString("0") + "t, PF " + Pf(o.ProfitFactor)
                 + ", avgMAE " + o.AvgMae.ToString("0.0") + ", avgMFE " + o.AvgMfe.ToString("0.0")
-                + ", eyeCoverage " + s.EyeCoverage + "/" + s.TradesParsed);
+                );
         }
 
         private static string Pf(double pf) { return double.IsPositiveInfinity(pf) ? "∞" : pf.ToString("0.00"); }
@@ -2412,80 +2378,9 @@ namespace NinjaTrader.NinjaScript.AddOns.Sentinel
         private Border LensDivider() => new Border { Height = 1, Background = Faint, Margin = new Thickness(0, 8, 0, 6) };
 
         // Eye-partition row: category-colored, leads with avg ticks/trade (the expectancy that matters)
-        private TextBlock EyeGroupLine(SentinelLens_v1_1_0.Group g)
-        {
-            string label = g.Key == "Endorsed" ? "Endorsed    " : (g.Key == "NotEndorsed" ? "Not-endorsed" : "No-verdict  ");
-            string txt = label + "  " + g.Trades + " tr · " + g.WinRate.ToString("0") + "% · "
-                + (g.AvgNet >= 0 ? "+" : "") + g.AvgNet.ToString("0.00") + " t/trade · PF " + Pf(g.ProfitFactor)
-                + " · net " + (g.NetTicks >= 0 ? "+" : "") + g.NetTicks.ToString("0") + "t";
-            var color = g.Key == "Endorsed" ? (g.AvgNet >= 0 ? Green : Red)
-                      : (g.Key == "NotEndorsed" ? Amber : Muted);
-            return MonoLine(txt, color);
-        }
 
-        // ── EYE TAB (SentinelEye qualification verdicts per instrument) ──────────────
-        private FrameworkElement BuildEyeTab()
-        {
-            var panel = new StackPanel { Margin = new Thickness(12) };
-            _eyeStatus = new TextBlock { Foreground = Text, FontFamily = new FontFamily("Consolas"),
-                FontSize = 12, Margin = new Thickness(0, 0, 0, 8), TextWrapping = TextWrapping.Wrap };
-            panel.Children.Add(_eyeStatus);
-            _eyeTiles = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 2, 0, 10) };
-            panel.Children.Add(_eyeTiles);
+        // ── (the qualification tab was removed 2026-08-11) per-instrument) ──────────────
 
-            panel.Children.Add(Label("Qualified verdicts (per instrument, from SentinelEye charts)", true));
-            _eyePanel = new StackPanel { Margin = new Thickness(0, 4, 0, 10) };
-            panel.Children.Add(_eyePanel);
-
-            panel.Children.Add(new TextBlock {
-                Text = "Copier Eye-gate: set eyeGate=on in Copy.conf to mirror only Eye-qualified ENTRIES "
-                     + "(exits always mirror). OFF by default — Eye is informational until you trust it.",
-                Foreground = Muted, FontFamily = new FontFamily("Consolas"), FontSize = 10,
-                TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 4, 0, 0) });
-
-            return new ScrollViewer { VerticalScrollBarVisibility = ScrollBarVisibility.Auto, Content = panel, Background = Bg };
-        }
-
-        private void RefreshEyeLive()
-        {
-            if (_eyePanel == null) return;
-            var verdicts = SentinelCore.AllEyeVerdicts();
-            _eyeStatus.Text = "SentinelEye: " + verdicts.Count + " instrument(s) publishing";
-            if (_eyeTiles != null)
-            {
-                _eyeTiles.Children.Clear();
-                int lng = 0, sht = 0, neu = 0;
-                foreach (var v in verdicts) { if (v == null) continue; if (v.Direction > 0) lng++; else if (v.Direction < 0) sht++; else neu++; }
-                _eyeTiles.Children.Add(StatTile("Publishing", verdicts.Count.ToString(), Text, "instruments"));
-                _eyeTiles.Children.Add(StatTile("Qualified", (lng + sht).ToString(), (lng + sht) > 0 ? Accent : Muted, lng + " long · " + sht + " short"));
-                _eyeTiles.Children.Add(StatTile("Neutral", neu.ToString(), Muted, "not qualified"));
-            }
-            _eyePanel.Children.Clear();
-            if (verdicts.Count == 0)
-            {
-                _eyePanel.Children.Add(MonoLine("no SentinelEye indicator running — add SentinelEyeV1_0 to a chart", Muted));
-                return;
-            }
-
-            // ── VISUAL: signed score per instrument — right/green = qualified LONG, left/red = qualified SHORT ──
-            var eLabels = new List<string>(); var eVals = new List<double>();
-            foreach (var v in verdicts) { if (v == null) continue; eLabels.Add(v.Instrument); eVals.Add(v.Direction * Math.Abs(v.Score)); }
-            _eyePanel.Children.Add(new TextBlock { Text = "qualification — right/green = LONG, left/red = SHORT, bar = score",
-                Foreground = Muted, FontFamily = new FontFamily("Consolas"), FontSize = 9, Margin = new Thickness(0, 0, 0, 3) });
-            _eyePanel.Children.Add(HDivBars(eLabels, eVals, v => (v > 0 ? "L " : (v < 0 ? "S " : "· ")) + Math.Abs(v).ToString("0"), true, 120, 210));
-            _eyePanel.Children.Add(new Border { Height = 1, Background = Faint, Margin = new Thickness(0, 8, 0, 6) });
-
-            foreach (var v in verdicts)
-            {
-                if (v == null) continue;
-                string dir = v.Direction > 0 ? "QUALIFIED LONG" : (v.Direction < 0 ? "QUALIFIED SHORT" : "neutral (not qualified)");
-                Brush b = v.Direction > 0 ? Green : (v.Direction < 0 ? Red : Muted);
-                double ageSec = 0; try { ageSec = (DateTime.Now.ToUniversalTime() - v.UpdatedUtc).TotalSeconds; } catch (Exception _sx) { SentinelCore.Swallow("SentinelDashboard.RefreshEyeLive", _sx); }
-                _eyePanel.Children.Add(MonoLine(
-                    v.Instrument + "   " + dir + "   score " + v.Score.ToString("0") + "   src " + v.Source
-                    + "   (" + ageSec.ToString("0") + "s)", b));
-            }
-        }
 
         // ── ARC TAB (fleet orchestration — read SentinelCore fleet registry) ─────────
         private FrameworkElement BuildArcTab()
@@ -2513,7 +2408,7 @@ namespace NinjaTrader.NinjaScript.AddOns.Sentinel
 
             panel.Children.Add(new TextBlock
             {
-                Text = "Arc publishes this plan; GTrader21 obeys it via SlotLive() once wired (v0.2.0). "
+                Text = "Arc publishes this plan; the Bridge obeys it via SlotLive() once wired (v0.2.0). "
                      + "Add/remove slots by editing Sentinel\\Arc.conf then Reload. Health: OFF / "
                      + "CLOSED (out of session) / IDLE (waiting) / LIVE (in position) / DARK (leader offline).",
                 Foreground = Muted, FontFamily = new FontFamily("Consolas"), FontSize = 10,
@@ -2543,7 +2438,7 @@ namespace NinjaTrader.NinjaScript.AddOns.Sentinel
             _arcPanel.Children.Clear();
             if (slots.Count == 0)
             {
-                _arcPanel.Children.Add(MonoLine("no slots — edit Sentinel\\Arc.conf (e.g. slot=GC|GTrader21|on|1|24h) then Reload", Muted));
+                _arcPanel.Children.Add(MonoLine("no slots — edit Sentinel\\Arc.conf (e.g. slot=GC|Bridge|on|1|24h) then Reload", Muted));
                 return;
             }
             slots.Sort((a, b) => string.Compare(a.Instrument, b.Instrument, StringComparison.OrdinalIgnoreCase));
@@ -2618,7 +2513,7 @@ namespace NinjaTrader.NinjaScript.AddOns.Sentinel
             {
                 Text = "Manual-assist: set a follower to 'manual' in Copy.conf (follower=<label>|manual|<mult>|<map>) "
                      + "for prop accounts that bar automated copy-trading. The Copier emits a ticket here instead "
-                     + "of submitting — you place it on your prop platform. Eye-gate still applies to entries.",
+                     + "of submitting — you place it on your prop platform. Entry gating is the order source’s job, not the copier’s.",
                 Foreground = Muted, FontFamily = new FontFamily("Consolas"), FontSize = 10,
                 TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 4, 0, 0)
             });
@@ -2797,7 +2692,7 @@ namespace NinjaTrader.NinjaScript.AddOns.Sentinel
             RedrawExcDetail();
         }
 
-        // live: which running GTrader21 instance is on which lab config (SentinelCore config-use registry)
+        // live: which running the Bridge instance is on which lab config (SentinelCore config-use registry)
         private void RefreshActiveConfigsLive()
         {
             if (_excConfigs == null) return;
@@ -2805,7 +2700,7 @@ namespace NinjaTrader.NinjaScript.AddOns.Sentinel
             _excConfigs.Children.Clear();
             if (uses.Count == 0)
             {
-                _excConfigs.Children.Add(MonoLine("none — turn on a GTrader21 v0.1.6 instance's 'Auto-read Sentinel Config' (it reports here on load)", Muted));
+                _excConfigs.Children.Add(MonoLine("none — turn on a strategy instance's 'Auto-read Sentinel Config' (it reports here on load)", Muted));
                 return;
             }
             uses.Sort((a, b) => string.Compare(a.Instrument, b.Instrument, StringComparison.OrdinalIgnoreCase));
@@ -2949,8 +2844,6 @@ namespace NinjaTrader.NinjaScript.AddOns.Sentinel
             _excDetail.Children.Add(ResponsiveHost(w => DrawScatter(g, w), 760));
             _excDetail.Children.Add(MonoCaption("③ TP/stop expectancy grid — est. ticks/trade  ·  ★ best raw EV  ·  ◆ best RESPONSIBLE (stop ≤ TP)  ·  dim = wide stop (rarely triggers, inflates EV)"));
             _excDetail.Children.Add(ResponsiveHost(w => DrawExpectancyBars(g, w), 980));
-            _excDetail.Children.Add(MonoCaption("④ Eye referee — do Eye-endorsed fires out-earn the rest at 15 min? (realtime-only; accrues as SentinelEye runs)"));
-            _excDetail.Children.Add(DrawEyeReferee(g));
             // ⑤ Conviction referee — only for COUNCIL fires (sets the Bridge's MinConviction floor)
             if (g.CouncilCount > 0)
             {
@@ -2958,11 +2851,11 @@ namespace NinjaTrader.NinjaScript.AddOns.Sentinel
                 _excDetail.Children.Add(DrawConvictionReferee(g));
             }
 
-            // Apply the ◆ responsible config to a per-instrument GTrader21 config file
+            // Apply the ◆ responsible config to a per-instrument the Bridge config file
             var applyRow = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 6, 0, 0) };
             var gForBtn = g;
-            applyRow.Children.Add(MakeButton("Apply ◆ to GTrader21 config", (bs, be) => ApplyBestRespToGTrader(gForBtn)));
-            applyRow.Children.Add(new TextBlock { Text = "writes Sentinel\\GTraderConfigs\\<inst>_<signal>_<dir>.conf (a recommendation you set on the chart)",
+            applyRow.Children.Add(MakeButton("Apply ◆ to signal config", (bs, be) => ApplyBestRespToSignalConfig(gForBtn)));
+            applyRow.Children.Add(new TextBlock { Text = "writes Sentinel\\SignalConfigs\\<inst>_<signal>_<dir>.conf (a recommendation you set on the chart)",
                 Foreground = Muted, FontFamily = new FontFamily("Consolas"), FontSize = 9, VerticalAlignment = VerticalAlignment.Center, TextWrapping = TextWrapping.Wrap });
             _excDetail.Children.Add(applyRow);
         }
@@ -2993,7 +2886,7 @@ namespace NinjaTrader.NinjaScript.AddOns.Sentinel
             return best;
         }
 
-        private void ApplyBestRespToGTrader(SentinelExcursions_v1_0.Group g)
+        private void ApplyBestRespToSignalConfig(SentinelExcursions_v1_0.Group g)
         {
             string file = WriteConfigFor(g);
             if (_excStatus != null) _excStatus.Text = file != null
@@ -3001,7 +2894,7 @@ namespace NinjaTrader.NinjaScript.AddOns.Sentinel
                 : "no responsible (stop ≤ TP) config for " + (g != null ? g.Key : "?") + " — need n≥15";
         }
 
-        // Writes Sentinel\GTraderConfigs\<inst>_<signal>_<dir>.conf for a group's ◆ best-responsible
+        // Writes Sentinel\SignalConfigs\<inst>_<signal>_<dir>.conf for a group's ◆ best-responsible
         // config; returns the written path, or null if no responsible config exists / the write fails.
         private string WriteConfigFor(SentinelExcursions_v1_0.Group g)
         {
@@ -3012,26 +2905,22 @@ namespace NinjaTrader.NinjaScript.AddOns.Sentinel
             int tn = (g.ByRegime != null && g.ByRegime.TryGetValue("trend", out trend) && trend != null) ? trend.N : g.N;
             string dirWord = g.Dir > 0 ? "Long" : "Short";
             double rr = r.Stop > 0 ? r.Tp / r.Stop : 0;
-            // Eye-gate recommendation from the referee: only write the key when the verdict is conclusive
-            int eyeCode = EyeVerdictCode(g);
-            string eyeLine = eyeCode == 1 ? "useEyeGate = true\r\n" : (eyeCode == -1 ? "useEyeGate = false\r\n" : "");
             string txt =
-                "# GTrader21 lab config — generated by Sentinel Excursion analysis (◆ best responsible, stop <= TP)\r\n"
+                "# Sentinel signal config — generated by Sentinel Excursion analysis (◆ best responsible, stop <= TP)\r\n"
               + "# " + g.Key + "  ·  trend-regime n=" + tn + "  ·  R:R " + rr.ToString("0.0")
               + "  ·  est " + (r.Exp >= 0 ? "+" : "") + Math.Round(r.Exp) + "t/trade @ " + Math.Round(r.HitRate * 100) + "% hit"
               + "  ·  " + g.FiresPerDay.ToString("0.0") + " fires/day"
-              + (eyeCode != 0 ? "  ·  Eye referee: " + (eyeCode == 1 ? "endorse (gate ON)" : "no help (gate OFF)") : "") + "\r\n"
+              + "\r\n"
               + "instrument = " + g.Instrument + "\r\n"
               + "signal = " + g.Signal + "\r\n"
               + "direction = " + dirWord + "\r\n"
               + "useTrendFilter = true\r\n"
               + "trendAdxThreshold = 25\r\n"
-              + eyeLine
               + "takeProfitTicks = " + Math.Round(r.Tp) + "\r\n"
               + "stopLossTicks = " + Math.Round(r.Stop) + "\r\n";
             try
             {
-                string dir = System.IO.Path.Combine(SentinelCore.SettingsDir, "GTraderConfigs");
+                string dir = System.IO.Path.Combine(SentinelCore.SettingsDir, "SignalConfigs");
                 System.IO.Directory.CreateDirectory(dir);
                 string file = System.IO.Path.Combine(dir, g.Instrument + "_" + g.Signal + "_" + dirWord + ".conf");
                 System.IO.File.WriteAllText(file, txt);
@@ -3054,7 +2943,7 @@ namespace NinjaTrader.NinjaScript.AddOns.Sentinel
                 if (r != null && r.Exp > 0 && WriteConfigFor(g) != null) wrote++;
                 else skipped++;
             }
-            if (_excStatus != null) _excStatus.Text = "✔ synced " + wrote + " confident +EV ◆ config(s) → Sentinel\\GTraderConfigs  (skipped " + skipped + " low-n/edgeless)";
+            if (_excStatus != null) _excStatus.Text = "✔ synced " + wrote + " confident +EV ◆ config(s) → Sentinel\\SignalConfigs  (skipped " + skipped + " low-n/edgeless)";
             SentinelCore.Log("Excursion", "sync-all: wrote " + wrote + " config(s), skipped " + skipped);
         }
 
@@ -3152,15 +3041,8 @@ namespace NinjaTrader.NinjaScript.AddOns.Sentinel
             AddScatterPts(canvas, RegimePts(g, "mid"),   X, Y, Amber);
             AddScatterPts(canvas, RegimePts(g, "trend"), X, Y, Green);
 
-            // Eye-endorsement overlay: hollow rings on the fires SentinelEye endorsed (realtime-only →
+            // (endorsement overlay removed 2026-08-11) hollow rings on endorsed fires (realtime-only →
             // accrues forward; empty until Eye runs). Rings sit ON TOP of the regime dots.
-            SentinelExcursions_v1_0.Sub eyeEnd;
-            if (g.EyeCount > 0 && g.ByEye != null && g.ByEye.TryGetValue("endorsed", out eyeEnd) && eyeEnd != null)
-                foreach (var p in eyeEnd.Pts)
-                {
-                    var ring = new ShapeEllipse { Width = 9, Height = 9, Stroke = Text, StrokeThickness = 1 };  // hollow (no Fill)
-                    Canvas.SetLeft(ring, X(p.Mae15) - 4.5); Canvas.SetTop(ring, Y(p.Mfe15) - 4.5); canvas.Children.Add(ring);
-                }
 
             if (best != null && best.Ok)
             {
@@ -3178,7 +3060,6 @@ namespace NinjaTrader.NinjaScript.AddOns.Sentinel
             box.Children.Add(canvas);
             var legend = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(pad, 3, 0, 0) };
             legend.Children.Add(LegendDot("trend", Green)); legend.Children.Add(LegendDot("mid", Amber)); legend.Children.Add(LegendDot("chop", Muted));
-            if (g.EyeCount > 0) legend.Children.Add(LegendRing("Eye-endorsed"));
             box.Children.Add(legend);
             return box;
         }
@@ -3256,39 +3137,19 @@ namespace NinjaTrader.NinjaScript.AddOns.Sentinel
         }
 
         // ④ Eye referee: endorsed vs not-endorsed medians/expectancy + a plain-English verdict
-        private FrameworkElement DrawEyeReferee(SentinelExcursions_v1_0.Group g)
-        {
-            var wrap = new StackPanel();
-            if (g.EyeCount == 0 || g.ByEye == null)
-            {
-                wrap.Children.Add(MonoLine("— no Eye verdicts recorded yet (Eye is realtime-only; this fills in as SentinelEye runs)", Muted));
-                return wrap;
-            }
-            SentinelExcursions_v1_0.Sub end, nott;
-            g.ByEye.TryGetValue("endorsed", out end);
-            g.ByEye.TryGetValue("not", out nott);
-            wrap.Children.Add(EyeRow("endorsed", end));
-            wrap.Children.Add(EyeRow("not-endorsed", nott));
-
-            int code = EyeVerdictCode(g);
-            string verdict; Brush vb;
-            if (end == null || end.N < 10) { verdict = "verdict: not enough endorsed fires yet (need n≥10)"; vb = Muted; }
-            else if (nott == null || nott.N == 0) { verdict = "verdict: no not-endorsed fires to compare against"; vb = Muted; }
-            else
-            {
-                double endEdge = end.MfeMed15 - end.MaeMed15, notEdge = nott.MfeMed15 - nott.MaeMed15, delta = endEdge - notEdge;
-                if (code == 1)       { verdict = "verdict: Eye ADDS edge — endorsed net-median " + Sgn(endEdge) + "t vs " + Sgn(notEdge) + "t  (+" + Math.Round(delta) + "t)"; vb = Green; }
-                else if (code == -1) { verdict = "verdict: Eye HURTS — endorsed " + Sgn(endEdge) + "t vs not " + Sgn(notEdge) + "t  (" + Math.Round(delta) + "t)"; vb = Red; }
-                else                 { verdict = "verdict: no clear Eye effect — endorsed " + Sgn(endEdge) + "t vs not " + Sgn(notEdge) + "t"; vb = Amber; }
-            }
-            var tv = MonoLine(verdict, vb); tv.Margin = new Thickness(0, 3, 0, 0);
-            wrap.Children.Add(tv);
-            if (code == 1)  wrap.Children.Add(MonoLine("   → recommend: Eye-gate ON for this signal ('Apply ◆' writes useEyeGate=true; GTrader21 applies it)", Green));
-            if (code == -1) wrap.Children.Add(MonoLine("   → recommend: keep Eye-gate OFF here (endorsement doesn't help)", Amber));
-            return wrap;
-        }
 
         // ⑤ Conviction referee: HIGH vs MID vs LOW conviction buckets + a plain-English "does conviction pay?" verdict
+        // generic label + Sub stat row (label, n, medians, expectancy)
+        private TextBlock StatRow(string label, SentinelExcursions_v1_0.Sub s)
+        {
+            if (s == null || s.N == 0)
+                return MonoLine(string.Format("   {0,-14} —", label), Muted);
+            double edge = s.MfeMed15 - s.MaeMed15;
+            return MonoLine(string.Format("   {0,-14} n={1,-5} mfe15 {2,6:0.0}  mae15 {3,6:0.0}  edge {4,+6:0.0}",
+                            label, s.N, s.MfeMed15, s.MaeMed15, edge),
+                            edge > 0 ? Green : (edge < 0 ? Red : Muted));
+        }
+
         private FrameworkElement DrawConvictionReferee(SentinelExcursions_v1_0.Group g)
         {
             var wrap = new StackPanel();
@@ -3301,9 +3162,9 @@ namespace NinjaTrader.NinjaScript.AddOns.Sentinel
             g.ByConviction.TryGetValue("HIGH", out hi);
             g.ByConviction.TryGetValue("MID",  out mid);
             g.ByConviction.TryGetValue("LOW",  out lo);
-            wrap.Children.Add(EyeRow("HIGH ≥.70", hi));   // reuse the generic label+Sub row
-            wrap.Children.Add(EyeRow("MID .50-.70", mid));
-            wrap.Children.Add(EyeRow("LOW <.50", lo));
+            wrap.Children.Add(StatRow("HIGH ≥.70", hi));   // reuse the generic label+Sub row
+            wrap.Children.Add(StatRow("MID .50-.70", mid));
+            wrap.Children.Add(StatRow("LOW <.50", lo));
 
             int code = g.ConvictionVerdictCode;
             string verdict; Brush vb;
@@ -3324,17 +3185,6 @@ namespace NinjaTrader.NinjaScript.AddOns.Sentinel
         }
 
         // shared verdict now lives on the Group (used by the headless State writer too)
-        private int EyeVerdictCode(SentinelExcursions_v1_0.Group g) { return g == null ? 0 : g.EyeVerdictCode; }
-        private TextBlock EyeRow(string label, SentinelExcursions_v1_0.Sub s)
-        {
-            if (s == null || s.N == 0) return MonoLine("  " + label.PadRight(12) + " n0", Muted);
-            var best = s.Best;
-            string bs = (best != null && best.Ok)
-                ? "   best TP" + Math.Round(best.Tp) + " SL" + Math.Round(best.Stop) + " " + Math.Round(best.HitRate * 100) + "% " + (best.Exp >= 0 ? "+" : "") + Math.Round(best.Exp) + "t"
-                : "";
-            return MonoLine("  " + label.PadRight(12) + " n" + s.N + "   MFE15 " + Math.Round(s.MfeMed15)
-                + "  MAE15 " + Math.Round(s.MaeMed15) + (s.HasEdge ? "  ✓" : "") + bs, s.HasEdge ? Green : Muted);
-        }
         private static string Sgn(double v) { return (v >= 0 ? "+" : "") + Math.Round(v); }
 
         // ── small drawing helpers ─────────────────────────────────────────────────────

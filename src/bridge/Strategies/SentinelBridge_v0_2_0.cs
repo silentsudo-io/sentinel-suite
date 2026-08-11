@@ -153,7 +153,7 @@ namespace NinjaTrader.NinjaScript.Strategies
     // NB: BASE Strategies namespace (NOT .Strategies.Sentinel). NT's Strategy selector does NOT surface
     // sub-namespaced strategies (only indicators fold into picker sub-folders) — a sub-namespaced strategy
     // compiles clean but never appears in the Strategies list. The "Sentinel" identity is carried by the
-    // class-name prefix + display Name instead. (Federated naming law amended 2026-07-07; GTraderStrategy
+    // class-name prefix + display Name instead. (Federated naming law amended 2026-07-07; the Bridge strategy
     // stayed in base for the same reason.)
     public class SentinelBridge_v0_2_0 : Strategy
     {
@@ -770,7 +770,7 @@ namespace NinjaTrader.NinjaScript.Strategies
         {
             try
             {
-                string path = System.IO.Path.Combine(SentinelCore.SettingsDir, "GTraderConfigs", inst + "_COUNCIL_" + dir + ".conf");
+                string path = System.IO.Path.Combine(SentinelCore.SettingsDir, "SignalConfigs", inst + "_COUNCIL_" + dir + ".conf");
                 if (!System.IO.File.Exists(path)) return;
                 foreach (string raw in System.IO.File.ReadAllLines(path))
                 {

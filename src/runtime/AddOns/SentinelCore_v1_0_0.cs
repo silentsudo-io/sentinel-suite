@@ -139,9 +139,9 @@
 //                 independent of the consuming chart's bar type. Documented in-seam; do NOT scope it.
 //             The Council still consults Clock + Intermarket by bare instrument, deliberately.
 //    v1.20.0 — SEAM SCOPE MIGRATION, BATCH 3 (execution plan 1.4). 12 of 15 seams migrated.
-//             MIGRATED: EyeVerdict · LiquidityState · LevelState · MtfState — all cleanly per-chart, so all key by
+//             MIGRATED: LiquidityState · LevelState · MtfState — all cleanly per-chart, so all key by
 //             SCOPE. Each state class gained Scope/Bartype; each store is now a shared SeamStore<T> with the
-//             scope→instrument shim + a heartbeat (Touch*/Clear*Scope). EyeVerdict + LiquidityState use the
+//             scope→instrument shim + a heartbeat (Touch*/Clear*Scope). The qualification seam + LiquidityState use the
 //             batch-1 style (a legacy instrument-arg Set overload that delegates to the scope one); LevelState +
 //             MtfState are object-form and key on `s.Scope ?? s.Instrument` (no signature change). Council now
 //             consults all four by its own scope. REMAINING (3): ClockState (session-derived — identical for every
@@ -229,7 +229,7 @@
 //             chart's alternation history.
 //    v1.16.0 — DECLARED ROSTER (execution plan 3.1 · ML spec §10.4). New `RosterInfo` + `CouncilState.Roster`
 //             and a `SetCouncilState` overload carrying it. The Council's roster was EMERGENT — it fused whatever
-//             seams happened to be fresh — so `Eye_v1_1_0` crashing on load meant `EYE` (weight 1.4, the heaviest
+//             seams happened to be fresh — so a declared voter crashing on load meant it (at the heaviest
 //             voter) abstained on all 332 recorded verdicts and NOTHING SAID SO. Under fail-open abstention a
 //             crashed sensor is indistinguishable from a quiet one. Declaring the expected voter set makes the
 //             absence reportable, and makes the model attributable: you can now tell THE MODEL apart from WHAT
@@ -306,7 +306,7 @@
 //             ONE per-instrument directional VERDICT: fused Bias (-1/0/1), Conviction (0..1 = how aligned
 //             the FRESH voters are), suggested SizeMult (0 when vetoed), agree/disagree/voter tallies, and a
 //             compact Reasons audit string. HARD VETOES (global/scoped kill + rollover + news-lockout + an
-//             absorption wall blocking the intended side) zero the conviction. Consumers (GTrader21 / Bridge /
+//             absorption wall blocking the intended side) zero the conviction. Consumers (Bridge /
 //             Deck / Copier / strategies) consult it instead of re-deriving confluence, and record the verdict
 //             on each FIRE so Lens can grade which confluence actually paid. Same publish/consult pattern as
 //             every other seam; everything travels as INT/double/string so the core never couples to the
@@ -325,7 +325,7 @@
 //             + BrickState, w/ IsUp / AtrTicks / Aligned helpers). SentinelTBars (a Sentinel-graded
 //             adaptive HA/Renko-hybrid BARS TYPE) publishes its per-instrument adaptive VOLATILITY
 //             read — ATR (price units), the live with-trend / counter-trend brick offsets, brick
-//             direction, density scale, and trend-persistence count — so consumers (GTrader21 / Eye /
+//             direction, density scale, and trend-persistence count — so consumers (Bridge /
 //             strategies) can consult "what is the tape's current brick volatility + direction" without
 //             re-deriving it. Same publish/consult pattern as Eye + ADX + Trend + CCI + Liquidity.
 //             Direction travels as an INT (-1 Down / 1 Up) so the core never couples to the bars-type
@@ -334,7 +334,7 @@
 //    v1.5.0 — CCI TREND publish/consult seam (SetCciState/GetCciState/AllCciStates + CciState, w/
 //             Bias/Strong/TrendOn/Aligned helpers). WoodiesCCIPro (a Woodies CCI/Turbo trend-filter
 //             oscillator, Sentinel-graded) publishes per-instrument persisted trend state (-2..+2) + CCI
-//             values + slope + last entry signal so consumers (GTrader21 / Eye / strategies) can gate on
+//             values + slope + last entry signal so consumers (Bridge / strategies) can gate on
 //             "Woodies trend is bull and not weakening." Same publish/consult pattern as Eye + VolEnvelope
 //             + ADX + Trend + Liquidity. State travels as an INT so the core never couples to any indicator
 //             version's enum. Backward-compatible (added members only).
@@ -342,7 +342,7 @@
 //             + LiquidityState, w/ ResistanceAbove/SupportBelow/NearWall/BlocksEntry helpers). LiquidityWalls
 //             (a chart order-flow ABSORPTION detector, ported from the TradingIQ "Liquidity Walls" study)
 //             publishes per-instrument absorption z-score + side + the nearest active wall above/below price
-//             so consumers (GTrader21 / Deck / Eye / strategies) can veto entries into a wall. Same publish/
+//             so consumers (Bridge / Deck / strategies) can veto entries into a wall. Same publish/
 //             consult pattern as Eye + VolEnvelope + ADX + Trend. Side travels as an INT (-1 support-below /
 //             0 none / 1 resistance-above) so the core never couples to any indicator version's enum.
 //             Backward-compatible (added members only).
@@ -352,20 +352,20 @@
 //             lifetime EQUITY (realized balance + OPEN P&L) vs the firm's trailing threshold — the #1 way
 //             funded accounts die (giving back open profit and touching the trail by a tick). Risk (which
 //             owns account P&L) computes peak-equity/floor/cushion and publishes here; CanEnter now also
-//             consults it (blocks new entries when the cushion is thin) — so GTrader21/Deck/Copier get
+//             consults it (blocks new entries when the cushion is thin) — so the Bridge/Deck/Copier get
 //             trailing-DD protection FREE. Direction of enforcement travels as flags (Warn/EntryBlocked/
 //             Breach) so the core never owns the firm-specific math. Fail-open (no state → allowed).
 //             Backward-compatible (added members only).
 //    v1.3.0 — TREND publish/consult seam (SetTrendState/GetTrendState/AllTrendStates + TrendState).
 //             SentinelTrend (the unified ATR/CCI trailing-line indicator that SUPERSEDES the old
 //             TrendMagic family) publishes per-instrument trailing direction + line price + signed
-//             distance (ticks) + bars-in-trend so consumers (SentinelTrendStrategy / GTrader21 / Eye)
+//             distance (ticks) + bars-in-trend so consumers (SentinelTrendStrategy / Bridge)
 //             can consult "trend flipped up AND price is holding above the line." Same publish/consult
 //             pattern as Eye + VolEnvelope + ADX. Direction travels as an INT (-1 Down / 0 Flat / 1 Up)
 //             so the core never couples to any indicator version's enum. Backward-compatible (added only).
 //    v1.2.0 — ADX REGIME publish/consult seam (SetAdxState/GetAdxState/AllAdxStates + AdxState).
 //             ADXPro (a chart ADX/DI indicator) publishes per-instrument trend strength + directional
-//             bias so consumers (GTrader21 / Eye / Copier / strategies) can gate on "trend ON + bias
+//             bias so consumers (Bridge / Copier / strategies) can gate on "trend ON + bias
 //             agrees" or "ADX fading — don't add." Same publish/consult pattern as Eye + VolEnvelope.
 //             Bias travels as an INT (-1 Bear / 0 Neutral / 1 Bull) so the core never couples to any
 //             indicator version's enum. Backward-compatible (added members only).
@@ -373,7 +373,7 @@
 //             backward-compatible (added members only), all marked "(v1.1.0)" inline:
 //               • ORDER GATE — the single pre-submit choke point: GateEntry() → GateDecision
 //                 {Level,Reason,Size}, SizeForRisk()/TickValue() risk sizer, and a fat-finger rate
-//                 guard (SetOrderGuards/NoteOrderSubmitted). Deck=fail-open, GTrader/Copier=fail-closed.
+//                 guard (SetOrderGuards/NoteOrderSubmitted). Deck=fail-open, the Bridge/Copier=fail-closed.
 //               • STATE LEDGER (SentinelCore.Ledger) — one append-only daily JSONL event stream
 //                 (<SettingsDir>\Ledger\ledger-YYYY-MM-DD.jsonl, async writes): Ledger.Order()/Action()/
 //                 Fill() (fill carries intended-vs-actual price → adverse slip ticks).
@@ -389,7 +389,7 @@
 //             Also: governor daily-reset CLOCK (resetHour/GovernorResetHour/Label) + AccountProfile
 //             .HardEnforce (opt-in auto-flatten arm).
 //    v1.0.9 — PROFILES now DO something: CanEnter also honors the account profile's SESSION window
-//             (block entries outside it; exits always allowed) — so GTrader21 gets per-account session
+//             (block entries outside it; exits always allowed) — so the Bridge gets per-account session
 //             gating FREE. New SizedQuantity(account, baseQty) = baseQty × profile.SizeScale ×
 //             governor RecommendedSize, clamped to the profile's ContractLimit (≥1) — the one place
 //             sizing math lives, for strategies to size entries. Fail-open (unprofiled → unchanged).
@@ -402,7 +402,7 @@
 //             prop-firm gate. A host (Risk) tracks each account's daily realized P&L vs its firm
 //             cap (consistency) + loss-stop and publishes GovernorState; consumers consult
 //             TradingAllowedToday(account) + RecommendedSize(account). CanEnter now also honors the
-//             governor, so GTrader21 (Direct-EA) gets it FREE. Fail-open (no state → allowed).
+//             governor, so the Bridge (Direct-EA) gets it FREE. Fail-open (no state → allowed).
 //    v1.0.6 — CONFIG-USE registry: a running Sentinel-aware strategy that auto-read a lab .conf
 //             publishes what it loaded (SetConfigUse) so the dashboard shows which INSTANCE is on
 //             which config + TP/SL. Publish on apply, remove on Terminated. Backward-compatible.
@@ -413,7 +413,7 @@
 //             is unchanged (manual "stop everything"). New: SetInstrumentKill/InstrumentKillEngaged/
 //             InstrumentKillReason/AllInstrumentKills + InstrumentKillChanged event, and
 //             CanActInstrument(instrument, acct) = CanAct + the scoped kill. CanEnter now routes
-//             through CanActInstrument, so GTrader21 (already calling CanEnter) gets scoping for
+//             through CanActInstrument, so the Bridge (already calling CanEnter) gets scoping for
 //             FREE — no strategy change. Backward-compatible (added members only).
 //    v1.0.4 — LIVE-PHASE ENTRY GATES (rollover + news) + a WATCH registry. Three additions, all
 //             publish/consult like Eye + Fleet, all backward-compatible (added members only):
@@ -428,11 +428,11 @@
 //             consult a Sentinel-aware strategy makes at entry. InstrumentRoot() helper added.
 //    v1.0.3 — FLEET ORCHESTRATION registry: SentinelArc publishes a per-instrument "fleet plan"
 //             (which strategies/instruments should trade on the leader, size, session window) +
-//             live supervision status; Sentinel-aware strategies (GTrader21) consult SlotLive()
+//             live supervision status; Sentinel-aware strategies (the Bridge) consult SlotLive()
 //             at entry time and gate their own entries on it. Same publish/consult pattern as Eye.
 //             FAIL-OPEN for unmanaged instruments. Backward-compatible (added members only).
-//    v1.0.2 — EYE QUALIFICATION registry: SentinelEye (a chart scanner) publishes a per-instrument
-//             "qualified direction + score" verdict here; the Copier consults it (when its Eye-gate
+//    v1.0.2 — (REMOVED 2026-08-11) a per-instrument qualification registry publishes a per-instrument
+//             a "qualified direction + score" verdict the Copier consulted (when its Eye-gate
 //             is on) to mirror only Eye-qualified trades. Same publish/consult pattern as the
 //             kill-switch + feed-health probe. Stale verdicts (closed chart) auto-expire by age.
 //    v1.0.1 — OBSERVABILITY: Log() now also appends every line to a file I (Claude) can read:
@@ -459,7 +459,7 @@ namespace NinjaTrader.NinjaScript.AddOns.Sentinel
     /// </summary>
     public static partial class SentinelCore
     {
-        public const string Version = "1.48.0";   // v1.48.0 BARTYPE NAME REGISTRY COMPLETED — _bartypeNames carried only 212201/212202/212203, but SEVEN Sentinel bars types are shipped and compiled (212201-212207). So BartypeName() fell through to its "Type<id>" fallback for SentinelDrift, SentinelLattice, SentinelEffort and SentinelTide, and FriendlyBartag/FriendlyScope rendered a Tide scope as "GC · Type212207 8" on every surface that consults them — Cockpit, cards, dashboards, the Streamlit explorer. The fallback is deliberately silent (an unregistered id is not an error), which is exactly why four missing rows survived four bar-type releases: nothing failed, a human just read a number instead of a name. Found 2026-08-10 by DRIVING friendly_bartag over every shipped id rather than reading the registry — the registry looks complete when you only test the ids that are in it. Display-only and additive: the machine tag is untouched, so no scope key, corpus join, saved chart or Models\ folder moves. The Python mirror (Lab\sentinel_lab\bartag.py _NAMES) is updated in the same change — it is declared a MIRROR of this dictionary, and a mirror updated on one side only is worse than no mirror; v1.47.0 CVD CATALOG ROW — the Council has declared CVD in KnownVoters and FUSED it since v1.43.0, but VoterCatalog never got its row, so the two surfaces that read the catalog (Cockpit, System Builder) could not see a voter that was actively voting: it could not be shown, toggled, or written into a generated Roster.conf, which would then silently omit a voter the Council counts in its denominator. Found 2026-07-30 by enumerating KnownVoters (25) against VoterCatalog (24) while drawing the architecture guides — the catalog and the code disagreed, and the artifact wins by default. Enters at defWeight 0.0 AUDITION to match the Council's own WeightCvd default; v1.46.0 SIGNAL-FIRE INTAKE — the excursion corpus could only ever see the COUNCIL. SentinelExcursionRecorder polls GetCouncilState and opens on Open("COUNCIL", …), so EVERY strategy was invisible to the corpus by construction: build a strategy, and the thing that grades decisions cannot see its decisions. New NoteSignalFire(scope,dir,tag,…) + DrainSignalFires(scope) + SignalFireStats() make the recorder's intake GENERIC — the Council becomes one caller among several, and Keel/Hull/Pilot (or any future strategy) records through the same path with the same schema. Deliberately an EVENT QUEUE, not a seam: a seam is last-value-wins, so two fires inside one bar would silently drop one, and a fire is exactly the thing that must not be lost. Historical fires are REJECTED AT THE DOOR rather than queued (a queued historical fire drained at realtime is lookahead contamination — the same class as the UpdatedUtc as-of hole), the queue is BOUNDED with counted drops, and stale fires expire on drain. SignalFireStats() exists so a dropped or never-drained fire is visible instead of silent — a strategy that records nothing must not be indistinguishable from a strategy that never fired. Row schema UNCHANGED at 1.5 (the row's `signal` field already carries the tag); carrying strategy-side context onto the row is a deliberate follow-up that needs a schema bump; v1.45.0 PRESSURE SEAM — BuySellVolumePressureMountain was ported with a glass card but NEVER given a …State seam, so it computed an order-flow opinion nothing could consult (design system §9 item 6 miss, closed 2026-07-26). New PressureState (BuyPct/SellPct/Delta/Dir/DomRatio/Strong/Divergence/TickBacked) + Set/Get/Touch/All + BSP VoterCatalog row. Enters at defWeight 0.0 AUDITION: the 07-26 re-test killed all 19 voters and every one was PRICE-derived, so a genuine bid/ask-classified order-flow voice is the one untested family — but it is graded before it is trusted. TickBacked is load-bearing: OnMarketData is realtime-only, so a historical rebuild silently falls back to an OHLC proxy that is itself price-derived; a consumer that cannot tell them apart would grade the proxy and call it flow; v1.44.0 LANE FROM DISK - new LaneAssign (Sentinel\Lanes.conf) + ResolveLane(inst,barTag,f6Lane). The lane a chart runs in had ONE source of truth, the Council's F6 ScopeLane, while a Conductor job line's `lane=` LOOKED authoritative and was not. On 2026-07-25 that cost a run twice: once at launch (job said AUD0626, chart said TEST -> fused the SCRAPPED 7-voter roster, declaredW=5.30) and again after a crash-recovery reboot, where the workspace restored to lane TEST and an armed auto-resume would have baked contaminated rows into a lane named for a 19-voter roster. Lanes.conf now wins when it has an entry, F6 otherwise, and the override is ANNOUNCED in the log - never silent. Cascade "<inst>.<barTag>" -> "<inst>" -> F6, matching RosterIO/LaneIO. Paired with Conductor v0.2.0's fail-closed lane guard; v1.43.0 CVD SEAM — new CvdState (session cumulative volume delta + its DERIVATIVES) published by the SentinelCVD indicator, so it works on ANY bar type rather than only where SentinelFlux is the clock. Carries Slope/SlopeZ/Dir (direction), Divergence (flow vs price), and — the one nobody plots — EFFICIENCY: ticks of price per 1,000 contracts of net aggression, i.e. market IMPACT (Kyle's lambda in retail clothing). Low efficiency on rising CVD = absorption; high = a thin book. Orthogonal to every price-derived voter. NOT a duplicate of FluxState: Theta is ONE forming bar's imbalance and resets each bar, FluxState.Cvd was a bonus read nothing consumed and only exists on a Flux chart. Council gains the CVD voter (STATE) + VoterCatalog row; v1.42.0 LOG RETENTION — sentinel.log rotation kept exactly ONE generation and DELETED it on every roll, so at the rates this log actually hits (41,340 lines in 27 SECONDS on a historical rebuild) 5 MB is ~3 minutes of history at 100x replay; that permanently destroyed the 2026-07-23→24 forensic window TWICE in one night mid-investigation of the BRK/FLUX seam bug. Now keeps LOG_GENERATIONS=6 (.1...6). Rotation stays deliberately silent (Swallow→Log→WriteLogFile would recurse). Also archived SentinelExcursionRecorder_v1_4 (contaminated schema 1.3) out of the tree — two excursion recorders were loadable at once, against the one-writer invariant; v1.41.0 Swallow()/Faults() — the RECORDED empty catch: ~350 `catch (Exception _sx) { SentinelCore.Swallow("SentinelCore.anon", _sx); }` across the suite made every expensive bug invisible by construction; Swallow never rethrows (identical behaviour) but counts + rate-limits + logs. Order paths migrated first (Deck 71 · GTrader21 30 · Bridge 28 · Copier 5); v1.40.0 AppDomain GENERATION BEACON — an F5 leaves a chart's bars-type instance on the OLD assembly, publishing into an orphaned static seam store (silent; cost the 07-23 audition bake) → Beacon/BeaconForeign let a consumer say DECOUPLED-restart-NT instead of "absent"; v1.39.0 LaneIO cascade + RosterIO.Resolve (live config reload); v1.38.0 ReplayMode file-switch unblocks bars-type seam publishes in Playback; v1.36.0 CouncilState.CouncilVersion
+        public const string Version = "1.48.0";   // v1.48.0 BARTYPE NAME REGISTRY COMPLETED — _bartypeNames carried only 212201/212202/212203, but SEVEN Sentinel bars types are shipped and compiled (212201-212207). So BartypeName() fell through to its "Type<id>" fallback for SentinelDrift, SentinelLattice, SentinelEffort and SentinelTide, and FriendlyBartag/FriendlyScope rendered a Tide scope as "GC · Type212207 8" on every surface that consults them — Cockpit, cards, dashboards, the Streamlit explorer. The fallback is deliberately silent (an unregistered id is not an error), which is exactly why four missing rows survived four bar-type releases: nothing failed, a human just read a number instead of a name. Found 2026-08-10 by DRIVING friendly_bartag over every shipped id rather than reading the registry — the registry looks complete when you only test the ids that are in it. Display-only and additive: the machine tag is untouched, so no scope key, corpus join, saved chart or Models\ folder moves. The Python mirror (Lab\sentinel_lab\bartag.py _NAMES) is updated in the same change — it is declared a MIRROR of this dictionary, and a mirror updated on one side only is worse than no mirror; v1.47.0 CVD CATALOG ROW — the Council has declared CVD in KnownVoters and FUSED it since v1.43.0, but VoterCatalog never got its row, so the two surfaces that read the catalog (Cockpit, System Builder) could not see a voter that was actively voting: it could not be shown, toggled, or written into a generated Roster.conf, which would then silently omit a voter the Council counts in its denominator. Found 2026-07-30 by enumerating KnownVoters (25) against VoterCatalog (24) while drawing the architecture guides — the catalog and the code disagreed, and the artifact wins by default. Enters at defWeight 0.0 AUDITION to match the Council's own WeightCvd default; v1.46.0 SIGNAL-FIRE INTAKE — the excursion corpus could only ever see the COUNCIL. SentinelExcursionRecorder polls GetCouncilState and opens on Open("COUNCIL", …), so EVERY strategy was invisible to the corpus by construction: build a strategy, and the thing that grades decisions cannot see its decisions. New NoteSignalFire(scope,dir,tag,…) + DrainSignalFires(scope) + SignalFireStats() make the recorder's intake GENERIC — the Council becomes one caller among several, and Keel/Hull/Pilot (or any future strategy) records through the same path with the same schema. Deliberately an EVENT QUEUE, not a seam: a seam is last-value-wins, so two fires inside one bar would silently drop one, and a fire is exactly the thing that must not be lost. Historical fires are REJECTED AT THE DOOR rather than queued (a queued historical fire drained at realtime is lookahead contamination — the same class as the UpdatedUtc as-of hole), the queue is BOUNDED with counted drops, and stale fires expire on drain. SignalFireStats() exists so a dropped or never-drained fire is visible instead of silent — a strategy that records nothing must not be indistinguishable from a strategy that never fired. Row schema UNCHANGED at 1.5 (the row's `signal` field already carries the tag); carrying strategy-side context onto the row is a deliberate follow-up that needs a schema bump; v1.45.0 PRESSURE SEAM — BuySellVolumePressureMountain was ported with a glass card but NEVER given a …State seam, so it computed an order-flow opinion nothing could consult (design system §9 item 6 miss, closed 2026-07-26). New PressureState (BuyPct/SellPct/Delta/Dir/DomRatio/Strong/Divergence/TickBacked) + Set/Get/Touch/All + BSP VoterCatalog row. Enters at defWeight 0.0 AUDITION: the 07-26 re-test killed all 19 voters and every one was PRICE-derived, so a genuine bid/ask-classified order-flow voice is the one untested family — but it is graded before it is trusted. TickBacked is load-bearing: OnMarketData is realtime-only, so a historical rebuild silently falls back to an OHLC proxy that is itself price-derived; a consumer that cannot tell them apart would grade the proxy and call it flow; v1.44.0 LANE FROM DISK - new LaneAssign (Sentinel\Lanes.conf) + ResolveLane(inst,barTag,f6Lane). The lane a chart runs in had ONE source of truth, the Council's F6 ScopeLane, while a Conductor job line's `lane=` LOOKED authoritative and was not. On 2026-07-25 that cost a run twice: once at launch (job said AUD0626, chart said TEST -> fused the SCRAPPED 7-voter roster, declaredW=5.30) and again after a crash-recovery reboot, where the workspace restored to lane TEST and an armed auto-resume would have baked contaminated rows into a lane named for a 19-voter roster. Lanes.conf now wins when it has an entry, F6 otherwise, and the override is ANNOUNCED in the log - never silent. Cascade "<inst>.<barTag>" -> "<inst>" -> F6, matching RosterIO/LaneIO. Paired with Conductor v0.2.0's fail-closed lane guard; v1.43.0 CVD SEAM — new CvdState (session cumulative volume delta + its DERIVATIVES) published by the SentinelCVD indicator, so it works on ANY bar type rather than only where SentinelFlux is the clock. Carries Slope/SlopeZ/Dir (direction), Divergence (flow vs price), and — the one nobody plots — EFFICIENCY: ticks of price per 1,000 contracts of net aggression, i.e. market IMPACT (Kyle's lambda in retail clothing). Low efficiency on rising CVD = absorption; high = a thin book. Orthogonal to every price-derived voter. NOT a duplicate of FluxState: Theta is ONE forming bar's imbalance and resets each bar, FluxState.Cvd was a bonus read nothing consumed and only exists on a Flux chart. Council gains the CVD voter (STATE) + VoterCatalog row; v1.42.0 LOG RETENTION — sentinel.log rotation kept exactly ONE generation and DELETED it on every roll, so at the rates this log actually hits (41,340 lines in 27 SECONDS on a historical rebuild) 5 MB is ~3 minutes of history at 100x replay; that permanently destroyed the 2026-07-23→24 forensic window TWICE in one night mid-investigation of the BRK/FLUX seam bug. Now keeps LOG_GENERATIONS=6 (.1...6). Rotation stays deliberately silent (Swallow→Log→WriteLogFile would recurse). Also archived SentinelExcursionRecorder_v1_4 (contaminated schema 1.3) out of the tree — two excursion recorders were loadable at once, against the one-writer invariant; v1.41.0 Swallow()/Faults() — the RECORDED empty catch: ~350 `catch (Exception _sx) { SentinelCore.Swallow("SentinelCore.anon", _sx); }` across the suite made every expensive bug invisible by construction; Swallow never rethrows (identical behaviour) but counts + rate-limits + logs. Order paths migrated first (Deck 71 · Bridge 28 · Copier 5); v1.40.0 AppDomain GENERATION BEACON — an F5 leaves a chart's bars-type instance on the OLD assembly, publishing into an orphaned static seam store (silent; cost the 07-23 audition bake) → Beacon/BeaconForeign let a consumer say DECOUPLED-restart-NT instead of "absent"; v1.39.0 LaneIO cascade + RosterIO.Resolve (live config reload); v1.38.0 ReplayMode file-switch unblocks bars-type seam publishes in Playback; v1.36.0 CouncilState.CouncilVersion
 
         // ═════════════════════════════════════════════════════════════════════
         //  SCOPE (v1.15.0) — the coordinate every seam should be keyed by.
@@ -797,52 +797,18 @@ namespace NinjaTrader.NinjaScript.AddOns.Sentinel
         }
 
         // ─────────────────────────────────────────────────────────────────────
-        //  EYE QUALIFICATION — SentinelEye (a chart scanner indicator) PUBLISHES a per-instrument
-        //  verdict ("is the GodTrades edge qualified, and which direction"); the Copier CONSULTS it
-        //  (when its Eye-gate is enabled) so real followers copy only Eye-qualified trades. Publish/
-        //  consult pattern mirrors the kill-switch + feed-health probe. Key = master instrument name
-        //  (e.g. "GC"). Verdicts auto-expire by age so a closed chart's stale verdict never gates.
+        //  ⛔ THE EYE QUALIFICATION SEAM WAS REMOVED 2026-08-11 (operator's call).
+        //  SentinelEye was settled dead 2026-07-23 and this seam outlived it by 19 days, during
+        //  which it did active harm: `Copy.conf` still carried `eyeGate=on`, the gate treated an
+        //  ABSENT verdict as a REFUSING one, and so the copier silently mirrored EXITS ONLY —
+        //  a follower could be flattened but never opened. Nothing announced it.
+        //  ⇒ The lesson, and the reason this comment is here rather than the code: retiring a
+        //  PRODUCER and retiring its CONSUMERS are two different jobs, and only the first was
+        //  done. A dead tool that still holds a veto over an order path is not inert.
+        //  ⛔ DO NOT RE-ADD. Qualification belongs to whatever produces the leader's fills —
+        //  choose the leader ACCOUNT, do not gate inside the copier (an in-copier qualifier
+        //  re-creates exactly this failure with a different producer).
         // ─────────────────────────────────────────────────────────────────────
-        public sealed class EyeVerdict
-        {
-            /// <summary>v1.20.0 — the CHART this verdict came from ("GC.69697v6x24").</summary>
-            public string   Scope;
-            public string   Bartype;
-            public string   Instrument;
-            public int      Direction;   // +1 long-qualified, -1 short-qualified, 0 none/neutral
-            public double   Score;
-            public string   Source;      // e.g. "Tick 300 BG"
-            public DateTime UpdatedUtc;
-        }
-
-        private static readonly SeamStore<EyeVerdict> _eye =
-            new SeamStore<EyeVerdict>("Eye", v => v.Instrument, v => v.UpdatedUtc, (v, t) => v.UpdatedUtc = t);
-
-        /// <summary>LEGACY (pre-v1.20.0) publish — keys by bare instrument. Prefer the scope-aware overload.</summary>
-        public static void SetEyeVerdict(string instrument, int direction, double score, string source)
-            => SetEyeVerdict(instrument, null, instrument, direction, score, source);
-
-        /// <summary>SentinelEye publishes its verdict for ONE SCOPE (one chart) — the Eye's simulated rows are
-        /// chart-specific, so two charts on one instrument must not overwrite each other.</summary>
-        public static void SetEyeVerdict(string scope, string bartype, string instrument,
-                                         int direction, double score, string source)
-        {
-            if (string.IsNullOrEmpty(scope)) return;
-            _eye.Set(scope, new EyeVerdict { Scope = scope, Bartype = bartype, Instrument = instrument,
-                                             Direction = direction, Score = score,
-                                             Source = source, UpdatedUtc = DateTime.UtcNow });
-        }
-
-        /// <summary>Latest verdict for a SCOPE (or a bare instrument, resolved only when unique).</summary>
-        public static EyeVerdict GetEyeVerdict(string scopeOrInstrument, double maxAgeSec)
-            => _eye.Get(scopeOrInstrument, maxAgeSec);
-
-        /// <summary>Heartbeat: re-stamp the cached verdict so a quiet-market Eye doesn't age out of the roster.</summary>
-        public static void TouchEyeVerdict(string scope) => _eye.Touch(scope);
-
-        public static void ClearEyeScope(string scope) => _eye.ClearScope(scope);
-
-        public static List<EyeVerdict> AllEyeVerdicts() => _eye.All();
 
         // ─────────────────────────────────────────────────────────────────────
         //  VOL-ENVELOPE REGIME — VolEnvelope (a chart envelope indicator) PUBLISHES its per-instrument
@@ -900,7 +866,7 @@ namespace NinjaTrader.NinjaScript.AddOns.Sentinel
 
         // ─────────────────────────────────────────────────────────────────────
         //  ADX REGIME (v1.2.0) — ADXPro (a chart ADX/DI indicator) PUBLISHES its per-instrument trend
-        //  strength + directional bias so consumers (GTrader21 / Eye / Copier / strategies) can gate on
+        //  strength + directional bias so consumers (Bridge / Copier / strategies) can gate on
         //  it, e.g. "only enter when the trend is ON and bias agrees with the signal" or "don't ADD while
         //  ADX is fading." Same publish/consult pattern as the Eye verdict + VolEnvelope regime. Key =
         //  master instrument name. Auto-expires by age. Bias travels as an INT (-1=Bear 0=Neutral 1=Bull)
@@ -963,7 +929,7 @@ namespace NinjaTrader.NinjaScript.AddOns.Sentinel
         // ─────────────────────────────────────────────────────────────────────
         //  TREND (v1.3.0) — SentinelTrend (the unified ATR/CCI trailing-line indicator that SUPERSEDES
         //  the old TrendMagic family) PUBLISHES its per-instrument trailing direction + line price +
-        //  signed distance so consumers (SentinelTrendStrategy / GTrader21 / Eye / strategies) can gate
+        //  signed distance so consumers (SentinelTrendStrategy / Bridge / strategies) can gate
         //  on it, e.g. "only enter when the trend just flipped up AND price is holding above the line"
         //  or "don't fade an established trend." Same publish/consult pattern as the Eye verdict +
         //  VolEnvelope regime + ADX. Key = master instrument name. Auto-expires by age. Direction travels
@@ -1080,7 +1046,7 @@ namespace NinjaTrader.NinjaScript.AddOns.Sentinel
         // ─────────────────────────────────────────────────────────────────────
         //  LIQUIDITY WALLS (v1.4.0) — LiquidityWalls (a chart order-flow ABSORPTION detector) PUBLISHES its
         //  per-instrument absorption state + the nearest active liquidity WALL above/below price so consumers
-        //  (GTrader21 / Deck / Eye / strategies) can gate on it, e.g. "don't enter long into a resistance wall
+        //  (Bridge / Deck / strategies) can gate on it, e.g. "don't enter long into a resistance wall
         //  a few ticks overhead" or "a fresh support wall just formed below — favor the long." Same publish/
         //  consult pattern as the Eye verdict + VolEnvelope + ADX + Trend. Key = master instrument name.
         //  Auto-expires by age. AbsorbSide travels as an INT (-1 support-below / 0 none / 1 resistance-above)
@@ -1154,7 +1120,7 @@ namespace NinjaTrader.NinjaScript.AddOns.Sentinel
 
         // ─────────────────────────────────────────────────────────────────────
         //  CCI TREND (v1.5.0) — WoodiesCCIPro (a Woodies CCI/Turbo-CCI trend-filter oscillator) PUBLISHES
-        //  its per-instrument persisted trend state + CCI values so consumers (GTrader21 / Eye / Copier /
+        //  its per-instrument persisted trend state + CCI values so consumers (Bridge / Copier /
         //  strategies) can gate on it, e.g. "only enter long when the Woodies trend is bull and not weakening."
         //  Same publish/consult pattern as the Eye verdict + VolEnvelope + ADX + Trend + Liquidity. Key =
         //  master instrument name. Auto-expires by age. TrendState travels as an INT (-2 strong-bear .. +2
@@ -1214,7 +1180,7 @@ namespace NinjaTrader.NinjaScript.AddOns.Sentinel
         // ─────────────────────────────────────────────────────────────────────
         //  BRICK / BAR STATE (v1.6.0) — SentinelTBars (a Sentinel-graded adaptive HA/Renko-hybrid BARS
         //  TYPE) PUBLISHES its per-instrument adaptive VOLATILITY read + last brick direction so consumers
-        //  (GTrader21 / Eye / strategies) can consult "what is the tape's current brick volatility +
+        //  (Bridge / strategies) can consult "what is the tape's current brick volatility +
         //  direction" without re-deriving it — e.g. size a stop off the live brick ATR, or refuse to add
         //  when the brick just flipped against the signal. Same publish/consult pattern as the Eye verdict
         //  + VolEnvelope + ADX + Trend + CCI + Liquidity. Key = master instrument name. Auto-expires by age.
@@ -1489,7 +1455,7 @@ namespace NinjaTrader.NinjaScript.AddOns.Sentinel
         //  SizeMult (0..1, 0 when vetoed), the agree/disagree/voter tallies, and a compact human-readable
         //  Reasons string (the AUDIT — why it decided). HARD VETOES (global/scoped kill / rollover /
         //  news-lockout / an absorption wall blocking the intended side) zero the conviction and set
-        //  Vetoed+VetoReason. Consumers (GTrader21 / Bridge / Deck / Copier / strategies) consult
+        //  Vetoed+VetoReason. Consumers (Bridge / Deck / Copier / strategies) consult
         //  GetCouncilState instead of re-deriving confluence, and record the verdict on each FIRE (Ledger/Log
         //  ctx) so Lens can grade which confluence actually paid. Same publish/consult pattern as every other
         //  seam. Key = master instrument name. Auto-expires by age. Everything travels as INT/double/string
@@ -1517,7 +1483,7 @@ namespace NinjaTrader.NinjaScript.AddOns.Sentinel
             /// <summary>Where the declaration came from — a Roster.conf path, or "default" when derived from weights.</summary>
             public string Source;
 
-            /// <summary>"8/10 — EYE, BRK missing" — the Cockpit's roster line.</summary>
+            /// <summary>"8/10 — CCI, BRK missing" — the Cockpit's roster line.</summary>
             public override string ToString()
             {
                 string s = Present + "/" + Declared;
@@ -2935,7 +2901,7 @@ namespace NinjaTrader.NinjaScript.AddOns.Sentinel
         // ─────────────────────────────────────────────────────────────────────
         //  FLEET ORCHESTRATION — SentinelArc PUBLISHES a per-slot "fleet plan" (which
         //  instruments/strategies should trade on the leader, at what size, in which
-        //  session window); Sentinel-aware STRATEGIES (e.g. GTrader21) CONSULT SlotLive()
+        //  session window); Sentinel-aware STRATEGIES (e.g. the Bridge) CONSULT SlotLive()
         //  at entry time and only trade when their slot is live. Same publish/consult
         //  pattern as Eye + the kill-switch. This is how Arc "enables/disables" a chart
         //  strategy it can NOT start/stop directly: the strategy stays loaded 24/5 but
@@ -2951,7 +2917,7 @@ namespace NinjaTrader.NinjaScript.AddOns.Sentinel
         {
             // plan (Arc-authored)
             public string   Instrument;       // master name, e.g. "GC"
-            public string   Strategy;         // label, e.g. "GTrader21"
+            public string   Strategy;         // label, e.g. "the Bridge"
             public bool     Enabled;          // Arc master on/off for this slot
             public int      Contracts;        // size hint (0 = let the strategy decide)
             public int      SessionStartMin;  // minutes-of-day session opens (-1 = 24h)
@@ -3767,7 +3733,7 @@ namespace NinjaTrader.NinjaScript.AddOns.Sentinel
         //  active stop price) SURVIVES A RESTART. One file per key at <SettingsDir>\State\<safeKey>.json.
         //  Distinct from the async event Ledger: the Ledger is an append-only HISTORY; this is the
         //  latest SNAPSHOT of what we believe should be true, overwritten in place. Consumers key by
-        //  their own identity (e.g. "GTrader21|<account>|<instrument>"), Save() on every state change,
+        //  their own identity (e.g. "the Bridge|<account>|<instrument>"), Save() on every state change,
         //  Load() on restart, Clear() when the position closes. See Docs/SENTINEL_HARDENING_FRAMEWORK.md
         //  (Substrate 2 — "intended-state store" + reconcile). Reconciliation is the CONSUMER's job:
         //  restore only after verifying the account actually still holds a matching position.

@@ -1,10 +1,10 @@
-// ────────────────────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
 // This Source Code Form is subject to the terms of the Mozilla Public License,
 // v. 2.0. If a copy of the MPL was not distributed with this file, You can obtain
 // one at https://mozilla.org/MPL/2.0/.
 //
 // Copyright (c) 2026 silentsudo-io and the Sentinel Suite contributors.
-// ────────────────────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
 // =============================================================================
 //  SentinelCore - SAFETY layer  (partial)
 //  File: SentinelCore.Safety.cs   |   part of static partial class SentinelCore
@@ -245,7 +245,7 @@ namespace NinjaTrader.NinjaScript.AddOns.Sentinel
         // ═════════════════════════════════════════════════════════════════════
         //  THE ORDER GATE (v1.1.0) — the single pre-submit choke point.
         //  See Docs/SENTINEL_HARDENING_FRAMEWORK.md (Substrate 1). Every order — Deck,
-        //  GTrader21, Copier — asks GateEntry() before Account.Submit. The gate CLASSIFIES
+        //  the Bridge, Copier — asks GateEntry() before Account.Submit. The gate CLASSIFIES
         //  (Clear / Advisory / Hard) and RISK-SIZES; it does NOT itself submit or cancel.
         //  The CALLER applies policy: manual = fail-open (surface Advisory/Hard loudly but a
         //  human may still act), automated = fail-closed (refuse on Hard). Exits never gate
@@ -378,7 +378,7 @@ namespace NinjaTrader.NinjaScript.AddOns.Sentinel
 
         // ─────────────────────────────────────────────────────────────────────
         //  FEED-HEALTH GATE — pluggable. A future "Sentinel Risk"/health service (or
-        //  the promoted GTrader21 v0.1.2 lag metric) registers a probe here; until then
+        //  the promoted the Bridge v0.1.2 lag metric) registers a probe here; until then
         //  the default is "healthy". Tools call IsAccountHealthy() before acting on a feed.
         // ─────────────────────────────────────────────────────────────────────
         /// <summary>

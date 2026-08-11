@@ -38,7 +38,7 @@ using NinjaTrader.NinjaScript.AddOns.Sentinel;
 //    • SENTINEL GLASS CARD (SentinelSkin.Painter) docked in the oscillator panel via CardLayout — trend-state
 //      pill + Main/Turbo CCI hero + strength track + slope/signal row. Never overlaps another Sentinel card.
 //    • LABEL REMOVER (mandatory) — NT's chart name-label hidden by default (ShowIndicatorLabel to restore).
-//    • SENTINEL PUBLISH — broadcasts SentinelCore.CciState (SetCciState) each bar so GTrader21/Eye/strategies
+//    • SENTINEL PUBLISH — broadcasts SentinelCore.CciState (SetCciState) each bar so Bridge/strategies
 //      can consult "Woodies trend is bull and not weakening" (SentinelCore v1.5.0 seam).
 //
 //  Edge lane: NO orders — a trend-filter/observer only. The Values[] signal plots feed Strategy Builder.
@@ -1163,4 +1163,3 @@ namespace NinjaTrader.NinjaScript.Indicators.Sentinel.Sensors
         }
     }
 }
-

@@ -507,7 +507,7 @@ top of the consult chain: sensors publish → **Council fuses** → strategies/B
   Envelope/Brick echo the same OHLC) — `Conviction` is *agreement*, not *confirmation*. The verdict only gets independent as
   the **orthogonal axes** below publish their own seams. **Now partly addressed:** the **FLUX** voter (the `SentinelFlux`
   order-flow-imbalance bar type, §6d) is the first genuinely orthogonal axis — a tape-sourced vote, not the same OHLC.
-  The Council now fuses **25 voters**; interim `ConvictionFloor = 0.20`.
+  The Council now fuses **24 voters**; interim `ConvictionFloor = 0.20`.
 
 ### 6d. Signal collection — the orthogonal axes (planned seams, build in dependency order)
 The Council is built to pick these up automatically as each publishes a `…State` seam. **Rule for every new axis: publish a

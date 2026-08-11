@@ -10,7 +10,7 @@ The one modelling decision that lives here: FOLD BY DIRECTION.
 
     x_i = vote_i * dir
 
-A long verdict with EYE=+1 and a short verdict with EYE=-1 are the SAME evidence
+A long verdict with TRND=+1 and a short verdict with TRND=-1 are the SAME evidence
 ("the Eye agreed with the taken side"). Folding halves the feature space, doubles
 effective N, and -- because `dir == sign(netScore)` for any verdict -- makes the
 fitted coefficient directly comparable to the Council's hand-set `WeightEye`.
@@ -38,7 +38,6 @@ CLOCK_PHASES = {0: "closed", 1: "opendrive", 2: "midday", 3: "close"}
 # we fall back to this embedded copy — kept in sync by regenerating from the C# source.
 # cols: tag, role(voter|modulator|veto), kind(state|trigger), defWeight, display, seam
 _EMBEDDED_CATALOG = [
-    ("EYE",  "voter", "trigger", 1.4, "Eye",             "EyeVerdict"),
     ("TRND", "voter", "state",   1.0, "SentinelTrend",   "TrendState"),
     ("CCI",  "voter", "state",   0.8, "Woodies CCI",     "CciState"),
     ("ADX",  "voter", "state",   0.6, "ADX Pro",         "AdxState"),

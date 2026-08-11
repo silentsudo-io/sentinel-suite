@@ -75,10 +75,8 @@ BRICK_TYPES = {212201, 212202, 212204}
 
 # Voters whose ABSENCE is a settled decision, not a fault to go chase. Reported (a roster declaring a
 # retired voter is real config drift worth cleaning) but with the resolution attached, so "X is missing"
-# can never re-open a closed loop. EYE is NOT globally dead -- it votes on 100% of rows on some live GC
-# lanes -- it is retired from the AUDITION and was never installed on legacy-node, so the fix is always to
-# drop it from that lane's roster, never to re-add the sensor.
-RETIRED = {"EYE": "  [EYE is RETIRED for audition lanes -- remove it from this roster; do NOT re-add the sensor]"}
+# can never re-open a closed loop. Empty since 2026-08-11: the one entry was removed along with its sensor.
+RETIRED = {}
 
 PARTIAL_PCT = 0.90       # a declared voter below this coverage is intermittently dropping out
 BRK_PCT     = 0.99       # brick lanes must carry levels on essentially every row

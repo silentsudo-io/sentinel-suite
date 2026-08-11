@@ -117,7 +117,7 @@ namespace NinjaTrader.NinjaScript.Indicators.Sentinel.Sensors
 		private SentinelSkin.Painter _sp;
 		private double lastWindowCoil;
 
-		private const string SchemaVer = "1.3";
+		private const string SchemaVer = "1.4";
 		private const string SignalTag = "CBRK";
 		private static readonly int[] Levels = { 10, 20, 30, 40, 50, 60, 80, 100 };
 		// schema 1.3 (ML spec §1.3/§2.3) — the ATR-scaled FIRST-TOUCH barrier, mirroring the Council ExcursionRecorder:
@@ -138,10 +138,6 @@ namespace NinjaTrader.NinjaScript.Indicators.Sentinel.Sensors
 			public double   BaseHeightTicks;
 			public string   Regime;
 			public double   Adx;
-			public bool     EyeHad;
-			public double   EyeScore;
-			public int      EyeDir;
-			public bool     EyeAligned;
 			public double   MaxMFE, MaxMAE;
 			public int      BarsToMFE, BarsToMAE;
 			public double   MsToMFE, MsToMAE;
@@ -442,14 +438,6 @@ namespace NinjaTrader.NinjaScript.Indicators.Sentinel.Sensors
 
 			try
 			{
-				var v = SentinelCore.GetEyeVerdict(Instrument.MasterInstrument.Name, 0);
-				if (v != null)
-				{
-					e.EyeHad = true;
-					e.EyeScore = v.Score;
-					e.EyeDir = v.Direction;
-					e.EyeAligned = v.Direction == dir;
-				}
 			}
 			catch (Exception _sx) { SentinelCore.Swallow("CompressionBase.OpenExcursion", _sx); }
 
@@ -520,9 +508,6 @@ namespace NinjaTrader.NinjaScript.Indicators.Sentinel.Sensors
 				S(sb, "inst", InstName());       C(sb); S(sb, "bartype", BarTag()); C(sb);
 				S(sb, "signal", SignalTag);      C(sb); N(sb, "dir", e.Dir);        C(sb);
 				S(sb, "regime", e.Regime);       C(sb); N(sb, "adx", e.Adx);        C(sb);
-				B(sb, "eyeHad", e.EyeHad);       C(sb);
-				if (e.EyeHad) { N(sb, "eyeScore", e.EyeScore); C(sb); N(sb, "eyeDir", e.EyeDir); C(sb); B(sb, "eyeAligned", e.EyeAligned); C(sb); }
-				else          { Null(sb, "eyeScore"); C(sb); Null(sb, "eyeDir"); C(sb); Null(sb, "eyeAligned"); C(sb); }
 				S(sb, "fireTime", e.FireTime.ToString("o", CultureInfo.InvariantCulture)); C(sb);
 				N(sb, "firePx", e.FirePx);       C(sb);
 				N(sb, "maxMFE", e.MaxMFE);       C(sb); N(sb, "maxMAE", e.MaxMAE);   C(sb);
@@ -715,4 +700,3 @@ namespace NinjaTrader.NinjaScript.Indicators.Sentinel.Sensors
 		#endregion
 	}
 }
-

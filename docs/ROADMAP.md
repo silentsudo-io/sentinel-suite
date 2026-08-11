@@ -109,7 +109,7 @@ The suite has moved well past the snapshots below. Where they disagree on a vers
 > (Core · Council · Bridge · Cockpit · GTrader21 · recorder) `memory/NOW.md` wins over any number pinned
 > below; `{{core_version}}` + the voter count render live from code and can't drift.
 
-- **The Council fuses 25 VOTERS** (was 8–9). **SentinelCore → v1.48.0**, **Council → v1.8.x.**
+- **The Council fuses 24 VOTERS** (was 8–9). **SentinelCore → v1.48.0**, **Council → v1.8.x.**
 - **⭐ Newest thread — SentinelFlux (order-flow imbalance BAR TYPE).** A from-scratch López-de-Prado information-driven
   bar type (BarsPeriodType **212203**, reserved block 212200–212299) stabilised by the TBars discipline. It closes bars on
   accumulated signed order-flow imbalance → the suite's **first genuinely orthogonal axis** (every other voter is

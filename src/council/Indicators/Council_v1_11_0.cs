@@ -33,9 +33,9 @@ using NinjaTrader.NinjaScript.AddOns.Sentinel;   // SentinelSkin (glass card) + 
 //
 //  WHAT THIS IS — the missing brain of the suite. Every Sentinel sensor already PUBLISHES its own
 //  opinion to SentinelCore as a "…State" seam (Trend, ADX, CCI, VolEnvelope, Liquidity, Brick) plus
-//  the Eye's qualification verdict. Until now each consumer hand-consulted one or two of those ad hoc.
+//  every published sensor seam. Until now each consumer hand-consulted one or two of those ad hoc.
 //  The Council FUSES them all into ONE explainable per-instrument verdict and publishes it back as
-//  SentinelCore.CouncilState so ANY consumer (GTrader21 / Bridge / Deck / Copier / strategies) reads
+//  SentinelCore.CouncilState so ANY consumer (Bridge / Deck / Copier / strategies) reads
 //  the SAME decision instead of re-deriving confluence.
 //
 //  THE VERDICT (SentinelCore.CouncilState, SentinelCore ≥ v1.7.0):
@@ -251,10 +251,10 @@ using NinjaTrader.NinjaScript.AddOns.Sentinel;   // SentinelSkin (glass card) + 
 //             triggers quiet, state voters present) the denominator drops 7.8 → ~4.1, so conviction ~doubles.
 //             ⚠ CLASSIFICATION was VERIFIED against the published seams, not assumed. The v1.2.1 note called BRK a
 //             trigger — WRONG: BrickState.Direction is documented "-1 Down / 1 Up" and is NEVER 0 (a brick always has
-//             a direction), so BRK is STATE and can never go quiet. The real triggers are EYE·CMP·WAE·GREV (3.7/7.80,
+//             a direction), so BRK is STATE and can never go quiet. The real triggers are CMP·WAE·GREV (3.7/7.80,
 //             still ~47%). STATE = TRND·CCI·ADX·ENV·IMKT·BRK.
 //             CONFIG: a per-voter kind override in Roster.conf, mirroring the `w=` override —
-//                 EYE   w=1.4 trigger        # bare word, or `kind=trigger`
+//                 CMP   w=0.7 trigger        # bare word, or `kind=trigger`
 //                 TRND  state
 //             Code default = DefaultKind(tag), so it works with no conf. The effective per-bar denominator is written
 //             into the Reasons audit ("denom 4.1/7.8"), which the Bridge records to the Ledger on fire — so the Lab
@@ -270,7 +270,7 @@ using NinjaTrader.NinjaScript.AddOns.Sentinel;   // SentinelSkin (glass card) + 
 //
 //             ⚠ THE FLOOR IS NOT THE REAL PROBLEM. `declaredW` conflates two kinds of voter:
 //               • STATE voters (TRND · ADX · ENV · IMKT) always carry a direction.
-//               • TRIGGER voters (EYE · BRK · CMP · WAE · GREV) are ±1 only on the rare bar they fire, and read "~"
+//               • TRIGGER voters (BRK · CMP · WAE · GREV) are ±1 only on the rare bar they fire, and read "~"
 //                 the rest of the time.
 //             About HALF the model's weight is therefore parked at zero on a typical bar, permanently dragging
 //             conviction toward 0.16. A silent trigger is being scored as "I looked and saw no direction" — the same
@@ -331,12 +331,12 @@ using NinjaTrader.NinjaScript.AddOns.Sentinel;   // SentinelSkin (glass card) + 
 //             errs toward standing down, and the Lab will refit it alongside the rest.
 //    v1.0.3 (in-place, 2026-07-09) — LOG BY SCOPE, not by instrument. Every sentinel.log line the Council wrote was
 //             prefixed with the bare instrument, so two GC charts both logged "GC …" — and the first live roster
-//             immediately proved why that's untenable: `GC roster COMPLETE 10/10` and `GC roster 3/10 ⚠EYE,CCI,…`
+//             immediately proved why that's untenable: `GC roster COMPLETE 10/10` and `GC roster 3/10 ⚠CCI,ADX,…`
 //             were DIFFERENT CHARTS, indistinguishable in the log. New LogTag() → the scope ("GC.69697v6x24"),
 //             falling back to the instrument only before the scope resolves. Applied to the verdict-change line,
 //             the roster-deviation line, and the declaration line.
 //    v1.0.2 (in-place, 2026-07-09) — DECLARED ROSTER (exec plan 3.1 · ML spec §10.4; needs SentinelCore ≥ v1.16.0).
-//             The roster was EMERGENT: the Council fused whatever seams happened to be fresh. So when Eye_v1_1_0
+//             The roster was EMERGENT: the Council fused whatever seams happened to be fresh. So when a declared voter
 //             threw on load it simply never voted, and across 332 verdicts NOTHING SAID SO — the heaviest voter
 //             (1.4) was dead code. Under fail-open abstention a crashed sensor is indistinguishable from a quiet
 //             one. Now the expected voter set is DECLARED and resolved against reality every update:
@@ -351,7 +351,7 @@ using NinjaTrader.NinjaScript.AddOns.Sentinel;   // SentinelSkin (glass card) + 
 //             activeW, the agree/disagree tally, or the breadth damping. A candidate sensor accrues its full
 //             history before it can influence one trade. Adding/retiring a sensor becomes a config change.
 //             Fusion math is UNCHANGED when every voter is declared with weight > 0 (today's default).
-//    v1.0.0 (2026-07-07) — initial: fuse Trend/ADX/CCI/Envelope/Liquidity/Brick/Eye → CouncilState verdict;
+//    v1.0.0 (2026-07-07) — initial: fuse Trend/ADX/CCI/Envelope/Liquidity/Brick → CouncilState verdict;
 //             weighted vote + breadth/squeeze damping; account-free hard vetoes; hidden Bias/Conviction
 //             plots; Sentinel card/palette/label-remover; change-logged. Designed to pick up the orthogonal
 //             axes (Clock/Location/Participation/MTF/Event) as they publish their own seams.
@@ -392,7 +392,7 @@ namespace NinjaTrader.NinjaScript.Indicators.Sentinel
         // one lightweight vote record for rendering + tally
         private struct Vote
         {
-            public string Tag;     // short chip label (EYE / TRND / CCI / ADX / ENV / BRK)
+            public string Tag;     // short chip label (TRND / CCI / ADX / ENV / BRK)
             public int    Dir;     // -1 / 0 / +1 (0 = present but neutral / abstains from direction)
             public double W;       // effective weight this update
             public bool   Fresh;   // a non-stale reading existed
@@ -401,10 +401,10 @@ namespace NinjaTrader.NinjaScript.Indicators.Sentinel
 
         // ── DECLARED ROSTER (SentinelCore v1.16.0 · ML spec §10.4) ────────────────────────────────
         // The roster used to be EMERGENT — the Council fused whatever seams happened to be fresh. So when the
-        // Eye crashed on load it simply never voted, and across 332 verdicts nothing anywhere said so. Declaring
+        // crashed on load it simply never voted, and across 332 verdicts nothing anywhere said so. Declaring
         // the expected voter set converts a silent absence into a reported one, and separates THE MODEL from
         // WHAT HAPPENED TO BE LOADED ON THE CHART.
-        private static readonly string[] KnownVoters = { "EYE", "TRND", "CCI", "ADX", "ENV", "BRK", "CMP", "IMKT", "WAE", "GREV", "STF", "FLOW", "STRC", "EXH", "AVMA", "SPRT", "PSAR", "ZSC", "ARCH", "VDYA", "HARM", "FLUX", "CVB", "CVD", "BSP" };
+        private static readonly string[] KnownVoters = { "TRND", "CCI", "ADX", "ENV", "BRK", "CMP", "IMKT", "WAE", "GREV", "STF", "FLOW", "STRC", "EXH", "AVMA", "SPRT", "PSAR", "ZSC", "ARCH", "VDYA", "HARM", "FLUX", "CVB", "CVD", "BSP" };
         private List<string> _declared;                  // expected voters, in declaration order
         private Dictionary<string, double> _rosterW;     // per-tag weight override from Roster.conf (null ⇒ use the property)
         private Dictionary<string, VoterKind> _rosterKind; // per-tag kind override from Roster.conf (null ⇒ DefaultKind) — v1.3.0
@@ -485,7 +485,7 @@ namespace NinjaTrader.NinjaScript.Indicators.Sentinel
         {
             if (State == State.SetDefaults)
             {
-                Description              = "The Sentinel confluence arbiter — fuses every published sensor seam (Trend/ADX/CCI/Envelope/Liquidity/Brick/Eye) into ONE explainable directional verdict (bias + conviction + size), applies hard vetoes, and publishes SentinelCore.CouncilState for any strategy to consult.";
+                Description              = "The Sentinel confluence arbiter — fuses every published sensor seam (Trend/ADX/CCI/Envelope/Liquidity/Brick) into ONE explainable directional verdict (bias + conviction + size), applies hard vetoes, and publishes SentinelCore.CouncilState for any strategy to consult.";
                 Name                     = "Sentinel Council v1.11.0";
                 Calculate                = Calculate.OnPriceChange;
                 IsOverlay                = true;
@@ -494,16 +494,17 @@ namespace NinjaTrader.NinjaScript.Indicators.Sentinel
                 DrawOnPricePanel         = true;
 
                 // ── vote weights (the edge lives here) ──
-                // ⛔ EYE PULLED FROM THE SUITE (settled 2026-07-23; default benched 2026-08-03).
-                //    Was 1.4 — "the qualifier, strongest single voice" — and it stayed 1.4 in the code and in
-                //    all four Roster.confs for eleven days AFTER the decision to drop it, so the ledger said
-                //    "not a voter" while the live Council fused it at the highest weight of any voter.
-                //    ⭐ Benched at 0 rather than deleted, deliberately: EYE is still in KnownVoters and still
-                //    calls AddVote, so it is RECORDED and the roster denominator is unchanged — which keeps
-                //    the 8,875 historical rows that carry EYE comparable in SHAPE to new ones. Deleting the
-                //    voter outright would move netScore/activeW *and* the denominator in one step and silently
-                //    break that comparison. A benched voter is the suite's existing idiom (CVD, BSP at 0.0).
-                WeightEye      = 0.0;
+                // ⛔ THE EYE VOTER WAS DELETED 2026-08-11 (operator's call), not benched.
+                //    It was settled dead 2026-07-23 and still fused at 1.4 — the highest weight of any
+                //    voter — for eleven days after, so the ledger read "not a voter" while the live
+                //    Council leaned on it hardest. Benching at 0 (2026-08-03) fixed the arithmetic but
+                //    left the name in an order path, which is how the copier's Eye-gate survived to
+                //    silently mirror EXITS ONLY for 19 days.
+                //    ⭐ THE OLD RATIONALE FOR BENCHING WAS REAL AND IS ANSWERED, NOT IGNORED: deleting a
+                //    voter moves netScore/activeW AND the roster denominator at once, which would break
+                //    comparison against the 8,875 historical rows that carry EYE. The objection was to a
+                //    SILENT break — so the excursion schema is bumped in the same change. The
+                //    discontinuity is now declared by the data itself instead of inferred.
                 WeightTrend    = 1.0;   // structural trailing-line trend
                 WeightCci      = 0.8;   // Woodies trend (× strong)
                 WeightAdx      = 0.6;   // regime/strength confirmer (× strong)
@@ -671,9 +672,6 @@ namespace NinjaTrader.NinjaScript.Indicators.Sentinel
             string seamKey = BareScope() ?? inst;
             try
             {
-                var eye = SentinelCore.GetEyeVerdict(seamKey, StaleSec);
-                if (eye != null) AddVote("EYE", eye.Direction, WeightFor("EYE", WeightEye), ref netScore, ref activeW, ref voters);
-
                 var tr = Local("TRND", SentinelCore.GetTrendState(seamKey, StaleSec));
                 if (tr != null) AddVote("TRND", tr.Direction, WeightFor("TRND", WeightTrend), ref netScore, ref activeW, ref voters);
 
@@ -1365,7 +1363,6 @@ namespace NinjaTrader.NinjaScript.Indicators.Sentinel
         {
             switch (tag)
             {
-                case "EYE":  return WeightEye;
                 case "TRND": return WeightTrend;
                 case "CCI":  return WeightCci;
                 case "ADX":  return WeightAdx;
@@ -1408,7 +1405,7 @@ namespace NinjaTrader.NinjaScript.Indicators.Sentinel
         {
             switch (tag)
             {
-                case "EYE": case "CMP": case "WAE": case "GREV": case "EXH": case "ZSC": case "HARM": return VoterKind.Trigger;
+                case "CMP": case "WAE": case "GREV": case "EXH": case "ZSC": case "HARM": return VoterKind.Trigger;
                 default:                                          return VoterKind.State;  // TRND CCI ADX ENV IMKT BRK FLOW STRC AVMA SPRT PSAR ARCH VDYA FLUX
             }
         }
@@ -1422,7 +1419,7 @@ namespace NinjaTrader.NinjaScript.Indicators.Sentinel
 
         // ── the declaration ───────────────────────────────────────────────────────────────────────
         // Sentinel\Models\<INST>\<bartag>\Roster.conf  ▸  …\<INST>\Roster.conf  ▸  …\Models\Roster.conf
-        //   EYE   w=1.4 trigger  # declared voter, weight override + KIND override (v1.3.0; bare word or `kind=trigger`)
+        //   CMP   w=0.7 trigger  # declared voter, weight override + KIND override (v1.3.0; bare word or `kind=trigger`)
         //   TRND  state          # declared voter, weight from the F6 property, kind forced to STATE
         //   NEWSENSOR w=0        # exploration: votes and is recorded, contributes nothing
         // v1.8.0 — PER-LANE SYSTEM PROFILE. Apply Sentinel\Models\<inst>\<ladedTag>\Lane.conf OVER the F6 fusion
@@ -1758,11 +1755,6 @@ namespace NinjaTrader.NinjaScript.Indicators.Sentinel
         }
 
         #region Properties
-        [Range(0.0, double.MaxValue)]
-        [NinjaScriptProperty]
-        [Display(Name = "Weight — Eye", Description = "Vote weight for the Eye qualification verdict (the strongest single voice).", Order = 1, GroupName = "Weights")]
-        public double WeightEye { get; set; }
-
         [Range(0.0, double.MaxValue)]
         [NinjaScriptProperty]
         [Display(Name = "Weight — Trend", Description = "Vote weight for SentinelTrend's trailing-line direction.", Order = 2, GroupName = "Weights")]

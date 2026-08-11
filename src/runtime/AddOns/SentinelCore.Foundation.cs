@@ -196,7 +196,7 @@ namespace NinjaTrader.NinjaScript.AddOns.Sentinel
         //  SWALLOW — the recorded empty catch  (v1.41.0, 2026-07-25)
         //
         //  WHY THIS EXISTS — ~350 empty `catch { }` blocks were counted across the suite (Deck 71 of
-        //  107, Council 31 of 34, Risk 29, Bridge 28, GTrader21 29). The INTENT is right and must be
+        //  107, Council 31 of 34, Risk 29, Bridge 28). The INTENT is right and must be
         //  preserved: telemetry and UI must never throw into a bar or order path. The DEFECT is that
         //  "don't propagate" was implemented as "don't record", and that is the proven mechanism of
         //  every expensive bug in this project's history — the BRK/FLUX seam hunt (the publish body

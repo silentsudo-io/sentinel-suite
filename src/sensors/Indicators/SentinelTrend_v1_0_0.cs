@@ -53,7 +53,7 @@ using NinjaTrader.NinjaScript.Indicators.Sentinel.Sensors;
 //      exactly as the old strategies consumed TrendMagicSignalMod.Direction).
 //    • CONSULT: optional ADX-regime filter — reads SentinelCore.GetAdxState so signal markers can require
 //      "trend ON + bias agrees" (needs ADXPro publishing; SentinelCore ≥ v1.2.0). Fail-open when absent.
-//    • PUBLISH: optional SentinelCore.SetTrendState(...) so GTrader21 / Eye / strategies can consult this
+//    • PUBLISH: optional SentinelCore.SetTrendState(...) so Bridge / strategies can consult this
 //      trend's direction + line + distance (needs SentinelCore ≥ v1.3.0).
 //    • A SentinelSkin.Painter glass card (CardLayout-docked) + Sentinel palette + label remover.
 //
@@ -388,7 +388,7 @@ namespace NinjaTrader.NinjaScript.Indicators.Sentinel.Sensors
         public double StaleSec { get; set; }
 
         [NinjaScriptProperty]
-        [Display(Name = "Publish Trend to Sentinel", Description = "Publish direction + line + distance to SentinelCore so GTrader21/Eye/strategies can consult it. Needs SentinelCore ≥ v1.3.0.", Order = 22, GroupName = "Sentinel")]
+        [Display(Name = "Publish Trend to Sentinel", Description = "Publish direction + line + distance to SentinelCore so Bridge/strategies can consult it. Needs SentinelCore ≥ v1.3.0.", Order = 22, GroupName = "Sentinel")]
         public bool PublishState { get; set; }
 
         [XmlIgnore]
@@ -433,4 +433,3 @@ namespace NinjaTrader.NinjaScript.Indicators.Sentinel.Sensors
         #endregion
     }
 }
-

@@ -27,7 +27,7 @@
 //    (RecordGodTrades / ShowUnderlyingIndicator). That baseline embedded a third-party engine that is
 //    not part of the open-source distribution, so this version records the COUNCIL verdict ONLY. The
 //    JSONL schema is UNCHANGED (still 1.3) — Council rows are byte-identical to v1_4's; there are simply
-//    no BG/FC/OBR rows. No SentinelCore change (CONSULTS CouncilState ≥ v1.7.0 + GetEyeVerdict, both seams).
+//    no BG/FC/OBR rows. No SentinelCore change (CONSULTS CouncilState ≥ v1.7.0).
 //    v1_4 stays as the user's private tool (frozen); this is the shippable.
 //
 //  CHANGELOG
@@ -227,7 +227,7 @@ namespace NinjaTrader.NinjaScript.Indicators.Sentinel
         // shape change SchemaVer exists to separate: 1.5 rows land in council\1.5\ and can NEVER pool with the
         // ~9-tick-optimistic 1.4 corpus. The 1.4 rows are kept, not deleted — they are still a valid record of
         // what the old logic saw; they are simply not labels you can trade.
-        private const string SchemaVer = "1.5";
+        private const string SchemaVer = "1.6";
         private const string RecVer    = "2.5.0";   // v2.5.0 = + TickPathTailMs setting (schema stays 1.5; recVer separates the batches)
 
         private ADX adx;
@@ -283,10 +283,6 @@ namespace NinjaTrader.NinjaScript.Indicators.Sentinel
             public double[] MaeAt;
             public string   Regime;      // "trend" / "mid" / "chop"
             public double   Adx;
-            public bool     EyeHad;
-            public double   EyeScore;
-            public int      EyeDir;
-            public bool     EyeAligned;
             // Council verdict snapshot at fire
             public bool     Council;
             public double   Conviction;
@@ -584,13 +580,10 @@ namespace NinjaTrader.NinjaScript.Indicators.Sentinel
         private void Open(string signal, int dir, NinjaTrader.NinjaScript.AddOns.Sentinel.SentinelCore.CouncilState council = null)
         {
             double a = 0; try { a = adx[0]; } catch (Exception _sx) { SentinelCore.Swallow("SentinelExcursionRec.Open", _sx); }
-            bool eyeHad = false; double eyeScore = double.NaN; int eyeDir = 0; bool eyeAligned = false;
             if (State == State.Realtime)   // live Eye registry has no historical value → realtime fires only
             {
                 try
                 {
-                    var ev = NinjaTrader.NinjaScript.AddOns.Sentinel.SentinelCore.GetEyeVerdict(InstName(), 0);
-                    if (ev != null) { eyeHad = true; eyeScore = ev.Score; eyeDir = ev.Direction; eyeAligned = (eyeDir == dir); }
                 }
                 catch (Exception _sx) { SentinelCore.Swallow("SentinelExcursionRec.Open", _sx); }
             }
@@ -623,7 +616,6 @@ namespace NinjaTrader.NinjaScript.Indicators.Sentinel
                 MaxMFE = 0, MaxMAE = 0, LastTime = Time[0],
                 MfeAt = new double[Milestones.Length], MaeAt = new double[Milestones.Length],
                 Regime = Regime(a), Adx = a,
-                EyeHad = eyeHad, EyeScore = eyeScore, EyeDir = eyeDir, EyeAligned = eyeAligned,
                 Council    = council != null,
                 Conviction = council != null ? council.Conviction : double.NaN,
                 ConvBucket = council != null ? Bucket(council.Conviction) : null,
@@ -819,10 +811,6 @@ namespace NinjaTrader.NinjaScript.Indicators.Sentinel
               .Append(",\"dir\":").Append(r.Dir)
               .Append(",\"regime\":").Append(Q(r.Regime))
               .Append(",\"adx\":").Append(F(r.Adx))
-              .Append(",\"eyeHad\":").Append(r.EyeHad ? "true" : "false")
-              .Append(",\"eyeScore\":").Append(F(r.EyeScore))
-              .Append(",\"eyeDir\":").Append(r.EyeHad ? r.EyeDir.ToString(CultureInfo.InvariantCulture) : "null")
-              .Append(",\"eyeAligned\":").Append(r.EyeHad ? (r.EyeAligned ? "true" : "false") : "null")
               // council fields
               .Append(",\"council\":").Append(r.Council ? "true" : "false")
               .Append(",\"conviction\":").Append(F(r.Conviction))

@@ -17,7 +17,7 @@
 //
 //      • Arc PUBLISHES a per-instrument FLEET PLAN to SentinelCore (enable, size, session
 //        window) from Arc.conf / the dashboard.
-//      • Sentinel-aware STRATEGIES (GTrader21, once wired in v0.2.0) CONSULT SlotLive() at
+//      • Sentinel-aware STRATEGIES (once wired in v0.2.0) CONSULT SlotLive() at
 //        entry time and only trade when their slot is live. You load the strategy on each
 //        chart ONCE; Arc controls which instruments trade, and when, from one place.
 //      • Arc also SUPERVISES the leader: per-slot position, day PnL, fills-today, last
@@ -25,14 +25,14 @@
 //        watchdog for the TOP of the funnel (Risk watches feeds; Copy fans out).
 //
 //    This v0.1.0 does the PLAN + SUPERVISION halves (fully testable headless via
-//    sentinel.log). The CONTROL half lands when GTrader21 consults SlotLive() (v0.2.0) —
+//    sentinel.log). The CONTROL half lands when the Bridge consults SlotLive() (v0.2.0) —
 //    until then the plan is published + honored by any strategy that opts in, and Arc
 //    reports the fleet's live status regardless.
 //
 //  ARC.CONF (in <UserDataDir>\Sentinel\, hand-editable):
 //    leader=Sim101
-//    slot=GC|GTrader21|on|1|24h
-//    slot=NQ|GTrader21|off|1|0830-1500          (session HHMM-HHMM in NT clock time; 24h = always)
+//    slot=GC|Bridge|on|1|24h
+//    slot=NQ|Bridge|off|1|0830-1500          (session HHMM-HHMM in NT clock time; 24h = always)
 //
 //  VERIFIED APIs: Account.All / Account.Name / Account.Connection.Status; Account.Positions +
 //    Position.{MarketPosition,Quantity,Instrument}; Position.GetUnrealizedProfitLoss(Currency);
@@ -42,7 +42,7 @@
 //    v0.1.0 — initial: Arc.conf fleet plan → SentinelCore fleet registry (publish); leader
 //             ExecutionUpdate subscription for fills-today/last-signal; 3s supervision tick
 //             computing InSession + position + unrealized + health per slot; logs on health
-//             change + a 30s heartbeat. Headless singleton. GTrader21 consult-gate = v0.2.0.
+//             change + a 30s heartbeat. Headless singleton. the Bridge consult-gate = v0.2.0.
 // ═════════════════════════════════════════════════════════════════════════════
 
 using System;
@@ -65,7 +65,7 @@ namespace NinjaTrader.NinjaScript.AddOns.Sentinel
         public sealed class SlotConfig
         {
             public string Instrument;      // master name, e.g. "GC"
-            public string Strategy;        // label, e.g. "GTrader21"
+            public string Strategy;        // label, e.g. "Bridge"
             public bool   Enabled;
             public int    Contracts;       // 0 = let the strategy decide
             public int    SessionStartMin; // minutes-of-day; -1 = 24h
@@ -308,7 +308,7 @@ namespace NinjaTrader.NinjaScript.AddOns.Sentinel
                 sb.AppendLine("# slot=<instrument>|<strategy>|on/off|<contracts>|<HHMM-HHMM or 24h>");
                 sb.AppendLine("leader=" + (cfg.Leader ?? ""));
                 foreach (var s in cfg.Slots)
-                    sb.AppendLine("slot=" + s.Instrument + "|" + (s.Strategy ?? "GTrader21") + "|"
+                    sb.AppendLine("slot=" + s.Instrument + "|" + (s.Strategy ?? "Bridge") + "|"
                         + (s.Enabled ? "on" : "off") + "|" + s.Contracts + "|" + SessionText(s.SessionStartMin, s.SessionEndMin));
                 Directory.CreateDirectory(SentinelCore.SettingsDir);
                 File.WriteAllText(ConfFile, sb.ToString());
@@ -403,7 +403,7 @@ namespace NinjaTrader.NinjaScript.AddOns.Sentinel
             var sc = new SlotConfig
             {
                 Instrument = p[0].Trim(),
-                Strategy   = p.Length > 1 && !string.IsNullOrWhiteSpace(p[1]) ? p[1].Trim() : "GTrader21",
+                Strategy   = p.Length > 1 && !string.IsNullOrWhiteSpace(p[1]) ? p[1].Trim() : "Bridge",
                 Enabled    = p.Length > 2 && IsOn(p[2]),
                 Contracts  = p.Length > 3 ? ParseInt(p[3], 0) : 0,
                 SessionStartMin = -1,

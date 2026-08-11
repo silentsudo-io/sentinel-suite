@@ -18,10 +18,10 @@
 //    It also registers SentinelCore.FeedHealthProbe so any tool can gate per-account.
 //
 //  WHY  — the user hit real OVERNIGHT DATA LAG degrading feeds. This generalizes the
-//    GTrader21 v0.1.2 lag metric into a suite-wide, screen-free watchdog.
+//    the Bridge v0.1.2 lag metric into a suite-wide, screen-free watchdog.
 //
 //  HOW IT MEASURES (verified in-repo)
-//    Lag  = (Core.Globals.Now - e.Time).TotalSeconds        — GTrader21v_0_1_3Panel.cs:749
+//    Lag  = (Core.Globals.Now - e.Time).TotalSeconds        — a pulled predecessor panel
 //           (how far behind wall-clock the latest tick's own timestamp is)
 //    Stall= (Core.Globals.Now - lastTickWallClock)          — no tick received for N seconds
 //    Feeds: new MarketData(instr) + .Update += handler; release via .Update -= (no Dispose).
@@ -34,14 +34,14 @@
 //    NOTE (v1): during a live breach it will re-assert the kill even if a human clears it —
 //    safety-first; refine later if that's too aggressive.
 //
-//  VERIFIED APIs: MarketDataEventArgs.{Time,Price,MarketDataType} (GTrader21 + archived MAE),
+//  VERIFIED APIs: MarketDataEventArgs.{Time,Price,MarketDataType} (a pulled predecessor panel + archived MAE),
 //    Connection.ConnectionStatusUpdate + ConnectionStatusEventArgs.{Status,Connection}
 //    (AutoReconnect.cs), Account.Connection.Status, Account.Positions.
 //
 //  CHANGELOG
 //    v1.0.11 (2026-07-09) — THE NAKED-POSITION ALERT WAS CRYING WOLF. `ReconcileAccount` counted a stop as present
 //             only in Working|Accepted|PartFilled. NT transits an order through ChangePending/ChangeSubmitted on
-//             every modify, and GTrader21 TRAILS its stop — so at each trail step the stop left that set, this
+//             every modify, and the Bridge TRAILS its stop — so at each trail step the stop left that set, this
 //             2-second scan saw a naked position, and fired a CRITICAL. **160 false NAKED POSITION alerts** sit in
 //             the Ledger (74 on 07-05 alone), same account + instrument, 20-60 s apart. The system's most severe
 //             alert was mostly noise, so a REAL naked position would have been invisible inside it.
@@ -97,7 +97,7 @@
 //             feed stops being monitored, and all our kills on Stop(), are released so nothing stays
 //             stuck. Snapshot gains InstrumentKills (root — reason). The GLOBAL kill-switch stays a
 //             manual "halt everything". Consumers scope for free: Copier via CanActInstrument,
-//             GTrader21 via CanEnter. RootOf() = MasterInstrument.Name.
+//             the Bridge via CanEnter. RootOf() = MasterInstrument.Name.
 //    v1.0.3 — LIVE-PHASE HARDENING (4 additions; all respect the v1.0.2 "no NT market-data calls
 //             under _lock" rule):
 //               • KILL-SWITCH HYSTERESIS — engage instantly on breach, but only RELEASE after
@@ -995,7 +995,7 @@ namespace NinjaTrader.NinjaScript.AddOns.Sentinel
         // v1.0.11 — both are CONDITION ALERTS, routed through SentinelCore.Conditions. They used to share one
         // HashSet and got OPPOSITE bugs from it:
         //   • NAKED had no debounce. A stop order transits ChangePending/ChangeSubmitted during every modify, and
-        //     GTrader21 TRAILS its stop — so on each trail step the stop left the "working" set for a moment, this
+        //     the Bridge TRAILS its stop — so on each trail step the stop left the "working" set for a moment, this
         //     2-second scan saw no stop, and fired a CRITICAL. 160 false NAKED POSITION alerts sit in the Ledger,
         //     same account + instrument, 20-60s apart. The alert you most need to trust was crying wolf.
         //   • ORPHAN's latch was DELETED on every scan by the naked-flag sweep below (its key starts with

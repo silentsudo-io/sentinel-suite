@@ -7,14 +7,21 @@
 // ─────────────────────────────────────────────────────────────────────────────
 // ═════════════════════════════════════════════════════════════════════════════
 //  SentinelCopierService — headless multi-account trade copier (NT8 AddOn)
-//  File: SentinelCopierService_v0_2_0.cs
-//  Service version: v0.2.0   (SKELETON — compiles + structured; live paths marked VALIDATE)
+//  File: SentinelCopierService_v0_2_1.cs
+//  Service version: v0.2.1   (mirror path DRIVEN on real accounts; reconciler validated + FAILED)
 // ─────────────────────────────────────────────────────────────────────────────
 //  WHAT THIS IS  (part of the "Sentinel Suite"; see Docs/ROADMAP.md)
 //    A headless, always-on AddOn service — SAME architecture as MAECaptureService:
-//    an AddOnBase singleton that lives for the NT process, exposes a static Instance
-//    so a future dashboard/settings window ATTACHES to it, and never depends on any
-//    window being open. Closing a UI must never stop copying.
+//    an AddOnBase that lives for the NT process, exposes a static Instance so a future
+//    dashboard/settings window ATTACHES to it, and never depends on any window being
+//    open. Closing a UI must never stop copying.
+//    ⛔ "SINGLETON" IS AN ASPIRATION, NOT A GUARANTEE — MEASURED FALSE 2026-08-11.
+//    Two instances were found alive in one NT (every log line emitted exactly twice,
+//    3.78 s apart on one 30 s timer). Suspected cause: an assembly reload leaves the
+//    old assembly's AddOn un-Terminated and still running. ⇒ Anything whose
+//    correctness depends on there being ONE of us must be enforced somewhere that
+//    outlives the assembly — see MirrorClaim. Do not add a `static` guard and believe
+//    it: across a reload the new assembly gets its own statics.
 //
 //  WHAT IT DOES  (pure FILL-MIRROR copier — the "Horde" model)
 //    • Subscribes to the LEADER account's ExecutionUpdate.
@@ -24,30 +31,30 @@
 //        - submits a MARKET order on the follower account (unmanaged, account-level).
 //    • Pure fill-mirror: it never reads the leader strategy's internal state. Entry AND
 //      exit both arrive as fills, so each follower's NET position stays synced with the
-//      leader automatically. Works with GTrader21, manual ChartTrader, or any strategy.
+//      leader automatically. Works with the Bridge, manual ChartTrader, or any strategy.
 //
 //  CREDIT / ATTRIBUTION  (required before any open-source release)
 //    The fill-mirror engine (subscribe to master ExecutionUpdate → qty×multiplier → market
 //    CreateOrder+Submit, Guid order name) is ADAPTED from the TickHunter NT "Horde" copier by
 //    **Frosty** (TradeLikeAZombie community). Even the "SentCopy_" order prefix echoes their
 //    "TH-Horde_". Sentinel ADDS: same-provider prop rule, bidirectional GC↔MGC / CL↔MCL map,
-//    SentinelCore kill-switch + feed-health gating, Eye-gate, and manual-assist mode. Thanks, Frosty.
+//    SentinelCore kill-switch + feed-health gating and manual-assist mode. Thanks, Frosty.
 //
 //  LEADER MODEL (decided — see memory copier-samples-analysis)
 //    The leader is a SIGNAL account (a dedicated SIM or small live acct trading native GC).
 //    EVERY real account — including what the user calls "primary" — is an execution TARGET
 //    with its own instrument map (GC→MGC) + size. This satisfies "primary cross-trades"
-//    AND "SIM leader → prop accounts" with ZERO changes to GTrader21's order path.
+//    AND "SIM leader → prop accounts" with ZERO changes to the Bridge's order path.
 //
 //  SUITE CONTRACTS (how this ties into the rest of the Sentinel Suite)
 //    • ORDER-NAME PREFIX  = "SentCopy_"  → distinguishes copier orders from strategy orders
-//      (GTrader21 uses "GTS_"; keep prefixes disjoint so tools never edit each other's orders).
+//      (the Bridge uses "GTS_"; keep prefixes disjoint so tools never edit each other's orders).
 //    • SHARED KILL-SWITCH = SentinelCore.KillSwitchEngaged (in SentinelCore_v1_0_0.cs). Any
 //      suite tool (a risk monitor, the panel's lockout, the dashboard) flips it to halt ALL
 //      mirroring. The copier no longer owns its own flag — it consults the suite Core.
 //    • MIRROR GATE        = SentinelCore.CanAct() + per-follower connection health, the single
 //      choke point every mirror passes through. Core's feed-health probe (once a health tool
-//      registers one — e.g. the GTrader21 v0.1.2 lag metric) gates each account automatically.
+//      registers one — e.g. a pulled predecessor’s v0.1.2 lag metric) gates each account automatically.
 //
 //  VERIFIED API NOTES (from in-repo usage — AlightenButtonPanelv3, MAECaptureService)
 //    • AddOnBase auto-starts as a singleton; OnStateChange fires SetDefaults/Active/Terminated.
@@ -79,6 +86,22 @@
 //  CHANGELOG
 //    (in-place, 2026-07-25) — RECORDED CATCHES: 5 empty `catch {}` -> SentinelCore.Swallow (Core >= v1.41.0).
 //             Behaviour identical; a swallowed fault on the mirror path is now counted and logged.
+//    v0.2.1 — ONE LEADER FILL ⇒ ONE MIRROR, however many instances are alive.
+//             Fork of v0.2.0; v0.2.0 frozen to bin\_archive\ so two copiers cannot both run.
+//             ⭐ THIS FIXES A DEFECT THAT WAS MEASURED, NOT SUSPECTED (main, 2026-08-11):
+//             one leader BuyToCover produced TWO `MIRROR ▶` lines 26 ms apart and left the
+//             follower LONG +1 against a FLAT leader — a side the leader never took. Cause:
+//             two live service instances, each with its own per-instance _seenExecIds, so
+//             neither could see the other's mirror.
+//             • NEW `MirrorClaim` — an AppDomain-hosted, reload-surviving atomic claim on
+//               (leader, executionId). Read its header before changing it: a `static` field
+//               CANNOT fix this, because the orphan lives in a different assembly with its
+//               own statics. Fails CLOSED (no claim ⇒ no mirror): a duplicate order is
+//               unrecoverable, a missed one is visible and the reconciler reports it.
+//             • _seenExecIds is retained but DEMOTED to diagnostics — it is no longer the guard.
+//             ⚠ STILL OPEN (do not read this version as closing them): the two instances are
+//               not PREVENTED, only made harmless on the mirror path — the reconciler still
+//               double-reports; and the reconciler's flat-leader blind spot is v0.2.2 / item 2b.
 //    v0.2.0 — COPY MODE + THE POSITION RECONCILER. (fork of v0.1.0h; v0.1.0 frozen to
 //             bin\_archive\copier-v0_1_0-superseded-2026-08-09\ so two singletons cannot both run.)
 //             • CopyMode {Fill,Order} per follower, default Fill — an axis INDEPENDENT of
@@ -123,11 +146,11 @@
 //    v0.1.0c — (in-place) MANUAL-ASSIST mode. A follower can be 'manual' (follower=<label>|manual|…):
 //             instead of auto-submitting, the Copier PUBLISHES a place-by-hand ticket to
 //             SentinelCore's assist registry (dashboard Assist tab + state.json). Same map/size/
-//             Eye-gate pipeline; mirrors the leader's exact action; the account name is just a label
+//             mirror pipeline; mirrors the leader's exact action; the account name is just a label
 //             (need not be an NT account). For prop firms that bar automated copy-trading (TPT eval/
 //             PRO, Bulenox) — decision-support instead of auto-execution. Auto path unchanged.
-//    v0.1.0b — (in-place) Eye-gate: when UseEyeGate, mirror only ENTRIES SentinelEye qualifies
-//             (exits always mirror). eyeGate=on/off in Copy.conf.
+//    v0.1.0b — (in-place) an entry qualifier gate (REMOVED 2026-08-11 with its producer)
+//             (exits always mirrored).
 //    v0.1.0 — initial SKELETON. Headless AddOnBase singleton; leader ExecutionUpdate
 //             subscription; fill-mirror engine; per-follower instrument map + size ratio +
 //             multiplier; same-provider policy (Off/Warn/Block) with SIM-leader exemption;
@@ -144,6 +167,7 @@
 // ═════════════════════════════════════════════════════════════════════════════
 
 using System;
+using System.Collections;            // non-generic Hashtable: the cross-assembly mirror claim (see MirrorClaim)
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
@@ -207,16 +231,95 @@ namespace NinjaTrader.NinjaScript.AddOns.SentinelCopier
     {
         public string LeaderAccount;                 // the SIGNAL account we mirror FROM
         public ProviderPolicy Policy = ProviderPolicy.Warn;
-        public bool UseEyeGate = false;              // when true, mirror only ENTRIES SentinelEye qualifies (exits always mirror)
         public List<FollowerConfig> Followers = new List<FollowerConfig>();
     }
 
-    public class SentinelCopierService_v0_2_0 : NinjaTrader.NinjaScript.AddOnBase
+    // ═════════════════════════════════════════════════════════════════════════
+    //  MirrorClaim — "this leader fill is MINE to mirror", process-wide.
+    //
+    //  WHY THIS EXISTS (measured on main 2026-08-11, not theorised): a single leader
+    //  BuyToCover produced TWO `MIRROR ▶` lines 26 ms apart and drove the follower from
+    //  -1 to LONG +1 — a side the leader never took. TWO service instances were alive in
+    //  one NT: every copier log line emitted exactly twice, 3.781/3.789/3.790 s apart on
+    //  one 30 s timer period. The old guard was a per-instance HashSet, so neither
+    //  instance could see the other's mirror.
+    //
+    //  WHY IT IS NOT A `static` FIELD — the trap that makes the obvious fix useless:
+    //  the instances are suspected to come from an ASSEMBLY RELOAD, where the old
+    //  assembly's AddOn is never Terminated and keeps running. Across a reload the new
+    //  assembly gets its OWN copy of every static, so a static set (or a static
+    //  `Instance` guard) is invisible to the orphan and cannot stop it. The claim must
+    //  live somewhere that OUTLIVES the assembly. Two consequences shape the code below:
+    //    • the store hangs off AppDomain.CurrentDomain, which spans reloads; and
+    //    • it MUST be a type from a stable assembly. A Hashtable from mscorlib is the
+    //      same type to both assemblies; anything declared HERE would be a different
+    //      type per load and the cast back would silently fail — which fails OPEN, i.e.
+    //      straight back to double-mirroring. That is why this is a non-generic
+    //      Hashtable and not the HashSet<string> you would otherwise reach for.
+    //    • the creation lock is an INTERNED string for the same reason: the intern pool
+    //      is process-wide, so both assemblies lock the identical object.
+    //
+    //  ⛔ FAILS CLOSED, deliberately: if the claim cannot be taken we do NOT mirror.
+    //  A duplicate order is unrecoverable; a missed mirror is visible and the reconciler
+    //  is built to report it.
+    // ═════════════════════════════════════════════════════════════════════════
+    internal static class MirrorClaim
+    {
+        private const string SlotKey    = "Sentinel.Copier.MirroredExecutionIds.v1";
+        private const int    PruneAbove = 4000;   // bound the store; ids are only useful while fresh
+
+        // Interned → the SAME object in every assembly loaded into this AppDomain.
+        private static readonly object CreateGate = string.Intern("Sentinel.Copier.MirrorClaim.CreateGate.v1");
+
+        private static Hashtable Store()
+        {
+            AppDomain ad = AppDomain.CurrentDomain;
+            Hashtable t = ad.GetData(SlotKey) as Hashtable;
+            if (t != null) return t;
+            lock (CreateGate)
+            {
+                t = ad.GetData(SlotKey) as Hashtable;      // re-check: another instance may have won
+                if (t == null)
+                {
+                    t = new Hashtable();
+                    ad.SetData(SlotKey, t);
+                }
+                return t;
+            }
+        }
+
+        /// <summary>
+        /// TRUE exactly once per (leader, executionId), for the whole NT process — including
+        /// across an assembly reload. Every later caller, in any instance, gets FALSE.
+        /// </summary>
+        internal static bool TryClaim(string leaderAccount, string executionId)
+        {
+            if (string.IsNullOrEmpty(executionId)) return false;   // cannot dedupe it ⇒ do not mirror it
+            string key = (leaderAccount ?? "?") + "|" + executionId;
+            try
+            {
+                Hashtable t = Store();
+                lock (t.SyncRoot)                       // check + set must be ONE atomic step
+                {
+                    if (t.ContainsKey(key)) return false;
+                    if (t.Count >= PruneAbove) t.Clear();
+                    t[key] = null;
+                    return true;
+                }
+            }
+            catch (Exception) { return false; }         // fail CLOSED — see the header
+        }
+
+        /// <summary>Diagnostics only: how many claims the process is currently holding.</summary>
+        internal static int Held { get { try { Hashtable t = Store(); lock (t.SyncRoot) return t.Count; } catch { return -1; } } }
+    }
+
+    public class SentinelCopierService_v0_2_1 : NinjaTrader.NinjaScript.AddOnBase
     {
         private const string OrderPrefix = "SentCopy_";     // suite contract: copier order tag
 
         // ── singleton so a future dashboard/settings window can attach ──
-        public static SentinelCopierService_v0_2_0 Instance { get; private set; }
+        public static SentinelCopierService_v0_2_1 Instance { get; private set; }
 
         // Kill-switch + feed-health now live in the shared SentinelCore (suite-wide), not here.
         // Flip via SentinelCore.SetKillSwitch(true, "..."); the mirror gate consults SentinelCore.
@@ -260,7 +363,7 @@ namespace NinjaTrader.NinjaScript.AddOns.SentinelCopier
             // base ctor calls this BEFORE our ctor — do not rely on field initializers.
             if (State == State.SetDefaults)
             {
-                Name = "SentinelCopierService_v0_2_0";
+                Name = "SentinelCopierService_v0_2_1";
                 Description = "Sentinel Suite — headless multi-account fill-mirror trade copier. "
                             + "Mirrors a leader account's fills to enabled followers (with "
                             + "instrument cross-map + size). Inert until configured. Runs always.";
@@ -299,7 +402,7 @@ namespace NinjaTrader.NinjaScript.AddOns.SentinelCopier
             _reconcileTimer = new System.Threading.Timer(ReconcileTick, null,
                 ReconcileSeconds * 1000, ReconcileSeconds * 1000);
 
-            Log("SentinelCopierService v0.2.0 started. Leader='" + (_config.LeaderAccount ?? "<none>")
+            Log("SentinelCopierService v0.2.1 started. Leader='" + (_config.LeaderAccount ?? "<none>")
                 + "', followers=" + _config.Followers.Count
                 + ", reconciler every " + ReconcileSeconds + "s"
                 + (string.IsNullOrEmpty(_config.LeaderAccount) ? " (inert until a leader is set)." : "."));
@@ -367,7 +470,7 @@ namespace NinjaTrader.NinjaScript.AddOns.SentinelCopier
             {
                 if (f == null || !f.Enabled || f.CopyMode != CopyMode.Order) continue;
                 Log("REFUSING follower '" + f.AccountName + "': copy mode ORDER is not implemented "
-                    + "in v0.2.0 (the mirror path and its position reconciler land together — an "
+                    + "in v0.2.1 either (the mirror path and its position reconciler land together — an "
                     + "Order-mode copier without reconciliation diverges invisibly). This follower "
                     + "will NOT be mirrored at all. Set it to fill in Copy.conf to copy it now.");
             }
@@ -512,7 +615,6 @@ namespace NinjaTrader.NinjaScript.AddOns.SentinelCopier
                 sb.AppendLine("# Sentinel Copier config — auto-saved by the dashboard. Safe to hand-edit.");
                 sb.AppendLine("leader=" + (cfg.LeaderAccount ?? ""));
                 sb.AppendLine("policy=" + cfg.Policy);
-                sb.AppendLine("eyeGate=" + (cfg.UseEyeGate ? "on" : "off"));
                 foreach (FollowerConfig f in cfg.Followers)
                 {
                     if (f == null || string.IsNullOrEmpty(f.AccountName)) continue;
@@ -553,7 +655,9 @@ namespace NinjaTrader.NinjaScript.AddOns.SentinelCopier
                         if (Enum.TryParse(val, true, out p)) cfg.Policy = p;
                     }
                     else if (key.Equals("eyeGate", StringComparison.OrdinalIgnoreCase))
-                        cfg.UseEyeGate = val.Equals("on", StringComparison.OrdinalIgnoreCase) || val.Equals("true", StringComparison.OrdinalIgnoreCase);
+                        SentinelCore.Log("Copy", "OBSOLETE KEY IGNORED: 'eyeGate' was removed 2026-08-11 along with the qualifier "
+                            + "it consulted. It is NOT in force. Delete the line from Copy.conf. (Silently "
+                            + "ignoring it is how this gate blocked every ENTRY for 19 days unnoticed.)");
                     else if (key.Equals("follower", StringComparison.OrdinalIgnoreCase))
                     {
                         string[] parts = val.Split('|');
@@ -659,10 +763,14 @@ namespace NinjaTrader.NinjaScript.AddOns.SentinelCopier
                 int qty = exec.Quantity;                 // qty of THIS event → partials handled
                 if (qty <= 0) return;
 
-                // defensive dedupe: don't mirror the same execution twice if the event re-fires
+                // DEDUPE — PROCESS-WIDE, not per-instance. Measured 2026-08-11 on main: one leader fill
+                // produced TWO mirrors 26 ms apart and left the follower LONG on a FLAT leader, because
+                // two service instances were alive and each had its own _seenExecIds. A per-instance set
+                // cannot see another instance's mirror, so it cannot prevent the double. See MirrorClaim.
                 if (exec.ExecutionId != null)
                 {
-                    lock (_lock) { if (!_seenExecIds.Add(exec.ExecutionId)) return; }
+                    if (!MirrorClaim.TryClaim(cfg.LeaderAccount, exec.ExecutionId)) return;
+                    lock (_lock) { _seenExecIds.Add(exec.ExecutionId); }   // local copy, diagnostics only
                 }
 
                 string reason;
@@ -816,23 +924,6 @@ namespace NinjaTrader.NinjaScript.AddOns.SentinelCopier
 
                 OrderAction fAction = ResolveFollowerAction(leaderIsBuy, fAcct, tInstr);
 
-                // ── EYE-GATE (opt-in): only mirror ENTRIES that SentinelEye qualifies for this leader
-                //    instrument+direction. Exits (Sell/BuyToCover) ALWAYS mirror to keep followers synced.
-                if (_config != null && _config.UseEyeGate
-                    && (fAction == OrderAction.Buy || fAction == OrderAction.SellShort))
-                {
-                    int wantDir = fAction == OrderAction.Buy ? 1 : -1;
-                    var verdict = SentinelCore.GetEyeVerdict(leaderSym, 30);   // 30s staleness window
-                    if (verdict == null || verdict.Direction != wantDir)
-                    {
-                        Log("Eye-gate BLOCKED entry ▶ " + f.AccountName + " " + fAction + " " + tInstr.FullName
-                            + " — Eye for " + leaderSym + " = "
-                            + (verdict == null ? "no/stale verdict" : "dir " + verdict.Direction + " score " + verdict.Score.ToString("0") + " (" + verdict.Source + ")"));
-                        return;
-                    }
-                    Log("Eye-gate OK ▶ " + leaderSym + " qualified dir " + verdict.Direction + " score " + verdict.Score.ToString("0"));
-                }
-
                 // ── ORDER GATE (v1.1.0): automated mirror = fail CLOSED. Gate only NEW entries (flat
                 //    follower); exits always mirror so followers stay synced. Adds kill/feed/rollover/
                 //    news/rate/qty-cap on top of the governor/session check above (the single choke point).
@@ -881,7 +972,7 @@ namespace NinjaTrader.NinjaScript.AddOns.SentinelCopier
         }
 
         // ─────────────────────────────────────────────────────────────────────
-        //  MANUAL-ASSIST: reuse the map/size/Eye-gate pipeline, but PUBLISH a "place this by hand"
+        //  MANUAL-ASSIST: reuse the map/size pipeline, but PUBLISH a "place this by hand"
         //  ticket instead of submitting an order. Mirrors the leader's exact action (fill-mirror), so
         //  no follower-account lookup is needed — the account name is just a label the user places on.
         // ─────────────────────────────────────────────────────────────────────
@@ -903,23 +994,6 @@ namespace NinjaTrader.NinjaScript.AddOns.SentinelCopier
                 OrderAction fAction = exec.Order.OrderAction;   // fill-mirror: place exactly what the leader did
                 bool isEntry = fAction == OrderAction.Buy || fAction == OrderAction.SellShort;
 
-                // Eye-gate entries, same policy as the auto path (exits always pass so you stay in sync).
-                if (_config != null && _config.UseEyeGate && isEntry)
-                {
-                    int wantDir = fAction == OrderAction.Buy ? 1 : -1;
-                    var verdict = SentinelCore.GetEyeVerdict(leaderSym, 30);
-                    if (verdict == null || verdict.Direction != wantDir)
-                    {
-                        Log("Assist Eye-gate BLOCKED ▶ " + f.AccountName + " " + fAction + " " + tName
-                            + " — Eye " + leaderSym + " = "
-                            + (verdict == null ? "no/stale verdict" : "dir " + verdict.Direction + " score " + verdict.Score.ToString("0")));
-                        return;
-                    }
-                }
-
-                var v = SentinelCore.GetEyeVerdict(leaderSym, 60);
-                string eyeCtx = (v != null && v.Direction != 0) ? " · Eye " + (v.Direction > 0 ? "L" : "S") + v.Score.ToString("0") : "";
-
                 SentinelCore.PublishAssistTicket(new SentinelCore.AssistTicket
                 {
                     TimeUtc    = DateTime.UtcNow,
@@ -928,10 +1002,10 @@ namespace NinjaTrader.NinjaScript.AddOns.SentinelCopier
                     Qty        = fQty,
                     Instrument = tName,
                     IsEntry    = isEntry,
-                    Context    = leaderQty + " " + leaderSym + " " + (leaderIsBuy ? "buy" : "sell") + eyeCtx
+                    Context    = leaderQty + " " + leaderSym + " " + (leaderIsBuy ? "buy" : "sell") 
                 });
                 Log("ASSIST ▶ PLACE " + fAction + " " + fQty + " " + tName + " on '" + f.AccountName
-                    + "'  (leader " + leaderQty + " " + leaderSym + (leaderIsBuy ? " buy" : " sell") + ")" + eyeCtx);
+                    + "'  (leader " + leaderQty + " " + leaderSym + (leaderIsBuy ? " buy" : " sell") + ")");
             }
             catch (Exception ex)
             {

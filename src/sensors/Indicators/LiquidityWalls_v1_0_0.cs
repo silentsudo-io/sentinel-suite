@@ -56,7 +56,7 @@ using NinjaTrader.NinjaScript.AddOns.Sentinel;
 //    • Hidden "Signal" plot (Values[1]) = absorbSide on an absorption bar (+1 resistance / -1 support / 0)
 //      so the Deck SIGNAL ARM / any consumer reads it generically (design-system §6b convention).
 //    • Publishes SentinelCore.LiquidityState (SetLiquidityState) — absorption z + nearest wall above/below —
-//      so GTrader21/Deck/Eye can veto entries into a wall (SentinelCore v1.4.0 seam).
+//      so Bridge/Deck can veto entries into a wall (SentinelCore v1.4.0 seam).
 //
 //  Edge lane: NO orders — a detector/observer only.
 //
@@ -503,4 +503,3 @@ namespace NinjaTrader.NinjaScript.Indicators.Sentinel.Sensors
 		#endregion
 	}
 }
-

@@ -51,7 +51,7 @@ using NinjaTrader.NinjaScript.AddOns.Sentinel;
 //             voter out of the box. In-place patch (no rename); existing placements keep their serialized value.
 //    v0.2.0 — PUBLISH SEAM wired: Publish regime (opt-in) → SentinelCore.SetEnvelopeState(instr, regime,
 //             stretch, bwPctile, multUp, multDown, source); new SentinelCore.EnvelopeState +
-//             Get/AllEnvelopeStates consult API (regime as int; publish/consult mirrors EyeVerdict).
+//             Get/AllEnvelopeStates consult API (regime as int; publish/consult mirrors the other …State seams).
 //             v0_1_0 ARCHIVED out of the tree (…\_archive\Indicators) — new type identity, re-add on charts.
 //    v0.1.0 — [frozen, archived as VolEnvelope_v0_1_0] Initial. EWMA center + YZ/RS vol + asymmetric empirical
 //             bands (per-side quantile) + regime + trend-aware %b + error band + forward cone + glass card.
@@ -94,7 +94,6 @@ namespace NinjaTrader.NinjaScript.Indicators.Sentinel.Sensors
 		private double    lPercentB, lStretch, lBandwidth, lBwPct;
 		private EnvRegime lRegime = EnvRegime.Range;
 		private bool      lExtreme, lRiding;
-		private int       lEyeDir; private bool lEyeHad;
 
 		// Sentinel glass-card readout (SharpDX via SentinelSkin.Painter, drawn in OnRender)
 		private SentinelSkin.Painter _sp;
@@ -261,11 +260,8 @@ namespace NinjaTrader.NinjaScript.Indicators.Sentinel.Sensors
 			bool riding  = Math.Abs(stretch) > 0 && (regime == EnvRegime.TrendUp || regime == EnvRegime.TrendDown);
 
 			// ── Eye consult (trend context; advisory only) ──
-			lEyeHad = false; lEyeDir = 0;
 			try
 			{
-				var v = SentinelCore.GetEyeVerdict(Instrument.MasterInstrument.Name, 0);
-				if (v != null) { lEyeHad = true; lEyeDir = v.Direction; }
 			}
 			catch (Exception _sx) { SentinelCore.Swallow("VolEnvelope.OnBarUpdate", _sx); }
 
@@ -541,7 +537,7 @@ namespace NinjaTrader.NinjaScript.Indicators.Sentinel.Sensors
 			var lead = SharpDX.DirectWrite.TextAlignment.Leading;
 			_sp.Text("σ " + lVol.ToString("0.0000") + "   mult ↑" + lMultUp.ToString("0.0") + " ↓" + lMultDown.ToString("0.0"),
 				r.Left, r.Top + 78f, r.Width, 14f, SentinelSkin.CInk2, 10.5f, false, lead, true);
-			_sp.Text("bw " + lBandwidth.ToString("0.000") + "  pct " + (lBwPct * 100).ToString("0") + "   eye " + (lEyeHad ? (lEyeDir > 0 ? "↑" : lEyeDir < 0 ? "↓" : "·") : "–"),
+			_sp.Text("bw " + lBandwidth.ToString("0.000") + "  pct " + (lBwPct * 100).ToString("0"),
 				r.Left, r.Top + 92f, r.Width, 14f, SentinelSkin.CMute, 10f, false, lead, true);
 			_sp.Text(InstName() + "  " + BarTag(), r.Left, r.Top + 106f, r.Width, 12f, SentinelSkin.CMute, 9f, false, lead, true);
 		}

@@ -27,7 +27,7 @@
 //             metric set. NEW: ByConviction partition (LOW/MID/HIGH buckets from convBucket) + CouncilCount +
 //             ConvictionVerdictCode (+1 HIGH-conviction fires out-earn LOW at 15m / -1 worse / 0 inconclusive)
 //             — the "does higher conviction actually pay?" referee for the dashboard + the Bridge floor.
-//    v1.0.4 — Group.EyeVerdictCode getter (+1 Eye adds edge / -1 hurts / 0 inconclusive) — the shared
+//    v1.0.4 — (REMOVED 2026-08-11) a per-signal referee getter (+1 adds edge / -1 hurts / 0 inconclusive) — the shared
 //             Eye-referee verdict used by both the dashboard ④ section and the State writer's eye block.
 //    v1.0.3 — FIRE-RATE: Group tracks distinct fire dates (FireDates) → FiresPerDay = N/days, so the
 //             dashboard can show "signals/day" (a +EV signal that fires twice a month isn't a business).
@@ -74,11 +74,9 @@ namespace NinjaTrader.NinjaScript.AddOns.Sentinel
 
             // v1.1 partitions (each Sub holds mfe15/mae15 at 15m — the edge lens)
             public readonly Dictionary<string, Sub> ByRegime = new Dictionary<string, Sub>(StringComparer.OrdinalIgnoreCase);
-            public readonly Dictionary<string, Sub> ByEye    = new Dictionary<string, Sub>(StringComparer.OrdinalIgnoreCase);
             // v1.4: council conviction buckets (LOW/MID/HIGH) — only council records populate this
             public readonly Dictionary<string, Sub> ByConviction = new Dictionary<string, Sub>(StringComparer.OrdinalIgnoreCase);
             public readonly List<Pt> Pts = new List<Pt>();
-            public int EyeCount;
             public int CouncilCount;   // v1.4: # of COUNCIL fires in this group
             public TpStop Best { get { return BestTpStop(Pts); } }
 
@@ -89,20 +87,6 @@ namespace NinjaTrader.NinjaScript.AddOns.Sentinel
             public string Key { get { return Instrument + "·" + Signal + "·" + (Dir > 0 ? "L" : "S"); } }
             public bool   HasEdge { get { return MfeMed15 > MaeMed15; } }   // favorable > adverse at 15m
 
-            // v1.0.4: Eye referee — +1 = Eye-endorsed fires out-earn the rest at 15m, -1 = worse,
-            // 0 = inconclusive/insufficient (need endorsed n≥10). Shared by the dashboard + State writer.
-            public int EyeVerdictCode
-            {
-                get
-                {
-                    if (EyeCount == 0) return 0;
-                    Sub end, nott;
-                    if (!ByEye.TryGetValue("endorsed", out end) || end == null || end.N < 10) return 0;
-                    if (!ByEye.TryGetValue("not", out nott) || nott == null || nott.N == 0) return 0;
-                    double delta = (end.MfeMed15 - end.MaeMed15) - (nott.MfeMed15 - nott.MaeMed15);
-                    return delta >= 3 ? 1 : (delta <= -3 ? -1 : 0);
-                }
-            }
 
             // v1.4: conviction referee — +1 = HIGH-conviction council fires out-earn LOW at 15m by ≥3 ticks
             // (conviction is paying → gate the Bridge higher), -1 = HIGH does WORSE (conviction inverts —
@@ -216,19 +200,11 @@ namespace NinjaTrader.NinjaScript.AddOns.Sentinel
                             pt = new Pt { Mfe15 = mfe15, Mae15 = mae15, MsMFE = GetNum(line, "msToMFE"), MsMAE = GetNum(line, "msToMAE") };
                         if (pt != null) g.Pts.Add(pt);
 
-                        // v1.1 partitions (regime always; eye only where a verdict was recorded)
+                        // v1.1 partitions (by regime)
                         var rs = GetSub(g.ByRegime, GetStr(line, "regime"));
                         if (!double.IsNaN(mfe15)) rs.Mfe15.Add(mfe15);
                         if (!double.IsNaN(mae15)) rs.Mae15.Add(mae15);
                         if (pt != null) rs.Pts.Add(pt);
-                        if (GetBool(line, "eyeHad"))
-                        {
-                            g.EyeCount++;
-                            var es = GetSub(g.ByEye, GetBool(line, "eyeAligned") ? "endorsed" : "not");
-                            if (!double.IsNaN(mfe15)) es.Mfe15.Add(mfe15);
-                            if (!double.IsNaN(mae15)) es.Mae15.Add(mae15);
-                            if (pt != null) es.Pts.Add(pt);
-                        }
                         // v1.4: council conviction partition (only COUNCIL records carry council=true + convBucket)
                         if (GetBool(line, "council"))
                         {

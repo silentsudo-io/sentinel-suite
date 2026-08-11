@@ -13,7 +13,7 @@
 //  Phase 0 of that spec — nothing here changes existing behaviour until a consumer calls it:
 //
 //    • VoterCatalog — the tag → indicator-class / role / seam / defaults map. `Roster.conf`
-//      speaks in voter TAGS ("EYE","TRND"…); a chart loads indicator CLASSES ("Eye_v1_1_0"…).
+//      speaks in voter TAGS ("TRND","CCI"…); a chart loads indicator CLASSES ("SentinelTrend_v1_0_0"…).
 //      This is the one bridge between them. Seeded to mirror the Council's KnownVoters +
 //      SetDefaults (Council v1.4.0) + the orthogonal context axes.
 //
@@ -57,9 +57,9 @@ namespace NinjaTrader.NinjaScript.AddOns.Sentinel
         // ═════════════════════════════════════════════════════════════════════
         public sealed class CatalogEntry
         {
-            public string     Tag;            // the Roster.conf token, e.g. "EYE"
-            public string     Display;        // human name, e.g. "Eye"
-            public string     TypeName;       // the NT indicator class to load/template, e.g. "Eye_v1_1_0"
+            public string     Tag;            // the Roster.conf token, e.g. "TRND"
+            public string     Display;        // human name, e.g. "SentinelTrend"
+            public string     TypeName;       // the NT indicator class to load/template, e.g. "SentinelTrend_v1_0_0"
             public SensorRole Role;
             public VoterKind  DefaultKind;    // meaningful for Role.Voter
             public double     DefaultWeight;  // mirrors Council SetDefaults (Role.Voter only)
@@ -81,8 +81,7 @@ namespace NinjaTrader.NinjaScript.AddOns.Sentinel
         {
             private static readonly List<CatalogEntry> _all = new List<CatalogEntry>
             {
-                // ── the 14 weighted voters (Roster.conf) ─────────────────────────────────────
-                V("EYE",  "Eye",           "Eye_v1_1_0",                        VoterKind.Trigger, 1.4, "EyeVerdict",      "The GodTrades qualifier — strongest single voice."),
+                // ── the weighted voters (Roster.conf) ─────────────────────────────────────
                 V("TRND", "SentinelTrend", "SentinelTrend_v1_0_0",              VoterKind.State,   1.0, "TrendState",      "Structural trailing-line trend."),
                 V("CCI",  "Woodies CCI",   "WoodiesCCIPro_v1_0_0",              VoterKind.State,   0.8, "CciState",        "Woodies CCI trend bias (×1.5 strong)."),
                 V("ADX",  "ADX Pro",       "ADXPro_v1_2_0",                     VoterKind.State,   0.6, "AdxState",        "Regime/strength confirmer when trend is ON."),

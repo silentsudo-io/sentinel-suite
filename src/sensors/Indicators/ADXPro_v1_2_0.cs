@@ -36,7 +36,7 @@ using NinjaTrader.NinjaScript.Indicators.Sentinel.Sensors;
 //      +DI = green, −DI = red (money/direction), Trigger = mute, Strong = amber (advisory threshold),
 //      bull/bear background = green/red tint. No more Gold/DeepSkyBlue/MediumPurple/Teal/Purple.
 //    • PublishRegime → SentinelCore.SetAdxState(instrument, adx, +DI, −DI, bias, slope5, strong) so
-//      GTrader21 / Eye / Copier can consult "trend ON + bias agrees" (needs SentinelCore ≥ v1.2.0).
+//      Bridge / Copier can consult "trend ON + bias agrees" (needs SentinelCore ≥ v1.2.0).
 //    • Dropped dead pre-card cruft: BiasTablePosition / TableFontSize / TableTextBrush props + the
 //      unused BiasText()/SlopeDirection()/TrendText() methods.
 //
@@ -507,7 +507,7 @@ namespace NinjaTrader.NinjaScript.Indicators.Sentinel.Sensors
         public SentinelCardCorner CardCorner { get; set; }
 
         [NinjaScriptProperty]
-        [Display(Name = "Publish Regime to Sentinel", Description = "Publish ADX strength + bias to SentinelCore so GTrader21/Eye/Copier can consult it. Needs SentinelCore ≥ v1.2.0.", Order = 14, GroupName = "Sentinel")]
+        [Display(Name = "Publish Regime to Sentinel", Description = "Publish ADX strength + bias to SentinelCore so Bridge/Copier can consult it. Needs SentinelCore ≥ v1.2.0.", Order = 14, GroupName = "Sentinel")]
         public bool PublishRegime { get; set; }
 
         [XmlIgnore]
@@ -632,4 +632,3 @@ namespace NinjaTrader.NinjaScript.Indicators.Sentinel.Sensors
         }
     }
 }
-

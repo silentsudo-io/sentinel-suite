@@ -24,7 +24,7 @@
 //        toward a target bars-per-session.
 //      • Quiet-hours gating, forced time-bricks, micro-splits.
 //    It PUBLISHES its adaptive read to SentinelCore.BrickState (v1.6.0 seam) so the
-//    rest of the suite (GTrader21 / Eye / strategies) can consult the live brick
+//    rest of the suite (Bridge / strategies) can consult the live brick
 //    ATR + direction without re-deriving it.
 //
 //  ⚠⚠ READ THIS BEFORE YOU TRADE OFF THE CANDLES — **CANDLE COLOUR IS NOT BRICK

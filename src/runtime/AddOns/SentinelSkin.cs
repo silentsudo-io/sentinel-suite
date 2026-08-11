@@ -9,8 +9,8 @@
 // SentinelSkin — the shared "flight-instrument" drawing framework for the Suite
 // ============================================================================
 // ONE library every Sentinel indicator/strategy uses to draw cohesive on-chart
-// cards, text, dots, pills, gauges, sparklines and tracks — so SentinelEye,
-// SignalExcursionRecorder, CompressionBase, the Deck, GTrader21, and every FUTURE
+// cards, text, dots, pills, gauges, sparklines and tracks — so the suite tools,
+// SignalExcursionRecorder, CompressionBase, the Deck, the Bridge, and every FUTURE
 // tool look and feel like they belong to the same instrument panel.
 //
 // USAGE (SharpDX OnRender):
@@ -22,7 +22,7 @@
 //       _sp.Begin(RenderTarget);
 //       var r = _sp.Card(x, y, 300f, 150f, active ? SentinelSkin.CLine : SentinelSkin.CWarn);
 //       _sp.Dot(r.Left + 19f, r.Top + 23f, active ? SentinelSkin.CAccent : SentinelSkin.CWarn, glow:true);
-//       _sp.Text("SENTINEL EYE", r.Left + 30f, r.Top + 14f, 160f, 18f, SentinelSkin.CInk, 12f, semibold:true);
+//       _sp.Text("SENTINEL CARD", r.Left + 30f, r.Top + 14f, 160f, 18f, SentinelSkin.CInk, 12f, semibold:true);
 //       _sp.Money(r.Left + 15f, r.Top + 42f, pnl, pnl >= 0 ? SentinelSkin.CUp : SentinelSkin.CDown);
 //       _sp.End();
 //   }

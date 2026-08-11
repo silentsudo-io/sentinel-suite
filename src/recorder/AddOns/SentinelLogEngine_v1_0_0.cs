@@ -45,9 +45,9 @@
 //
 // ─────────────────────────────────────────────────────────────────────────────
 //  CHANGELOG
-//  v1.2.0 / schema 1.1 (2026-07-01) — EYE VERDICT CAPTURE (the profit keystone).
-//    - OnEntry now snapshots the current SentinelEye verdict for the trade's instrument
-//      (SentinelCore.GetEyeVerdict, no staleness filter) and freezes it with the trade.
+//  v1.2.0 / schema 1.1 (2026-07-01, REMOVED at schema 1.2) — QUALIFIER CAPTURE (the profit keystone).
+//    - OnEntry snapshotted a qualifier verdict for the trade's instrument
+//      (no staleness filter) and froze it with the trade.
 //    - Every record gains an eye block: eyeHad, eyeDir, eyeScore, eyeSource, eyeAgeSec,
 //      and eyeAligned (= did Eye qualify THIS trade's direction). This is what lets Lens
 //      partition trades into Eye-endorsed vs not and prove whether the Eye filter adds edge.
@@ -113,7 +113,7 @@ namespace NinjaTrader.NinjaScript.AddOns.Sentinel
     {
         // engine identity (independent of any strategy version)
         public const string EngineVersion = "v1.2.0";
-        public const string SchemaVersion = "1.1";
+        public const string SchemaVersion = "1.2";
 
         // ── configuration (set once at construction) ──────────────────────────
         private readonly string  _account;        // basket grouping key (spec §3.1)
@@ -143,11 +143,6 @@ namespace NinjaTrader.NinjaScript.AddOns.Sentinel
 
         // Eye verdict frozen at ENTRY (the keystone for proving Eye's edge). Captured
         // regardless of staleness — we also record the age so analysis can filter.
-        private bool     _eyeHad;               // was any Eye verdict published for this instrument?
-        private int      _eyeDir;               // +1 long-qualified / -1 short-qualified / 0 neutral
-        private double   _eyeScore;             // Eye's best-model score (NaN if none)
-        private string   _eyeSource;            // qualifying row/model source (null if none)
-        private double   _eyeAgeSec;            // verdict age at entry, seconds (NaN if none)
 
         // running excursion (tracked EVERY bar; spec §3.3 correctness guarantee)
         private double _maeTicksRaw, _mfeTicksRaw;
@@ -269,26 +264,6 @@ namespace NinjaTrader.NinjaScript.AddOns.Sentinel
             _pathBuf = _pathSampling ? new StringBuilder(8192) : null;
             _lastPx = entryPriceAvg;
 
-            // ── Freeze the Eye verdict as it stood at entry ───────────────────────
-            // This is the keystone that lets Lens prove whether Eye-endorsed trades
-            // out-earn the rest. Capture the LAST verdict regardless of staleness
-            // (maxAgeSec=0 = "never stale" per SentinelCore) and store its age so
-            // analysis can filter on it. _instrument is the master name ("GC") —
-            // the same key Eye publishes under.
-            _eyeHad = false; _eyeDir = 0; _eyeScore = double.NaN; _eyeSource = null; _eyeAgeSec = double.NaN;
-            try
-            {
-                var ev = SentinelCore.GetEyeVerdict(_instrument, 0);
-                if (ev != null)
-                {
-                    _eyeHad    = true;
-                    _eyeDir    = ev.Direction;
-                    _eyeScore  = ev.Score;
-                    _eyeSource = ev.Source;
-                    _eyeAgeSec = (DateTime.UtcNow - ev.UpdatedUtc).TotalSeconds;
-                }
-            }
-            catch { /* Eye registry absent — leave the null defaults */ }
 
             // notify the service registry (if loaded) so the dashboard sees this trade
             var h = OnEngineTradeOpened;
@@ -406,16 +381,6 @@ namespace NinjaTrader.NinjaScript.AddOns.Sentinel
               .Append("\"barsToMfe\":").Append(_barsToMfe).Append(',')
               .Append("\"maeTimeToMs\":").Append(_maeTimeToMs).Append(',')
               .Append("\"mfeTimeToMs\":").Append(_mfeTimeToMs);
-
-            // eye block (schema 1.1) — the Eye verdict as it stood at ENTRY. The keystone
-            // for proving Eye's edge: partition trades by eyeAligned/eyeScore in Lens and
-            // compare expectancy. eyeAligned = did Eye qualify THIS trade's direction?
-            sb.Append(",\"eyeHad\":").Append(_eyeHad ? "true" : "false")
-              .Append(",\"eyeDir\":").Append(_eyeHad ? _eyeDir.ToString(CultureInfo.InvariantCulture) : "null")
-              .Append(",\"eyeScore\":").Append(F(_eyeScore))
-              .Append(",\"eyeSource\":").Append(_eyeSource == null ? "null" : Quote(_eyeSource))
-              .Append(",\"eyeAgeSec\":").Append(F(_eyeAgeSec))
-              .Append(",\"eyeAligned\":").Append(_eyeHad ? ((_eyeDir == _dir) ? "true" : "false") : "null");
 
             // context block (spec §3.4) — tier-2 only; opaque pass-through
             if (!string.IsNullOrEmpty(_ctxJson))

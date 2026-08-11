@@ -23,7 +23,7 @@
 //  are detailed; the rest are summarized as counts (total / connected).
 //
 //  VERIFIED APIs (in-repo): acct.Get(AccountItem.Realized/UnrealizedProfitLoss, Currency.UsDollar)
-//    (GTrader21v_0_0_4Panel.cs:2738), position.GetUnrealizedProfitLoss(PerformanceUnit.Currency)
+//    (a pulled predecessor panel), position.GetUnrealizedProfitLoss(PerformanceUnit.Currency)
 //    (@UnrealizedProfitLoss.cs:73), Account.Connection.Status/.Options.Name, Account.All.
 //
 //  CHANGELOG
@@ -32,7 +32,7 @@
 //    v1.0.6 — added the "governor" block (per-account daily cap/loss state from SentinelCore) and a
 //             THROTTLED "eyeReferee" block (per-signal Eye verdict +1/-1/0 from SentinelExcursions,
 //             recomputed every 5 min since it parses the excursion files — empty until Eye accrues).
-//    v1.0.5 — added the "configs" block (AppendConfigs): which running GTrader21 instance auto-read
+//    v1.0.5 — added the "configs" block (AppendConfigs): which running the Bridge instance auto-read
 //             which lab .conf (strategy/instrument/account/config/tp/sl/ageSec) from SentinelCore's
 //             config-use registry. Also surfaced the risk block's per-instrument SCOPED kills
 //             ("instrumentKills") — so "GC halted, ES/NQ fine" is readable outside NT.
@@ -40,7 +40,7 @@
 //             per-slot instrument/strategy/enabled/inSession/session/health/posQty/dayPnl/fillsToday/
 //             lastSignalAgeSec) from SentinelCore's fleet registry. Fleet status now readable in
 //             state.json, not just sentinel.log heartbeats.
-//    v1.0.3 — added the "eye" block: per-instrument SentinelEye GodTrades qualification verdicts
+//    v1.0.3 — (REMOVED 2026-08-11) an "eye" block: per-instrument godTrades qualification verdicts
 //             (instrument/direction/score/source/ageSec) from SentinelCore's Eye registry.
 //    v1.0.2 — teardown hardening: `_stopping` flag set FIRST in Stop() so the 2s timer callback
 //             bails instantly during NT recompile/teardown (was a plausible compile-hang cause —
@@ -144,10 +144,6 @@ namespace NinjaTrader.NinjaScript.AddOns.Sentinel
             AppendRisk(sb);
             sb.Append(",\n");
 
-            // ── eye verdicts (per-instrument GodTrades qualification from SentinelEye charts) ──
-            sb.Append("  \"eye\": ");
-            AppendEye(sb);
-            sb.Append(",\n");
 
             // ── arc fleet (orchestration plan + live supervision from SentinelCore's fleet registry) ──
             sb.Append("  \"arc\": ");
@@ -174,10 +170,6 @@ namespace NinjaTrader.NinjaScript.AddOns.Sentinel
             AppendGovernor(sb);
             sb.Append(",\n");
 
-            // ── eye referee (per-signal endorsed-vs-not verdict; throttled — parses excursion files) ──
-            sb.Append("  \"eyeReferee\": ");
-            AppendEyeReferee(sb);
-            sb.Append(",\n");
 
             // ── accounts ──
             int total = 0, connected = 0;
@@ -255,43 +247,8 @@ namespace NinjaTrader.NinjaScript.AddOns.Sentinel
             sb.Append("]");
         }
 
-        // throttled: LoadSummary parses ~10MB of excursion files, so recompute at most every 5 min.
-        private string _eyeRefCache = null;
-        private DateTime _lastEyeRefUtc = DateTime.MinValue;
-        private const double EyeRefEverySec = 300;
 
-        private void AppendEyeReferee(StringBuilder sb)
-        {
-            try
-            {
-                if (_eyeRefCache == null || (DateTime.UtcNow - _lastEyeRefUtc).TotalSeconds >= EyeRefEverySec)
-                {
-                    _lastEyeRefUtc = DateTime.UtcNow;
-                    _eyeRefCache = ComputeEyeReferee();
-                }
-            }
-            catch { if (_eyeRefCache == null) _eyeRefCache = "[]"; }
-            sb.Append(_eyeRefCache);
-        }
 
-        private static string ComputeEyeReferee()
-        {
-            var s = SentinelExcursions_v1_0.LoadSummary();
-            if (s == null || s.Error != null || s.Groups == null) return "[]";
-            var sb = new StringBuilder("[");
-            int n = 0;
-            foreach (var g in s.Groups)
-            {
-                if (g == null || g.EyeCount == 0) continue;
-                if (n++ > 0) sb.Append(", ");
-                sb.Append("{ \"signal\": ").Append(Str(g.Key))
-                  .Append(", \"eyeCount\": ").Append(g.EyeCount)
-                  .Append(", \"verdict\": ").Append(g.EyeVerdictCode)   // +1 Eye adds edge / -1 hurts / 0 inconclusive
-                  .Append(" }");
-            }
-            sb.Append("]");
-            return sb.ToString();
-        }
 
         private void AppendConfigs(StringBuilder sb)
         {
@@ -315,25 +272,6 @@ namespace NinjaTrader.NinjaScript.AddOns.Sentinel
             sb.Append("]");
         }
 
-        private void AppendEye(StringBuilder sb)
-        {
-            var verdicts = SentinelCore.AllEyeVerdicts();
-            sb.Append("[");
-            for (int i = 0; i < verdicts.Count; i++)
-            {
-                var v = verdicts[i];
-                if (v == null) continue;
-                if (i > 0) sb.Append(", ");
-                double ageSec = 0; try { ageSec = (DateTime.Now.ToUniversalTime() - v.UpdatedUtc).TotalSeconds; } catch (Exception _sx) { SentinelCore.Swallow("SentinelState.AppendEye", _sx); }
-                sb.Append("{ \"instrument\": ").Append(Str(v.Instrument))
-                  .Append(", \"direction\": ").Append(v.Direction)
-                  .Append(", \"score\": ").Append(Num(v.Score))
-                  .Append(", \"source\": ").Append(Str(v.Source))
-                  .Append(", \"ageSec\": ").Append(Num(ageSec))
-                  .Append(" }");
-            }
-            sb.Append("]");
-        }
 
         private void AppendAssist(StringBuilder sb)
         {
@@ -427,7 +365,7 @@ namespace NinjaTrader.NinjaScript.AddOns.Sentinel
 
         private void AppendCopier(StringBuilder sb)
         {
-            var svc = SentinelCopierService_v0_2_0.Instance;
+            var svc = SentinelCopierService_v0_2_1.Instance;
             CopierConfig cfg = svc != null ? svc.CurrentConfig : null;
             if (svc == null) { sb.Append("{ \"running\": false }"); return; }
             sb.Append("{ \"running\": true, \"leader\": ").Append(Str(cfg != null ? cfg.LeaderAccount : null));
@@ -442,7 +380,7 @@ namespace NinjaTrader.NinjaScript.AddOns.Sentinel
                     sb.Append("{ \"account\": ").Append(Str(f.AccountName))
                       .Append(", \"enabled\": ").Append(f.Enabled ? "true" : "false")
                       .Append(", \"mult\": ").Append(Num(f.Multiplier))
-                      .Append(", \"map\": ").Append(Str(SentinelCopierService_v0_2_0.MapToDsl(f.InstrumentMap)))
+                      .Append(", \"map\": ").Append(Str(SentinelCopierService_v0_2_1.MapToDsl(f.InstrumentMap)))
                       .Append(" }");
                 }
             }

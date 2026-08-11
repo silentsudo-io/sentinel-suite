@@ -15,7 +15,7 @@
 // ONLY this chart's instrument on the selected account. A flight-instrument risk
 // card (SharpDX) tracks the account live: day P&L, open position, uP&L, open risk.
 //
-// DESIGN: identical "flight-instrument" language as SentinelDashboard + GTrader21
+// DESIGN: identical "flight-instrument" language as SentinelDashboard + the Bridge
 // (void ground, ONE cyan accent = live/watching, green/red reserved for money +
 // direction). Seamless with the Sentinel skin.
 //
@@ -179,16 +179,16 @@
 //     (Mkt/Lmt/Stp/StpLmt), qty stepper + presets, price entry (offset/editable/
 //     click-chart), BUY/SELL/REVERSE/CLOSE, FLATTEN-THIS-CHART, account risk card,
 //     Sentinel advisory. See SentinelDeck_v0_1_0.cs.
-//   v0.2.0 (2026-07-03)  FULL trade-management suite (ports GTrader21's engine):
+//   v0.2.0 (2026-07-03)  FULL trade-management suite (ports a pulled predecessor panel’s engine):
 //      BRACKET / STOP  attach OCO (stop+target) or a protective stop to the open
 //       position; auto-on-entry cycle Off / Stop-only / Bracket.
 //      BREAKEVEN  move stops to entry  offset (manual + auto when profit  trigger).
-//      TRAILING  all 7 GTrader modes: TrailTicks  Breakeven+  Bar H/L  N-Bar H/L 
+//      TRAILING  all 7 trailing modes: TrailTicks  Breakeven+  Bar H/L  N-Bar H/L 
 //       ATR  TrendMagic (ATR gated by CCI regime)  Half+BE (scale half  BE). Manual
 //       arm + auto-trail-on-entry. Tick-level execution via OnMarketData; stop only ever
 //       improves (never moves against the position).
 //      SCALE  close half. Orders remain account-level UNMANAGED (the deck owns them).
-//     Engine adapted verbatim-in-spirit from GTrader21v_0_1_6Panel (no strategy-owned-
+//     Engine adapted verbatim-in-spirit from a pulled predecessor panel (no strategy-owned-
 //     order guards needed  the deck has no strategy).  validate on SIM before live.
 //     + POP-OUT / DOCK toggle in the header ([ ] / ><) - floats the deck into its own
 //       resizable window (geometry remembered) and docks it back into ChartTrader.
@@ -751,7 +751,7 @@ namespace NinjaTrader.NinjaScript.Indicators.Sentinel
             catch (Exception _sx) { SentinelCore.Swallow("SentinelDeck.DisposeWPFControls", _sx); }
         }
 
-        // -- pop-out / dock (ported from GTrader21) --
+        // -- pop-out / dock (ported from the Bridge) --
         private void TogglePanelFloat()
         {
             if (panelFloating) DockDeck();
@@ -3242,7 +3242,7 @@ namespace NinjaTrader.NinjaScript.Indicators.Sentinel
 
         // 
         // TRADE MANAGEMENT ENGINE (v0.2.0)  account-level unmanaged, data thread
-        // Ported from GTrader21v_0_1_6Panel (no strategy-owned-order guards needed).
+        // Ported from a pulled predecessor panel (no strategy-owned-order guards needed).
         // 
         private void BracketOrder(int stopTicks, int profitTicks)
         {
@@ -3472,4 +3472,3 @@ namespace NinjaTrader.NinjaScript.Indicators.Sentinel
         }
     }
 }
-

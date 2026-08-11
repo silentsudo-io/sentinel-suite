@@ -55,7 +55,7 @@ suite's own recorded outcomes *is* the machine-learning project. Everything belo
 fit possible, honest, and reversible.
 
 > **⚠ Roster size (2026-07-14).** This spec was written against the original **10-voter** roster
-> (`EYE TRND CCI ADX ENV BRK CMP IMKT WAE GREV`). The Council now fuses **25 voters** (incl. the
+> (`EYE TRND CCI ADX ENV BRK CMP IMKT WAE GREV`). The Council now fuses **24 voters** (incl. the
 > order-flow FLUX voter). The 10-tag lists below are the ORIGINAL set, not the current one; the
 > fit machinery (ridge over the signed vote vector) is unchanged and scales to whatever roster is declared.
 
@@ -333,7 +333,7 @@ row **per bias flip**. Measured on the existing data (§9): **~150 rows/day on o
 of rows, but the median gap between fires is **0.4 minutes** against a 15-minute label window, so
 **effective N is a small fraction of row count.** Volume was never the constraint. Independence is.
 Fit 10 ridge coefficients, not 40, and quote `nEffective`, never `nSamples`. *(The roster has since grown to
-**25 voters**; the coefficient count is whatever the declared roster holds, but the same
+**24 voters**; the coefficient count is whatever the declared roster holds, but the same
 independence caution applies, now more so.)*
 
 The one genuinely lucky property: the Recorder fires on **every** `HasEdge` flip, including verdicts
