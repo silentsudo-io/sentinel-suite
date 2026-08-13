@@ -31,6 +31,9 @@ import re
 import sys
 from pathlib import Path
 
+import _console                                                     # noqa: E402
+_console.unbreakable_output()   # a guard that cannot PRINT its failure has no failure
+
 REPO = Path(__file__).resolve().parent.parent
 SRC = REPO / "src"
 RUNTIME = SRC / "runtime"

@@ -62,6 +62,28 @@ MPL_LINE  = re.compile(r"Mozilla Public License|mozilla\.org/MPL|This Source Cod
                        r"one at https|Copyright \(c\) \d{4}|^[─═\s]*$")
 
 
+def _unbreakable_output() -> None:
+    """Make stdout/stderr incapable of raising UnicodeEncodeError before we can state a finding.
+
+    MEASURED 2026-08-12: piped stdout on Windows encodes with cp1252, which has no glyph for
+    the FAIL markers this project writes in. So the PASS path printed and the FAIL path died
+    with UnicodeEncodeError -- losing the finding while the exit code said only "something".
+    A gate that cannot print its refusal reads, to the person on the other end, as noise.
+    Full rationale: sentinel-suite tools/_console.py.
+    """
+    for _s in (sys.stdout, sys.stderr):
+        _rc = getattr(_s, "reconfigure", None)
+        if _rc is None:
+            continue
+        try:
+            _rc(errors="replace") if _s.isatty() else _rc(encoding="utf-8", errors="replace")
+        except (ValueError, OSError):
+            pass                                   # reporting matters more than the stream
+
+
+_unbreakable_output()
+
+
 def _decomment(block):
     """Strip the // prefix, drop the MPL boilerplate and leading/trailing rules."""
     out = [re.sub(r"^[ \t]*//[ \t]?", "", ln) for ln in block.splitlines()]
@@ -74,6 +96,33 @@ def _decomment(block):
 
 def _slug(s):
     return re.sub(r"[^a-z0-9]+", "-", s.lower()).strip("-")
+
+
+def slug_of(rec, seen=None):
+    r"""A page filename that is UNIQUE across the whole set.
+
+    ⚠ NAME ALONE COLLIDES. The Azimuth tree alone has four `__init__.py`, and slugging on the
+    basename silently overwrote three of them -- 229 artifacts produced 225 pages and the
+    index linked to whichever won. A reference that quietly drops entries is worse than one
+    that admits a gap, because the index still looks complete. Disambiguate with the parent
+    directory, then with a counter if even that repeats.
+    """
+    base = _slug(rec["name"])
+    if seen is None:
+        return base
+    if base not in seen:
+        seen[base] = rec["path"]
+        return base
+    if seen[base] == rec["path"]:
+        return base
+    parent = os.path.basename(os.path.dirname(rec["path"].replace("\\", "/")))
+    cand = _slug(parent + "-" + rec["name"]) if parent else base
+    n = 2
+    while cand in seen and seen[cand] != rec["path"]:
+        cand = "%s-%d" % (_slug(parent + "-" + rec["name"]) if parent else base, n)
+        n += 1
+    seen[cand] = rec["path"]
+    return cand
 
 
 def changelog_of(path, kind):
@@ -110,9 +159,24 @@ def abs_path(a, prefer_published=False):
     return p if os.path.isabs(p) else os.path.join(cov.NT8, p)
 
 
+def _fm(v):
+    """YAML-safe scalar. Quotes and escapes, because a filename can contain a colon."""
+    return '"%s"' % str(v).replace("\\", "\\\\").replace('"', '\\"')
+
+
 def page(a, backlinks, from_published=False):
     """One artifact's reference page."""
     L = []
+    # Front matter drives the Jekyll layout on GitHub Pages (_layouts/sentinel-ref.html).
+    # Without it these render in Jekyll's default theme, which looks nothing like the rest
+    # of the suite's docs — and a reference that looks foreign reads as third-party.
+    L.append("---")
+    L.append("layout: sentinel-ref")
+    L.append("title: %s" % _fm(a["name"]))
+    L.append("blurb: %s" % _fm("%s · %s · %d lines" % (
+        FAMILY_TITLE.get(a["kind"], a["kind"]), a["ver"] or "unversioned", a["lines"])))
+    L.append("---")
+    L.append("")
     L.append("# %s" % a["name"])
     L.append("")
     L.append("> `%s`" % a["path"].replace("\\", "/"))
@@ -133,7 +197,7 @@ def page(a, backlinks, from_published=False):
     rows.append(("Documented by", ", ".join("[%s](../../%s)" % (d[:-3], d) for d in a["docs"])
                  if a["docs"] else "_no doc tracks this artifact_"))
     if backlinks:
-        rows.append(("Depends on this", ", ".join("[%s](%s.md)" % (b, _slug(b)) for b in backlinks)))
+        rows.append(("Depends on this", ", ".join("[%s](%s.md)" % (b, s) for b, s in backlinks)))
     L.append("| | |")
     L.append("|---|---|")
     for k, v in rows:
@@ -164,8 +228,10 @@ def page(a, backlinks, from_published=False):
     return "\n".join(L) + "\n"
 
 
-def index(rows, scope):
-    L = ["# Sentinel — artifact reference", "",
+def index(rows, scope, slugs):
+    L = ["---", "layout: sentinel-ref", "title: \"Sentinel — artifact reference\"",
+         "blurb: \"Every published artifact, generated from its own source.\"", "---", "",
+         "# Sentinel — artifact reference", "",
          "_Generated from the code by `Lab/docs/wiki.py`. Do not hand-edit: every page is rebuilt "
          "from the artifact's own changelog, so edits here are lost and, worse, become a fifth "
          "version of the truth._", "",
@@ -189,7 +255,7 @@ def index(rows, scope):
             docs = ", ".join(d[:-3] for d in r["docs"]) or ("—" if r["state"] == "DARK"
                                                             else "_mentioned only_")
             L.append("| [%s](%s.md) | %s | %d | %s |"
-                     % (r["name"], _slug(r["name"]), r["ver"] or "—", r["lines"], docs))
+                     % (r["name"], slugs[r["path"]], r["ver"] or "—", r["lines"], docs))
         L.append("")
     return "\n".join(L) + "\n"
 
@@ -243,14 +309,19 @@ def main():
         print("⚠ %d public-scope artifacts have no published counterpart to read from; "
               "rendering those from the canonical tree: %s"
               % (len(missing), ", ".join(missing[:5]) + ("…" if len(missing) > 5 else "")))
+    seen = {}
+    slugs = {r["path"]: slug_of(r, seen) for r in sorted(rows, key=lambda r: r["path"])}
+    name2slug = {r["name"]: slugs[r["path"]] for r in rows}
     for r in rows:
-        p = os.path.join(a.out, _slug(r["name"]) + ".md")
+        p = os.path.join(a.out, slugs[r["path"]] + ".md")
         try:
             io.open(p, "w", encoding="utf-8").write(
-                page(r, back.get(r["name"], []), from_published=from_pub))
+                page(r, [(b, name2slug[b]) for b in back.get(r["name"], [])
+                         if b in name2slug], from_published=from_pub))
         except OSError as _swex:
             swallow("docs.wiki.write", _swex)
-    io.open(os.path.join(a.out, "index.md"), "w", encoding="utf-8").write(index(rows, a.scope))
+    io.open(os.path.join(a.out, "index.md"), "w", encoding="utf-8").write(
+        index(rows, a.scope, slugs))
     print("wrote %d pages + index.md -> %s" % (len(rows), a.out))
     return 0
 

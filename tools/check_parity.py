@@ -52,6 +52,9 @@ import re
 import sys
 from pathlib import Path
 
+import _console                                                     # noqa: E402
+_console.unbreakable_output()   # a guard that cannot PRINT its failure has no failure
+
 # This tool's own output is full of the characters the project writes in — arrows, rules, warning
 # signs. On a Windows console defaulting to cp1252 that is not a mojibake nuisance, it is a hard
 # UnicodeEncodeError that kills the run: adding one "⚠" to a DELIBERATE reason crashed the gate

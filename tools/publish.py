@@ -42,6 +42,9 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from scrub import load_map, scrub                                    # noqa: E402
 from check_parity import strip_region, MPL_MARK                      # noqa: E402
 
+import _console                                                     # noqa: E402
+_console.unbreakable_output()   # a guard that cannot PRINT its failure has no failure
+
 try:
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 except Exception:

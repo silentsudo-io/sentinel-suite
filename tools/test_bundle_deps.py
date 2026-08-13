@@ -23,6 +23,9 @@ from check_bundle_deps import (ManifestError, closure, load_manifest,  # noqa: E
                                strip_strings, top_level_types)
 import check_bundle_deps  # noqa: E402
 
+import _console                                                     # noqa: E402
+_console.unbreakable_output()   # a guard that cannot PRINT its failure has no failure
+
 FAILED = []
 
 

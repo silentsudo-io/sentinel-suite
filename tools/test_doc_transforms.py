@@ -36,6 +36,9 @@ import os
 import re
 import sys
 
+import _console                                                     # noqa: E402
+_console.unbreakable_output()   # a guard that cannot PRINT its failure has no failure
+
 HERE = os.path.dirname(os.path.abspath(__file__))
 REPO = os.path.abspath(os.path.join(HERE, ".."))
 

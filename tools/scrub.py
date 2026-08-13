@@ -38,6 +38,9 @@ import re
 import sys
 from pathlib import Path
 
+import _console                                                     # noqa: E402
+_console.unbreakable_output()   # a guard that cannot PRINT its failure has no failure
+
 try:
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 except Exception:

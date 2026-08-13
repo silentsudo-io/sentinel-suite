@@ -45,6 +45,9 @@ import re
 import sys
 from pathlib import Path
 
+import _console                                                     # noqa: E402
+_console.unbreakable_output()   # a guard that cannot PRINT its failure has no failure
+
 # Only PUBLIC / INTERNAL types can be referenced from another file, so only those can
 # be a cross-bundle dependency. A nested `private sealed class Track` (an internal helper)
 # must be excluded, or a same-named method call (`_sp.Track(...)`) becomes a false positive.

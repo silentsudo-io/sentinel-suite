@@ -54,6 +54,28 @@ MAX_BYTES = 4_000_000
 PRIVATE_CONF = os.path.join(HERE, "private.conf")
 
 
+def _unbreakable_output() -> None:
+    """Make stdout/stderr incapable of raising UnicodeEncodeError before we can state a finding.
+
+    MEASURED 2026-08-12: piped stdout on Windows encodes with cp1252, which has no glyph for
+    the FAIL markers this project writes in. So the PASS path printed and the FAIL path died
+    with UnicodeEncodeError -- losing the finding while the exit code said only "something".
+    A gate that cannot print its refusal reads, to the person on the other end, as noise.
+    Full rationale: sentinel-suite tools/_console.py.
+    """
+    for _s in (sys.stdout, sys.stderr):
+        _rc = getattr(_s, "reconfigure", None)
+        if _rc is None:
+            continue
+        try:
+            _rc(errors="replace") if _s.isatty() else _rc(encoding="utf-8", errors="replace")
+        except (ValueError, OSError):
+            pass                                   # reporting matters more than the stream
+
+
+_unbreakable_output()
+
+
 def _operator_rules():
     r"""Operator-specific BLOCK patterns, loaded from private.conf (gitignored).
 

@@ -88,6 +88,28 @@ SEAM_GET  = re.compile(r"SentinelCore\.Get(\w+?)State\s*\(")
 PY_DOC    = ('"""', "'''", 'r"""', "r'''")
 
 
+def _unbreakable_output() -> None:
+    """Make stdout/stderr incapable of raising UnicodeEncodeError before we can state a finding.
+
+    MEASURED 2026-08-12: piped stdout on Windows encodes with cp1252, which has no glyph for
+    the FAIL markers this project writes in. So the PASS path printed and the FAIL path died
+    with UnicodeEncodeError -- losing the finding while the exit code said only "something".
+    A gate that cannot print its refusal reads, to the person on the other end, as noise.
+    Full rationale: sentinel-suite tools/_console.py.
+    """
+    for _s in (sys.stdout, sys.stderr):
+        _rc = getattr(_s, "reconfigure", None)
+        if _rc is None:
+            continue
+        try:
+            _rc(errors="replace") if _s.isatty() else _rc(encoding="utf-8", errors="replace")
+        except (ValueError, OSError):
+            pass                                   # reporting matters more than the stream
+
+
+_unbreakable_output()
+
+
 def _read(p):
     try:
         return io.open(p, encoding="utf-8", errors="replace").read()
@@ -173,8 +195,14 @@ def artifacts():
                 ns=ns.group(1) if ns else "", cls=cls.group(1) if cls else "",
                 publishes=sorted(set(SEAM_SET.findall(text))),
                 consumes=sorted(set(SEAM_GET.findall(text))),
-                scope="published" if name.lower() in pub else "private",
-                pubpath=pub.get(name.lower(), ""),
+                # ⚠ BASENAME MATCHING COLLIDES NOW THAT 351 FILES SHIP. `nt8bridge/config.py`
+                # read as PUBLISHED because `azimuth/engine/config.py` exists in the snapshot.
+                # The bridge is a SEPARATE upstream repo with its own README, so it is neither
+                # published-by-us nor private-to-us: it is EXTERNAL, and saying so is more
+                # honest than picking one of the two wrong answers.
+                scope=("external" if p.startswith(BRIDGE)
+                       else "published" if name.lower() in pub else "private"),
+                pubpath="" if p.startswith(BRIDGE) else pub.get(name.lower(), ""),
             ))
     return out
 
