@@ -13,7 +13,7 @@
 //  WHAT THIS IS  (see Docs/ROADMAP.md, memory: sentinel-suite-architecture)
 //    The ONE window for the whole suite. Adds "Sentinel Suite" under Control Center > New.
 //    A TabControl with one tab per Sentinel tool; each tab ATTACHES to that tool's headless
-//    service singleton (e.g. SentinelCopierService_v0_2_1.Instance) — it does NOT own the
+//    service singleton (e.g. SentinelCopierService_v0_2_2.Instance) — it does NOT own the
 //    service, and closing this window never stops any service. Same attach pattern as
 //    MAEDashboard → MAECaptureService.
 //
@@ -1071,7 +1071,7 @@ namespace NinjaTrader.NinjaScript.AddOns.Sentinel
             row.Mult = new TextBox { Text = (prefill != null ? prefill.Multiplier : 1.0).ToString(CultureInfo.InvariantCulture), Width = 46, Margin = new Thickness(2, 0, 6, 0) };
             sp.Children.Add(row.Mult);
 
-            row.Map = new TextBox { Text = prefill != null ? SentinelCopierService_v0_2_1.MapToDsl(prefill.InstrumentMap) : "", MinWidth = 220, Margin = new Thickness(0, 0, 6, 0) };
+            row.Map = new TextBox { Text = prefill != null ? SentinelCopierService_v0_2_2.MapToDsl(prefill.InstrumentMap) : "", MinWidth = 220, Margin = new Thickness(0, 0, 6, 0) };
             sp.Children.Add(row.Map);
 
             var remove = MakeButton("×", (s, e) =>
@@ -1090,7 +1090,7 @@ namespace NinjaTrader.NinjaScript.AddOns.Sentinel
         // ── apply UI → live copier config ────────────────────────────────────
         private void ApplyConfig()
         {
-            var svc = SentinelCopierService_v0_2_1.Instance;
+            var svc = SentinelCopierService_v0_2_2.Instance;
             if (svc == null) { SetStatus("copier service not running — compile SentinelCopierService (F5)."); return; }
 
             var cfg = new CopierConfig();
@@ -1106,21 +1106,21 @@ namespace NinjaTrader.NinjaScript.AddOns.Sentinel
                 var f = new FollowerConfig { AccountName = acct, Enabled = r.Enabled.IsChecked == true };
                 double m;
                 f.Multiplier = double.TryParse(r.Mult.Text, NumberStyles.Any, CultureInfo.InvariantCulture, out m) ? m : 1.0;
-                SentinelCopierService_v0_2_1.ParseMapDsl(r.Map.Text, f.InstrumentMap);
+                SentinelCopierService_v0_2_2.ParseMapDsl(r.Map.Text, f.InstrumentMap);
                 cfg.Followers.Add(f);
             }
 
             svc.Reconfigure(cfg);
-            SentinelCopierService_v0_2_1.SaveConfig(cfg);   // persist → survives NT recompiles/restarts
+            SentinelCopierService_v0_2_2.SaveConfig(cfg);   // persist → survives NT recompiles/restarts
             SetStatus("applied + saved: leader='" + (cfg.LeaderAccount ?? "<none>") + "', followers=" + cfg.Followers.Count
                 + ", policy=" + cfg.Policy);
         }
 
         private void ReloadConfig()
         {
-            var svc = SentinelCopierService_v0_2_1.Instance;
+            var svc = SentinelCopierService_v0_2_2.Instance;
             if (svc == null) { SetStatus("copier service not running"); return; }
-            var cfg = SentinelCopierService_v0_2_1.LoadConfig();
+            var cfg = SentinelCopierService_v0_2_2.LoadConfig();
             if (cfg == null) { SetStatus("no Copy.conf on disk to reload"); return; }
             svc.Reconfigure(cfg);
             LoadFromLiveConfig();
@@ -1130,7 +1130,7 @@ namespace NinjaTrader.NinjaScript.AddOns.Sentinel
 
         private void LoadFromLiveConfig()
         {
-            var svc = SentinelCopierService_v0_2_1.Instance;
+            var svc = SentinelCopierService_v0_2_2.Instance;
             CopierConfig cfg = svc != null ? svc.CurrentConfig : null;
             if (cfg == null) return;
 
@@ -1150,7 +1150,7 @@ namespace NinjaTrader.NinjaScript.AddOns.Sentinel
             return string.IsNullOrEmpty(c.Text) ? null : c.Text.Trim();
         }
 
-        // (instrument-map DSL parse/format now live canonically on SentinelCopierService_v0_2_1,
+        // (instrument-map DSL parse/format now live canonically on SentinelCopierService_v0_2_2,
         //  reused here so the dashboard and the persisted Copy.conf always agree.)
 
         // ── helpers ──────────────────────────────────────────────────────────
@@ -1209,7 +1209,7 @@ namespace NinjaTrader.NinjaScript.AddOns.Sentinel
 
         private void RefreshStatus()
         {
-            bool copierUp = SentinelCopierService_v0_2_1.Instance != null;
+            bool copierUp = SentinelCopierService_v0_2_2.Instance != null;
             SetStatus("Copier service: " + (copierUp ? "running" : "NOT running (F5 to compile)")
                 + "   •   accounts: " + AccountNames().Count);
         }

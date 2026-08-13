@@ -7,8 +7,8 @@
 // ─────────────────────────────────────────────────────────────────────────────
 // ═════════════════════════════════════════════════════════════════════════════
 //  SentinelCopierService — headless multi-account trade copier (NT8 AddOn)
-//  File: SentinelCopierService_v0_2_1.cs
-//  Service version: v0.2.1   (mirror path DRIVEN on real accounts; reconciler validated + FAILED)
+//  File: SentinelCopierService_v0_2_2.cs
+//  Service version: v0.2.2   (reconciler sweeps BOTH books; the flat-leader blind spot is closed)
 // ─────────────────────────────────────────────────────────────────────────────
 //  WHAT THIS IS  (part of the "Sentinel Suite"; see Docs/ROADMAP.md)
 //    A headless, always-on AddOn service — SAME architecture as MAECaptureService:
@@ -86,7 +86,7 @@
 //  CHANGELOG
 //    (in-place, 2026-07-25) — RECORDED CATCHES: 5 empty `catch {}` -> SentinelCore.Swallow (Core >= v1.41.0).
 //             Behaviour identical; a swallowed fault on the mirror path is now counted and logged.
-//    v0.2.1 — ONE LEADER FILL ⇒ ONE MIRROR, however many instances are alive.
+//    v0.2.2 — ONE LEADER FILL ⇒ ONE MIRROR, however many instances are alive.
 //             Fork of v0.2.0; v0.2.0 frozen to bin\_archive\ so two copiers cannot both run.
 //             ⭐ THIS FIXES A DEFECT THAT WAS MEASURED, NOT SUSPECTED (main, 2026-08-11):
 //             one leader BuyToCover produced TWO `MIRROR ▶` lines 26 ms apart and left the
@@ -314,12 +314,12 @@ namespace NinjaTrader.NinjaScript.AddOns.SentinelCopier
         internal static int Held { get { try { Hashtable t = Store(); lock (t.SyncRoot) return t.Count; } catch { return -1; } } }
     }
 
-    public class SentinelCopierService_v0_2_1 : NinjaTrader.NinjaScript.AddOnBase
+    public class SentinelCopierService_v0_2_2 : NinjaTrader.NinjaScript.AddOnBase
     {
         private const string OrderPrefix = "SentCopy_";     // suite contract: copier order tag
 
         // ── singleton so a future dashboard/settings window can attach ──
-        public static SentinelCopierService_v0_2_1 Instance { get; private set; }
+        public static SentinelCopierService_v0_2_2 Instance { get; private set; }
 
         // Kill-switch + feed-health now live in the shared SentinelCore (suite-wide), not here.
         // Flip via SentinelCore.SetKillSwitch(true, "..."); the mirror gate consults SentinelCore.
@@ -363,7 +363,7 @@ namespace NinjaTrader.NinjaScript.AddOns.SentinelCopier
             // base ctor calls this BEFORE our ctor — do not rely on field initializers.
             if (State == State.SetDefaults)
             {
-                Name = "SentinelCopierService_v0_2_1";
+                Name = "SentinelCopierService_v0_2_2";
                 Description = "Sentinel Suite — headless multi-account fill-mirror trade copier. "
                             + "Mirrors a leader account's fills to enabled followers (with "
                             + "instrument cross-map + size). Inert until configured. Runs always.";
@@ -402,7 +402,7 @@ namespace NinjaTrader.NinjaScript.AddOns.SentinelCopier
             _reconcileTimer = new System.Threading.Timer(ReconcileTick, null,
                 ReconcileSeconds * 1000, ReconcileSeconds * 1000);
 
-            Log("SentinelCopierService v0.2.1 started. Leader='" + (_config.LeaderAccount ?? "<none>")
+            Log("SentinelCopierService v0.2.2 started. Leader='" + (_config.LeaderAccount ?? "<none>")
                 + "', followers=" + _config.Followers.Count
                 + ", reconciler every " + ReconcileSeconds + "s"
                 + (string.IsNullOrEmpty(_config.LeaderAccount) ? " (inert until a leader is set)." : "."));
@@ -470,7 +470,7 @@ namespace NinjaTrader.NinjaScript.AddOns.SentinelCopier
             {
                 if (f == null || !f.Enabled || f.CopyMode != CopyMode.Order) continue;
                 Log("REFUSING follower '" + f.AccountName + "': copy mode ORDER is not implemented "
-                    + "in v0.2.1 either (the mirror path and its position reconciler land together — an "
+                    + "in v0.2.2 either (the mirror path and its position reconciler land together — an "
                     + "Order-mode copier without reconciliation diverges invisibly). This follower "
                     + "will NOT be mirrored at all. Set it to fill in Copy.conf to copy it now.");
             }
@@ -488,41 +488,93 @@ namespace NinjaTrader.NinjaScript.AddOns.SentinelCopier
                 CopierConfig cfg = _config;
                 if (cfg == null || string.IsNullOrEmpty(cfg.LeaderAccount)) return;
                 Account leader = FindAccount(cfg.LeaderAccount);
-                if (leader == null || leader.Positions == null) return;
+                if (leader == null) return;
 
                 foreach (FollowerConfig f in cfg.Followers)
                 {
                     if (f == null || !f.Enabled || string.IsNullOrEmpty(f.AccountName)) continue;
                     if (f.Mode == FollowerMode.Manual) continue;   // we do not place these; not ours to reconcile
                     Account fa = FindAccount(f.AccountName);
-                    if (fa == null || !IsConnected(fa) || fa.Positions == null) continue;
+                    if (fa == null || !IsConnected(fa)) continue;
 
-                    foreach (Position lp in leader.Positions)
-                    {
-                        if (lp == null || lp.Instrument == null) continue;
-                        string leaderSym = lp.Instrument.MasterInstrument != null
-                            ? lp.Instrument.MasterInstrument.Name : null;
-                        if (string.IsNullOrEmpty(leaderSym)) continue;
-
-                        double ratio = 1.0;
-                        string targetSym = leaderSym;
-                        InstrumentMapEntry me;
-                        if (f.InstrumentMap != null && f.InstrumentMap.TryGetValue(leaderSym, out me) && me != null)
+                    // ⛔ v0.2.2 — THE BLIND SPOT THIS FIXES, AND IT WAS THE WORST CASE THERE IS.
+                    //    v0.2.1 iterated `leader.Positions` and derived everything from it. NT REMOVES a
+                    //    flat position from Account.Positions, so a FLAT LEADER iterated ZERO times and
+                    //    every follower was skipped entirely. Measured live on main 2026-08-11: the
+                    //    leader went flat, a double-mirror left the follower LONG 1 — a position AND a
+                    //    side the leader never took — and the reconciler said nothing for 5.5 minutes
+                    //    across ~22 checks.
+                    //    ⭐ The design note that justified building this reconciler names exactly that
+                    //    case as the danger ("the follower in a position the leader never took"). It was
+                    //    written against the one case the implementation could not see, because it used
+                    //    the leader as the enumerator and the leader's own emptiness erased the check.
+                    //    ⇒ SWEEP THE UNION OF BOTH SIDES. A symbol is reconcilable if EITHER book holds
+                    //    it; expected is 0 when the leader is flat, which is the whole point.
+                    var syms = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+                    if (leader.Positions != null)
+                        foreach (Position lp in leader.Positions)
                         {
-                            targetSym = me.TargetSymbol;
-                            ratio = me.SizeRatio;
+                            if (lp == null || lp.Instrument == null || lp.Instrument.MasterInstrument == null) continue;
+                            string ls = lp.Instrument.MasterInstrument.Name;
+                            if (string.IsNullOrEmpty(ls)) continue;
+                            string ts = ls;
+                            InstrumentMapEntry m0;
+                            if (f.InstrumentMap != null && f.InstrumentMap.TryGetValue(ls, out m0) && m0 != null)
+                                ts = m0.TargetSymbol;
+                            syms[ts] = ls;                       // target symbol -> the leader symbol it maps from
                         }
-
-                        int leaderNet = SignedQty(lp);
-                        int expected = (int)Math.Round(leaderNet * ratio * f.Multiplier);
-                        int actual = 0;
+                    if (fa.Positions != null)
                         foreach (Position fp in fa.Positions)
                         {
                             if (fp == null || fp.Instrument == null || fp.Instrument.MasterInstrument == null) continue;
-                            if (!string.Equals(fp.Instrument.MasterInstrument.Name, targetSym,
-                                               StringComparison.OrdinalIgnoreCase)) continue;
-                            actual += SignedQty(fp);
+                            string ts = fp.Instrument.MasterInstrument.Name;
+                            if (string.IsNullOrEmpty(ts) || syms.ContainsKey(ts)) continue;
+                            // A follower-only symbol. Recover the LEADER symbol it should have come from,
+                            // so ratio/multiplier still apply; default to same-symbol when unmapped.
+                            string ls = ts;
+                            if (f.InstrumentMap != null)
+                                foreach (var kv in f.InstrumentMap)
+                                    if (kv.Value != null && string.Equals(kv.Value.TargetSymbol, ts,
+                                                                          StringComparison.OrdinalIgnoreCase))
+                                    { ls = kv.Key; break; }
+                            syms[ts] = ls;
                         }
+
+                    // Keys examined this tick. Anything with a live streak that is NOT here has left
+                    // BOTH books — see the sweep-back below.
+                    var visited = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+                    foreach (var pair in syms)
+                    {
+                        string targetSym = pair.Key;
+                        string leaderSym = pair.Value;
+                        visited.Add(f.AccountName + "|" + targetSym);
+
+                        double ratio = 1.0;
+                        InstrumentMapEntry me;
+                        if (f.InstrumentMap != null && f.InstrumentMap.TryGetValue(leaderSym, out me) && me != null)
+                            ratio = me.SizeRatio;
+
+                        int leaderNet = 0;
+                        if (leader.Positions != null)
+                            foreach (Position lp in leader.Positions)
+                            {
+                                if (lp == null || lp.Instrument == null || lp.Instrument.MasterInstrument == null) continue;
+                                if (!string.Equals(lp.Instrument.MasterInstrument.Name, leaderSym,
+                                                   StringComparison.OrdinalIgnoreCase)) continue;
+                                leaderNet += SignedQty(lp);      // 0 when flat — NT simply has no row
+                            }
+
+                        int expected = (int)Math.Round(leaderNet * ratio * f.Multiplier);
+                        int actual = 0;
+                        if (fa.Positions != null)
+                            foreach (Position fp in fa.Positions)
+                            {
+                                if (fp == null || fp.Instrument == null || fp.Instrument.MasterInstrument == null) continue;
+                                if (!string.Equals(fp.Instrument.MasterInstrument.Name, targetSym,
+                                                   StringComparison.OrdinalIgnoreCase)) continue;
+                                actual += SignedQty(fp);
+                            }
 
                         string key = f.AccountName + "|" + targetSym;
                         if (expected == actual)
@@ -539,7 +591,9 @@ namespace NinjaTrader.NinjaScript.AddOns.SentinelCopier
                         streak++;
                         _divergedStreak[key] = streak;
                         if (streak != DivergeStreakToAlert) continue;   // speak once, on crossing
-                        Log("🔴 POSITION DIVERGENCE: follower '" + f.AccountName + "' holds " + actual
+                        Log("🔴 POSITION DIVERGENCE" + (leaderNet == 0 && actual != 0
+                                ? " (LEADER IS FLAT — the follower holds a position the leader never took)" : "")
+                            + ": follower '" + f.AccountName + "' holds " + actual
                             + " " + targetSym + " but the leader implies " + expected
                             + " (leader " + leaderNet + " " + leaderSym + " × ratio " + ratio
                             + " × mult " + f.Multiplier + "). Seen on " + streak
@@ -547,6 +601,26 @@ namespace NinjaTrader.NinjaScript.AddOns.SentinelCopier
                             + "reconciling by hand is the operator's call.");
                         try { SentinelCore.Log("Copy", "DIVERGENCE " + key + " actual=" + actual + " expected=" + expected); }
                         catch (Exception _sx) { SentinelCore.Swallow("SentinelCopier.Reconcile", _sx); }
+                    }
+
+                    // ⛔ THE RESIDUAL BUG THE FIRST v0.2.2 DRIVE EXPOSED, and it was silent.
+                    //    A divergence that resolves by BOTH sides going FLAT removes the symbol from
+                    //    both books, so the union sweep above never visits it: RECONCILED was never
+                    //    announced and the streak entry leaked forever. Measured 2026-08-12 — the
+                    //    LEADER-IS-FLAT alert fired correctly, the follower was flattened, and then
+                    //    nothing said it was resolved.
+                    //    ⭐ A recovery you cannot see is the same defect as a divergence you cannot
+                    //    see. Both leave the operator reading silence as health.
+                    string pfx = f.AccountName + "|";
+                    foreach (string stale in _divergedStreak.Keys
+                                 .Where(k => k.StartsWith(pfx, StringComparison.OrdinalIgnoreCase)
+                                             && !visited.Contains(k)).ToList())
+                    {
+                        int had2;
+                        if (_divergedStreak.TryGetValue(stale, out had2) && had2 >= DivergeStreakToAlert)
+                            Log("RECONCILED: " + stale + " is back in line at 0 — the symbol left BOTH "
+                                + "books (leader flat and follower flat).");
+                        _divergedStreak.Remove(stale);
                     }
                 }
             }

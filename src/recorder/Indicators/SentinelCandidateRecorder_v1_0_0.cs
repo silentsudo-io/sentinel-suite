@@ -7,7 +7,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 // ═════════════════════════════════════════════════════════════════════════════
 //  SentinelCandidateRecorder — the CLOCK-native candidate corpus (the "second oven")
-//  File: SentinelCandidateRecorder_v1_0_0.cs   ·   Version v1.3.0   ·   Schema cand.2 (sidecar ctick.4)   ·   namespace …Indicators.Sentinel
+//  File: SentinelCandidateRecorder_v1_0_0.cs   ·   Version v1.4.0   ·   Schema cand.2 (sidecar ctick.5)   ·   namespace …Indicators.Sentinel
 // ─────────────────────────────────────────────────────────────────────────────
 //  WHAT THIS IS
 //    A pure, no-orders recorder that tests one hypothesis: **the edge lives in the CLOCK, not the fused
@@ -51,6 +51,23 @@
 //           millisecond is adopted as the entry (`pxSrc="firsttick"`); a later one is not, since that would be
 //           lookahead. This matters MOST here: brick CASCADES (measured on GC Renko 11v1x1) print several bricks
 //           off one jump, and every one of them was inheriting the same pre-jump entry.
+//    v1.4.0 (2026-08-11) — 🔴 THE TICK PATH WAS TOO SHORT TO GRADE ANY BARRIER BUT ITS OWN.
+//           Row schema UNCHANGED at cand.2; sidecar ctick.4 → ctick.5. Measured, not guessed: paths ran
+//           median 88.8s / p90 254s, so re-grading 60,000 GC.11v1x1 paths at a 40-tick barrier left only
+//           40.7% usable and 60+ ticks left 0–1.3%. Those wide cells then read +8.662t net — SURVIVORSHIP,
+//           because only fires that resolved FAST fit inside a recording. So the best hypothesis we have
+//           (the barrier sits too close to the spread) was UNTESTABLE rather than tested.
+//           ⭐ The fix is exact, not approximate: grading any barrier B needs the FIRST reach of ±B, and
+//           every first-reach IS a new running extreme — so after a dense window, keeping only new extremes
+//           is LOSSLESS for every B at once. Dense ticks for 60s, then extremes + a 10s heartbeat, out to
+//           30 min (was 5), and the flush now waits for the 6× barrier rather than the original one.
+//           ⇒ ~2× the volume, not the 10–20× that "record everything for 30 minutes" would have cost.
+//           ⚠ The header now stamps pathMode/pathFullMs/pathCoarseMs/pathMaxMs/wideBarrierMult so a
+//           consumer can never mistake the sparse tail for a data gap; ctick.5 keeps old and new unpooled.
+//    v1.3.1 (2026-08-11) — (in-place) NOTE: the 1/5/15/60 milestone grid is NO LONGER the resolution
+//           bottleneck. `msToTargetR`/`msToStopR` in the sidecar header give exact hold times for 81.3%
+//           of 257,241 fires, so the Lab reads the hold instead of inferring it from the grid. A finer
+//           grid was planned as `cand.3`; that plan is retired — this file's PATH LENGTH was the real limit.
 //    v1.2.0 (2026-07-22) — 🔴 THE HONEST ENTRY PRICE (parity with council recorder v2.2.0). Row cand.1 → cand.2,
 //           sidecar ctick.3 → ctick.4. `FirePx` was `Close[0]` = the HEIKIN-ASHI SYNTHETIC close, a price that
 //           NEVER TRADED — the C6 BOUNDARY above, flagged from day one and never measured. Measured 2026-07-22:
@@ -94,13 +111,39 @@ namespace NinjaTrader.NinjaScript.Indicators.Sentinel
         private const double BarrierAtrMult = 1.0;    // first-touch R = this × ATR(14), in ticks
         private const double BarrierMinTicks = 20.0;  // …but never below this (noise floor)
 
-        private const long TickPathTailMs = 30000;    // flush a fire's tick sidecar 30s after first-touch
-        private const long TickPathMaxMs  = 300000;   // hard cap: flush a never-resolving fire after 5 min
+        // ── TIERED TICK PATH (v1.4.0) ────────────────────────────────────────────────────
+        // ⛔ WHY THIS CHANGED, measured 2026-08-11 and not guessed. The old caps (30s tail / 5-min
+        //    hard cap) produced paths of median 88.8s (p90 254s) on GC.11v1x1. That is long enough
+        //    to grade the ORIGINAL barrier and nothing wider: re-grading 60,000 paths at a barrier
+        //    of 40 ticks left only 40.7% usable, and 60+ ticks left 0-1.3%. The wide-barrier cells
+        //    then read +8.662t net — pure SURVIVORSHIP, because only fires that resolved FAST fit
+        //    inside a recording. The single most promising hypothesis we have (the barrier is too
+        //    close to the spread — a symmetric barrier needs hit > 50% + cost/(2*barrier)) was
+        //    therefore UNTESTABLE, not refuted.
+        //
+        // ⭐ THE PROPERTY THAT MAKES THE CHEAP FIX EXACT, not an approximation:
+        //    grading ANY barrier B needs the FIRST time price reached +B or -B. Every such
+        //    first-reach IS a new running extreme. So after the dense window, keeping ONLY new
+        //    extremes is LOSSLESS for barrier grading at every B simultaneously. The dropped ticks
+        //    are, by construction, ticks that did not extend the range and so cannot be a
+        //    first-touch of anything.
+        //    ⇒ dense ticks for the first minute (microstructure, slippage, entry realism),
+        //      then extremes + a sparse heartbeat out to 30 minutes.
+        //    ⇒ ~2x the volume of the old scheme, NOT the 10-20x a naive "record everything for
+        //      30 minutes" would have cost.
+        // ⚠ A consumer MUST be able to tell a tiered path from a dense one, or it will read the
+        //    sparse tail as a data gap. The header therefore stamps pathMode + all three constants,
+        //    and the sidecar schema goes ctick.4 -> ctick.5 so old and new never pool silently.
+        private const long TickPathTailMs   = 30000;    // still flush 30s after the WIDE barrier resolves
+        private const long TickPathFullMs   = 60000;    // dense: every tick for the first 60s
+        private const long TickPathCoarseMs = 10000;    // sparse heartbeat after that (extremes always kept)
+        private const long TickPathMaxMs    = 1800000;  // hard cap raised 5 min -> 30 min
+        private const double WideBarrierMult = 6.0;     // keep recording until 6x the original barrier resolves
 
         // v1.2.0 — cand.2 = cand.1 + the HONEST ENTRY PRICE. FirePx changed MEANING, re-basing every MFE/MAE/
         // barrier/firstTouch, so the rows land in candidates\cand.2\ and can never pool with the optimistic cand.1.
         private const string SchemaVer = "cand.2";
-        private const string RecVer    = "1.3.0";   // v1.3.0 = + latched brick boundaries at fire (schema stays cand.2; additive)
+        private const string RecVer = "1.4.0";   // v1.3.0 = + latched brick boundaries at fire (schema stays cand.2; additive)
 
         private ADX adx;
         private ATR atr;
@@ -159,6 +202,8 @@ namespace NinjaTrader.NinjaScript.Indicators.Sentinel
             public double   FluxPressure;
             // first-touch label
             public double   BarrierTicks;
+            public long     LastPathMs;        // v1.4.0 tiered path: ms of the last appended point
+            public long     WideResolvedMs;    // v1.4.0: ms the WIDE (6x) barrier resolved, -1 = not yet
             public int      FtFavBar, FtAdvBar;
             // raw-tick path
             public string        FireId;
@@ -305,20 +350,38 @@ namespace NinjaTrader.NinjaScript.Indicators.Sentinel
 
                 double favT = r.Dir > 0 ? (px - r.FirePx) / tick : (r.FirePx - px) / tick;
                 double advT = -favT;
-                if (favT > r.MaxFavTick) { r.MaxFavTick = favT; r.MsToMaxFavTick = ms; }
-                if (advT > r.MaxAdvTick) { r.MaxAdvTick = advT; r.MsToMaxAdvTick = ms; }
+                // capture BEFORE updating: the extremes are the append gate below
+                bool newFav = favT > r.MaxFavTick;
+                bool newAdv = advT > r.MaxAdvTick;
+                if (newFav) { r.MaxFavTick = favT; r.MsToMaxFavTick = ms; }
+                if (newAdv) { r.MaxAdvTick = advT; r.MsToMaxAdvTick = ms; }
                 if (r.FtFavMs < 0 && favT >= r.BarrierTicks) r.FtFavMs = ms;
                 if (r.FtAdvMs < 0 && advT >= r.BarrierTicks) r.FtAdvMs = ms;
                 if (r.ResolvedMs < 0 && (r.FtFavMs >= 0 || r.FtAdvMs >= 0)) r.ResolvedMs = ms;
-                if (r.TickBuf != null && r.TickBuf.Length < 4000000)
+                // TIERED APPEND. Dense for the first minute; after that keep every new extreme
+                // (lossless for barrier grading at any size — see the constants block) plus a
+                // heartbeat so the path stays readable and a stall is visible as a stall.
+                bool keep = (ms <= TickPathFullMs)
+                         || newFav || newAdv
+                         || (ms - r.LastPathMs) >= TickPathCoarseMs;
+                if (keep)
                 {
-                    r.TickBuf.Append("{\"ms\":").Append(ms).Append(",\"px\":")
-                             .Append(px.ToString("0.#####", CultureInfo.InvariantCulture)).Append("}\n");
-                    r.TickCount++;
+                    if (r.TickBuf != null && r.TickBuf.Length < 4000000)
+                    {
+                        r.TickBuf.Append("{\"ms\":").Append(ms).Append(",\"px\":")
+                                 .Append(px.ToString("0.#####", CultureInfo.InvariantCulture)).Append("}\n");
+                        r.TickCount++;
+                        r.LastPathMs = ms;
+                    }
+                    else if (r.TickBuf != null) r.PathTrunc = true;
                 }
-                else if (r.TickBuf != null) r.PathTrunc = true;
 
-                bool tailDone = r.ResolvedMs >= 0 && (ms - r.ResolvedMs) >= TickPathTailMs;
+                // Keep recording until the WIDE barrier resolves, not the original one — the whole
+                // point is that a 6x barrier must still be gradable from this path.
+                if (r.WideResolvedMs < 0 &&
+                    (favT >= r.BarrierTicks * WideBarrierMult || advT >= r.BarrierTicks * WideBarrierMult))
+                    r.WideResolvedMs = ms;
+                bool tailDone = r.WideResolvedMs >= 0 && (ms - r.WideResolvedMs) >= TickPathTailMs;
                 if (tailDone || ms >= TickPathMaxMs) WriteTickPath(r);
             }
         }
@@ -361,6 +424,7 @@ namespace NinjaTrader.NinjaScript.Indicators.Sentinel
                 ClockPhase = clockPhase, MinsToClose = minsClose, MtfBias = mtfBias,
                 FluxDir = fluxDir, FluxPressure = fluxPress, FluxDiverg = fluxDiv,
                 BarrierTicks = FirstTouchBarrier(), FtFavBar = -1, FtAdvBar = -1,
+                LastPathMs = -1, WideResolvedMs = -1,
                 TickBuf = RecordTickPath ? new StringBuilder(8192) : null,
                 MaxFavTick = 0, MaxAdvTick = 0, FtFavMs = -1, FtAdvMs = -1, ResolvedMs = -1
             };
@@ -426,7 +490,7 @@ namespace NinjaTrader.NinjaScript.Indicators.Sentinel
                 else ftT = 0;
 
                 var sb = new StringBuilder(4096);
-                sb.Append("{\"schema\":\"ctick.4\",\"kind\":\"candidate_tickpath\"")
+                sb.Append("{\"schema\":\"ctick.5\",\"kind\":\"candidate_tickpath\"")
                   .Append(",\"recVer\":").Append(Q(RecVer))
                   .Append(",\"coreVer\":").Append(Q(SentinelCore.Version))
                   .Append(",\"barLabel\":").Append(Q(SentinelCore.FriendlyBartag(BarTag())))
@@ -470,6 +534,15 @@ namespace NinjaTrader.NinjaScript.Indicators.Sentinel
                   .Append(",\"msToStopR\":").Append(r.FtAdvMs)
                   .Append(",\"firstTouchTick\":").Append(ftT)
                   .Append(",\"ticks\":").Append(r.TickCount)
+                  // v1.4.0 — DECLARE THE TIERING. Without these a consumer reads the sparse tail as
+                  // a data gap. pathMode is the flag to branch on; the constants make the path
+                  // self-describing so a re-grade never has to guess which build wrote it.
+                  .Append(",\"pathMode\":\"tiered\"")
+                  .Append(",\"pathFullMs\":").Append(TickPathFullMs)
+                  .Append(",\"pathCoarseMs\":").Append(TickPathCoarseMs)
+                  .Append(",\"pathMaxMs\":").Append(TickPathMaxMs)
+                  .Append(",\"wideBarrierMult\":").Append(F(WideBarrierMult))
+                  .Append(",\"wideResolvedMs\":").Append(r.WideResolvedMs)
                   .Append(",\"trunc\":").Append(r.PathTrunc ? "true" : "false")
                   .Append("}\n");
                 sb.Append(r.TickBuf);

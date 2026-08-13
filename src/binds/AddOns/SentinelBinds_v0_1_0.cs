@@ -93,6 +93,19 @@
 //           chrome), v0.1.1 moved to LocationChanged + release watchdog (right idea, still WPF
 //           geometry), v0.1.2 fixed live-dictionary enumeration + surfaced the real exception, which
 //           is what finally named the cause. Every step was found by MEASURING, never by reasoning.
+//    v0.1.3 — 🔴 AttachExisting() HAD NEVER ATTACHED ANYTHING. `Application.Current.Windows` is
+//           thread-affine, so reading it off the Application's dispatcher threw InvalidOperationException
+//           before the loop was ever entered; the OUTER catch swallowed it and the function returned 0 on
+//           every call since v0.1.1. The Diagnose button reported "rescan +0", which reads as "nothing new
+//           to attach" rather than "this has never worked".
+//           ⭐ A FAIL-OPEN PATH THAT RETURNS ZERO IS INDISTINGUISHABLE FROM SUCCESS — same shape as a
+//           crashed sensor abstaining silently. The count was there; nothing ever asked whether 0 was right.
+//           Fix: marshal to the app dispatcher for the collection, attach each window on ITS OWN dispatcher
+//           (NT is multi-UI-threaded), bound the foreign-dispatcher wait at 500ms so it cannot deadlock a
+//           UI thread, and lock-guard _windows because attach now runs on many threads.
+//           ⭐ AND THE SWEEP NOW LOGS WHAT IT DID ("attached N of M; tracking K"). The defect hid
+//           for weeks because the only output was a return value nobody printed — fixing the throw
+//           without fixing the silence would leave the NEXT failure just as invisible.
 //    v0.1.2 — .ToList() snapshots on every _windows enumeration; catch writes the exception into
 //           LastWhy; LocationChanged only arms while the mouse is down (749 events / 156 releases
 //           fired with nothing moving).
@@ -109,10 +122,12 @@ using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Interop;
 using System.Windows.Media;
+using System.Windows.Threading;
 using NinjaTrader.Gui;
 using NinjaTrader.Gui.Tools;
 using NinjaTrader.NinjaScript;
@@ -193,6 +208,15 @@ namespace NinjaTrader.NinjaScript.AddOns.Sentinel
         // HWND is the identity throughout. A Window reference is kept ONLY to unsubscribe on detach —
         // it is never dereferenced for geometry (see the multi-thread warning in the file header).
         private static readonly Dictionary<IntPtr, Window> _windows = new Dictionary<IntPtr, Window>();
+        // ⛔ _windows is now written from SEVERAL dispatcher threads (see AttachExisting): NT gives
+        //    each window its own UI thread, so attach/detach no longer happen on one. A plain
+        //    Dictionary corrupts under concurrent write+read — the .ToList() snapshots added in
+        //    v0.1.2 narrow that window but do not close it, because the snapshot itself walks the
+        //    buckets. Every access now takes _winLock.
+        private static readonly object _winLock = new object();
+        // The first sweep of the process ALWAYS reports, even a zero. See v0.1.3: a silent zero here
+        // read as "nothing to do" for weeks while the sweep was in fact throwing on its first line.
+        private static bool _sweptOnce;
 
         internal static bool Enabled = true;
         internal static int  Threshold = 12;      // physical pixels
@@ -200,8 +224,8 @@ namespace NinjaTrader.NinjaScript.AddOns.Sentinel
         internal static long LocEvents, Releases, Snaps;
         internal static string LastWhy = "-";
 
-        internal static int Count { get { return _windows.Count; } }
-        internal static List<IntPtr> Handles { get { return _windows.Keys.ToList(); } }
+        internal static int Count { get { lock (_winLock) return _windows.Count; } }
+        internal static List<IntPtr> Handles { get { lock (_winLock) return _windows.Keys.ToList(); } }
 
         // ═════════════════════════════════════════════════════════════════
         //  THE BIND — a named set of windows glued into one movable unit.
@@ -349,8 +373,12 @@ namespace NinjaTrader.NinjaScript.AddOns.Sentinel
 
         private static void Hook(Window w, IntPtr h)
         {
-            if (h == IntPtr.Zero || _windows.ContainsKey(h)) return;
-            _windows[h] = w;
+            if (h == IntPtr.Zero) return;
+            lock (_winLock)
+            {
+                if (_windows.ContainsKey(h)) return;
+                _windows[h] = w;
+            }
             // These fire ON THE WINDOW'S OWN THREAD, which is the one place WPF access here is legal.
             w.LocationChanged += OnMoved;
             w.SizeChanged     += OnResized;
@@ -369,9 +397,13 @@ namespace NinjaTrader.NinjaScript.AddOns.Sentinel
             try
             {
                 IntPtr found = IntPtr.Zero;
-                foreach (var kv in _windows.ToList())
+                foreach (var kv in SnapshotPairs())
                     if (ReferenceEquals(kv.Value, w)) { found = kv.Key; break; }
-                if (found != IntPtr.Zero) { _windows.Remove(found); _group.Remove(found); _last.Remove(found); }
+                if (found != IntPtr.Zero)
+                {
+                    lock (_winLock) { _windows.Remove(found); }
+                    _group.Remove(found); _last.Remove(found);
+                }
                 if (_pending == found) _pending = IntPtr.Zero;
             }
             catch (Exception ex) { SentinelCore.Swallow("SentinelBinds.Detach", ex); }
@@ -381,25 +413,81 @@ namespace NinjaTrader.NinjaScript.AddOns.Sentinel
         /// after the AddOn loads, so without this an F5 leaves the engine tracking almost nothing.</summary>
         internal static int AttachExisting()
         {
-            int n = 0;
             try
             {
-                if (Application.Current == null) return 0;
-                foreach (Window w in Application.Current.Windows)
+                Application app = Application.Current;
+                if (app == null) return 0;
+
+                // ⛔ THREAD AFFINITY IS THE WHOLE BUG (fixed v0.1.3, 2026-08-11).
+                //    `Application.Current.Windows` is thread-affine: read from any thread but the
+                //    Application's own it throws InvalidOperationException BEFORE the loop is entered.
+                //    That is why every fault logged here was the OUTER catch and the returned count was
+                //    always 0 — this sweep had never attached a single window since v0.1.1.
+                if (!app.Dispatcher.CheckAccess())
+                    return (int)app.Dispatcher.Invoke(new Func<int>(AttachExisting));
+
+                List<Window> snapshot = new List<Window>();
+                foreach (Window w in app.Windows) snapshot.Add(w);   // legal: we are on the app thread
+
+                int n = 0;
+                foreach (Window w in snapshot)
                 {
+                    Window win = w;
                     try
                     {
-                        // Legal: Application.Current.Windows is enumerated on the main thread and we only
-                        // take the HWND, never a geometry property.
-                        var h = new WindowInteropHelper(w).Handle;
-                        if (h != IntPtr.Zero && !_windows.ContainsKey(h)) { Hook(w, h); n++; }
-                        else if (h == IntPtr.Zero) { Attach(w); n++; }
+                        // ⛔ NT IS MULTI-UI-THREADED — each window may own a DIFFERENT dispatcher, and
+                        //    BOTH WindowInteropHelper(w).Handle and Hook()'s event subscriptions are
+                        //    thread-affine. The comment that stood here claimed taking the HWND was safe
+                        //    "because we only take the HWND, never a geometry property". That reasoning
+                        //    was wrong: the WINDOW is the affine object, not the property.
+                        if (win.Dispatcher.CheckAccess())
+                        {
+                            if (AttachOne(win)) n++;
+                        }
+                        else
+                        {
+                            // Bounded wait, deliberately. A blocking Invoke onto a foreign dispatcher
+                            // deadlocks if that thread is itself waiting on this one — and this runs on
+                            // a UI thread. A window missed this sweep is picked up by the next one; a
+                            // frozen NT is not recoverable.
+                            DispatcherOperation<bool> op = win.Dispatcher.InvokeAsync<bool>(() => AttachOne(win));
+                            if (op.Task.Wait(500)) { if (op.Task.Result) n++; }
+                            else SentinelCore.Log("Binds", "AttachExisting: a window's dispatcher did not "
+                                + "answer in 500ms — SKIPPED this sweep (not attached). It is retried next sweep.");
+                        }
                     }
                     catch (Exception ex) { SentinelCore.Swallow("SentinelBinds.AttachExisting.one", ex); }
                 }
+
+                // ⭐ SAY WHAT THE SWEEP DID. The v0.1.3 bug survived because this function's only
+                //    output was a return value nobody printed: it reported 0 while never having run.
+                //    A sweep that attaches nothing is now DISTINGUISHABLE from one that never ran.
+                if (n > 0 || !_sweptOnce)
+                {
+                    _sweptOnce = true;
+                    SentinelCore.Log("Binds", "sweep: attached " + n + " of " + snapshot.Count
+                        + " open window(s); now tracking " + Count + ".");
+                }
+                return n;
             }
-            catch (Exception ex) { SentinelCore.Swallow("SentinelBinds.AttachExisting", ex); }
-            return n;
+            catch (Exception ex) { SentinelCore.Swallow("SentinelBinds.AttachExisting", ex); return 0; }
+        }
+
+        /// <summary>Attach ONE window. ⛔ MUST run on that window's OWN dispatcher — every WPF touch
+        /// below is thread-affine. True if this call newly tracked (or deferred) the window.</summary>
+        private static bool AttachOne(Window w)
+        {
+            IntPtr h = new WindowInteropHelper(w).Handle;
+            if (h == IntPtr.Zero) { Attach(w); return true; }   // no HWND yet -> defers to SourceInitialized
+            lock (_winLock) { if (_windows.ContainsKey(h)) return false; }
+            Hook(w, h);
+            return true;
+        }
+
+        /// <summary>Locked snapshot of the tracked pairs.</summary>
+        private static List<KeyValuePair<IntPtr, Window>> SnapshotPairs()
+        {
+            lock (_winLock) return _windows.ToList();
         }
 
         // ── drag detection ───────────────────────────────────────────────────
@@ -481,7 +569,7 @@ namespace NinjaTrader.NinjaScript.AddOns.Sentinel
                 var ys = new List<int>();
                 var ye = new List<int>();
 
-                foreach (var h in _windows.Keys.ToList())      // snapshot: the dict mutates under us
+                foreach (var h in Handles)                    // locked snapshot: the dict mutates under us
                 {
                     if (h == self || !W32.Usable(h)) continue;
                     W32.RECT o;
@@ -557,10 +645,10 @@ namespace NinjaTrader.NinjaScript.AddOns.Sentinel
             {
                 SentinelCore.Log("Binds", string.Format(CultureInfo.InvariantCulture,
                     "{0} tracked={1} loc={2} rel={3} snap={4} enabled={5} thr={6} watchdog={7} why={8}",
-                    tag, _windows.Count, LocEvents, Releases, Snaps, Enabled, Threshold,
+                    tag, Count, LocEvents, Releases, Snaps, Enabled, Threshold,
                     _watchdog != null && _watchdog.IsEnabled, LastWhy));
 
-                foreach (var h in _windows.Keys.ToList())
+                foreach (var h in Handles)
                 {
                     try
                     {
