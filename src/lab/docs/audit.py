@@ -386,6 +386,30 @@ def scan(conn):
         sev_tot[sev] += 1
     drift = sev_tot["ERROR"] * SEV_WEIGHT["ERROR"] + sev_tot["WARN"] * SEV_WEIGHT["WARN"]
 
+    # ⛔⛔ THE BOOKKEEPING MUST NEVER VETO A COMMIT. Measured 2026-08-13: this function runs inside
+    # the repo's pre-commit hook, and its WRITE raised `database is locked` against the live
+    # ingester DESPITE WAL + a 30s busy_timeout — so EVERY commit to the Sentinel repo was blocked
+    # for as long as the platform was up. A gate that stops all work when a HEALTH ROW cannot be
+    # filed is not gating the thing it was built to gate.
+    # ⇒ The GATE still gates: doc ERRORs decide the exit code exactly as before. Only the history
+    #   row is best-effort — and its loss is announced LOUDLY, never swallowed, because a silently
+    #   missing row reads on the board as "no drift", which is the failure this tool exists to catch.
+    try:
+        _record(conn, ms, iso, doc_paths, contracted, sev_tot, drift, c, cov, facts, f)
+    except sqlite3.OperationalError as ex:
+        print("=" * 78)
+        print("⚠ DOCS-HEALTH ROW NOT RECORDED — %s" % ex)
+        print("  The database is busy (the Lab platform is running). The AUDIT ITSELF RAN and its")
+        print("  findings below are complete; only the history row is missing, so the board will")
+        print("  show a GAP rather than a clean scan. Re-run `audit.py` when the platform is idle.")
+        print("=" * 78)
+        swallow("docs.audit.record", ex)
+    return dict(docs=len(doc_paths), contracted=contracted, errors=sev_tot["ERROR"],
+                warns=sev_tot["WARN"], infos=sev_tot["INFO"], drift=drift, **cov)
+
+
+def _record(conn, ms, iso, doc_paths, contracted, sev_tot, drift, c, cov, facts, f):
+    """Write one docs-health row + its findings. Best-effort by design — see the caller."""
     conn.execute(
         "INSERT OR REPLACE INTO docs_health("
         "ts_ms,ts,docs_total,contracted,errors,warns,infos,drift_score,"
@@ -408,8 +432,6 @@ def scan(conn):
             conn.execute("INSERT OR REPLACE INTO docs_facts VALUES (?,?,?,?)",
                          (k, str(v), (facts.get("_sources", {}) or {}).get(k, "code"), ms))
     conn.commit()
-    return dict(docs=len(doc_paths), contracted=contracted, errors=sev_tot["ERROR"],
-                warns=sev_tot["WARN"], infos=sev_tot["INFO"], drift=drift, **cov)
 
 
 def main():
