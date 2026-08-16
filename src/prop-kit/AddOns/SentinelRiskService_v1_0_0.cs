@@ -39,6 +39,18 @@
 //    (AutoReconnect.cs), Account.Connection.Status, Account.Positions.
 //
 //  CHANGELOG
+//    v1.0.12 (2026-08-16) — SESSION WINDOWS WRITTEN THE DOCUMENTED WAY WERE SILENTLY NOT ENFORCED.
+//             ParseHHmm used int.TryParse only, so `HH:MM` — the form Profiles.conf's own header
+//             documented — failed to parse, ParseSession returned -1/-1, and InAccountSession reads
+//             -1 as "24h / no window" and returns TRUE. The control was ABSENT and said nothing: it
+//             FAILED OPEN. Proven both ways on SimHAND-1 in the same minute (`03:00-03:05` let an
+//             armed entry through; `0300-0305` refused it). ParseHHmm now accepts BOTH forms —
+//             strictly widening, every previously-parsing string parses identically. The -1 =>
+//             "no window" fail-open is PRE-EXISTING and deliberately unchanged (tightening it would
+//             turn a config typo into a silent trading halt). Header in Profiles.conf corrected too.
+//             ⚠ In-place fix, no file/class version bump: this service is referenced by name from the
+//             Dashboard and StateService, and renaming it hours before a live session is the larger
+//             risk. The per-file history the versioning policy exists for is this entry.
 //    v1.0.11 (2026-07-09) — THE NAKED-POSITION ALERT WAS CRYING WOLF. `ReconcileAccount` counted a stop as present
 //             only in Working|Accepted|PartFilled. NT transits an order through ChangePending/ChangeSubmitted on
 //             every modify, and the Bridge TRAILS its stop — so at each trail step the stop left that set, this
@@ -732,11 +744,38 @@ namespace NinjaTrader.NinjaScript.AddOns.Sentinel
             if (p.Length != 2) return;
             start = ParseHHmm(p[0]); end = ParseHHmm(p[1]);
         }
+        /// <summary>Minutes-since-midnight from `HHmm` OR `HH:MM`. -1 = unparseable.
+        ///
+        /// ⛔⛔ 2026-08-16 — THE FIX AND WHY IT IS A SAFETY FIX, NOT A CONVENIENCE ONE. This used
+        /// `int.TryParse` alone, so `03:00` — THE FORM Profiles.conf's OWN HEADER DOCUMENTED — failed,
+        /// ParseSession returned -1/-1, and SentinelCore.InAccountSession reads -1 as "24h / no
+        /// window" and returns TRUE. ⇒ A session window written the documented way was **SILENTLY NOT
+        /// ENFORCED**: no rejected line, no warning, the control simply absent. It FAILED OPEN.
+        /// Proven both ways on SimHAND-1 in the same minute: `03:00-03:05` let an armed entry
+        /// straight through; `0300-0305` produced "REFUSED CanEnter: outside session 0300-0305".
+        /// Same family as [[rate-guard-is-wallclock]] — a control that runs, reports nothing, and
+        /// measures a different question than the one asked.
+        ///
+        /// ⚠ Deliberately STRICTLY WIDENING: every string that parsed before parses identically now.
+        /// A malformed value still returns -1, which still means "no window" — that fail-open is the
+        /// PRE-EXISTING contract of InAccountSession and is NOT changed here, because tightening it
+        /// would turn a typo in a config into a silent trading halt. The defect was never that -1
+        /// means open; it was that the documented format produced -1.</summary>
         private static int ParseHHmm(string t)
         {
             t = (t ?? "").Trim();
             int v;
             if (int.TryParse(t, out v) && v >= 0 && v <= 2359) return (v / 100) * 60 + (v % 100);
+
+            int c = t.IndexOf(':');
+            if (c > 0 && c < t.Length - 1)
+            {
+                int h, m;
+                if (int.TryParse(t.Substring(0, c).Trim(), out h)
+                    && int.TryParse(t.Substring(c + 1).Trim(), out m)
+                    && h >= 0 && h <= 23 && m >= 0 && m <= 59)
+                    return h * 60 + m;
+            }
             return -1;
         }
 
