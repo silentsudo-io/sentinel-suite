@@ -240,6 +240,7 @@ namespace NinjaTrader.NinjaScript.AddOns.Sentinel
         // (debounce → report → re-state on a cooldown → auto-clear on resolve). See [[conditions-vs-latches]].
         // trailing-drawdown (v1.0.7): peak-equity high-water per account (PERSISTED — never lost on restart);
         // _ddFlattened = auto-flattened-on-breach this day (day-roll re-arms); _ddZone = last zone for once-per alerts
+        private readonly Dictionary<string, string> _govTrace = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         private readonly Dictionary<string, double> _ddPeak = new Dictionary<string, double>(StringComparer.OrdinalIgnoreCase);
         private readonly HashSet<string> _ddFlattened = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         private readonly Dictionary<string, string> _ddZone = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
@@ -803,10 +804,30 @@ namespace NinjaTrader.NinjaScript.AddOns.Sentinel
                 {
                     // PERSISTED baseline (SentinelCore.State, keyed by account + trading-day) so a mid-day F5/
                     // restart no longer zeroes the day's realized P&L; a genuinely new trading day recaptures.
-                    if (!TryLoadGovBaseline(a.Name, tradingDay, out baseline))
+                    // ⛔ THE RE-ANCHOR IS THE BUG AND IT WAS INVISIBLE (2026-08-17). GOV TRACE showed
+                    // SimBURN-1 at realized=-364.24 with baseline=-233.72 -- the baseline had moved
+                    // MID-DAY to the realized figure taken right after a container auto-flatten,
+                    // forgiving $233 of already-taken losses and un-halting a locked-out account.
+                    // ⇒ A fresh capture is the ONLY way baseline can move, and until now it happened
+                    //   silently, so "the baseline re-anchored" could be inferred but never caught in
+                    //   the act. Both branches are now logged and the FRESH one says loudly that a
+                    //   day's losses just became invisible.
+                    bool loaded = TryLoadGovBaseline(a.Name, tradingDay, out baseline);
+                    if (!loaded)
                     {
                         baseline = realized;
                         SaveGovBaseline(a.Name, tradingDay, baseline);
+                        SentinelCore.Log("Risk", "GOV BASELINE **FRESH CAPTURE** " + a.Name
+                            + " day=" + tradingDay.ToString("yyyy-MM-dd")
+                            + " baseline=" + Math.Round(baseline, 2)
+                            + " — any loss taken before this instant is now FORGIVEN. If this is not"
+                            + " the first tick of a new trading day, it is a DEFECT.");
+                    }
+                    else
+                    {
+                        SentinelCore.Log("Risk", "GOV BASELINE loaded " + a.Name
+                            + " day=" + tradingDay.ToString("yyyy-MM-dd")
+                            + " baseline=" + Math.Round(baseline, 2));
                     }
                     _govBaseline[a.Name] = baseline;
                 }
@@ -816,6 +837,30 @@ namespace NinjaTrader.NinjaScript.AddOns.Sentinel
                 if (dayPnl >= gc.Cap)            { status = "DayComplete"; allowed = false; reason = "daily cap $" + Math.Round(gc.Cap) + " hit (banked $" + Math.Round(dayPnl) + ")"; }
                 else if (dayPnl <= -gc.LossStop) { status = "DayHalted";   allowed = false; reason = "daily loss stop -$" + Math.Round(gc.LossStop) + " hit ($" + Math.Round(dayPnl) + ")"; }
                 else                             { status = "Trading";     allowed = true;  reason = null; }
+
+                // ⛔ GOVERNOR TRACE (2026-08-17). MEASURED that night: SentinelRiskService logged
+                // "HARD ENFORCE ▶ loss stop hit — AUTO-FLATTEN + lockout (-$1 hit ($-87))" and SIX
+                // SECONDS LATER the GovernorState it publishes read Status="Trading" — same trading
+                // day, no reload between. Every consumer that consults correctly (the Copier calls
+                // GetGovernorState; the bridge now does too) was therefore told a halted, flattened,
+                // locked-out account was fine to trade.
+                // ⚠ The day-roll is NOT the explanation: _govBaseline.Clear() only fires when
+                //   tradingDay changes, and this flip happened inside one day. So `baseline` is
+                //   being re-anchored by something else, and NOTHING in this method could say what.
+                // ⇒ Trace the three numbers the verdict is actually computed from. A status that
+                //   flips cannot be diagnosed from the status; it has to be diagnosed from realized,
+                //   baseline and dayPnl. Logged only on CHANGE plus once a minute, so it cannot
+                //   drown the log the way the 41,340-lines-in-27-seconds incident did.
+                string traceKey = status + "|" + Math.Round(dayPnl) + "|" + Math.Round(baseline);
+                string prevTrace; _govTrace.TryGetValue(a.Name, out prevTrace);
+                if (prevTrace != traceKey)
+                {
+                    _govTrace[a.Name] = traceKey;
+                    SentinelCore.Log("Risk", "GOV TRACE " + a.Name + " realized=" + Math.Round(realized, 2)
+                        + " baseline=" + Math.Round(baseline, 2) + " dayPnl=" + Math.Round(dayPnl, 2)
+                        + " lossStop=" + Math.Round(gc.LossStop, 2) + " cap=" + Math.Round(gc.Cap, 2)
+                        + " -> " + status);
+                }
 
                 SentinelCore.SetGovernorState(new SentinelCore.GovernorState
                 {
