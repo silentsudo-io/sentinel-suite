@@ -64,7 +64,7 @@ up from what holds. Buying N is what the corpus bakes are for.
 
 ### Shipped since the 07-14 block
 
-- **Core v1.48.0** — `ConvictionState` (v1.37.0, the Drift **CVB** voter) · **`ReplayMode`** (v1.38.0) ·
+- **Core v1.49.0** — `ConvictionState` (v1.37.0, the Drift **CVB** voter) · **`ReplayMode`** (v1.38.0) ·
   `RosterIO`/`LaneIO` **cascade** (v1.39.0) · the **generation beacon** (v1.40.0) · **`Swallow`/`Faults`**
   (v1.41.0, migrated across **726 call sites / 86 files**) · **log retention `LOG_GENERATIONS = 6`**
   (v1.42.0) · **`CvdState`** (v1.43.0, the **CVD** voter — cumulative delta on *any* bar type, carrying
@@ -109,7 +109,7 @@ The suite has moved well past the snapshots below. Where they disagree on a vers
 > (Core · Council · Bridge · Cockpit · GTrader21 · recorder) `memory/NOW.md` wins over any number pinned
 > below; `{{core_version}}` + the voter count render live from code and can't drift.
 
-- **The Council fuses 24 VOTERS** (was 8–9). **SentinelCore → v1.48.0**, **Council → v1.8.x.**
+- **The Council fuses 24 VOTERS** (was 8–9). **SentinelCore → v1.49.0**, **Council → v1.8.x.**
 - **⭐ Newest thread — SentinelFlux (order-flow imbalance BAR TYPE).** A from-scratch López-de-Prado information-driven
   bar type (BarsPeriodType **212203**, reserved block 212200–212299) stabilised by the TBars discipline. It closes bars on
   accumulated signed order-flow imbalance → the suite's **first genuinely orthogonal axis** (every other voter is

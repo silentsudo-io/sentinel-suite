@@ -359,5 +359,170 @@ namespace NinjaTrader.NinjaScript.AddOns.Sentinel
             }
             catch { return null; }
         }
+
+        // ─────────────────────────────────────────────────────────────────────
+        //  CROSS-GENERATION SEAM STORE  (v1.49.0, 2026-08-17)
+        //
+        //  WHY — the beacon above can SAY "decoupled"; this makes the decoupling stop happening.
+        //  Every …State seam stores its values in a `static Dictionary` on SentinelCore, and a
+        //  static field is per-ASSEMBLY. A reload loads a new NinjaTrader.Custom without unloading
+        //  the old one, so each generation gets its OWN store and a write into one is invisible to
+        //  a reader that resolved the other. MEASURED 2026-08-17: SentinelRiskService logged
+        //  "GOV TRACE … -> DayHalted" and 82 s later the bridge's risk consult read "Trading" for
+        //  the same account, with no intervening change from the writer — and 14 loaded assemblies
+        //  exposing SentinelCore. It cost four hours and produced three wrong root causes, because
+        //  a forked store fails as SILENCE: the write succeeds, nothing throws, and the reader sees
+        //  a fail-open null.
+        //
+        //  THE FIX IS THE BEACON'S OWN MECHANISM, GENERALISED. `AppDomain.CurrentDomain.GetData/
+        //  SetData` hangs off the AppDomain, not off any assembly, so ONE table is shared by every
+        //  generation. The beacon has used it since v1.40.0 and has never forked.
+        //
+        //  ⛔ ONLY STRINGS CROSS THE BOUNDARY — this is the whole constraint, not a style choice.
+        //  Type identity includes ASSEMBLY identity, so a `GovernorState` written by generation A
+        //  is a DIFFERENT type from generation B's `GovernorState`: the object would cross fine and
+        //  then fail its cast, turning a silent fork into a silent null. So a seam encodes to a
+        //  flat string on write and decodes into the READER's own type on read. That is also why
+        //  this store is deliberately dumb (string→string) rather than generic.
+        //
+        //  ⚠ The encoding must round-trip values that contain anything — a governor Reason carries
+        //  "$", "-", "(", ")" and could carry the separator itself. Only two characters are escaped
+        //  ('%' and the unit separator) and names are split on the FIRST '=', so a value may contain
+        //  '=' freely.
+        // ─────────────────────────────────────────────────────────────────────
+        private const  string SeamSlot   = "Sentinel.Seam.Store";
+        // ⚠ Written as an ESCAPE, never as a literal control character: a raw U+001F in a
+        //   .cs file is invisible in every editor and is precisely the byte class that a tool
+        //   re-encoding the source mangles silently ([[powershell-corrupts-source-encoding]]).
+        private const  char   SeamSep    = '\u001F';   // ASCII unit separator
+        private static readonly object _seamSlotLock = new object();
+
+        private static System.Collections.Hashtable SeamTable()
+        {
+            var t = AppDomain.CurrentDomain.GetData(SeamSlot) as System.Collections.Hashtable;
+            if (t != null) return t;
+            lock (_seamSlotLock)
+            {
+                t = AppDomain.CurrentDomain.GetData(SeamSlot) as System.Collections.Hashtable;
+                if (t == null)
+                {
+                    // Synchronized wrapper: publishers run on data threads, consumers on UI threads.
+                    t = System.Collections.Hashtable.Synchronized(new System.Collections.Hashtable());
+                    AppDomain.CurrentDomain.SetData(SeamSlot, t);
+                }
+                return t;
+            }
+        }
+
+        /// <summary>Publish an encoded seam value under a key shared by every assembly generation.
+        /// Returns false if the write did not land — a SAFETY seam must be able to tell.</summary>
+        internal static bool SeamPut(string key, string payload)
+        {
+            if (string.IsNullOrEmpty(key) || payload == null) return false;
+            try { SeamTable()[key] = payload; return true; }
+            catch (Exception ex) { Swallow("SentinelCore.SeamPut", ex); return false; }
+        }
+
+        /// <summary>Read a seam value written by ANY generation. Null = genuinely not published.</summary>
+        internal static string SeamGet(string key)
+        {
+            if (string.IsNullOrEmpty(key)) return null;
+            try { return SeamTable()[key] as string; }
+            catch (Exception ex) { Swallow("SentinelCore.SeamGet", ex); return null; }
+        }
+
+        /// <summary>Snapshot of every key under a prefix. Taken under the Hashtable's own lock:
+        /// enumerating a synchronized Hashtable is NOT itself synchronized.</summary>
+        internal static List<string> SeamKeys(string prefix)
+        {
+            var outp = new List<string>();
+            try
+            {
+                var t = SeamTable();
+                lock (t.SyncRoot)
+                    foreach (System.Collections.DictionaryEntry de in t)
+                    {
+                        string k = de.Key as string;
+                        if (k != null && (string.IsNullOrEmpty(prefix) || k.StartsWith(prefix, StringComparison.Ordinal)))
+                            outp.Add(k);
+                    }
+            }
+            catch (Exception ex) { Swallow("SentinelCore.SeamKeys", ex); }
+            return outp;
+        }
+
+        // ── the flat field codec (strings only, by construction) ─────────────
+        private static string SeamEsc(string s)
+        {
+            if (string.IsNullOrEmpty(s)) return s ?? "";
+            return s.Replace("%", "%25").Replace(SeamSep.ToString(), "%1F");
+        }
+        private static string SeamUnesc(string s)
+        {
+            if (string.IsNullOrEmpty(s)) return s;
+            return s.Replace("%1F", SeamSep.ToString()).Replace("%25", "%");
+        }
+
+        /// <summary>Builds a seam payload. A null string field is OMITTED, so it decodes back to
+        /// null rather than to "" — the difference matters for a Reason nobody set.</summary>
+        internal sealed class SeamWriter
+        {
+            private readonly StringBuilder _sb = new StringBuilder(160);
+            private void Put(string name, string v)
+            {
+                if (_sb.Length > 0) _sb.Append(SeamSep);
+                _sb.Append(name).Append('=').Append(SeamEsc(v));
+            }
+            public SeamWriter Str (string name, string v)   { if (v != null) Put(name, v); return this; }
+            public SeamWriter Num (string name, double v)   { Put(name, v.ToString("R", CultureInfo.InvariantCulture)); return this; }
+            public SeamWriter Bool(string name, bool v)     { Put(name, v ? "1" : "0"); return this; }
+            public SeamWriter Time(string name, DateTime v) { Put(name, v.Ticks.ToString(CultureInfo.InvariantCulture)); return this; }
+            public override string ToString() { return _sb.ToString(); }
+        }
+
+        /// <summary>Reads a seam payload. Every accessor has a documented default, so a payload
+        /// written by an OLDER generation that lacks a newer field decodes without throwing.</summary>
+        internal sealed class SeamReader
+        {
+            private readonly Dictionary<string, string> _f =
+                new Dictionary<string, string>(StringComparer.Ordinal);
+
+            public SeamReader(string payload)
+            {
+                if (string.IsNullOrEmpty(payload)) return;
+                foreach (var part in payload.Split(SeamSep))
+                {
+                    int eq = part.IndexOf('=');          // FIRST '=' — a value may contain more
+                    if (eq <= 0) continue;
+                    _f[part.Substring(0, eq)] = SeamUnesc(part.Substring(eq + 1));
+                }
+            }
+
+            public bool Has(string name) { return _f.ContainsKey(name); }
+
+            public string Str(string name)
+            {
+                string v; return _f.TryGetValue(name, out v) ? v : null;
+            }
+            public double Num(string name)
+            {
+                string v; double d;
+                return _f.TryGetValue(name, out v)
+                    && double.TryParse(v, NumberStyles.Float, CultureInfo.InvariantCulture, out d) ? d : 0.0;
+            }
+            public bool Bool(string name)
+            {
+                string v; return _f.TryGetValue(name, out v) && v == "1";
+            }
+            public DateTime Time(string name)
+            {
+                string v; long ticks;
+                if (_f.TryGetValue(name, out v)
+                    && long.TryParse(v, NumberStyles.Integer, CultureInfo.InvariantCulture, out ticks)
+                    && ticks >= 0 && ticks <= DateTime.MaxValue.Ticks)
+                    return new DateTime(ticks, DateTimeKind.Utc);
+                return DateTime.MinValue;
+            }
+        }
     }
 }

@@ -43,26 +43,106 @@ namespace NinjaTrader.NinjaScript.AddOns.Sentinel
             public DateTime UpdatedUtc;
         }
 
+        // ─────────────────────────────────────────────────────────────────────
+        //  ⛔⛔ THIS SEAM IS CROSS-GENERATION AS OF v1.49.0 (2026-08-17) — READ BEFORE EDITING.
+        //
+        //  The store below used to be ONLY the `_gov` static Dictionary. A static field is
+        //  per-ASSEMBLY, and a NinjaScript `reload` loads a new NinjaTrader.Custom WITHOUT
+        //  unloading the old one, so each generation gets its own private copy. MEASURED that
+        //  night: SentinelRiskService logged "GOV TRACE … -> DayHalted" and 82 s later the
+        //  bridge's risk consult read "Trading" for the SAME account with no intervening write,
+        //  while 14 loaded assemblies exposed SentinelCore. The bridge resolves SentinelCore by
+        //  walking AppDomain.GetAssemblies(), so WHICH generation it got was enumeration order.
+        //  ⇒ A halted, auto-flattened, locked-out account answered "fine to trade".
+        //
+        //  The fork fails as SILENCE — the write succeeds, nothing throws, and the reader gets a
+        //  fail-open null. That is the worst possible direction for a risk container, so the
+        //  authoritative store is now SeamPut/SeamGet (Foundation), which hangs off the AppDomain
+        //  and is therefore SHARED by every generation. Only strings cross that boundary: a
+        //  GovernorState written by generation A is a DIFFERENT TYPE from generation B's, so the
+        //  object itself must never be stored — it is encoded here and decoded into the READER's
+        //  own type. See the Foundation block for the full reasoning.
+        //
+        //  ⚠ `_gov` IS DELIBERATELY KEPT as a last-resort fallback. If SeamPut ever fails, the
+        //    behaviour degrades to exactly what it was before this change instead of to a
+        //    fail-open null — a safety seam must never become MORE permissive on an error path.
+        //    SeamPut returns false rather than swallowing, and a failed publish is logged.
+        //  ⚠ The public API is unchanged, so all nine call sites are untouched. What DID change:
+        //    a read now returns a FRESHLY DECODED object, so a caller must not rely on reference
+        //    identity between two reads, or expect a mutation of the returned object to be seen
+        //    by anyone else. No caller does either (checked: Copier, Deck, Bridge-by-reflection).
+        // ─────────────────────────────────────────────────────────────────────
         private static readonly Dictionary<string, GovernorState> _gov =
             new Dictionary<string, GovernorState>(StringComparer.OrdinalIgnoreCase);
         private static readonly object _govLock = new object();
+        private const string GovSeamPrefix = "gov/";
+
+        private static string GovEncode(GovernorState g)
+        {
+            return new SeamWriter()
+                .Str ("acct", g.Account)
+                .Str ("stat", g.Status)
+                .Str ("rsn",  g.Reason)
+                .Bool("allw", g.Allowed)
+                .Num ("pnl",  g.DailyPnl)
+                .Num ("cap",  g.Cap)
+                .Num ("stop", g.LossStop)
+                .Num ("size", g.RecommendedSize)
+                .Time("upd",  g.UpdatedUtc)
+                .ToString();
+        }
+
+        private static GovernorState GovDecode(string payload)
+        {
+            if (string.IsNullOrEmpty(payload)) return null;
+            var r = new SeamReader(payload);
+            string acct = r.Str("acct");
+            if (string.IsNullOrEmpty(acct)) return null;      // unreadable payload ⇒ fall back, don't invent
+            return new GovernorState
+            {
+                Account         = acct,
+                Status          = r.Str("stat"),
+                Reason          = r.Str("rsn"),
+                Allowed         = r.Bool("allw"),
+                DailyPnl        = r.Num("pnl"),
+                Cap             = r.Num("cap"),
+                LossStop        = r.Num("stop"),
+                RecommendedSize = r.Num("size"),
+                UpdatedUtc      = r.Time("upd"),
+            };
+        }
 
         public static void SetGovernorState(GovernorState g)
         {
             if (g == null || string.IsNullOrEmpty(g.Account)) return;
             g.UpdatedUtc = DateTime.UtcNow;
             lock (_govLock) { _gov[g.Account] = g; }
+            if (!SeamPut(GovSeamPrefix + g.Account.ToLowerInvariant(), GovEncode(g)))
+                Log("Core", "GOVERNOR SEAM PUBLISH FAILED for " + g.Account
+                          + " — this generation's private store still has it, but another "
+                          + "generation reading the shared store will NOT see this verdict.");
         }
 
         public static GovernorState GetGovernorState(string account)
         {
             if (string.IsNullOrEmpty(account)) return null;
-            lock (_govLock) { GovernorState g; return _gov.TryGetValue(account, out g) ? g : null; }
+            var g = GovDecode(SeamGet(GovSeamPrefix + account.ToLowerInvariant()));
+            if (g != null) return g;
+            lock (_govLock) { GovernorState local; return _gov.TryGetValue(account, out local) ? local : null; }
         }
 
         public static List<GovernorState> AllGovernorStates()
         {
-            lock (_govLock) { return new List<GovernorState>(_gov.Values); }
+            var byAcct = new Dictionary<string, GovernorState>(StringComparer.OrdinalIgnoreCase);
+            foreach (string k in SeamKeys(GovSeamPrefix))
+            {
+                var g = GovDecode(SeamGet(k));
+                if (g != null) byAcct[g.Account] = g;
+            }
+            lock (_govLock)
+                foreach (var kv in _gov)                       // fallback only — never overwrites the shared store
+                    if (!byAcct.ContainsKey(kv.Key)) byAcct[kv.Key] = kv.Value;
+            return new List<GovernorState>(byAcct.Values);
         }
 
         // ── governor daily-reset clock (v1.1.0) ─────────────────────────────
@@ -122,9 +202,55 @@ namespace NinjaTrader.NinjaScript.AddOns.Sentinel
             public DateTime UpdatedUtc;
         }
 
+        // ⛔ CROSS-GENERATION as of v1.49.0 — same reasoning, same mechanism as the governor seam
+        //   above (read that block). This one matters MORE, not less: DrawdownAllowsEntry is the
+        //   predicate SentinelCore.CanEnter and the bridge's order path both lead with, so a
+        //   forked store here fails open on the floor the prop firm actually liquidates at.
         private static readonly Dictionary<string, DrawdownState> _dd =
             new Dictionary<string, DrawdownState>(StringComparer.OrdinalIgnoreCase);
         private static readonly object _ddLock = new object();
+        private const string DdSeamPrefix = "dd/";
+
+        private static string DdEncode(DrawdownState d)
+        {
+            return new SeamWriter()
+                .Str ("acct", d.Account)
+                .Str ("type", d.DdType)
+                .Str ("rsn",  d.Reason)
+                .Num ("eq",   d.Equity)
+                .Num ("peak", d.PeakEquity)
+                .Num ("flr",  d.Floor)
+                .Num ("cush", d.Cushion)
+                .Num ("amt",  d.DdAmount)
+                .Bool("warn", d.Warn)
+                .Bool("blk",  d.EntryBlocked)
+                .Bool("brch", d.Breach)
+                .Time("upd",  d.UpdatedUtc)
+                .ToString();
+        }
+
+        private static DrawdownState DdDecode(string payload)
+        {
+            if (string.IsNullOrEmpty(payload)) return null;
+            var r = new SeamReader(payload);
+            string acct = r.Str("acct");
+            if (string.IsNullOrEmpty(acct)) return null;
+            return new DrawdownState
+            {
+                Account      = acct,
+                DdType       = r.Str("type"),
+                Reason       = r.Str("rsn"),
+                Equity       = r.Num("eq"),
+                PeakEquity   = r.Num("peak"),
+                Floor        = r.Num("flr"),
+                Cushion      = r.Num("cush"),
+                DdAmount     = r.Num("amt"),
+                Warn         = r.Bool("warn"),
+                EntryBlocked = r.Bool("blk"),
+                Breach       = r.Bool("brch"),
+                UpdatedUtc   = r.Time("upd"),
+            };
+        }
 
         /// <summary>Host (Risk) publishes the computed trailing-drawdown state for an account (each governor tick).</summary>
         public static void SetDrawdownState(DrawdownState d)
@@ -132,17 +258,32 @@ namespace NinjaTrader.NinjaScript.AddOns.Sentinel
             if (d == null || string.IsNullOrEmpty(d.Account)) return;
             d.UpdatedUtc = DateTime.UtcNow;
             lock (_ddLock) { _dd[d.Account] = d; }
+            if (!SeamPut(DdSeamPrefix + d.Account.ToLowerInvariant(), DdEncode(d)))
+                Log("Core", "DRAWDOWN SEAM PUBLISH FAILED for " + d.Account
+                          + " — another generation consulting the shared store will not see this "
+                          + "floor. Entry gating on it is NOT authoritative until this clears.");
         }
 
         public static DrawdownState GetDrawdownState(string account)
         {
             if (string.IsNullOrEmpty(account)) return null;
-            lock (_ddLock) { DrawdownState d; return _dd.TryGetValue(account, out d) ? d : null; }
+            var d = DdDecode(SeamGet(DdSeamPrefix + account.ToLowerInvariant()));
+            if (d != null) return d;
+            lock (_ddLock) { DrawdownState local; return _dd.TryGetValue(account, out local) ? local : null; }
         }
 
         public static List<DrawdownState> AllDrawdownStates()
         {
-            lock (_ddLock) { return new List<DrawdownState>(_dd.Values); }
+            var byAcct = new Dictionary<string, DrawdownState>(StringComparer.OrdinalIgnoreCase);
+            foreach (string k in SeamKeys(DdSeamPrefix))
+            {
+                var d = DdDecode(SeamGet(k));
+                if (d != null) byAcct[d.Account] = d;
+            }
+            lock (_ddLock)
+                foreach (var kv in _dd)
+                    if (!byAcct.ContainsKey(kv.Key)) byAcct[kv.Key] = kv.Value;
+            return new List<DrawdownState>(byAcct.Values);
         }
 
         /// <summary>Entry consult: is this account clear of its trailing-drawdown floor to open NEW risk?

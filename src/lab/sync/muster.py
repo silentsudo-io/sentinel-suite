@@ -387,6 +387,18 @@ def cmd_push(args):
             len(gone), "" if args.prune else " (kept, need --prune)"))
         for k in changed[:args.show]:
             print("            changed  %s" % k)
+        if len(changed) > args.show:
+            print("            changed  … and %d more (--show N to see them)" % (len(changed) - args.show))
+        # ⛔ NAME WHAT GETS DELETED. --prune counted these and never printed one of them, so the
+        #   only way to learn what a prune removed was to run it and look afterwards. A delete you
+        #   cannot review before authorising is not reviewable at all, and "4 only-on-target" reads
+        #   as housekeeping right up until one of the four is the file you were about to need.
+        #   Same family as the no-silent-caps rule: a tool that drops work must say which work.
+        #   ⚠ ALWAYS listed in full — a `[:args.show]` truncation here would recreate the defect
+        #   for exactly the case that matters most, the target that has drifted furthest.
+        if gone:
+            for k in gone:
+                print("            %s  %s" % ("DELETE  " if args.prune else "on-target-only(kept)", k))
         if not send and not (args.prune and gone):
             print("            nothing to do")
             continue
