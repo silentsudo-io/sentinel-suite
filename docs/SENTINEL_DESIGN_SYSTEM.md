@@ -645,6 +645,28 @@ fixes it — a chart reload does not. See `[[f5-decouples-bartype-seams]]`.
 is **alive but decoupled** ⇒ restart NT. `null` means **genuinely absent / not loaded** ⇒ a different problem
 with a different fix. It survives the reload because it lives in an `AppDomain` data slot, not a static field.
 
+#### Cross-generation seam store — the beacon's mechanism, generalised   *(v1.49.0)*
+
+The beacon above can *say* "decoupled". **v1.49.0 stops the two SAFETY seams decoupling at all.**
+`GovernorState` and `DrawdownState` no longer live in a `static Dictionary`; they are published through
+`SeamPut`/`SeamGet`/`SeamKeys` over the same `AppDomain` slot the beacon uses, so **every generation reads one
+store**. Measured on 2026-08-17: the risk service logged `GOV TRACE … -> DayHalted` and 82 s later the bridge's
+consult read `Trading` for the same account, with 14 loaded assemblies exposing `SentinelCore` — a halted,
+auto-flattened, locked-out account reported fine to trade. The fork fails as **silence** (the write succeeds,
+nothing throws, the reader gets a fail-open `null`), which is the worst direction a risk container can fail in.
+
+⛔ **Only STRINGS cross the boundary, and that is a constraint rather than a style choice.** Type identity
+includes *assembly* identity, so generation A's `GovernorState` is a **different type** from B's: storing the
+object would cross fine and then fail its cast, turning a silent fork into a silent null. Each seam encodes to
+a flat escaped payload on write and decodes into the **reader's own** type on read. The public API is unchanged,
+so no call site moved. The per-generation dictionaries are kept as a last-resort fallback, so a failed publish
+degrades to the *old* behaviour instead of to a fail-open null — and it is **logged, not swallowed**.
+
+⚠ **This applies to the governor and drawdown seams ONLY.** Every other `…State` seam is still a per-generation
+static and still forks — which is exactly what the beacon is for. Proof harness: `Sentinel\tools\seamprobe\`
+(compiles the real source twice into one AppDomain, and builds a mutant to prove the test can fail); driven
+in a live NT by `Sentinel\tools\refusal_proof_cold.py`, which passed both directions with 2–3 generations loaded.
+
 #### `ReplayMode` — the replay-only guard bypass   *(v1.38.0)*
 
 `ReplayMode` is true when **`Sentinel\replay.on`** exists. `Globals.Now` is wall-clock during Playback, so the

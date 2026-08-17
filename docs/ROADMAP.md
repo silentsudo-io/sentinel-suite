@@ -73,8 +73,15 @@ up from what holds. Buying N is what the corpus bakes are for.
   (v1.45.0, the **BSP** voter — bid/ask-classified buy-vs-sell share) · **`NoteSignalFire` /
   `DrainSignalFires` / `SignalFireStats`** (v1.46.0) · the **CVD `VoterCatalog` row** (v1.47.0) · the
   **completed bar-type name registry** (v1.48.0 — `_bartypeNames` carried 3 of the 7 shipped Sentinel
-  bar types, so Drift/Lattice/Effort/Tide rendered as `Type212204`…`Type212207` on every surface).
+  bar types, so Drift/Lattice/Effort/Tide rendered as `Type212204`…`Type212207` on every surface) ·
+  the **cross-generation safety seams** (v1.49.0 — `GovernorState`/`DrawdownState` moved off per-assembly
+  statics onto the beacon's `AppDomain` slot, because a reload forked the store and a **halted,
+  auto-flattened, locked-out account answered "Trading"**).
   All documented in [SENTINEL_DESIGN_SYSTEM.md](SENTINEL_DESIGN_SYSTEM.md) §6f and §9.
+  ⭐ **v1.49.0 is the one to read if you only read one:** it is the only entry here that changed how a
+  *safety* verdict is stored, and it is the first to be proven **inside a running NT under the fault it
+  fixes** — `refusal_proof_cold.py` passed both directions while the bridge itself logged
+  `RISK CONSULT AMBIGUOUS: 2 loaded assemblies expose SentinelCore`.
   ⭐ **v1.46.0 is the one that mattered most and it is not a voter:** the excursion corpus could only
   ever see the **Council**, because the recorder's sole intake was a `GetCouncilState` poll opening on
   `Open("COUNCIL", …)`. **Every strategy was invisible to the corpus by construction** — you could run
