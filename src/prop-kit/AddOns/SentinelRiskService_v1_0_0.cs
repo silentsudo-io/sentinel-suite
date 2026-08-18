@@ -71,6 +71,10 @@
 //      Removed: _govBaseline, TryLoadGovBaseline, SaveGovBaseline, and the gov-baseline-<acct>
 //      State entries (now orphaned; harmless, and no longer read). GOV TRACE keeps printing
 //      realized/dayPnl — it is the only reason either defect was seen rather than inferred.
+//      ⭐ GOV TRACE also gained its HEARTBEAT. Its own comment had promised "on CHANGE plus once
+//      a minute" since the day it was written, and only the CHANGE half existed — so a healthy
+//      quiet governor and a dead one produced identical silence, which cost 43 minutes of doubt
+//      the same evening. Now ~1 line/account/minute: bounded, and silence finally means something.
 //    v1.0.11 (2026-07-09) — THE NAKED-POSITION ALERT WAS CRYING WOLF. `ReconcileAccount` counted a stop as present
 //             only in Working|Accepted|PartFilled. NT transits an order through ChangePending/ChangeSubmitted on
 //             every modify, and the Bridge TRAILS its stop — so at each trail step the stop left that set, this
@@ -260,6 +264,14 @@ namespace NinjaTrader.NinjaScript.AddOns.Sentinel
         // trailing-drawdown (v1.0.7): peak-equity high-water per account (PERSISTED — never lost on restart);
         // _ddFlattened = auto-flattened-on-breach this day (day-roll re-arms); _ddZone = last zone for once-per alerts
         private readonly Dictionary<string, string> _govTrace = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        // v1.0.12 — the HEARTBEAT half of GOV TRACE. Its comment claimed "on CHANGE plus once a
+        // minute" from the day it was written; only the CHANGE half existed. That is not cosmetic:
+        // with change-only logging a healthy quiet governor and a DEAD one produce identical
+        // silence, and on 2026-08-17 that cost 43 minutes of doubt about whether the service was
+        // still running. A safety service must be able to say "I am here and the answer is
+        // unchanged".
+        private readonly Dictionary<string, DateTime> _govTraceAt = new Dictionary<string, DateTime>(StringComparer.OrdinalIgnoreCase);
+        private const double GovTraceHeartbeatSec = 60.0;
         private readonly Dictionary<string, double> _ddPeak = new Dictionary<string, double>(StringComparer.OrdinalIgnoreCase);
         private readonly HashSet<string> _ddFlattened = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         private readonly Dictionary<string, string> _ddZone = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
@@ -845,13 +857,20 @@ namespace NinjaTrader.NinjaScript.AddOns.Sentinel
                 // a baseline silently re-anchoring mid-day, and then the session reset producing a
                 // phantom profit. Both are gone with the baseline itself, and the trace stays because
                 // it is the only reason either was visible rather than inferred.
-                // ⚠ Logged only on CHANGE plus once a minute — it must never drown the log the way the
-                //   41,340-lines-in-27-seconds incident did.
+                // ⚠ On CHANGE, plus a once-a-minute HEARTBEAT — and as of v1.0.12 the heartbeat is
+                //   real. This comment claimed it from the day it was written while only the CHANGE
+                //   half existed, which made a quiet governor indistinguishable from a dead one.
+                //   Bounded on purpose: ~1 line/account/minute, so it can never drown the log the way
+                //   the 41,340-lines-in-27-seconds incident did.
                 string traceKey = status + "|" + Math.Round(dayPnl);
                 string prevTrace; _govTrace.TryGetValue(a.Name, out prevTrace);
-                if (prevTrace != traceKey)
+                DateTime lastAt; _govTraceAt.TryGetValue(a.Name, out lastAt);
+                bool changed = prevTrace != traceKey;
+                bool heartbeat = (DateTime.UtcNow - lastAt).TotalSeconds >= GovTraceHeartbeatSec;
+                if (changed || heartbeat)
                 {
                     _govTrace[a.Name] = traceKey;
+                    _govTraceAt[a.Name] = DateTime.UtcNow;
                     SentinelCore.Log("Risk", "GOV TRACE " + a.Name + " realized=" + Math.Round(realized, 2)
                         + " dayPnl=" + Math.Round(dayPnl, 2)
                         + " lossStop=" + Math.Round(gc.LossStop, 2) + " cap=" + Math.Round(gc.Cap, 2)
