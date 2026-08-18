@@ -8,7 +8,7 @@
 // ═════════════════════════════════════════════════════════════════════════════
 //  SentinelRiskService — feed-health / lag watchdog for the Sentinel Suite (NT8)
 //  File: SentinelRiskService_v1_0_0.cs
-//  Version: v1.0.11
+//  Version: v1.0.12
 // ─────────────────────────────────────────────────────────────────────────────
 //  WHAT THIS IS  (see memory: sentinel-suite-architecture, ninjatrader-observability)
 //    A headless, always-on AddOnBase service — the SAFETY tool of the suite. It watches
@@ -51,6 +51,26 @@
 //             ⚠ In-place fix, no file/class version bump: this service is referenced by name from the
 //             Dashboard and StateService, and renaming it hours before a live session is the larger
 //             risk. The per-file history the versioning policy exists for is this entry.
+//    v1.0.12 (2026-08-17) — THE GOVERNOR'S DAY BASELINE IS GONE, AND ITS ABSENCE IS THE FIX.
+//      dayPnl was `realized - baseline`, where baseline was a per-day snapshot persisted to
+//      SentinelCore.State. But `realized` is Account.Get(RealizedProfitLoss), which NT ALREADY
+//      scopes to the trading day and resets on the session roll — MEASURED 2026-08-17, all four
+//      accounts went to 0 at 16:00:01. Subtracting a baseline captured at any other instant
+//      re-zeroes the day at an arbitrary moment.
+//      ⛔ NOT THEORETICAL, TWICE IN ONE DAY: (1) a baseline re-anchored mid-day and forgave $233
+//      of already-taken losses, un-halting a locked-out account; (2) at the 16:00 session reset
+//      the stale baseline turned realized=0 into a phantom +$352.96, tripping a $200 cap and
+//      locking SimBURN-1 out with a DayComplete it had never earned. All four accounts showed the
+//      same phantom profit; only that one had a cap tight enough to trip.
+//      ⭐ SentinelPilot_v0_1_0.cs had ALREADY fixed this in its own container and written down why
+//      ("I fixed the SCOPE and not the ANCHOR… it looked fixed, which is worse than looking
+//      broken"). Two containers, one suite, one of them fixed — this is that fix reaching the
+//      governor. The account's own daily reset is the anchor, and it is the one the FIRM grades
+//      against. ⚠ Setting resetHour= was the tempting wrong fix: it patches the boundary while
+//      leaving the subtraction that manufactures the phantom.
+//      Removed: _govBaseline, TryLoadGovBaseline, SaveGovBaseline, and the gov-baseline-<acct>
+//      State entries (now orphaned; harmless, and no longer read). GOV TRACE keeps printing
+//      realized/dayPnl — it is the only reason either defect was seen rather than inferred.
 //    v1.0.11 (2026-07-09) — THE NAKED-POSITION ALERT WAS CRYING WOLF. `ReconcileAccount` counted a stop as present
 //             only in Working|Accepted|PartFilled. NT transits an order through ChangePending/ChangeSubmitted on
 //             every modify, and the Bridge TRAILS its stop — so at each trail step the stop left that set, this
@@ -232,7 +252,6 @@ namespace NinjaTrader.NinjaScript.AddOns.Sentinel
         // v1.0.5 — governor: per-account config + daily realized-P&L baselines (reset at session rollover)
         private DateTime _govFileMtime = DateTime.MinValue;
         private Dictionary<string, GovConfig> _govConfig = new Dictionary<string, GovConfig>(StringComparer.OrdinalIgnoreCase);
-        private readonly Dictionary<string, double> _govBaseline = new Dictionary<string, double>(StringComparer.OrdinalIgnoreCase);
         private DateTime _govDay = DateTime.MinValue;
         private readonly HashSet<string> _hardFlattened = new HashSet<string>(StringComparer.OrdinalIgnoreCase);   // accounts auto-flattened this day
         private readonly Dictionary<string, string> _govPrevStatus = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);   // last governor status (transition alerts)
@@ -789,7 +808,7 @@ namespace NinjaTrader.NinjaScript.AddOns.Sentinel
             // Daily reset of the ACTION latches (flatten once per day) + transition memory. NOT _ddPeak — trailing DD
             // is a lifetime high-water mark. And NOT the naked/orphan CONDITIONS: a position that is naked across the
             // day roll is still naked, and its episode ends when it resolves, not when the clock does.
-            if (tradingDay != _govDay) { _govDay = tradingDay; _govBaseline.Clear(); _hardFlattened.Clear(); _govPrevStatus.Clear(); _ddFlattened.Clear(); }
+            if (tradingDay != _govDay) { _govDay = tradingDay; _hardFlattened.Clear(); _govPrevStatus.Clear(); _ddFlattened.Clear(); }
 
             var accts = new List<Account>();
             try { lock (Account.All) { foreach (Account a in Account.All) if (a != null && a.Name != null && _govConfig.ContainsKey(a.Name)) accts.Add(a); } } catch (Exception _sx) { SentinelCore.Swallow("SentinelRisk.GovernorTick", _sx); }
@@ -799,65 +818,42 @@ namespace NinjaTrader.NinjaScript.AddOns.Sentinel
                 GovConfig gc; if (!_govConfig.TryGetValue(a.Name, out gc)) continue;
                 double realized;
                 try { realized = a.Get(AccountItem.RealizedProfitLoss, Currency.UsDollar); } catch { continue; }
-                double baseline;
-                if (!_govBaseline.TryGetValue(a.Name, out baseline))
-                {
-                    // PERSISTED baseline (SentinelCore.State, keyed by account + trading-day) so a mid-day F5/
-                    // restart no longer zeroes the day's realized P&L; a genuinely new trading day recaptures.
-                    // ⛔ THE RE-ANCHOR IS THE BUG AND IT WAS INVISIBLE (2026-08-17). GOV TRACE showed
-                    // SimBURN-1 at realized=-364.24 with baseline=-233.72 -- the baseline had moved
-                    // MID-DAY to the realized figure taken right after a container auto-flatten,
-                    // forgiving $233 of already-taken losses and un-halting a locked-out account.
-                    // ⇒ A fresh capture is the ONLY way baseline can move, and until now it happened
-                    //   silently, so "the baseline re-anchored" could be inferred but never caught in
-                    //   the act. Both branches are now logged and the FRESH one says loudly that a
-                    //   day's losses just became invisible.
-                    bool loaded = TryLoadGovBaseline(a.Name, tradingDay, out baseline);
-                    if (!loaded)
-                    {
-                        baseline = realized;
-                        SaveGovBaseline(a.Name, tradingDay, baseline);
-                        SentinelCore.Log("Risk", "GOV BASELINE **FRESH CAPTURE** " + a.Name
-                            + " day=" + tradingDay.ToString("yyyy-MM-dd")
-                            + " baseline=" + Math.Round(baseline, 2)
-                            + " — any loss taken before this instant is now FORGIVEN. If this is not"
-                            + " the first tick of a new trading day, it is a DEFECT.");
-                    }
-                    else
-                    {
-                        SentinelCore.Log("Risk", "GOV BASELINE loaded " + a.Name
-                            + " day=" + tradingDay.ToString("yyyy-MM-dd")
-                            + " baseline=" + Math.Round(baseline, 2));
-                    }
-                    _govBaseline[a.Name] = baseline;
-                }
-                double dayPnl = realized - baseline;
+                // ⛔ NO BASELINE. `realized` is Account.Get(RealizedProfitLoss), which NT ALREADY
+                //   scopes to the trading day and resets on the session roll — MEASURED 2026-08-17,
+                //   all four accounts went to 0 at 16:00:01. Subtracting a baseline captured at any
+                //   OTHER instant re-zeroes the day at an arbitrary moment, and that is not theory:
+                //   it produced a phantom +$352.96 against a $200 cap and locked SimBURN-1 out with
+                //   a DayComplete it had never earned, on a day it had made nothing.
+                //   ⭐ SentinelPilot_v0_1_0.cs already fixed this in its own container and said why:
+                //   "I fixed the SCOPE and not the ANCHOR… it looked fixed, which is worse than
+                //   looking broken." The account's own daily reset is the anchor, and it is the one
+                //   the FIRM grades against. This is that fix, finally applied to the governor too.
+                //   ⚠ A baseline is still meaningful for a STRATEGY-scoped figure; it must never be
+                //   applied to the ACCOUNT figure.
+                double dayPnl = realized;
 
                 string status, reason; bool allowed;
                 if (dayPnl >= gc.Cap)            { status = "DayComplete"; allowed = false; reason = "daily cap $" + Math.Round(gc.Cap) + " hit (banked $" + Math.Round(dayPnl) + ")"; }
                 else if (dayPnl <= -gc.LossStop) { status = "DayHalted";   allowed = false; reason = "daily loss stop -$" + Math.Round(gc.LossStop) + " hit ($" + Math.Round(dayPnl) + ")"; }
                 else                             { status = "Trading";     allowed = true;  reason = null; }
 
-                // ⛔ GOVERNOR TRACE (2026-08-17). MEASURED that night: SentinelRiskService logged
-                // "HARD ENFORCE ▶ loss stop hit — AUTO-FLATTEN + lockout (-$1 hit ($-87))" and SIX
-                // SECONDS LATER the GovernorState it publishes read Status="Trading" — same trading
-                // day, no reload between. Every consumer that consults correctly (the Copier calls
-                // GetGovernorState; the bridge now does too) was therefore told a halted, flattened,
-                // locked-out account was fine to trade.
-                // ⚠ The day-roll is NOT the explanation: _govBaseline.Clear() only fires when
-                //   tradingDay changes, and this flip happened inside one day. So `baseline` is
-                //   being re-anchored by something else, and NOTHING in this method could say what.
-                // ⇒ Trace the three numbers the verdict is actually computed from. A status that
-                //   flips cannot be diagnosed from the status; it has to be diagnosed from realized,
-                //   baseline and dayPnl. Logged only on CHANGE plus once a minute, so it cannot
-                //   drown the log the way the 41,340-lines-in-27-seconds incident did.
-                string traceKey = status + "|" + Math.Round(dayPnl) + "|" + Math.Round(baseline);
+                // ⛔ GOVERNOR TRACE (2026-08-17). It was added to diagnose a status that flipped —
+                // "HARD ENFORCE ▶ loss stop hit — AUTO-FLATTEN + lockout" and SIX SECONDS LATER the
+                // published GovernorState read Status="Trading", same trading day, no reload between.
+                // A status that flips cannot be diagnosed FROM the status; it has to be diagnosed from
+                // the numbers the verdict is computed from. ⇒ This trace is what found the cause, twice:
+                // a baseline silently re-anchoring mid-day, and then the session reset producing a
+                // phantom profit. Both are gone with the baseline itself, and the trace stays because
+                // it is the only reason either was visible rather than inferred.
+                // ⚠ Logged only on CHANGE plus once a minute — it must never drown the log the way the
+                //   41,340-lines-in-27-seconds incident did.
+                string traceKey = status + "|" + Math.Round(dayPnl);
                 string prevTrace; _govTrace.TryGetValue(a.Name, out prevTrace);
                 if (prevTrace != traceKey)
                 {
                     _govTrace[a.Name] = traceKey;
                     SentinelCore.Log("Risk", "GOV TRACE " + a.Name + " realized=" + Math.Round(realized, 2)
-                        + " baseline=" + Math.Round(baseline, 2) + " dayPnl=" + Math.Round(dayPnl, 2)
+                        + " dayPnl=" + Math.Round(dayPnl, 2)
                         + " lossStop=" + Math.Round(gc.LossStop, 2) + " cap=" + Math.Round(gc.Cap, 2)
                         + " -> " + status);
                 }
@@ -1021,26 +1017,6 @@ namespace NinjaTrader.NinjaScript.AddOns.Sentinel
 
         // governor daily-P&L baseline (realized at day-start), PERSISTED so a mid-day restart/F5 doesn't zero
         // the day. Stored as "<yyyy-MM-dd>|<baseline>"; a stale (other-day) value is ignored → recaptured.
-        private bool TryLoadGovBaseline(string account, DateTime tradingDay, out double baseline)
-        {
-            baseline = 0;
-            try
-            {
-                string s = SentinelCore.State.Load("gov-baseline-" + account);
-                if (string.IsNullOrEmpty(s)) return false;
-                int bar = s.IndexOf('|');
-                if (bar <= 0) return false;
-                if (s.Substring(0, bar) != tradingDay.ToString("yyyy-MM-dd")) return false;   // stale (previous trading day)
-                return double.TryParse(s.Substring(bar + 1).Trim(), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out baseline);
-            }
-            catch { return false; }
-        }
-        private void SaveGovBaseline(string account, DateTime tradingDay, double baseline)
-        {
-            try { SentinelCore.State.Save("gov-baseline-" + account, tradingDay.ToString("yyyy-MM-dd") + "|" + baseline.ToString(System.Globalization.CultureInfo.InvariantCulture)); }
-            catch (Exception _sx) { SentinelCore.Swallow("SentinelRisk.SaveGovBaseline", _sx); }
-        }
-
         // Cancel every working order + market-close every position on an account. Off the tick path.
         private void HardFlattenAccount(Account acct)
         {
